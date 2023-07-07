@@ -79,13 +79,13 @@ const columns: ColumnData[] = [
   {
     label: "Cells",
     minWidth: 70,
-    key: "cell_image_urls",
+    key: "cells",
     type: "image"
   },
   {
     label: "Pixel Image",
     minWidth: 70,
-    key: "pixel_image",
+    key: "cell_image_urls",
     type: "image"
   },
 ]
