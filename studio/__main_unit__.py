@@ -9,6 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from studio.app.common.routers import (
     algolist,
     auth,
+    database,
     experiment,
     files,
     outputs,
@@ -32,6 +33,7 @@ app.include_router(params.router)
 app.include_router(run.router)
 app.include_router(users_admin.router)
 app.include_router(users_me.router)
+app.include_router(database.router, tags=["Database"])
 
 # optinist routers
 app.include_router(hdf5.router)
