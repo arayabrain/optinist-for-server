@@ -13,8 +13,9 @@ import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { useRunPipeline } from 'store/slice/Pipeline/PipelineHook'
 import FlowChart from './FlowChart/FlowChart'
 import Visualize from './Visualize/Visualize'
-import Experiment from './Experiment/Experiment'
+// import Experiment from './Experiment/Experiment'
 import optinistLogo from './optinist.png'
+import DataBaseExperiments from "./DataBaseExperiments";
 
 const Layout: React.FC = () => {
   const [value, setValue] = React.useState(0)
@@ -66,7 +67,8 @@ const Layout: React.FC = () => {
         <Visualize />
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <Experiment />
+        {/*<Experiment />*/}
+        <DataBaseExperiments />
       </TabPanel>
     </RootDiv>
   )
