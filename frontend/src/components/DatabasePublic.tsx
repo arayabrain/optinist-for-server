@@ -57,7 +57,9 @@ const ButtonCells = styled('span')(({theme}) => ({
 }))
 
 const DataBasePublicContent = styled(Box)(({theme}) => ({
-
+  width: "94vw",
+  margin: "auto",
+  marginTop: 15
 }))
 
 export default DatabasePublic;
