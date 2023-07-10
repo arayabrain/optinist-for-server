@@ -15,7 +15,7 @@ import FlowChart from './FlowChart/FlowChart'
 import Visualize from './Visualize/Visualize'
 // import Experiment from './Experiment/Experiment'
 import optinistLogo from './optinist.png'
-import DataBaseExperiments from "./DataBaseExperiments";
+import DatabasePublic from "./DatabasePublic";
 
 const Layout: React.FC = () => {
   const [value, setValue] = React.useState(0)
@@ -68,7 +68,7 @@ const Layout: React.FC = () => {
       </TabPanel>
       <TabPanel value={value} index={2}>
         {/*<Experiment />*/}
-        <DataBaseExperiments />
+        <DatabasePublic />
       </TabPanel>
     </RootDiv>
   )
