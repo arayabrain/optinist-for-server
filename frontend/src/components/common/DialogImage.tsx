@@ -2,43 +2,48 @@ import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
 
 type DialogImageProps = {
-  data?: string[]
+  open: boolean
+  data?: string[] | string
   handleCloseDialog: () => void
 }
 
-const DialogImage = ({data, handleCloseDialog}: DialogImageProps) => {
+const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
   if(!data) return <></>
   return (
-      <DialogImageWrapper>
-        <DialogImageContentWrapper>
-          <DialogImageContent>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                flexWrap: "wrap",
-                gap: 2,
-                margin: "80px 50px"
-              }}
-            >
-              {
-                data.filter(Boolean).map((item, index) => (
-                    <img
-                        key={index}
-                        src={item}
-                        alt={""}
-                        width={150}
-                        height={150}
-                    />
-                ))
-              }
-            </Box>
-          </DialogImageContent>
-          <ButtonClose onClick={handleCloseDialog}>
-            <CloseIcon />
-          </ButtonClose>
-        </DialogImageContentWrapper>
-      </DialogImageWrapper>
+      <>
+        {
+          open ? <DialogImageWrapper>
+            <DialogImageContentWrapper>
+              <DialogImageContent>
+                <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      margin: "80px 50px"
+                    }}
+                >
+                  {Array.isArray(data) ?
+                      data.filter(Boolean).map((item, index) => (
+                          <img
+                              key={index}
+                              src={item}
+                              alt={""}
+                              width={150}
+                              height={150}
+                          />
+                      )) : null
+                  }
+                </Box>
+              </DialogImageContent>
+              <ButtonClose onClick={handleCloseDialog}>
+                <CloseIcon />
+              </ButtonClose>
+            </DialogImageContentWrapper>
+          </DialogImageWrapper> : null
+        }
+        </>
   )
 }
 

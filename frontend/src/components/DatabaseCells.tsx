@@ -230,10 +230,11 @@ const DatabaseCells = () => {
             )
           })
         }
-        {
-            openDialog &&
-            <DialogImage data={dataDialog} handleCloseDialog={handleCloseDialog} />
-        }
+            <DialogImage
+                open={openDialog}
+                data={dataDialog}
+                handleCloseDialog={handleCloseDialog}
+            />
       </DatabaseCellsWrapper>
   )
 }
