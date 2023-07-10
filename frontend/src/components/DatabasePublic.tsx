@@ -38,7 +38,7 @@ const DatabasePublic = () => {
 }
 
 const DataBasePublicWrapper = styled(Box)(({theme}) => ({
-  marginTop: theme.spacing(10),
+  marginTop: theme.spacing(6),
 }))
 
 const Switch = styled(Box)(({theme}) => ({

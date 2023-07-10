@@ -3,7 +3,6 @@ import IconButton from '@mui/material/IconButton'
 import Close from '@mui/icons-material/Close'
 import { SnackbarProvider, SnackbarKey, useSnackbar } from 'notistack'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import Layout from 'components/Layout'
 import Dashboard from 'pages/Dashboard'
 import Account from 'pages/Account'
 import AccountDelete from 'pages/AccountDelete'
@@ -12,6 +11,8 @@ import ResetPassword from 'pages/ResetPassword'
 import Workspaces from 'pages/Workspace'
 import Workspace from 'pages/Workspace/Workspace'
 import { IS_STANDALONE } from 'const/Mode'
+import Layout from "components/Layout";
+import DatabasePublic from "./components/DatabasePublic";
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
               <Route path="/account-deleted" element={<AccountDelete />} />
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/public-database" element={<DatabasePublic />} />
               <Route path="/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
