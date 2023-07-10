@@ -8,7 +8,6 @@ const ImageChart = ({data}: {data: string[] | string}) => {
               src={typeof data === 'string' ? data : data[0]}
               alt={""}
               width={100}
-              height={100}
           />
         </Fragment>
     )
