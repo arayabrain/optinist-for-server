@@ -363,7 +363,7 @@ const datas: Data[] = [
     },
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
-    graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
+    graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png", "/static/pie_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -474,7 +474,11 @@ const TableBodyDataBase =
                   <TableCell key={column.key}>
                         <Box
                           onClick={() => handleClick(column.key, record)}
-                          sx={{ cursor: (record && (record as string[]).length > 1) || column.key === "cells" ? "pointer" : "auto" }}
+                          sx={{ cursor:
+                                (record && Array.isArray(record) && (record as string[]).length > 1) ||
+                                column.key === "cells" ||
+                                column.key === "attributes"
+                                    ? "pointer" : "auto" }}
                         >
                           { column.type === "image" ?
                           <ImageChart data={record as (string | string[])} />
@@ -576,7 +580,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
 }
 
 const DataBaseExperimentsWrapper = styled(Box)(({theme}) => ({
-  width: "98vw",
+  width: "100%",
   height: "calc(100vh - 165px)",
   overflow: "scroll",
   border: "1px solid #000"
