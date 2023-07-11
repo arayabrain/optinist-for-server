@@ -1,6 +1,7 @@
 import {Box, styled} from "@mui/material";
 import {useState} from "react";
 import DatabaseExperiments from "./DatabaseExperiments";
+import DatabaseCells from "./DatabaseCells";
 
 const DatabasePublic = () => {
   const [typeTable, setTypeTable] = useState("experiments")
@@ -11,7 +12,7 @@ const DatabasePublic = () => {
   }
 
   return (
-      <DataBasePublicWrapper>
+      <DatabasePublicWrapper>
         <Switch>
           <ButtonExperiments
               onClick={() => handleTypeTable("experiments")}
@@ -28,13 +29,15 @@ const DatabasePublic = () => {
           </ButtonCells>
         </Switch>
         <DataBasePublicContent>
-          <DatabaseExperiments setTypeTable={setTypeTable} />
+          {
+              typeTable === "experiments" ? <DatabaseExperiments setTypeTable={setTypeTable} />: <DatabaseCells />
+          }
         </DataBasePublicContent>
-      </DataBasePublicWrapper>
+      </DatabasePublicWrapper>
   )
 }
 
-const DataBasePublicWrapper = styled(Box)(({theme}) => ({
+const DatabasePublicWrapper = styled(Box)(({theme}) => ({
   marginTop: theme.spacing(6),
 }))
 
