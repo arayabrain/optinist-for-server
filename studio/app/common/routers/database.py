@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 
@@ -63,9 +63,12 @@ async def search_db_cells(
 
 
 @router.post(
-    "/db/experiment/publish/{id}",
+    "/db/experiment/publish/{id}/{flag}",
     response_model=bool,
     description="* Cells を検索し、結果を応答",
 )
-async def publish_db_experiment(id: int):
-    return
+async def publish_db_experiment(
+    id: int,
+    flag: Literal["on", "off"],
+):
+    return 1
