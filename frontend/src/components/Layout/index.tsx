@@ -1,28 +1,24 @@
 import { FC, useEffect, useState } from 'react'
-import { useSelector,
-  // useDispatch
-} from 'react-redux'
-import { useLocation,
-  // useNavigate
-} from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Box } from '@mui/material'
 import { styled } from '@mui/material/styles'
-// import { getToken } from 'utils/auth/AuthUtils'
+import { getToken } from 'utils/auth/AuthUtils'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
-// import { getMe } from 'store/slice/User/UserActions'
+import { getMe } from 'store/slice/User/UserActions'
 import Header from './Header'
 import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 
 const ignorePaths = ['/login', '/account-delete', '/reset-password']
-// const loginPaths = ['/login', '/reset-password']
+const loginPaths = ['/login', '/reset-password']
 
 const Layout: FC = ({ children }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
   const [open, setOpen] = useState(false)
-  // const navigate = useNavigate()
-  // const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const handleDrawerOpen = () => {
     setOpen(true)
@@ -38,19 +34,19 @@ const Layout: FC = ({ children }) => {
   }, [location.pathname, user])
 
   const checkAuth = async () => {
-    // if (user) return
-    // const token = getToken()
-    // const isPageLogin = loginPaths.includes(window.location.pathname)
-    //
-    // try {
-    //   if (token) {
-    //     dispatch(getMe())
-    //     if (isPageLogin) navigate('/')
-    //     return
-    //   } else if (!isPageLogin) throw new Error('fail auth')
-    // } catch {
-    //   navigate('/login')
-    // }
+    if (user) return
+    const token = getToken()
+    const isPageLogin = loginPaths.includes(window.location.pathname)
+
+    try {
+      if (token) {
+        dispatch(getMe())
+        if (isPageLogin) navigate('/')
+        return
+      } else if (!isPageLogin) throw new Error('fail auth')
+    } catch {
+      navigate('/login')
+    }
   }
 
   return (
