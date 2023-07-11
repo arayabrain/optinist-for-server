@@ -8,7 +8,7 @@ from studio.app.common.schemas.base import Pagenation
 
 
 class DbExperimentHeader(BaseModel):
-    graph_titles: str
+    graph_titles: List[str]
 
 
 class DbExperimentFields(BaseModel):
@@ -23,6 +23,7 @@ class DbExperiment(BaseModel):
     experiment_id: int
     fields: DbExperimentFields
     attributes: Dict[str, Any]
+    cell_image_urls: List[str]
     graph_urls: List[str]
     created_time: Optional[datetime]
     updated_time: Optional[datetime]
