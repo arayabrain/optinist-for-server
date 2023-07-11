@@ -518,11 +518,11 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   ))
 
   return(
-  <DataBaseExperimentsWrapper
+  <DatabaseExperimentsWrapper
     onScroll={handleScroll}
     ref={ref}
   >
-    <DataBaseExperimentsTableWrapper ref={refTable}>
+    <DatabaseExperimentsTableWrapper ref={refTable}>
     <TableHeader columns={[...columns, ...getColumns]} />
     {
       dataTable.map((data, index) => {
@@ -548,19 +548,19 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
         open={openAttributes}
         handleClose={handleCloseAttributes}
     />
-    </DataBaseExperimentsTableWrapper>
-  </DataBaseExperimentsWrapper>
+    </DatabaseExperimentsTableWrapper>
+  </DatabaseExperimentsWrapper>
   )
 }
 
-const DataBaseExperimentsWrapper = styled(Box)(({theme}) => ({
+const DatabaseExperimentsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
   height: "calc(100vh - 165px)",
   overflow: "scroll",
   border: "1px solid #000"
 }))
 
-const DataBaseExperimentsTableWrapper = styled("table")(({theme}) => ({
+const DatabaseExperimentsTableWrapper = styled("table")(({theme}) => ({
   width: "100%",
   height: "100%",
   overflow: "scroll",
