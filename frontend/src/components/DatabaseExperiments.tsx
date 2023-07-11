@@ -59,7 +59,6 @@ const columns: ColumnData[] = [
     label: "Imaging depth",
     minWidth: 70,
     key: "fields.imaging_depth",
-    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
   {
     label: "Attributes",
@@ -71,12 +70,14 @@ const columns: ColumnData[] = [
     label: "Cells",
     minWidth: 70,
     key: "cells",
+    cursor: 'pointer'
   },
   {
     label: "Pixel Image",
     minWidth: 70,
     key: "cell_image_urls",
-    type: "image"
+    type: "image",
+    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
 ]
 
