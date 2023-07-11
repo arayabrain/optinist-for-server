@@ -15,6 +15,7 @@ type ColumnData = {
   maxWidth?: number
   type?: "image"
   key: string
+  cursor?: string | ((v: string[]) => string)
 }
 
 type Data = {
@@ -33,40 +34,6 @@ type Data = {
   updated_time: string
 }
 
-type NewData = {
-  id: number
-  brain_area: string,
-  cre_driver: string,
-  reporter_line: string,
-  imaging_depth: number
-  experiment_id: string
-  attributes: string
-  cell_image_urls: string[]
-  created_time: string
-  updated_time: string
-  plot1?: string
-  plot2?: string
-  plot3?: string
-  plot4?: string
-  plot5?: string
-}
-
-// type PaginationType = {
-//   page: number
-//   limit: number
-//   total: number
-//   total_pages: number
-// }
-
-// const Pagination: PaginationType = {
-//     page: 0,
-//     limit: 4,
-//     total: 8,
-//     total_pages: 2
-// }
-
-const graphsTitle: string[] = ["Plot1", "Plot2", "Plot3", "Plot4", "Plot5"]
-
 const columns: ColumnData[] = [
   {
     label: "Experiment ID",
@@ -76,27 +43,29 @@ const columns: ColumnData[] = [
   {
     label: "Brain area",
     minWidth: 70,
-    key: "brain_area"
+    key: "fields.brain_area"
   },
   {
     label: "Cre driver",
     minWidth: 70,
-    key: "cre_driver"
+    key: "fields.cre_driver"
   },
   {
     label: "Reporter line",
     minWidth: 70,
-    key: "reporter_line"
+    key: "fields.reporter_line"
   },
   {
     label: "Imaging depth",
     minWidth: 70,
-    key: "imaging_depth"
+    key: "fields.imaging_depth",
+    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
   {
     label: "Attributes",
     minWidth: 70,
-    key: "attributes"
+    key: "attributes",
+    cursor: 'pointer'
   },
   {
     label: "Cells",
@@ -110,6 +79,8 @@ const columns: ColumnData[] = [
     type: "image"
   },
 ]
+
+const dataGraphsTitle: string[] = ["Plot1", "Plot2", "Plot3", "Plot4", "Plot5"]
 
 const datas: Data[] = [
   {
@@ -385,7 +356,7 @@ const datas: Data[] = [
 ]
 
 type TableBodyDataBaseProps = {
-  data: NewData
+  data: Data
   columns: ColumnData[]
   handleOpenDialog: Function
   handleOpenAttributes: Function
@@ -464,21 +435,29 @@ const TableBodyDataBase =
     }
   }
 
+  const getData = (data: Data, key: string) => {
+    let newData: any = data
+    if(key.includes(".")) {
+      const keys = key.split('.')
+      keys.forEach(k => {
+        let newKey = isNaN(Number(k)) ? k : Number(k);
+        newData = newData?.[newKey];
+      })
+    } else newData = data[key as keyof Data]
+    return newData;
+  }
+
   return (
       <TableBody>
         <TableRow>
           {
             columns.map((column) => {
-                let record = data[column.key as keyof NewData]
+                let record = getData(data, column.key as string)
                 return (
                   <TableCell key={column.key}>
                         <Box
                           onClick={() => handleClick(column.key, record)}
-                          sx={{ cursor:
-                                (record && Array.isArray(record) && (record as string[]).length > 1) ||
-                                column.key === "cells" ||
-                                column.key === "attributes"
-                                    ? "pointer" : "auto" }}
+                          sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
                         >
                           { column.type === "image" ?
                           <ImageChart data={record as (string | string[])} />
@@ -530,12 +509,12 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     }
   }
 
-  const getColumns: ColumnData[] = graphsTitle.map((graphTitle) => ({
-          label: graphTitle,
-          minWidth: 70,
-          key: graphTitle,
-          type: "image"
-        }
+  const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
+      label: graphTitle,
+      minWidth: 70,
+      key: `graph_urls.${index}`,
+      type: "image"
+    }
   ))
 
   return(
@@ -546,19 +525,14 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     <DataBaseExperimentsTableWrapper ref={refTable}>
     <TableHeader columns={[...columns, ...getColumns]} />
     {
-      dataTable.map((data) => {
-        const { fields, graph_urls, ...newData } = data
-        let dataPlot: {[key: string]: string} = {}
-        graph_urls.forEach((graph_url, index) => {
-          dataPlot[graphsTitle[index]] = graph_url
-        })
+      dataTable.map((data, index) => {
         return (
             <TableBodyDataBase
-                key={data.id}
+                key={`${data.id}_${index}`}
                 setTypeTable={setTypeTable}
                 handleOpenAttributes={handleOpenAttributes}
                 handleOpenDialog={handleOpenDialog}
-                data={{...newData, ...fields, ...dataPlot}}
+                data={data}
                 columns={[...columns, ...getColumns]}
             />
         )
