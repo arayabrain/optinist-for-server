@@ -14,6 +14,7 @@ class DbCell(BaseModel):
     id: int
     exp_id: int
     fields: DbExperimentFields
+    cell_image_url: str
     graph_urls: List[str]
     created_time: Optional[datetime]
     updated_time: Optional[datetime]
