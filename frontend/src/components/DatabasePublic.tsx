@@ -1,6 +1,5 @@
 import {Box, styled} from "@mui/material";
 import {useState} from "react";
-import DatabaseCells from "./DatabaseCells";
 import DatabaseExperiments from "./DatabaseExperiments";
 
 const DatabasePublic = () => {
@@ -29,9 +28,7 @@ const DatabasePublic = () => {
           </ButtonCells>
         </Switch>
         <DataBasePublicContent>
-          {
-            typeTable === "experiments" ? <DatabaseExperiments setTypeTable={setTypeTable} /> : <DatabaseCells />
-          }
+          <DatabaseExperiments setTypeTable={setTypeTable} />
         </DataBasePublicContent>
       </DataBasePublicWrapper>
   )
