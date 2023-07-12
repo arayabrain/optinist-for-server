@@ -13,16 +13,16 @@ import DialogContentText from '@mui/material/DialogContentText';
 import SwitchCustom from "./common/SwitchCustom";
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 
-type OrderByType = "ASC" | "DESC" | ""
+export type OrderByType = "ASC" | "DESC" | ""
 
-type HeaderType = {
+export type HeaderType = {
   columns: ColumnData[]
   orderBy: OrderByType
   handleOrderBy: (key: string) => void
   keySort: string
 }
 
-type ColumnData = {
+export type ColumnData = {
   label: string
   minWidth?: number
   maxWidth?: number
@@ -531,10 +531,10 @@ const TableBodyDataBase =
             if(column.key === "action") record = <SwitchCustom value={true} />
             return (
               <TableCell
-                  sx={{
-                    border: "none"
-                  }}
-                  key={column.key}>
+                sx={{
+                  border: "none"
+                }}
+                key={column.key}>
                 <Box
                   onClick={() => handleClick(column.key, record)}
                   sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
@@ -630,14 +630,14 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   >
     <DatabaseExperimentsTableWrapper ref={refTable}>
     <TableHeader
-        columns={ user ? [...columns, ...getColumns, {
-                  label: "",
-                  minWidth: 70,
-                  key: "action"
-                }] : [...columns, ...getColumns]}
-        orderBy={orderBy}
-        handleOrderBy={handleOrderBy}
-        keySort={keySort}
+      columns={ user ? [...columns, ...getColumns, {
+        label: "",
+        minWidth: 70,
+        key: "action"
+      }] : [...columns, ...getColumns]}
+      orderBy={orderBy}
+      handleOrderBy={handleOrderBy}
+      keySort={keySort}
     />
     {
       dataTable.map((data, index) => {
@@ -663,11 +663,11 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       handleCloseDialog={handleCloseDialog}
     />
     <PopupAttributes
-        handleChangeAttributes={handleChangeAttributes}
-        data={dataDialog as string}
-        open={openAttributes}
-        handleClose={handleCloseAttributes}
-        role={!!user}
+      handleChangeAttributes={handleChangeAttributes}
+      data={dataDialog as string}
+      open={openAttributes}
+      handleClose={handleCloseAttributes}
+      role={!!user}
     />
     </DatabaseExperimentsTableWrapper>
   </DatabaseExperimentsWrapper>

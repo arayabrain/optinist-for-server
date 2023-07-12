@@ -2,15 +2,8 @@ import { TableCell, Box, TableHead, TableRow, TableBody, styled } from "@mui/mat
 import ImageChart from "./common/ImageChart";
 import {useRef, useState} from "react";
 import DialogImage from "./common/DialogImage";
-
-type ColumnData = {
-  label: string
-  minWidth?: number
-  maxWidth?: number
-  type?: "image"
-  key: string
-  cursor?: string | ((v: string[]) => string)
-}
+import { ColumnData, HeaderType, OrderByType } from "./DatabaseExperiments";
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 
 type Data = {
   id: number
@@ -30,29 +23,37 @@ const columns: ColumnData[] = [
   {
     label: "Brain area",
     minWidth: 70,
-    key: "fields.brain_area"
+    key: "fields.brain_area",
+    sort: true,
+    cursor: "poniter"
   },
   {
     label: "Cre driver",
     minWidth: 70,
-    key: "fields.cre_driver"
+    key: "fields.cre_driver",
+    sort: true,
+    cursor: "poniter"
   },
   {
     label: "Reporter line",
     minWidth: 70,
-    key: "fields.reporter_line"
+    key: "fields.reporter_line",
+    sort: true,
+    cursor: "poniter"
   },
   {
     label: "Imaging depth",
     minWidth: 70,
     key: "fields.imaging_depth",
-    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
+    sort: true,
+    cursor: "poniter"
   },
   {
     label: "Pixel Image",
     minWidth: 70,
     key: "cell_image_urls",
-    type: "image"
+    type: "image",
+    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default',
   },
 ]
 
@@ -299,9 +300,21 @@ type TableBodyDataBaseProps = {
   data: Data
   columns: ColumnData[]
   handleOpenDialog: Function
+
 }
 
-const TableHeader = ({columns}: {columns: ColumnData[]}) => {
+const TableHeader =
+  ({
+    columns,
+    orderBy,
+    handleOrderBy,
+    keySort
+  }: HeaderType) => {
+
+    const handleOrder = (key: string) => {
+      handleOrderBy(key)
+    }
+
   return (
     <TableHead>
       <TableRow>
@@ -310,11 +323,41 @@ const TableHeader = ({columns}: {columns: ColumnData[]}) => {
             <TableCellCustom
               key={item.key}
               checkHead={item.label.toLowerCase().includes("plot")}
+              onClick={() => handleOrder(item.key)}
               sx={{
                 minWidth: item.minWidth,
+                cursor: item.sort ? "pointer" : "default",
+                borderBottom: "none"
               }}
             >
-              <span>{item.label}</span>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  position: "relative",
+                  width: "100%"
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "100%",
+                    textAlign: "center"
+                  }}
+                >
+                  {item.label}
+                </span>
+                <ArrowDownwardIcon
+                  sx={{
+                    position: "relative",
+                    width: 16,
+                    right: -10,
+                    display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
+                    transform: `rotate(${orderBy === "ASC" ? 0 : 180}deg)`,
+                    transition: "all 0.3s"
+                  }}
+                />
+              </Box>
             </TableCellCustom>
               )
           )}
@@ -324,57 +367,59 @@ const TableHeader = ({columns}: {columns: ColumnData[]}) => {
 }
 
 const TableBodyDataBase =
-    ({
-       data,
-       columns,
-       handleOpenDialog,
-     }: TableBodyDataBaseProps) => {
+  ({
+     data,
+     columns,
+     handleOpenDialog,
+   }: TableBodyDataBaseProps) => {
 
-      const handleClick = (key: string, record?: string | number | object | string[]) => {
-        if(key === "cell_image_urls") {
-          handleOpenDialog(record)
-          return
-        }
+    const handleClick = (key: string, record?: string | number | object | string[]) => {
+      if(key === "cell_image_urls") {
+        handleOpenDialog(record)
+        return
       }
-
-      const getData = (data: Data, key: string) => {
-        let newData: any = data
-        if(key.includes(".")) {
-          const keys = key.split('.')
-          keys.forEach(k => {
-            let newKey = isNaN(Number(k)) ? k : Number(k);
-            newData = newData?.[newKey];
-          })
-        } else newData = data[key as keyof Data]
-        return newData;
-      }
-
-      return (
-          <TableBody>
-            <TableRow>
-              {
-                columns.map((column) => {
-                  let record = getData(data, column.key as string)
-                  return (
-                      <TableCell key={column.key}>
-                        <Box
-                            onClick={() => handleClick(column.key, record)}
-                            sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
-                        >
-                          { column.type === "image" ?
-                              <ImageChart data={record as (string | string[])} /> : record
-                          }
-                        </Box>
-                      </TableCell>
-                  )
-                })
-              }
-            </TableRow>
-          </TableBody>
-      )
     }
 
+    const getData = (data: Data, key: string) => {
+      let newData: any = data
+      if(key.includes(".")) {
+        const keys = key.split('.')
+        keys.forEach(k => {
+          let newKey = isNaN(Number(k)) ? k : Number(k);
+          newData = newData?.[newKey];
+        })
+      } else newData = data[key as keyof Data]
+      return newData;
+    }
+
+    return (
+      <TableBody>
+        <TableRow>
+          {
+            columns.map((column) => {
+              let record = getData(data, column.key as string)
+              return (
+                <TableCell key={column.key}>
+                  <Box
+                      onClick={() => handleClick(column.key, record)}
+                      sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
+                  >
+                    { column.type === "image" ?
+                        <ImageChart data={record as (string | string[])} /> : record
+                    }
+                  </Box>
+                </TableCell>
+              )
+            })
+          }
+        </TableRow>
+      </TableBody>
+    )
+  }
+
 const DatabaseCells = () => {
+  const [orderBy, setOrderBy] = useState<OrderByType>("")
+  const [keySort, setKeySort] = useState("")
   const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
   const [count, setCount] = useState(6)
   const [openDialog, setOpenDialog] = useState(false)
@@ -400,40 +445,64 @@ const DatabaseCells = () => {
     }
   }
 
+  const handleOrderBy = (key: string) => {
+    setKeySort(key)
+    if(key !== keySort && keySort) {
+      setOrderBy("ASC")
+      return
+    }
+
+    if(!orderBy) {
+      setOrderBy("ASC")
+      return
+    }
+
+    if(orderBy === "ASC") {
+      setOrderBy("DESC")
+      return
+    }
+    setOrderBy("")
+  }
+
   const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
-        label: graphTitle,
-        minWidth: 70,
-        key: `graph_urls.${index}`,
-        type: "image"
-      }
+    label: graphTitle,
+    minWidth: 70,
+    key: `graph_urls.${index}`,
+    type: "image"
+  }
   ))
 
   return(
-      <DatabaseCellsWrapper
-          onScroll={handleScroll}
-          ref={ref}
-      >
-        <DatabaseCellsTableWrapper ref={refTable}>
-          <TableHeader columns={[...columns, ...getColumns]} />
-          {
-            dataTable.map((data, index) => {
-              return (
-                <TableBodyDataBase
-                  key={`${data.id}_${index}`}
-                  handleOpenDialog={handleOpenDialog}
-                  data={data}
-                  columns={[...columns, ...getColumns]}
-                />
-              )
-            })
-          }
-          <DialogImage
-              open={openDialog}
-              data={dataDialog}
-              handleCloseDialog={handleCloseDialog}
-          />
-        </DatabaseCellsTableWrapper>
-      </DatabaseCellsWrapper>
+    <DatabaseCellsWrapper
+        onScroll={handleScroll}
+        ref={ref}
+    >
+      <DatabaseCellsTableWrapper ref={refTable}>
+        <TableHeader
+          columns={[...columns, ...getColumns]}
+          orderBy={orderBy}
+          handleOrderBy={handleOrderBy}
+          keySort={keySort}
+        />
+        {
+          dataTable.map((data, index) => {
+            return (
+              <TableBodyDataBase
+                key={`${data.id}_${index}`}
+                handleOpenDialog={handleOpenDialog}
+                data={data}
+                columns={[...columns, ...getColumns]}
+              />
+            )
+          })
+        }
+        <DialogImage
+          open={openDialog}
+          data={dataDialog}
+          handleCloseDialog={handleCloseDialog}
+        />
+      </DatabaseCellsTableWrapper>
+    </DatabaseCellsWrapper>
   )
 }
 
