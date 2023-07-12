@@ -1,6 +1,8 @@
 import { TableCell, Box, TableHead, TableRow, TableBody, styled } from "@mui/material";
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import ImageChart from "./common/ImageChart";
-import {useEffect, useRef, useState} from "react";
+import { useRef, useState } from "react";
 import DialogImage from "./common/DialogImage";
 import LaunchIcon from '@mui/icons-material/Launch';
 import Button from '@mui/material/Button';
@@ -439,6 +441,7 @@ const TableHeader =
           columns.map((item) => {
             return (
               <TableCellCustom
+                key={item.key}
                 checkHead={item.key}
                 sx={{
                   minWidth: item.minWidth,
@@ -551,6 +554,7 @@ const TableBodyDataBase =
 }
 
 const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => void}) => {
+  const user = useSelector(selectCurrentUser)
   const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
   const [orderBy, setOrderBy] = useState<OrderByType>("")
   const [keySort, setKeySort] = useState("")
@@ -626,11 +630,11 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   >
     <DatabaseExperimentsTableWrapper ref={refTable}>
     <TableHeader
-        columns={[...columns, ...getColumns, {
+        columns={ user ? [...columns, ...getColumns, {
                   label: "",
                   minWidth: 70,
                   key: "action"
-                }]}
+                }] : [...columns, ...getColumns]}
         orderBy={orderBy}
         handleOrderBy={handleOrderBy}
         keySort={keySort}
@@ -644,11 +648,11 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
             handleOpenAttributes={handleOpenAttributes}
             handleOpenDialog={handleOpenDialog}
             data={data}
-            columns={[...columns, ...getColumns, {
+            columns={user ? [...columns, ...getColumns, {
               label: "",
               minWidth: 70,
               key: "action"
-            }]}
+            }] : [...columns, ...getColumns]}
           />
         )
       })
@@ -663,7 +667,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
         data={dataDialog as string}
         open={openAttributes}
         handleClose={handleCloseAttributes}
-        role={true}
+        role={!!user}
     />
     </DatabaseExperimentsTableWrapper>
   </DatabaseExperimentsWrapper>
