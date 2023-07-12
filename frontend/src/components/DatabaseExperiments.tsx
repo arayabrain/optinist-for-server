@@ -683,7 +683,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
 
 const DatabaseExperimentsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
-  height: "calc(100vh - 180px)",
+  height: "calc(100vh - 200px)",
   overflow: "scroll",
   border: "1px solid #000"
 }))
