@@ -1,6 +1,8 @@
 import { TableCell, Box, TableHead, TableRow, TableBody, styled } from "@mui/material";
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import ImageChart from "./common/ImageChart";
-import {useRef, useState} from "react";
+import { useRef, useState } from "react";
 import DialogImage from "./common/DialogImage";
 import LaunchIcon from '@mui/icons-material/Launch';
 import Button from '@mui/material/Button';
@@ -8,6 +10,17 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
+import SwitchCustom from "./common/SwitchCustom";
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+
+type OrderByType = "ASC" | "DESC" | ""
+
+type HeaderType = {
+  columns: ColumnData[]
+  orderBy: OrderByType
+  handleOrderBy: (key: string) => void
+  keySort: string
+}
 
 type ColumnData = {
   label: string
@@ -16,6 +29,8 @@ type ColumnData = {
   type?: "image"
   key: string
   cursor?: string | ((v: string[]) => string)
+  action?: boolean
+  sort?: boolean
 }
 
 type Data = {
@@ -37,28 +52,32 @@ type Data = {
 const columns: ColumnData[] = [
   {
     label: "Experiment ID",
-    minWidth: 70,
+    minWidth: 100,
     key: "experiment_id"
   },
   {
     label: "Brain area",
     minWidth: 70,
-    key: "fields.brain_area"
+    key: "fields.brain_area",
+    sort: true
   },
   {
     label: "Cre driver",
     minWidth: 70,
-    key: "fields.cre_driver"
+    key: "fields.cre_driver",
+    sort: true
   },
   {
     label: "Reporter line",
     minWidth: 70,
-    key: "fields.reporter_line"
+    key: "fields.reporter_line",
+    sort: true
   },
   {
     label: "Imaging depth",
     minWidth: 70,
     key: "fields.imaging_depth",
+    sort: true,
     cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
   {
@@ -71,12 +90,14 @@ const columns: ColumnData[] = [
     label: "Cells",
     minWidth: 70,
     key: "cells",
+    cursor: 'pointer'
   },
   {
     label: "Pixel Image",
     minWidth: 70,
     key: "cell_image_urls",
-    type: "image"
+    type: "image",
+    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
 ]
 
@@ -85,7 +106,7 @@ const dataGraphsTitle: string[] = ["Plot1", "Plot2", "Plot3", "Plot4", "Plot5"]
 const datas: Data[] = [
   {
     id: 0,
-    experiment_id: "xxxx",
+    experiment_id: "0",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -100,7 +121,7 @@ const datas: Data[] = [
   },
   {
     id: 1,
-    experiment_id: "xxxx",
+    experiment_id: "1",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -115,7 +136,7 @@ const datas: Data[] = [
   },
   {
     id: 2,
-    experiment_id: "xxxx",
+    experiment_id: "2",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -130,7 +151,7 @@ const datas: Data[] = [
   },
   {
     id: 3,
-    experiment_id: "xxxx",
+    experiment_id: "3",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -145,7 +166,7 @@ const datas: Data[] = [
   },
   {
     id: 4,
-    experiment_id: "xxxx",
+    experiment_id: "4",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -160,7 +181,7 @@ const datas: Data[] = [
   },
   {
     id: 5,
-    experiment_id: "xxxx",
+    experiment_id: "5",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -175,7 +196,7 @@ const datas: Data[] = [
   },
   {
     id: 6,
-    experiment_id: "xxxx",
+    experiment_id: "6",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -190,7 +211,7 @@ const datas: Data[] = [
   },
   {
     id: 7,
-    experiment_id: "xxxx",
+    experiment_id: "7",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -205,7 +226,7 @@ const datas: Data[] = [
   },
   {
     id: 8,
-    experiment_id: "xxxx",
+    experiment_id: "8",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -220,7 +241,7 @@ const datas: Data[] = [
   },
   {
     id: 9,
-    experiment_id: "xxxx",
+    experiment_id: "9",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -235,7 +256,7 @@ const datas: Data[] = [
   },
   {
     id: 10,
-    experiment_id: "xxxx",
+    experiment_id: "10",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -250,7 +271,7 @@ const datas: Data[] = [
   },
   {
     id: 11,
-    experiment_id: "xxxx",
+    experiment_id: "11",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -265,7 +286,7 @@ const datas: Data[] = [
   },
   {
     id: 12,
-    experiment_id: "xxxx",
+    experiment_id: "12",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -280,7 +301,7 @@ const datas: Data[] = [
   },
   {
     id: 13,
-    experiment_id: "xxxx",
+    experiment_id: "13",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -295,7 +316,7 @@ const datas: Data[] = [
   },
   {
     id: 14,
-    experiment_id: "xxxx",
+    experiment_id: "14",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -310,7 +331,7 @@ const datas: Data[] = [
   },
   {
     id: 15,
-    experiment_id: "xxxx",
+    experiment_id: "15",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -325,7 +346,7 @@ const datas: Data[] = [
   },
   {
     id: 16,
-    experiment_id: "xxxx",
+    experiment_id: "16",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -340,7 +361,7 @@ const datas: Data[] = [
   },
   {
     id: 17,
-    experiment_id: "xxxx",
+    experiment_id: "17",
     fields: {
       brain_area: "xxxx",
       cre_driver: "xxxx",
@@ -367,59 +388,113 @@ type PopupAttributesProps = {
   data: string
   open: boolean
   handleClose: () => void
+  role?: boolean
+  handleChangeAttributes: (e: any) => void
 }
 
-const PopupAttributes = ({data, open, handleClose}: PopupAttributesProps) => {
+const PopupAttributes =
+  ({
+   data,
+   open,
+   handleClose,
+   role = false,
+   handleChangeAttributes
+  }: PopupAttributesProps) => {
   return (
-      <Box>
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="draggable-dialog-title"
-        >
-          <DialogContent sx={{ minWidth: 200}}>
-            <DialogContentText>
-              {data}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button autoFocus onClick={handleClose}>Close</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+    <Box>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="draggable-dialog-title"
+      >
+        <DialogContent sx={{ minWidth: 400 }}>
+          <DialogContentText>
+            <Content readOnly={!role} value={data} onChange={handleChangeAttributes} />
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleClose}>Close</Button>
+          {
+            role && <Button onClick={handleClose}>Save</Button>
+          }
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
-const TableHeader = ({columns}: {columns: ColumnData[]}) => {
+const TableHeader =
+  ({
+    columns,
+    orderBy,
+    handleOrderBy,
+    keySort
+  }: HeaderType) => {
+  const handleOrder = (key: string) => {
+    handleOrderBy(key)
+  }
+
   return (
-      <TableHead>
-          <TableRow>
-            {
-              columns.map((item) => (
-                    <TableCellCustom
-                        key={item.key}
-                        checkHead={item.label.toLowerCase().includes("plot")}
-                        sx={{
-                          minWidth: item.minWidth,
-                        }}
-                    >
-                      <span>{item.label}</span>
-                    </TableCellCustom>
-                )
-              )}
-          </TableRow>
-      </TableHead>
+    <TableHead>
+      <TableRow>
+        {
+          columns.map((item) => {
+            return (
+              <TableCellCustom
+                key={item.key}
+                checkHead={item.key}
+                sx={{
+                  minWidth: item.minWidth,
+                  cursor: item.sort ? "pointer" : "default",
+                  borderBottom: "none"
+                }}
+                onClick={() => handleOrder(item.key)}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    position: "relative",
+                    width: "100%"
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "100%",
+                      textAlign: "center"
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                  <ArrowDownwardIcon
+                    sx={{
+                      position: "relative",
+                      width: 16,
+                      right: -10,
+                      display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
+                      transform: `rotate(${orderBy === "ASC" ? 0 : 180}deg)`,
+                      transition: "all 0.3s"
+                    }}
+                  />
+                </Box>
+              </TableCellCustom>
+            )
+          }
+          )}
+      </TableRow>
+    </TableHead>
   )
 }
 
 const TableBodyDataBase =
-    ({
-       data,
-       columns,
-       handleOpenDialog,
-       handleOpenAttributes,
-       setTypeTable
-    }: TableBodyDataBaseProps) => {
+  ({
+     data,
+     columns,
+     handleOpenDialog,
+     handleOpenAttributes,
+     setTypeTable
+  }: TableBodyDataBaseProps) => {
 
   const handleClick = (key: string, record?: string | number | object | string[]) => {
     if(key === "cell_image_urls") {
@@ -448,33 +523,41 @@ const TableBodyDataBase =
   }
 
   return (
-      <TableBody>
-        <TableRow>
-          {
-            columns.map((column) => {
-                let record = getData(data, column.key as string)
-                return (
-                  <TableCell key={column.key}>
-                        <Box
-                          onClick={() => handleClick(column.key, record)}
-                          sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
-                        >
-                          { column.type === "image" ?
-                          <ImageChart data={record as (string | string[])} />
-                          : column.key === "cells" ? <LaunchIcon /> : record
-                          }
-                        </Box>
-                  </TableCell>
-                )
-              })
-          }
-        </TableRow>
-      </TableBody>
+    <TableBody>
+      <TableRow>
+        {
+          columns.map((column) => {
+            let record = getData(data, column.key as string)
+            if(column.key === "action") record = <SwitchCustom value={true} />
+            return (
+              <TableCell
+                  sx={{
+                    border: "none"
+                  }}
+                  key={column.key}>
+                <Box
+                  onClick={() => handleClick(column.key, record)}
+                  sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
+                >
+                  { column.type === "image" ?
+                  <ImageChart data={record as (string | string[])} />
+                  : column.key === "cells" ? <LaunchIcon /> : record
+                  }
+                </Box>
+              </TableCell>
+            )
+          })
+        }
+      </TableRow>
+    </TableBody>
   )
 }
 
 const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => void}) => {
+  const user = useSelector(selectCurrentUser)
   const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
+  const [orderBy, setOrderBy] = useState<OrderByType>("")
+  const [keySort, setKeySort] = useState("")
   const [count, setCount] = useState(6)
   const [openDialog, setOpenDialog] = useState(false)
   const [openAttributes, setOpenAttributes] = useState(false)
@@ -509,11 +592,34 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     }
   }
 
+  const handleOrderBy = (key: string) => {
+    setKeySort(key)
+    if(key !== keySort && keySort) {
+      setOrderBy("ASC")
+      return
+    }
+
+    if(!orderBy) {
+      setOrderBy("ASC")
+      return
+    }
+
+    if(orderBy === "ASC") {
+      setOrderBy("DESC")
+      return
+    }
+    setOrderBy("")
+  }
+
+  const handleChangeAttributes = (event: any) => {
+    setDataDialog(event.target.value)
+  }
+
   const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
-      label: graphTitle,
-      minWidth: 70,
-      key: `graph_urls.${index}`,
-      type: "image"
+    label: graphTitle,
+    minWidth: 70,
+    key: `graph_urls.${index}`,
+    type: "image"
     }
   ))
 
@@ -523,30 +629,45 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     ref={ref}
   >
     <DatabaseExperimentsTableWrapper ref={refTable}>
-    <TableHeader columns={[...columns, ...getColumns]} />
+    <TableHeader
+        columns={ user ? [...columns, ...getColumns, {
+                  label: "",
+                  minWidth: 70,
+                  key: "action"
+                }] : [...columns, ...getColumns]}
+        orderBy={orderBy}
+        handleOrderBy={handleOrderBy}
+        keySort={keySort}
+    />
     {
       dataTable.map((data, index) => {
         return (
-            <TableBodyDataBase
-                key={`${data.id}_${index}`}
-                setTypeTable={setTypeTable}
-                handleOpenAttributes={handleOpenAttributes}
-                handleOpenDialog={handleOpenDialog}
-                data={data}
-                columns={[...columns, ...getColumns]}
-            />
+          <TableBodyDataBase
+            key={`${data.id}_${index}`}
+            setTypeTable={setTypeTable}
+            handleOpenAttributes={handleOpenAttributes}
+            handleOpenDialog={handleOpenDialog}
+            data={data}
+            columns={user ? [...columns, ...getColumns, {
+              label: "",
+              minWidth: 70,
+              key: "action"
+            }] : [...columns, ...getColumns]}
+          />
         )
       })
     }
     <DialogImage
-        open={openDialog}
-        data={dataDialog}
-        handleCloseDialog={handleCloseDialog}
+      open={openDialog}
+      data={dataDialog}
+      handleCloseDialog={handleCloseDialog}
     />
     <PopupAttributes
+        handleChangeAttributes={handleChangeAttributes}
         data={dataDialog as string}
         open={openAttributes}
         handleClose={handleCloseAttributes}
+        role={!!user}
     />
     </DatabaseExperimentsTableWrapper>
   </DatabaseExperimentsWrapper>
@@ -555,7 +676,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
 
 const DatabaseExperimentsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
-  height: "calc(100vh - 165px)",
+  height: "calc(100vh - 180px)",
   overflow: "scroll",
   border: "1px solid #000"
 }))
@@ -568,11 +689,16 @@ const DatabaseExperimentsTableWrapper = styled("table")(({theme}) => ({
 
 const TableCellCustom = styled(TableCell, {
   shouldForwardProp: props => props !== "checkHead"
-})<{ checkHead: boolean }>(({theme, checkHead}) => ({
+})<{ checkHead: string }>(({theme, checkHead}) => ({
   color: "#FFF",
-  background: !checkHead ? "#99dd99" : "#99dadd",
+  background: checkHead.includes("graph_urls") ? "#99dadd" : checkHead === "action" ? "#fff" : "#99dd99",
   borderLeft: `1px solid #FFF`,
   fontWeight: 700
+}))
+
+const Content = styled('textarea')(({theme}) => ({
+  width: 400,
+  height: "fit-content"
 }))
 
 export default DatabaseExperiments;

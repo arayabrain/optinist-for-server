@@ -3,7 +3,7 @@ import {useState} from "react";
 import DatabaseExperiments from "./DatabaseExperiments";
 import DatabaseCells from "./DatabaseCells";
 
-const DatabasePublic = () => {
+const Database = () => {
   const [typeTable, setTypeTable] = useState("experiments")
 
   const handleTypeTable = (type: string) => {
@@ -62,4 +62,4 @@ const DataBasePublicContent = styled(Box)(({theme}) => ({
   marginTop: 15
 }))
 
-export default DatabasePublic;
+export default Database;
