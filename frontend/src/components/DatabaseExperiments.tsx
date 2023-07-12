@@ -75,7 +75,8 @@ const columns: ColumnData[] = [
     label: "Imaging depth",
     minWidth: 70,
     key: "fields.imaging_depth",
-    sort: true
+    sort: true,
+    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
   {
     label: "Attributes",
@@ -671,7 +672,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
 
 const DatabaseExperimentsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
-  height: "calc(100vh - 165px)",
+  height: "calc(100vh - 180px)",
   overflow: "scroll",
   border: "1px solid #000"
 }))
