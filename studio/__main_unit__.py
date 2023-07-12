@@ -9,7 +9,6 @@ from starlette.middleware.cors import CORSMiddleware
 from studio.app.common.routers import (
     algolist,
     auth,
-    database,
     experiment,
     files,
     outputs,
@@ -19,7 +18,7 @@ from studio.app.common.routers import (
     users_me,
 )
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.routers import hdf5, nwb, roi
+from studio.app.optinist.routers import database, hdf5, nwb, roi
 
 app = FastAPI(docs_url="/docs", openapi_url="/openapi")
 

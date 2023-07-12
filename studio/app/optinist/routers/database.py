@@ -2,9 +2,9 @@ from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from studio.app.common.schemas.base import BaseQueryParams
-from studio.app.common.schemas.database.cell import DbCells
-from studio.app.common.schemas.database.experiment import (
+from studio.app.optinist.schemas.base import BaseQueryParams
+from studio.app.optinist.schemas.database.cell import DbCells
+from studio.app.optinist.schemas.database.experiment import (
     DbExperiments,
     SearchExperimentQueryParam,
 )

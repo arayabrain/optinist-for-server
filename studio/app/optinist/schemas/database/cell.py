@@ -3,8 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from studio.app.common.schemas.base import Pagenation
-from studio.app.common.schemas.database.experiment import (
+from studio.app.optinist.schemas.database.experiment import (
     DbExperimentFields,
     DbExperimentHeader,
 )
@@ -21,6 +20,5 @@ class DbCell(BaseModel):
 
 
 class DbCells(BaseModel):
-    pagenation: Pagenation
     header: DbExperimentHeader
     records: List[DbCell]
