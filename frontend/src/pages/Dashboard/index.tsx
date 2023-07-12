@@ -25,6 +25,24 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
+          {/*router demo */}
+          <LinkWrapper to="/database">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
+          {/*router demo*/}
+          <LinkWrapper to="/database">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>
