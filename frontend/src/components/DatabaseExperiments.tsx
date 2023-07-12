@@ -58,43 +58,43 @@ const columns: ColumnData[] = [
   },
   {
     label: "Brain area",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.brain_area",
     sort: true
   },
   {
     label: "Cre driver",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.cre_driver",
     sort: true
   },
   {
     label: "Reporter line",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.reporter_line",
     sort: true
   },
   {
     label: "Imaging depth",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.imaging_depth",
     sort: true,
   },
   {
     label: "Attributes",
-    minWidth: 70,
+    minWidth: 80,
     key: "attributes",
     cursor: 'pointer'
   },
   {
     label: "Cells",
-    minWidth: 70,
+    minWidth: 80,
     key: "cells",
     cursor: 'pointer'
   },
   {
     label: "Pixel Image",
-    minWidth: 70,
+    minWidth: 80,
     key: "cell_image_urls",
     type: "image",
     cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
@@ -469,7 +469,7 @@ const TableHeader =
                   </span>
                   <ArrowDownwardIcon
                     sx={{
-                      position: "relative",
+                      position: "absolute",
                       width: 16,
                       right: -10,
                       display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
@@ -624,7 +624,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
 
   const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
     label: graphTitle,
-    minWidth: 70,
+    minWidth: 80,
     key: `graph_urls.${index}`,
     type: "image"
     }
@@ -639,7 +639,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     <TableHeader
       columns={ user ? [...columns, ...getColumns, {
         label: "",
-        minWidth: 70,
+        minWidth: 80,
         key: "action"
       }] : [...columns, ...getColumns]}
       orderBy={orderBy}
@@ -657,7 +657,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
             data={data}
             columns={user ? [...columns, ...getColumns, {
               label: "",
-              minWidth: 70,
+              minWidth: 80,
               key: "action"
             }] : [...columns, ...getColumns]}
           />
