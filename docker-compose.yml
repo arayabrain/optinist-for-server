@@ -1,6 +1,18 @@
 version: "3"
 
 services:
+  db:
+    image: mariadb:10.3
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: docker
+      MYSQL_DATABASE: docker
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    volumes:
+      - db_data:/var/lib/mysql
+
   studio:
     build:
       context: .
@@ -12,3 +24,8 @@ services:
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
+    depends_on:
+      - db
+
+volumes:
+  db_data:
