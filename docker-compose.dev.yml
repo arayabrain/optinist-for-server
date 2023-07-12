@@ -1,6 +1,30 @@
 version: "3"
 
 services:
+  db:
+    image: mariadb:10.3
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: docker
+      MYSQL_DATABASE: docker
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    volumes:
+      - ./docker/php-phpmyadmin.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db
+      - PMA_USER=root
+      - PMA_PASSWORD=docker
+    ports:
+      - 20080:80
+
   studio-dev-be:
     build:
       context: .
@@ -14,12 +38,17 @@ services:
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
+    depends_on:
+      - db
 
-  studio-dev-fe:
-    image: node:16.20.1-alpine
-    working_dir: /app/frontend
-    volumes:
-      - ./frontend/:/app/frontend/
-    ports:
-      - "3000:3000"
-    command: ash -c 'yarn install && yarn start'
+  # studio-dev-fe:
+  #   image: node:16.20.1-alpine
+  #   working_dir: /app/frontend
+  #   volumes:
+  #     - ./frontend/:/app/frontend/
+  #   ports:
+  #     - "3000:3000"
+  #   command: ash -c 'yarn install && yarn start'
+
+volumes:
+  db_data:
