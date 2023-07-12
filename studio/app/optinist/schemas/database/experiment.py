@@ -4,8 +4,6 @@ from typing import Any, Dict, List, Optional
 from fastapi import Query
 from pydantic import BaseModel, dataclasses
 
-from studio.app.common.schemas.base import Pagenation
-
 
 class DbExperimentHeader(BaseModel):
     graph_titles: List[str]
@@ -30,7 +28,6 @@ class DbExperiment(BaseModel):
 
 
 class DbExperiments(BaseModel):
-    pagenation: Pagenation
     header: DbExperimentHeader
     records: List[DbExperiment]
 

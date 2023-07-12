@@ -1,14 +1,7 @@
-from typing import List, Optional
+from typing import List
 
 from fastapi import Query
-from pydantic import BaseModel, dataclasses
-
-
-class Pagenation(BaseModel):
-    page: Optional[int] = 0
-    limit: Optional[int] = 0
-    total: Optional[int] = 0
-    total_pages: Optional[int] = 0
+from pydantic import dataclasses
 
 
 @dataclasses.dataclass
