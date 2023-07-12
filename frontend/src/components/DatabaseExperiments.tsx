@@ -12,8 +12,9 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import SwitchCustom from "./common/SwitchCustom";
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+import { onSort } from "utils/database";
 
-type OrderByType = "ASC" | "DESC" | ""
+export type OrderByType = "ASC" | "DESC" | ""
 
 type HeaderType = {
   columns: ColumnData[]
@@ -33,7 +34,7 @@ type ColumnData = {
   sort?: boolean
 }
 
-type Data = {
+export type Data = {
   id: number
   fields: {
     brain_area: string,
@@ -78,7 +79,6 @@ const columns: ColumnData[] = [
     minWidth: 70,
     key: "fields.imaging_depth",
     sort: true,
-    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
   },
   {
     label: "Attributes",
@@ -108,7 +108,7 @@ const datas: Data[] = [
     id: 0,
     experiment_id: "0",
     fields: {
-      brain_area: "xxxx",
+      brain_area: "1xxxx",
       cre_driver: "xxxx",
       reporter_line: "xxxx",
       imaging_depth: 0,
@@ -153,8 +153,8 @@ const datas: Data[] = [
     id: 3,
     experiment_id: "3",
     fields: {
-      brain_area: "xxxx",
-      cre_driver: "xxxx",
+      brain_area: "1xxxx",
+      cre_driver: "1xxxx",
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
@@ -258,7 +258,7 @@ const datas: Data[] = [
     id: 10,
     experiment_id: "10",
     fields: {
-      brain_area: "xxxx",
+      brain_area: "1xxxx",
       cre_driver: "xxxx",
       reporter_line: "xxxx",
       imaging_depth: 0,
@@ -448,7 +448,7 @@ const TableHeader =
                   cursor: item.sort ? "pointer" : "default",
                   borderBottom: "none"
                 }}
-                onClick={() => handleOrder(item.key)}
+                onClick={() => item.sort && handleOrder(item.key)}
               >
                 <Box
                   sx={{
@@ -473,7 +473,7 @@ const TableHeader =
                       width: 16,
                       right: -10,
                       display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
-                      transform: `rotate(${orderBy === "ASC" ? 0 : 180}deg)`,
+                      transform: `rotate(${orderBy === "ASC" ? 180 : 0}deg)`,
                       transition: "all 0.3s"
                     }}
                   />
@@ -556,6 +556,7 @@ const TableBodyDataBase =
 const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => void}) => {
   const user = useSelector(selectCurrentUser)
   const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
+  const [initDataTable, setInitDataTable] = useState<Data[]>(datas.slice(0,6))
   const [orderBy, setOrderBy] = useState<OrderByType>("")
   const [keySort, setKeySort] = useState("")
   const [count, setCount] = useState(6)
@@ -587,28 +588,34 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   const handleScroll = (event: any) => {
     if(!ref.current || !refTable.current) return
     if(event.currentTarget.scrollTop + ref.current?.clientHeight === refTable.current?.clientHeight) {
-      setCount(12)
+      setCount(pre => pre + 6)
       setDataTable([...dataTable, ...datas.slice(count, count + 6)])
+      setInitDataTable([...initDataTable, ...datas.slice(count, count + 6)])
+      handleSort([...dataTable, ...datas.slice(count, count + 6)], orderBy, keySort)
     }
+  }
+
+  const handleSort = (dataTable: Data[], orderBy: OrderByType, key: string) => {
+    const newData = onSort(initDataTable, dataTable, orderBy, key)
+    if(!newData) return
+    setDataTable(newData)
   }
 
   const handleOrderBy = (key: string) => {
     setKeySort(key)
-    if(key !== keySort && keySort) {
+    if((key !== keySort && keySort) || !orderBy) {
       setOrderBy("ASC")
-      return
-    }
-
-    if(!orderBy) {
-      setOrderBy("ASC")
+      handleSort(dataTable, "ASC", key)
       return
     }
 
     if(orderBy === "ASC") {
       setOrderBy("DESC")
+      handleSort(dataTable, "DESC", key)
       return
     }
     setOrderBy("")
+    handleSort(dataTable, "", key)
   }
 
   const handleChangeAttributes = (event: any) => {
@@ -630,14 +637,14 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   >
     <DatabaseExperimentsTableWrapper ref={refTable}>
     <TableHeader
-        columns={ user ? [...columns, ...getColumns, {
-                  label: "",
-                  minWidth: 70,
-                  key: "action"
-                }] : [...columns, ...getColumns]}
-        orderBy={orderBy}
-        handleOrderBy={handleOrderBy}
-        keySort={keySort}
+      columns={ user ? [...columns, ...getColumns, {
+        label: "",
+        minWidth: 70,
+        key: "action"
+      }] : [...columns, ...getColumns]}
+      orderBy={orderBy}
+      handleOrderBy={handleOrderBy}
+      keySort={keySort}
     />
     {
       dataTable.map((data, index) => {
