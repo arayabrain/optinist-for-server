@@ -44,6 +44,7 @@ export type DisplayDataItem =
   | HTMLItem
   | FluoItem
   | BehaviorItem
+  | MatlabItem
 
 export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
   filePath: string | null
@@ -131,4 +132,8 @@ export interface FluoItem extends DisplayDataItemBaseType {
 
 export interface BehaviorItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.BEHAVIOR
+}
+
+export interface MatlabItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.MATLAB
 }

@@ -4,7 +4,9 @@ import { CsvFileNode } from 'components/Workspace/FlowChart/FlowChartNode/CsvFil
 import { HDF5FileNode } from 'components/Workspace/FlowChart/FlowChartNode/HDF5FileNode'
 import { FluoFileNode } from 'components/Workspace/FlowChart/FlowChartNode/FluoFileNode'
 import { BehaviorFileNode } from 'components/Workspace/FlowChart/FlowChartNode/BehaviorFileNode'
-
+import { MatlabFileNode } from 'components/Workspace/FlowChart/FlowChartNode/MatlabFileNode'
+import { TcFileNode } from 'components/Workspace/FlowChart/FlowChartNode/TcFileNode'
+import { TsFileNode } from 'components/Workspace/FlowChart/FlowChartNode/TsFileNode'
 import { CustomEdge } from 'components/Workspace/FlowChart/CustomEdge'
 
 export const reactFlowNodeTypes = {
@@ -14,6 +16,9 @@ export const reactFlowNodeTypes = {
   AlgorithmNode,
   FluoFileNode,
   BehaviorFileNode,
+  MatlabFileNode,
+  TcFileNode,
+  TsFileNode,
 } as const
 
 export const reactFlowEdgeTypes = {

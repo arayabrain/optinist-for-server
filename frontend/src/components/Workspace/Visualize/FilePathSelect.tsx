@@ -178,5 +178,9 @@ function toDataTypeFromFileType(fileType: FILE_TYPE) {
       return DATA_TYPE_SET.FLUO
     case FILE_TYPE_SET.BEHAVIOR:
       return DATA_TYPE_SET.BEHAVIOR
+    case FILE_TYPE_SET.MATLAB:
+    case FILE_TYPE_SET.TC:
+    case FILE_TYPE_SET.TS:
+      return DATA_TYPE_SET.MATLAB
   }
 }

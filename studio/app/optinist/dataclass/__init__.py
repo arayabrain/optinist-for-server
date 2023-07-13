@@ -6,6 +6,8 @@ from studio.app.optinist.dataclass.lccd import LccdData
 from studio.app.optinist.dataclass.nwb import NWBFile
 from studio.app.optinist.dataclass.roi import RoiData
 from studio.app.optinist.dataclass.suite2p import Suite2pData
+from studio.app.optinist.dataclass.tc import TcData
+from studio.app.optinist.dataclass.ts import TsData
 
 __all__ = [
     "BehaviorData",
@@ -16,4 +18,6 @@ __all__ = [
     "NWBFile",
     "RoiData",
     "Suite2pData",
+    "TcData",
+    "TsData",
 ]

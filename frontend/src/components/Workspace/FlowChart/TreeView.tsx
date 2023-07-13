@@ -107,6 +107,23 @@ export const AlgorithmTreeView = React.memo(() => {
           nodeName={'behaviorData'}
           fileType={FILE_TYPE_SET.BEHAVIOR}
         />
+        <TreeItem nodeId="Matlabs" label="matlab">
+          <InputNodeComponent
+            fileName={'matlab'}
+            nodeName={'matlabData'}
+            fileType={FILE_TYPE_SET.MATLAB}
+          />
+          <InputNodeComponent
+            fileName={'tc'}
+            nodeName={'tcData'}
+            fileType={FILE_TYPE_SET.TC}
+          />
+          <InputNodeComponent
+            fileName={'ts'}
+            nodeName={'tsData'}
+            fileType={FILE_TYPE_SET.TS}
+          />
+        </TreeItem>
       </TreeItem>
       <TreeItem nodeId="Algorithm" label="Algorithm">
         {Object.entries(algoList).map(([name, node], i) => (
@@ -156,6 +173,18 @@ const InputNodeComponent = React.memo<{
         case FILE_TYPE_SET.BEHAVIOR:
           reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.BehaviorFileNode
           fileType = FILE_TYPE_SET.BEHAVIOR
+          break
+        case FILE_TYPE_SET.MATLAB:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.MatlabFileNode
+          fileType = FILE_TYPE_SET.MATLAB
+          break
+        case FILE_TYPE_SET.TC:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.TcFileNode
+          fileType = FILE_TYPE_SET.TC
+          break
+        case FILE_TYPE_SET.TS:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.TsFileNode
+          fileType = FILE_TYPE_SET.TS
           break
       }
       const newNode = {

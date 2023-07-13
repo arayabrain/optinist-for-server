@@ -60,6 +60,36 @@ export const filesTreeSlice = createSlice({
               tree: [],
             }
           }
+        } else if (fileType === FILE_TYPE_SET.MATLAB) {
+          if (state[FILE_TREE_TYPE_SET.MATLAB] != null) {
+            state[FILE_TREE_TYPE_SET.MATLAB].isLatest = false
+          } else {
+            state[FILE_TREE_TYPE_SET.MATLAB] = {
+              isLoading: false,
+              isLatest: false,
+              tree: [],
+            }
+          }
+        } else if (fileType === FILE_TYPE_SET.TC) {
+          if (state[FILE_TREE_TYPE_SET.TC] != null) {
+            state[FILE_TREE_TYPE_SET.TC].isLatest = false
+          } else {
+            state[FILE_TREE_TYPE_SET.TC] = {
+              isLoading: false,
+              isLatest: false,
+              tree: [],
+            }
+          }
+        } else if (fileType === FILE_TYPE_SET.TS) {
+          if (state[FILE_TREE_TYPE_SET.TS] != null) {
+            state[FILE_TREE_TYPE_SET.TS].isLatest = false
+          } else {
+            state[FILE_TREE_TYPE_SET.TS] = {
+              isLoading: false,
+              isLatest: false,
+              tree: [],
+            }
+          }
         } else {
           if (state[FILE_TREE_TYPE_SET.ALL] != null) {
             state[FILE_TREE_TYPE_SET.ALL].isLatest = false
@@ -80,6 +110,12 @@ export const filesTreeSlice = createSlice({
           state[FILE_TREE_TYPE_SET.CSV].isLatest = false
         } else if (fileType === FILE_TYPE_SET.HDF5) {
           state[FILE_TREE_TYPE_SET.HDF5].isLatest = false
+        } else if (fileType === FILE_TYPE_SET.MATLAB) {
+          state[FILE_TREE_TYPE_SET.MATLAB].isLatest = false
+        } else if (fileType === FILE_TYPE_SET.TC) {
+          state[FILE_TREE_TYPE_SET.TC].isLatest = false
+        } else if (fileType === FILE_TYPE_SET.TS) {
+          state[FILE_TREE_TYPE_SET.TS].isLatest = false
         } else {
           state[FILE_TREE_TYPE_SET.ALL].isLatest = false
         }

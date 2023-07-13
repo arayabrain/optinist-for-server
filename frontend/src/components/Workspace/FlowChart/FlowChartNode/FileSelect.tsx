@@ -145,6 +145,10 @@ function getFileInputAccept(fileType: FILE_TREE_TYPE | undefined) {
       return '.csv'
     case FILE_TREE_TYPE_SET.HDF5:
       return '.hdf5,.nwb'
+    case FILE_TREE_TYPE_SET.MATLAB:
+    case FILE_TREE_TYPE_SET.TC:
+    case FILE_TREE_TYPE_SET.TS:
+      return '.mat'
     default:
       return undefined
   }

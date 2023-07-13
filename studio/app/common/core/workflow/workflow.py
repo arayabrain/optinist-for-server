@@ -14,6 +14,9 @@ class NodeType:
     BEHAVIOR: str = "BehaviorFileNode"
     HDF5: str = "HDF5FileNode"
     ALGO: str = "AlgorithmNode"
+    MATLAB: str = "MatlabFileNode"
+    TC: str = "TcFileNode"
+    TS: str = "TsFileNode"
 
 
 @dataclass

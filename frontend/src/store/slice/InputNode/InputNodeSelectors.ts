@@ -3,6 +3,7 @@ import {
   isHDF5InputNode,
   isCsvInputNode,
   isImageInputNode,
+  isMatlabInputNode,
 } from './InputNodeUtils'
 
 export const selectInputNode = (state: RootState) => state.inputNode
@@ -44,6 +45,16 @@ export const selectHDF5InputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {
     const node = selectInputNodeById(nodeId)(state)
     if (isHDF5InputNode(node)) {
+      return node.selectedFilePath
+    } else {
+      throw new Error('invaid input node type')
+    }
+  }
+
+export const selectMatlabInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const node = selectInputNodeById(nodeId)(state)
+    if (isMatlabInputNode(node)) {
       return node.selectedFilePath
     } else {
       throw new Error('invaid input node type')
@@ -98,3 +109,20 @@ export const selectInputNodeHDF5Path =
       return undefined
     }
   }
+
+const selectMatlabInputNodeParam = (nodeId: string) => (state: RootState) => {
+  const inputNode = selectInputNodeById(nodeId)(state)
+  if (isMatlabInputNode(inputNode)) {
+    return inputNode.param
+  } else {
+    throw new Error(`The InputNode is not MatlbaInputNode. (nodeId: ${nodeId})`)
+  }
+}
+
+export const selectMatlabInputNodeParamFieldName =
+  (nodeId: string) => (state: RootState) =>
+    selectMatlabInputNodeParam(nodeId)(state).fieldName
+
+export const selectMatlabInputNodeParamIndex =
+  (nodeId: string) => (state: RootState) =>
+    selectMatlabInputNodeParam(nodeId)(state).index

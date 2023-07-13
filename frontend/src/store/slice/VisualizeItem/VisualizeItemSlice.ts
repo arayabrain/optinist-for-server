@@ -21,6 +21,7 @@ import {
   HTMLItem,
   FluoItem,
   BehaviorItem,
+  MatlabItem,
   VISUALIZE_ITEM_SLICE_NAME,
 } from './VisualizeItemType'
 import {
@@ -134,6 +135,11 @@ const behaviorItemInitialValue: BehaviorItem = {
   dataType: DATA_TYPE_SET.BEHAVIOR,
 }
 
+const matlabItemInitialValue: MatlabItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.MATLAB,
+}
+
 function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
   switch (dataType) {
     case DATA_TYPE_SET.IMAGE:
@@ -158,6 +164,8 @@ function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
       return fluoItemInitialValue
     case DATA_TYPE_SET.BEHAVIOR:
       return behaviorItemInitialValue
+    case DATA_TYPE_SET.MATLAB:
+      return matlabItemInitialValue
   }
 }
 
