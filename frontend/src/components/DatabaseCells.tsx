@@ -4,6 +4,7 @@ import {useRef, useState} from "react";
 import DialogImage from "./common/DialogImage";
 import { ColumnData, HeaderType, OrderByType } from "./DatabaseExperiments";
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+import { onSort } from "utils/database";
 
 type Data = {
   id: number
@@ -13,7 +14,7 @@ type Data = {
     reporter_line: string,
     imaging_depth: number
   }
-  cell_image_urls: string[]
+  cell_image_urls: string
   graph_urls: string[]
   created_time: string
   updated_time: string
@@ -22,35 +23,35 @@ type Data = {
 const columns: ColumnData[] = [
   {
     label: "Brain area",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.brain_area",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Cre driver",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.cre_driver",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Reporter line",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.reporter_line",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Imaging depth",
-    minWidth: 70,
+    minWidth: 80,
     key: "fields.imaging_depth",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Pixel Image",
-    minWidth: 70,
+    minWidth: 80,
     key: "cell_image_urls",
     type: "image",
     cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default',
@@ -68,7 +69,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -81,7 +82,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -94,7 +95,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -102,12 +103,12 @@ const datas: Data[] = [
   {
     id: 3,
     fields: {
-      brain_area: "xxxx",
+      brain_area: "1xxxx",
       cre_driver: "xxxx",
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -120,7 +121,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -128,12 +129,12 @@ const datas: Data[] = [
   {
     id: 5,
     fields: {
-      brain_area: "xxxx",
+      brain_area: "1xxxx",
       cre_driver: "xxxx",
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -146,7 +147,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -159,7 +160,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -172,7 +173,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -185,7 +186,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -198,7 +199,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -211,7 +212,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -224,7 +225,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -237,7 +238,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -250,7 +251,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -263,7 +264,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -276,7 +277,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png", "/static/pie_chart.png", "/static/bar_chart.png"],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -289,7 +290,7 @@ const datas: Data[] = [
       reporter_line: "xxxx",
       imaging_depth: 0,
     },
-    cell_image_urls: ["/static/pixel_image.png"],
+    cell_image_urls: "/static/pixel_image.png",
     graph_urls: [""],
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
@@ -322,8 +323,8 @@ const TableHeader =
           columns.map((item) => (
             <TableCellCustom
               key={item.key}
-              checkHead={item.label.toLowerCase().includes("plot")}
-              onClick={() => handleOrder(item.key)}
+              checkHead={item.key}
+              onClick={() => item.sort && handleOrder(item.key)}
               sx={{
                 minWidth: item.minWidth,
                 cursor: item.sort ? "pointer" : "default",
@@ -349,11 +350,11 @@ const TableHeader =
                 </span>
                 <ArrowDownwardIcon
                   sx={{
-                    position: "relative",
+                    position: "absolute",
                     width: 16,
                     right: -10,
                     display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
-                    transform: `rotate(${orderBy === "ASC" ? 0 : 180}deg)`,
+                    transform: `rotate(${orderBy === "ASC" ? 180 : 0}deg)`,
                     transition: "all 0.3s"
                   }}
                 />
@@ -421,6 +422,7 @@ const DatabaseCells = () => {
   const [orderBy, setOrderBy] = useState<OrderByType>("")
   const [keySort, setKeySort] = useState("")
   const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
+  const [initDataTable, setInitDataTable] = useState<Data[]>(datas.slice(0,6))
   const [count, setCount] = useState(6)
   const [openDialog, setOpenDialog] = useState(false)
   const [dataDialog, setDataDialog] = useState<string[] | string>()
@@ -440,33 +442,39 @@ const DatabaseCells = () => {
   const handleScroll = (event: any) => {
     if(!ref.current || !refTable.current) return
     if(event.currentTarget.scrollTop + ref.current?.clientHeight === refTable.current?.clientHeight) {
-      setCount(12)
+      setCount((pre) => pre + 6)
       setDataTable([...dataTable, ...datas.slice(count, count + 6)])
+      setInitDataTable([...dataTable, ...datas.slice(count, count + 6)])
+      handleSort([...dataTable, ...datas.slice(count, count + 6)], orderBy, keySort)
     }
+  }
+
+  const handleSort = (dataTable: Data[], orderBy: OrderByType, key: string) => {
+    const newData = onSort(initDataTable, dataTable, orderBy, key)
+    if(!newData) return
+    setDataTable(newData)
   }
 
   const handleOrderBy = (key: string) => {
     setKeySort(key)
-    if(key !== keySort && keySort) {
+    if((key !== keySort && keySort) || !orderBy) {
       setOrderBy("ASC")
-      return
-    }
-
-    if(!orderBy) {
-      setOrderBy("ASC")
+      handleSort(dataTable, "ASC", key)
       return
     }
 
     if(orderBy === "ASC") {
       setOrderBy("DESC")
+      handleSort(dataTable, "DESC", key)
       return
     }
     setOrderBy("")
+    handleSort(dataTable, "", key)
   }
 
   const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
     label: graphTitle,
-    minWidth: 70,
+    minWidth: 80,
     key: `graph_urls.${index}`,
     type: "image"
   }
@@ -474,8 +482,8 @@ const DatabaseCells = () => {
 
   return(
     <DatabaseCellsWrapper
-        onScroll={handleScroll}
-        ref={ref}
+      onScroll={handleScroll}
+      ref={ref}
     >
       <DatabaseCellsTableWrapper ref={refTable}>
         <TableHeader
@@ -508,7 +516,7 @@ const DatabaseCells = () => {
 
 const DatabaseCellsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
-  height: "calc(100vh - 165px)",
+  height: "calc(100vh - 200px)",
   overflow: "scroll",
   border: "1px solid #000"
 }))
@@ -521,9 +529,9 @@ const DatabaseCellsTableWrapper = styled("table")(({theme}) => ({
 
 const TableCellCustom = styled(TableCell, {
   shouldForwardProp: props => props !== "checkHead"
-})<{ checkHead: boolean }>(({theme, checkHead}) => ({
+})<{ checkHead: string }>(({theme, checkHead}) => ({
   color: "#FFF",
-  background: !checkHead ? "#99dd99" : "#99dadd",
+  background: checkHead.includes("graph_urls") ? "#99dadd" : checkHead === "action" ? "#fff" : "#99dd99",
   borderLeft: `1px solid #FFF`,
   fontWeight: 700
 }))

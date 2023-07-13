@@ -1,19 +1,19 @@
-import {Box, styled} from "@mui/material";
-import {useState} from "react";
-import DatabaseExperiments from "./DatabaseExperiments";
-import DatabaseCells from "./DatabaseCells";
+import { Box, styled } from "@mui/material";
+import DatabaseCells from "components/DatabaseCells";
+import DatabaseExperiments from "components/DatabaseExperiments";
+import { useState } from "react";
 
 const Database = () => {
   const [typeTable, setTypeTable] = useState("experiments")
 
   const handleTypeTable = (type: string) => {
-    if(typeTable === type ) return
+    if(typeTable === type) return
     setTypeTable(type)
   }
 
   return (
-      <DatabasePublicWrapper>
-        <Switch>
+      <DataBaseWrapper>
+        <Box>
           <ButtonExperiments
               onClick={() => handleTypeTable("experiments")}
               sx={{ fontWeight: typeTable === "experiments" ? 600 : 400}}
@@ -27,22 +27,18 @@ const Database = () => {
           >
             Cells
           </ButtonCells>
-        </Switch>
+        </Box>
         <DataBasePublicContent>
-          {
-              typeTable === "experiments" ? <DatabaseExperiments setTypeTable={setTypeTable} />: <DatabaseCells />
-          }
+            {
+              typeTable === "experiments" ? <DatabaseExperiments setTypeTable={setTypeTable} /> : <DatabaseCells />
+            }
         </DataBasePublicContent>
-      </DatabasePublicWrapper>
+      </DataBaseWrapper>
   )
 }
 
-const DatabasePublicWrapper = styled(Box)(({theme}) => ({
+const DataBaseWrapper = styled(Box)(({theme}) => ({
   marginTop: theme.spacing(6),
-}))
-
-const Switch = styled(Box)(({theme}) => ({
-
 }))
 
 const ButtonExperiments = styled('span')(({theme}) => ({

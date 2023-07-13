@@ -430,6 +430,7 @@ const TableHeader =
     handleOrderBy,
     keySort
   }: HeaderType) => {
+
   const handleOrder = (key: string) => {
     handleOrderBy(key)
   }
@@ -489,11 +490,11 @@ const TableHeader =
 
 const TableBodyDataBase =
   ({
-     data,
-     columns,
-     handleOpenDialog,
-     handleOpenAttributes,
-     setTypeTable
+    data,
+    columns,
+    handleOpenDialog,
+    handleOpenAttributes,
+    setTypeTable
   }: TableBodyDataBaseProps) => {
 
   const handleClick = (key: string, record?: string | number | object | string[]) => {
