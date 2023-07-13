@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from studio.app.common.models import *  # noqa
+from studio.app.optinist.models import *  # noqa
 
 load_dotenv()
 
