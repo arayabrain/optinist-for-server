@@ -23,35 +23,35 @@ type Data = {
 const columns: ColumnData[] = [
   {
     label: "Brain area",
-    minWidth: 80,
+    minWidth: 90,
     key: "fields.brain_area",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Cre driver",
-    minWidth: 80,
+    minWidth: 90,
     key: "fields.cre_driver",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Reporter line",
-    minWidth: 80,
+    minWidth: 90,
     key: "fields.reporter_line",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Imaging depth",
-    minWidth: 80,
+    minWidth: 90,
     key: "fields.imaging_depth",
     sort: true,
     cursor: "poniter"
   },
   {
     label: "Pixel Image",
-    minWidth: 80,
+    minWidth: 90,
     key: "cell_image_urls",
     type: "image",
     cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default',
@@ -474,7 +474,7 @@ const DatabaseCells = () => {
 
   const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
     label: graphTitle,
-    minWidth: 80,
+    minWidth: 90,
     key: `graph_urls.${index}`,
     type: "image"
   }
