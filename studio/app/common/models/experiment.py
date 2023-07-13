@@ -9,8 +9,16 @@ class Experiment(Base, TimestampMixin, table=True):
     __tablename__ = "experiments"
     __table_args__ = (UniqueConstraint("experiment_id", name="idx_experiment_id"),)
 
+    organization_id: int = Field(nullable=False)
     experiment_id: str = Field(sa_column=Column(String(100), nullable=False))
     attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
-    publish_status: Optional[int] = Field(
-        sa_column=Column(Integer(), nullable=True, comment="0: private, 1: public")
+    share_type: int = Field(
+        sa_column=Column(
+            Integer(),
+            nullable=False,
+            comment="1: default(per users), 2: for organization",
+        )
+    )
+    publish_status: int = Field(
+        sa_column=Column(Integer(), nullable=False, comment="0: private, 1: public")
     )
