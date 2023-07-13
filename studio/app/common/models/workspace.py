@@ -18,7 +18,7 @@ class Workspace(Base, TimestampMixin, table=True):
 class WorkspacesShareUser(Base, table=True):
     __tablename__ = "workspaces_share_users"
     __table_args__ = (
-        UniqueConstraint("workspace_id", "user_id", name="idx_workspace_id"),
+        UniqueConstraint("workspace_id", "user_id", name="idx_workspace_id_user_id"),
     )
 
     workspace_id: int = Field(

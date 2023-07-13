@@ -11,18 +11,18 @@ class User(Base, TimestampMixin, table=True):
     __tablename__ = "users"
     __table_args__ = (UniqueConstraint("uid", name="idx_uid"),)
 
+    organization_id: int = Field(nullable=False)
     uid: str = Field(sa_column=Column(String(100), nullable=False))
     name: str = Field(sa_column=Column(String(100), nullable=False))
     email: str = Field(sa_column=Column(String(255), nullable=False))
-    belong_id: int = Field(nullable=False)
     attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
     active: bool = Field(nullable=False)
 
 
-class Belong(Base, table=True):
-    __tablename__ = "belongs"
+class Organization(Base, table=True):
+    __tablename__ = "organization"
 
-    belong: str = Field(sa_column=Column(String(100), nullable=False))
+    name: str = Field(sa_column=Column(String(100), nullable=False))
     created_at: Optional[datetime] = Field(
         sa_column_kwargs={"server_default": current_timestamp()},
     )
