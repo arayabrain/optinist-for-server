@@ -10,40 +10,48 @@ type DialogImageProps = {
 const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
   if(!data) return <></>
   return (
-      <>
-        {
-          open ? <DialogImageWrapper>
-            <DialogImageContentWrapper>
-              <DialogImageContent>
-                <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      flexWrap: "wrap",
-                      gap: 2,
-                      margin: "80px 50px"
-                    }}
-                >
-                  {Array.isArray(data) ?
-                      data.filter(Boolean).map((item, index) => (
-                          <img
-                              key={index}
-                              src={item}
-                              alt={""}
-                              width={150}
-                              height={150}
-                          />
-                      )) : null
-                  }
-                </Box>
-              </DialogImageContent>
-              <ButtonClose onClick={handleCloseDialog}>
-                <CloseIcon />
-              </ButtonClose>
-            </DialogImageContentWrapper>
-          </DialogImageWrapper> : null
-        }
-        </>
+    <>
+    {
+      open ? <DialogImageWrapper>
+        <DialogImageContentWrapper>
+          <DialogImageContent>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                gap: 2,
+                margin: "80px 50px"
+              }}
+            >
+              {
+                typeof data === "string" ?
+                    <img
+                        src={data}
+                        alt={""}
+                        width={200}
+                        height={200}
+                    /> :
+                Array.isArray(data) ?
+                data.filter(Boolean).map((item, index) => (
+                  <img
+                    key={index}
+                    src={item}
+                    alt={""}
+                    width={150}
+                    height={150}
+                  />
+                )) : null
+              }
+            </Box>
+          </DialogImageContent>
+          <ButtonClose onClick={handleCloseDialog}>
+            <CloseIcon />
+          </ButtonClose>
+        </DialogImageContentWrapper>
+      </DialogImageWrapper> : null
+    }
+    </>
   )
 }
 

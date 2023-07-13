@@ -12,7 +12,7 @@ import Workspaces from 'pages/Workspace'
 import Workspace from 'pages/Workspace/Workspace'
 import { IS_STANDALONE } from 'const/Mode'
 import Layout from "components/Layout";
-import Database from "./components/Database";
+import Database from 'pages/Database'
 
 const App: React.FC = () => {
   return (
