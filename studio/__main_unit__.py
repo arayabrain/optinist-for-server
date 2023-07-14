@@ -17,6 +17,7 @@ from studio.app.common.routers import (
     run,
     users_admin,
     users_me,
+    workspace,
 )
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.routers import expdb, hdf5, nwb, roi
@@ -35,12 +36,13 @@ app.include_router(params.router)
 app.include_router(run.router)
 app.include_router(users_admin.router)
 app.include_router(users_me.router)
-app.include_router(expdb.router, tags=["Experiment Database"])
+app.include_router(workspace.router, tags=["Workspace"])
 
 # optinist routers
 app.include_router(hdf5.router)
 app.include_router(nwb.router)
 app.include_router(roi.router)
+app.include_router(expdb.router, tags=["Experiment Database"])
 
 app.add_middleware(
     CORSMiddleware,
