@@ -484,7 +484,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     headerName: graphTitle,
     renderCell: (params: any) => {
       return (
-        <Box>
+          <Box sx={{ display: "flex" }}>
           {
             params.row.graph_urls[index] ?
             <img
