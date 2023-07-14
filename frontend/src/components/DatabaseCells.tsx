@@ -162,27 +162,31 @@ const DatabaseCells = () => {
       field: "brain_area",
       headerName: "Brain area",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.brain_area,
     },
     {
       field: "cre_driver",
       headerName: "Cre driver",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.cre_driver,
     },
     {
       field: "reporter_line",
       headerName: "Reporter line",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.reporter_line,
     },
     {
       field: "imaging_depth",
       headerName: "Imaging depth",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.imaging_depth,
     },
     {
       field: "cell_image_urls",
       headerName: "Pixel Image",
       width: 160,
-      renderCell: (params: any) => (
+      renderCell: (params: { row: Data }) => (
         <Box
           sx={{
             cursor: "pointer",
@@ -200,7 +204,7 @@ const DatabaseCells = () => {
     }
   ]
 
-  const handleOpenDialog = (data: string[]) => {
+  const handleOpenDialog = (data: string) => {
     if(data.length === 1) return
     setOpenDialog(true)
     setDataDialog(data)
@@ -210,11 +214,11 @@ const DatabaseCells = () => {
     setOpenDialog(false)
   }
 
-  const getColumns: any = dataGraphsTitle.map((graphTitle, index) => (
+  const getColumns = dataGraphsTitle.map((graphTitle, index) => (
     {
       field: `graph_urls.${index}`,
       headerName: graphTitle,
-      renderCell: (params: any) => {
+      renderCell: (params: { row: Data }) => {
         return (
           <Box sx={{ display: "flex" }}>
             {
@@ -233,20 +237,13 @@ const DatabaseCells = () => {
     }
   ))
 
-  const newData = dataTable.map((data) => {
-    const { fields, ...items } = data
-    return ({
-      ...items, ...fields
-    })
-  })
-
   return(
     <DatabaseCellsWrapper>
       <DataGrid
-          {...datas}
-          columns={[...columns, ...getColumns]}
-          rows={newData}
-          hideFooter={true}
+        {...datas}
+        columns={[...columns, ...getColumns]}
+        rows={dataTable}
+        hideFooter={true}
       />
       <Pagination sx={{marginTop: 2}} count={10} />
       <DialogImage

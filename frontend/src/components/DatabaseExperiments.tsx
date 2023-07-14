@@ -393,32 +393,37 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       field: "experiment_id",
       headerName: "Experiment ID",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.experiment_id
     },
     {
       field: "brain_area",
       headerName: "Brain area",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.brain_area,
     },
     {
       field: "cre_driver",
       headerName: "Cre driver",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.cre_driver,
     },
     {
       field: "reporter_line",
       headerName: "Reporter line",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.reporter_line,
     },
     {
       field: "imaging_depth",
       headerName: "Imaging depth",
       width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.imaging_depth,
     },
     {
       field: "attributes",
       headerName: "Attributes",
       width: 160,
-      renderCell: (params: any) => (
+      renderCell: (params: { row: Data }) => (
         <Box
           sx={{ cursor: "pointer" }}
           onClick={() => handleOpenAttributes(params.row.attributes)}
@@ -431,7 +436,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       field: "cells",
       headerName: "Cells",
       width: 160,
-      renderCell: (params: any) => (
+      renderCell: (params: { row: Data }) => (
         <Box sx={{cursor: "pointer"}} onClick={() => setTypeTable("cells")}>
           <LaunchIcon />
         </Box>
@@ -441,9 +446,13 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       field: "cell_image_urls",
       headerName: "Pixel Image",
       width: 160,
-      renderCell: (params: any) => (
-        <Box sx={{cursor: params.row.cell_image_urls.length > 1 ? "pointer" : "default"}}
-             onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
+      renderCell: (params: { row: Data }) => (
+        <Box
+          sx={{
+            cursor: params.row.cell_image_urls.length > 1 ? "pointer" : "default",
+            display : "flex"
+          }}
+           onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
           <img
             src={params.row.cell_image_urls[0]}
             alt={""}
@@ -478,35 +487,28 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     setDataDialog(event.target.value)
   }
 
-  const getColumns: any = dataGraphsTitle.map((graphTitle, index) => (
+  const getColumns = dataGraphsTitle.map((graphTitle, index) => (
   {
     field: `graph_urls.${index}`,
     headerName: graphTitle,
-    renderCell: (params: any) => {
+    renderCell: (params: { row: Data }) => {
       return (
-          <Box sx={{ display: "flex" }}>
-          {
-            params.row.graph_urls[index] ?
+        <Box sx={{ display: "flex" }}>
+        {
+          params.row.graph_urls[index] ?
             <img
               src={params.row.graph_urls[index]}
               alt={""}
               width={"100%"}
               height={"100%"}
             /> : null
-          }
-        </Box>
+        }
+      </Box>
       )
     },
     width: 160,
   }
   ))
-
-  const newData = dataTable.map((data) => {
-    const { fields, ...items } = data
-    return ({
-      ...items, ...fields
-    })
-  })
 
   return(
   <DatabaseExperimentsWrapper>
@@ -517,7 +519,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
           field: "share_type",
           headerName: "",
           width: 160,
-          renderCell: (params: any) => (
+          renderCell: (params: { row: Data }) => (
             <Box sx={{cursor: "pointer"}}>
               <GroupsIcon />
             </Box>
@@ -527,27 +529,27 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
           field: "publish_status",
           headerName: "",
           width: 160,
-          renderCell: (params: any) => (
+          renderCell: (params: { row: Data }) => (
             <Box sx={{cursor: "pointer"}}>
               <SwitchCustom value={!!params.row.publish_status} />
             </Box>
           ),
         }] : [...columns, ...getColumns]}
-      rows={newData}
+      rows={dataTable}
       hideFooter={true}
     />
     <Pagination sx={{marginTop: 2}} count={10} />
     <DialogImage
-        open={openDialog}
-        data={dataDialog}
-        handleCloseDialog={handleCloseDialog}
+      open={openDialog}
+      data={dataDialog}
+      handleCloseDialog={handleCloseDialog}
     />
     <PopupAttributes
-        handleChangeAttributes={handleChangeAttributes}
-        data={dataDialog as string}
-        open={openAttributes}
-        handleClose={handleCloseAttributes}
-        role={!!user}
+      handleChangeAttributes={handleChangeAttributes}
+      data={dataDialog as string}
+      open={openAttributes}
+      handleClose={handleCloseAttributes}
+      role={!!user}
     />
   </DatabaseExperimentsWrapper>
   )
