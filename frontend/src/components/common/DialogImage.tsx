@@ -40,10 +40,10 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
                   </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
-                  <Box sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                  }}>
+                  <Box
+                    key={`${item}_${index}`}
+                    sx={{ display: "flex", flexDirection: "column" }}
+                  >
                     <img
                       key={index}
                       src={item}
