@@ -14,11 +14,8 @@ services:
     image: phpmyadmin
     volumes:
       - ./docker/php-phpmyadmin.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
-    environment:
-      - PMA_ARBITRARY=1
-      - PMA_HOST=db
-      - PMA_USER=root
-      - PMA_PASSWORD=docker
+    env_file:
+      - studio/config/.env
     ports:
       - 20080:80
 
@@ -31,7 +28,7 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    command: python main.py --reload --host 0.0.0.0 --port 8000
+    command: bash -c "alembic upgrade head && python main.py --reload --host 0.0.0.0 --port 8000"
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
