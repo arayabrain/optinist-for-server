@@ -183,7 +183,11 @@ const DatabaseCells = () => {
       headerName: "Pixel Image",
       width: 160,
       renderCell: (params: any) => (
-        <Box sx={{cursor: "pointer"}}
+        <Box
+          sx={{
+            cursor: "pointer",
+            display: "flex"
+          }}
              onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
           <img
             src={params.row.cell_image_urls}
@@ -212,7 +216,7 @@ const DatabaseCells = () => {
       headerName: graphTitle,
       renderCell: (params: any) => {
         return (
-          <Box>
+          <Box sx={{ display: "flex" }}>
             {
               params.row.graph_urls[index] ?
                 <img
