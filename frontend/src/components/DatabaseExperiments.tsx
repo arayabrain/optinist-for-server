@@ -449,7 +449,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       renderCell: (params: { row: Data }) => (
         <Box
           sx={{
-            cursor: params.row.cell_image_urls.length > 1 ? "pointer" : "default",
+            cursor: "pointer",
             display : "flex"
           }}
            onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
@@ -465,7 +465,6 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
   ]
 
   const handleOpenDialog = (data: string[]) => {
-    if(data.length === 1) return
     setOpenDialog(true)
     setDataDialog(data)
   }
