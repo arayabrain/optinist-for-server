@@ -20,27 +20,39 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
                 display: "flex",
                 justifyContent: "center",
                 flexWrap: "wrap",
-                gap: 2,
+                gap: 3,
                 margin: "80px 50px"
               }}
             >
               {
                 typeof data === "string" ?
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                  }}>
                     <img
-                        src={data}
-                        alt={""}
-                        width={200}
-                        height={200}
-                    /> :
+                      src={data}
+                      alt={""}
+                      width={"100%"}
+                      height={"100%"}
+                    />
+                    <span>{data}</span>
+                  </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
-                  <img
-                    key={index}
-                    src={item}
-                    alt={""}
-                    width={150}
-                    height={150}
-                  />
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                  }}>
+                    <img
+                      key={index}
+                      src={item}
+                      alt={""}
+                      width={"100%"}
+                      height={"100%"}
+                    />
+                    <span>{item}</span>
+                  </Box>
                 )) : null
               }
             </Box>
@@ -88,7 +100,6 @@ const DialogImageContent = styled(Box)(({theme}) => ({
   alignItems: "center",
   width: "100%",
   height: "100%",
-  // border: "1px solid #000",
 }))
 
 const ButtonClose = styled("button")(({theme}) => ({

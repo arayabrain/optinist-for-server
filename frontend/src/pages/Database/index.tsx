@@ -38,7 +38,8 @@ const Database = () => {
 }
 
 const DataBaseWrapper = styled(Box)(({theme}) => ({
-  marginTop: theme.spacing(6),
+  marginTop: 48,
+  paddingBottom: 30
 }))
 
 const ButtonExperiments = styled('span')(({theme}) => ({

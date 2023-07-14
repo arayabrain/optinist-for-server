@@ -1,8 +1,7 @@
-import { TableCell, Box, TableHead, TableRow, TableBody, styled } from "@mui/material";
+import { Box, Pagination, styled } from "@mui/material";
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
-import ImageChart from "./common/ImageChart";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import DialogImage from "./common/DialogImage";
 import LaunchIcon from '@mui/icons-material/Launch';
 import Button from '@mui/material/Button';
@@ -11,28 +10,8 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import SwitchCustom from "./common/SwitchCustom";
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
-import { onSort } from "utils/database";
-
-export type OrderByType = "ASC" | "DESC" | ""
-
-export type HeaderType = {
-  columns: ColumnData[]
-  orderBy: OrderByType
-  handleOrderBy: (key: string) => void
-  keySort: string
-}
-
-export type ColumnData = {
-  label: string
-  minWidth?: number
-  maxWidth?: number
-  type?: "image"
-  key: string
-  cursor?: string | ((v: string[]) => string)
-  action?: boolean
-  sort?: boolean
-}
+import { DataGrid } from '@mui/x-data-grid';
+import GroupsIcon from '@mui/icons-material/Groups';
 
 export type Data = {
   id: number
@@ -46,60 +25,11 @@ export type Data = {
   attributes: string
   cell_image_urls: string[]
   graph_urls: string[]
+  share_type: number
+  publish_status: number
   created_time: string
   updated_time: string
 }
-
-const columns: ColumnData[] = [
-  {
-    label: "Experiment ID",
-    minWidth: 100,
-    key: "experiment_id"
-  },
-  {
-    label: "Brain area",
-    minWidth: 90,
-    key: "fields.brain_area",
-    sort: true
-  },
-  {
-    label: "Cre driver",
-    minWidth: 90,
-    key: "fields.cre_driver",
-    sort: true
-  },
-  {
-    label: "Reporter line",
-    minWidth: 90,
-    key: "fields.reporter_line",
-    sort: true
-  },
-  {
-    label: "Imaging depth",
-    minWidth: 90,
-    key: "fields.imaging_depth",
-    sort: true,
-  },
-  {
-    label: "Attributes",
-    minWidth: 90,
-    key: "attributes",
-    cursor: 'pointer'
-  },
-  {
-    label: "Cells",
-    minWidth: 90,
-    key: "cells",
-    cursor: 'pointer'
-  },
-  {
-    label: "Pixel Image",
-    minWidth: 90,
-    key: "cell_image_urls",
-    type: "image",
-    cursor: (files?: string[]) => files && files.length > 1 ? 'pointer' : 'default'
-  },
-]
 
 const dataGraphsTitle: string[] = ["Plot1", "Plot2", "Plot3", "Plot4", "Plot5"]
 
@@ -116,6 +46,8 @@ const datas: Data[] = [
     attributes: '{13}',
     cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -131,6 +63,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 1,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -146,6 +80,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -161,6 +97,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -176,6 +114,8 @@ const datas: Data[] = [
     attributes: '{13}',
     cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -191,6 +131,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -206,6 +148,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -221,6 +165,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -236,6 +182,8 @@ const datas: Data[] = [
     attributes: '{13}',
     cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -251,6 +199,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -266,6 +216,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -281,6 +233,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -296,6 +250,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -311,6 +267,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -326,6 +284,8 @@ const datas: Data[] = [
     attributes: '{13}',
     cell_image_urls: ["/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png", "/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -341,6 +301,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -356,6 +318,8 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: ["/static/pie_chart.png", "/static/bar_chart.png", "/static/bar_chart.png", "/static/pie_chart.png", "/static/bar_chart.png"],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
@@ -371,18 +335,12 @@ const datas: Data[] = [
     attributes: "{}",
     cell_image_urls: ["/static/pixel_image.png"],
     graph_urls: [""],
+    share_type: 0,
+    publish_status: 0,
     created_time: "2023-07-06T09:24:45.904Z",
     updated_time: "2023-07-06T09:24:45.904Z",
   },
 ]
-
-type TableBodyDataBaseProps = {
-  data: Data
-  columns: ColumnData[]
-  handleOpenDialog: Function
-  handleOpenAttributes: Function
-  setTypeTable: (type: string) => void
-}
 
 type PopupAttributesProps = {
   data: string
@@ -423,150 +381,79 @@ const PopupAttributes =
   )
 }
 
-const TableHeader =
-  ({
-    columns,
-    orderBy,
-    handleOrderBy,
-    keySort
-  }: HeaderType) => {
-
-  const handleOrder = (key: string) => {
-    handleOrderBy(key)
-  }
-
-  return (
-    <TableHead>
-      <TableRow>
-        {
-          columns.map((item) => {
-            return (
-              <TableCellCustom
-                key={item.key}
-                checkHead={item.key}
-                sx={{
-                  minWidth: item.minWidth,
-                  cursor: item.sort ? "pointer" : "default",
-                  borderBottom: "none"
-                }}
-                onClick={() => item.sort && handleOrder(item.key)}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    position: "relative",
-                    width: "100%"
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "100%",
-                      textAlign: "center"
-                    }}
-                  >
-                    {item.label}
-                  </span>
-                  <ArrowDownwardIcon
-                    sx={{
-                      position: "absolute",
-                      width: 16,
-                      right: -12,
-                      display: !orderBy || !item.sort || item.key !== keySort ? "none" : "block",
-                      transform: `rotate(${orderBy === "ASC" ? 180 : 0}deg)`,
-                      transition: "all 0.3s"
-                    }}
-                  />
-                </Box>
-              </TableCellCustom>
-            )
-          }
-          )}
-      </TableRow>
-    </TableHead>
-  )
-}
-
-const TableBodyDataBase =
-  ({
-    data,
-    columns,
-    handleOpenDialog,
-    handleOpenAttributes,
-    setTypeTable
-  }: TableBodyDataBaseProps) => {
-
-  const handleClick = (key: string, record?: string | number | object | string[]) => {
-    if(key === "cell_image_urls") {
-      handleOpenDialog(record)
-      return
-    }
-    if(key === "cells") {
-      setTypeTable("cells")
-      return
-    }
-    if(key === "attributes") {
-      handleOpenAttributes(record)
-    }
-  }
-
-  const getData = (data: Data, key: string) => {
-    let newData: any = data
-    if(key.includes(".")) {
-      const keys = key.split('.')
-      keys.forEach(k => {
-        let newKey = isNaN(Number(k)) ? k : Number(k);
-        newData = newData?.[newKey];
-      })
-    } else newData = data[key as keyof Data]
-    return newData;
-  }
-
-  return (
-    <TableBody>
-      <TableRow>
-        {
-          columns.map((column) => {
-            let record = getData(data, column.key as string)
-            if(column.key === "action") record = <SwitchCustom value={true} />
-            return (
-              <TableCell
-                sx={{
-                  border: "none"
-                }}
-                key={column.key}
-              >
-                <Box
-                  onClick={() => handleClick(column.key, record)}
-                  sx={{ cursor: typeof column.cursor === 'function' ? column.cursor(record) : column.cursor}}
-                >
-                  { column.type === "image" ?
-                  <ImageChart data={record as (string | string[])} />
-                  : column.key === "cells" ? <LaunchIcon /> : record
-                  }
-                </Box>
-              </TableCell>
-            )
-          })
-        }
-      </TableRow>
-    </TableBody>
-  )
-}
-
 const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => void}) => {
   const user = useSelector(selectCurrentUser)
-  const [dataTable, setDataTable] = useState<Data[]>(datas.slice(0,6))
-  const [initDataTable, setInitDataTable] = useState<Data[]>(datas.slice(0,6))
-  const [orderBy, setOrderBy] = useState<OrderByType>("")
-  const [keySort, setKeySort] = useState("")
-  const [count, setCount] = useState(6)
+  const [dataTable] = useState<Data[]>(datas)
   const [openDialog, setOpenDialog] = useState(false)
   const [openAttributes, setOpenAttributes] = useState(false)
   const [dataDialog, setDataDialog] = useState<string[] | string>()
-  const refTable = useRef<HTMLTableElement | null>(null)
-  const ref = useRef<HTMLDivElement | null>(null)
+
+  const columns = [
+    {
+      field: "experiment_id",
+      headerName: "Experiment ID",
+      width: 160,
+    },
+    {
+      field: "brain_area",
+      headerName: "Brain area",
+      width: 160,
+    },
+    {
+      field: "cre_driver",
+      headerName: "Cre driver",
+      width: 160,
+    },
+    {
+      field: "reporter_line",
+      headerName: "Reporter line",
+      width: 160,
+    },
+    {
+      field: "imaging_depth",
+      headerName: "Imaging depth",
+      width: 160,
+    },
+    {
+      field: "attributes",
+      headerName: "Attributes",
+      width: 160,
+      renderCell: (params: any) => (
+        <Box
+          sx={{ cursor: "pointer" }}
+          onClick={() => handleOpenAttributes(params.row.attributes)}
+        >
+          {params.row.attributes}
+        </Box>
+      )
+    },
+    {
+      field: "cells",
+      headerName: "Cells",
+      width: 160,
+      renderCell: (params: any) => (
+        <Box sx={{cursor: "pointer"}} onClick={() => setTypeTable("cells")}>
+          <LaunchIcon />
+        </Box>
+      )
+    },
+    {
+      field: "cell_image_urls",
+      headerName: "Pixel Image",
+      width: 160,
+      renderCell: (params: any) => (
+        <Box sx={{cursor: "pointer"}}
+             onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
+          <img
+              src={params.row.cell_image_urls[0]}
+              alt={""}
+              width={"100%"}
+              height={"100%"}
+          />
+        </Box>
+      ),
+    }
+  ]
 
   const handleOpenDialog = (data: string[]) => {
     if(data.length === 1) return
@@ -587,122 +474,88 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     setOpenAttributes(false)
   }
 
-  const handleScroll = (event: any) => {
-    if(!ref.current || !refTable.current) return
-    if(event.currentTarget.scrollTop + ref.current?.clientHeight === refTable.current?.clientHeight) {
-      setCount(pre => pre + 6)
-      setDataTable([...dataTable, ...datas.slice(count, count + 6)])
-      setInitDataTable([...initDataTable, ...datas.slice(count, count + 6)])
-      handleSort([...dataTable, ...datas.slice(count, count + 6)], orderBy, keySort)
-    }
-  }
-
-  const handleSort = (dataTable: Data[], orderBy: OrderByType, key: string) => {
-    const newData = onSort(initDataTable, dataTable, orderBy, key)
-    if(!newData) return
-    setDataTable(newData)
-  }
-
-  const handleOrderBy = (key: string) => {
-    setKeySort(key)
-    if((key !== keySort && keySort) || !orderBy) {
-      setOrderBy("ASC")
-      handleSort(dataTable, "ASC", key)
-      return
-    }
-
-    if(orderBy === "ASC") {
-      setOrderBy("DESC")
-      handleSort(dataTable, "DESC", key)
-      return
-    }
-    setOrderBy("")
-    handleSort(dataTable, "", key)
-  }
-
   const handleChangeAttributes = (event: any) => {
     setDataDialog(event.target.value)
   }
 
-  const getColumns: ColumnData[] = dataGraphsTitle.map((graphTitle, index) => ({
-    label: graphTitle,
-    minWidth: 90,
-    key: `graph_urls.${index}`,
-    type: "image"
-    }
+  const getColumns: any = dataGraphsTitle.map((graphTitle, index) => (
+  {
+    field: `graph_urls.${index}`,
+    headerName: graphTitle,
+    renderCell: (params: any) => {
+      return (
+        <Box sx={{cursor: "pointer"}}>
+          {
+            params.row.graph_urls[index] ?
+            <img
+              src={params.row.graph_urls[index]}
+              alt={""}
+              width={"100%"}
+              height={"100%"}
+            /> : null
+          }
+        </Box>
+      )
+    },
+    width: 160,
+  }
   ))
 
+  const newData = dataTable.map((data) => {
+    const { fields, ...items } = data
+    return ({
+      ...items, ...fields
+    })
+  })
+
   return(
-  <DatabaseExperimentsWrapper
-    onScroll={handleScroll}
-    ref={ref}
-  >
-    <DatabaseExperimentsTableWrapper ref={refTable}>
-    <TableHeader
-      columns={ user ? [...columns, ...getColumns, {
-        label: "",
-        minWidth: 90,
-        key: "action"
-      }] : [...columns, ...getColumns]}
-      orderBy={orderBy}
-      handleOrderBy={handleOrderBy}
-      keySort={keySort}
+  <DatabaseExperimentsWrapper>
+    <DataGrid
+      {...datas}
+      columns={ user ? [...columns, ...getColumns,
+        {
+          field: "share_type",
+          headerName: "",
+          width: 160,
+          renderCell: (params: any) => (
+            <Box sx={{cursor: "pointer"}}>
+              <GroupsIcon />
+            </Box>
+          ),
+        },
+        {
+          field: "publish_status",
+          headerName: "",
+          width: 160,
+          renderCell: (params: any) => (
+            <Box sx={{cursor: "pointer"}}>
+              <SwitchCustom value={!!params.row.publish_status} />
+            </Box>
+          ),
+        }] : [...columns, ...getColumns]}
+      rows={newData}
+      hideFooter={true}
     />
-    {
-      dataTable.map((data, index) => {
-        return (
-          <TableBodyDataBase
-            key={`${data.id}_${index}`}
-            setTypeTable={setTypeTable}
-            handleOpenAttributes={handleOpenAttributes}
-            handleOpenDialog={handleOpenDialog}
-            data={data}
-            columns={user ? [...columns, ...getColumns, {
-              label: "",
-              minWidth: 90,
-              key: "action"
-            }] : [...columns, ...getColumns]}
-          />
-        )
-      })
-    }
+    <Pagination sx={{marginTop: 2}} count={10} />
     <DialogImage
-      open={openDialog}
-      data={dataDialog}
-      handleCloseDialog={handleCloseDialog}
+        open={openDialog}
+        data={dataDialog}
+        handleCloseDialog={handleCloseDialog}
     />
     <PopupAttributes
-      handleChangeAttributes={handleChangeAttributes}
-      data={dataDialog as string}
-      open={openAttributes}
-      handleClose={handleCloseAttributes}
-      role={!!user}
+        handleChangeAttributes={handleChangeAttributes}
+        data={dataDialog as string}
+        open={openAttributes}
+        handleClose={handleCloseAttributes}
+        role={!!user}
     />
-    </DatabaseExperimentsTableWrapper>
   </DatabaseExperimentsWrapper>
   )
 }
 
 const DatabaseExperimentsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
-  height: "calc(100vh - 200px)",
-  overflow: "scroll",
-  border: "1px solid #000"
-}))
-
-const DatabaseExperimentsTableWrapper = styled("table")(({theme}) => ({
-  width: "100%",
-  height: "100%",
-  overflow: "scroll",
-}))
-
-const TableCellCustom = styled(TableCell, {
-  shouldForwardProp: props => props !== "checkHead"
-})<{ checkHead: string }>(({theme, checkHead}) => ({
-  color: "#FFF",
-  background: checkHead.includes("graph_urls") ? "#99dadd" : checkHead === "action" ? "#fff" : "#99dd99",
-  borderLeft: `1px solid #FFF`,
-  fontWeight: 700
+  height: "calc(100vh - 250px)",
 }))
 
 const Content = styled('textarea')(({theme}) => ({
