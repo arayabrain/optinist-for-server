@@ -46,3 +46,6 @@ class UserInfo(BaseModel):
     email: Optional[str]
     created_time: Optional[datetime]
     updated_time: Optional[datetime]
+
+    class Config:
+        orm_mode = True
