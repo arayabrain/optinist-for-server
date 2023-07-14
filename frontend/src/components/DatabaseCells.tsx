@@ -207,26 +207,26 @@ const DatabaseCells = () => {
   }
 
   const getColumns: any = dataGraphsTitle.map((graphTitle, index) => (
-      {
-        field: `graph_urls.${index}`,
-        headerName: graphTitle,
-        renderCell: (params: any) => {
-          return (
-              <Box sx={{cursor: "pointer"}}>
-                {
-                  params.row.graph_urls[index] ?
-                      <img
-                          src={params.row.graph_urls[index]}
-                          alt={""}
-                          width={"auto"}
-                          height={"auto"}
-                      /> : null
-                }
-              </Box>
-          )
-        },
-        width: 160,
-      }
+    {
+      field: `graph_urls.${index}`,
+      headerName: graphTitle,
+      renderCell: (params: any) => {
+        return (
+          <Box>
+            {
+              params.row.graph_urls[index] ?
+                <img
+                  src={params.row.graph_urls[index]}
+                  alt={""}
+                  width={"auto"}
+                  height={"auto"}
+                /> : null
+            }
+          </Box>
+        )
+      },
+      width: 160,
+    }
   ))
 
   const newData = dataTable.map((data) => {

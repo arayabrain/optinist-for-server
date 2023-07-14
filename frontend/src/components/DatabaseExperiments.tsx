@@ -442,16 +442,16 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
       headerName: "Pixel Image",
       width: 160,
       renderCell: (params: any) => (
-        <Box sx={{cursor: "pointer"}}
+        <Box sx={{cursor: params.row.cell_image_urls.length > 1 ? "pointer" : "default"}}
              onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
           <img
-              src={params.row.cell_image_urls[0]}
-              alt={""}
-              width={"100%"}
-              height={"100%"}
+            src={params.row.cell_image_urls[0]}
+            alt={""}
+            width={"100%"}
+            height={"100%"}
           />
         </Box>
-      ),
+      )
     }
   ]
 
@@ -484,7 +484,7 @@ const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => vo
     headerName: graphTitle,
     renderCell: (params: any) => {
       return (
-        <Box sx={{cursor: "pointer"}}>
+        <Box>
           {
             params.row.graph_urls[index] ?
             <img
