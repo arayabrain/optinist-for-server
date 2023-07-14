@@ -1,6 +1,4 @@
 import { Box, Pagination, styled } from "@mui/material";
-import { useSelector } from 'react-redux'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { useState } from "react";
 import DialogImage from "./common/DialogImage";
 import LaunchIcon from '@mui/icons-material/Launch';
@@ -381,8 +379,7 @@ const PopupAttributes =
   )
 }
 
-const DatabaseExperiments = ({setTypeTable}: {setTypeTable: (type: string) => void}) => {
-  const user = useSelector(selectCurrentUser)
+const DatabaseExperiments = ({setTypeTable, user}: {setTypeTable: (type: string) => void, user?: Object}) => {
   const [dataTable] = useState<Data[]>(datas)
   const [openDialog, setOpenDialog] = useState(false)
   const [openAttributes, setOpenAttributes] = useState(false)
