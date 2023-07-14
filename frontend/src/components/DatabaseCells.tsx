@@ -1,19 +1,9 @@
 import { Box, Pagination, styled } from "@mui/material";
-// import { useSelector } from 'react-redux'
-// import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { useState } from "react";
 import DialogImage from "./common/DialogImage";
 import { DataGrid } from '@mui/x-data-grid';
 
-export type ColumnData = {
-  label: string
-  minWidth?: number
-  maxWidth?: number
-  type?: "image"
-  key: string
-}
-
-export type Data = {
+type Data = {
   id: number
   fields: {
     brain_area: string,
@@ -163,7 +153,6 @@ const datas: Data[] = [
 ]
 
 const DatabaseCells = () => {
-  // const user = useSelector(selectCurrentUser)
   const [dataTable] = useState<Data[]>(datas)
   const [openDialog, setOpenDialog] = useState(false)
   const [dataDialog, setDataDialog] = useState<string[] | string>()
@@ -194,15 +183,15 @@ const DatabaseCells = () => {
       headerName: "Pixel Image",
       width: 160,
       renderCell: (params: any) => (
-          <Box sx={{cursor: "pointer"}}
-               onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
-            <img
-                src={params.row.cell_image_urls}
-                alt={""}
-                width={"auto"}
-                height={"auto"}
-            />
-          </Box>
+        <Box sx={{cursor: "pointer"}}
+             onClick={() => handleOpenDialog(params.row.cell_image_urls)}>
+          <img
+            src={params.row.cell_image_urls}
+            alt={""}
+            width={"auto"}
+            height={"auto"}
+          />
+        </Box>
       ),
     }
   ]
@@ -249,11 +238,11 @@ const DatabaseCells = () => {
 
   return(
     <DatabaseCellsWrapper>
-      <DataGridCustom
-        columns={[...columns, ...getColumns]}
-        rows={newData}
-        hideFooter={true}
-        autoHeight={true}
+      <DataGrid
+          {...datas}
+          columns={[...columns, ...getColumns]}
+          rows={newData}
+          hideFooter={true}
       />
       <Pagination sx={{marginTop: 2}} count={10} />
       <DialogImage
@@ -264,12 +253,6 @@ const DatabaseCells = () => {
     </DatabaseCellsWrapper>
   )
 }
-
-const DataGridCustom = styled(DataGrid)(({theme}) => ({
-  ".MuiDataGrid-virtualScroller" : {
-    maxHeight: 662
-  }
-}))
 
 const DatabaseCellsWrapper = styled(Box)(({theme}) => ({
   width: "100%",
