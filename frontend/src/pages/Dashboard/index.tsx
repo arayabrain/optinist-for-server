@@ -34,6 +34,14 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
+          <LinkWrapper to="/database-public">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database public</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>

@@ -36,6 +36,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/database" element={<Database />} />
+              <Route path="/database-public" element={<Database />} />
               <Route path="/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
