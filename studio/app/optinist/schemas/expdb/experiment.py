@@ -1,11 +1,18 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 from fastapi import Query
+from fastapi_pagination import LimitOffsetPage
 from pydantic import BaseModel, Field
 
 from studio.app.common.schemas.users import UserInfo
+
+T = TypeVar("T")
+
+
+class PageWithHeader(LimitOffsetPage[T], Generic[T]):
+    header: Optional["ExpDbExperimentHeader"] = {}
 
 
 class PublishFlags(str, Enum):
