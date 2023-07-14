@@ -28,25 +28,20 @@ class ExpDbExperimentFields(BaseModel):
 
 
 class ExpDbExperimentHeader(BaseModel):
-    graph_titles: List[str]
+    graph_titles: List[str] = []
 
 
 class ExpDbExperiment(BaseModel):
     id: int
     experiment_id: str
-    fields: ExpDbExperimentFields
-    attributes: dict
-    cell_image_urls: List[str]
-    graph_urls: List[str]
+    fields: ExpDbExperimentFields = None
+    attributes: Optional[dict] = {}
+    cell_image_urls: List[str] = []
+    graph_urls: List[str] = []
     share_type: int = Field(description="1: default(per users), 2: for organization")
     publish_status: int = Field(description="0: private, 1: public")
-    created_time: Optional[datetime]
-    updated_time: Optional[datetime]
-
-
-class ExpDbExperiments(BaseModel):
-    header: ExpDbExperimentFields
-    records: List[ExpDbExperiment]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):
