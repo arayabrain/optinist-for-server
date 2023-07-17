@@ -18,7 +18,7 @@ from studio.app.common.routers import (
     users_me,
 )
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.routers import hdf5, nwb, roi
+from studio.app.optinist.routers import database, hdf5, nwb, roi
 
 app = FastAPI(docs_url="/docs", openapi_url="/openapi")
 
@@ -32,6 +32,7 @@ app.include_router(params.router)
 app.include_router(run.router)
 app.include_router(users_admin.router)
 app.include_router(users_me.router)
+app.include_router(database.router, tags=["Database"])
 
 # optinist routers
 app.include_router(hdf5.router)
