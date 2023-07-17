@@ -19,9 +19,11 @@ ENV PATH $PATH:/root/miniconda3/bin
 
 COPY frontend/build /app/frontend/build
 COPY studio /app/studio
-COPY main.py pyproject.toml ./
+COPY main.py pyproject.toml alembic.ini ./
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e .
+
+RUN alembic upgrade head
 
 EXPOSE 8000
