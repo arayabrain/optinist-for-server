@@ -9,7 +9,23 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/workspaces">
+          <LinkWrapper to="/database">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
+          <LinkWrapper to="/database-public">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database public<br /><span style={{fontSize: "medium"}}>(for development)</span></TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
+          <LinkWrapper to="/database?sort=&sort=&limit=0&offset=0">
             <BoxMenu>
               <Box>
                 <StorageIcon fontSize="large" />
@@ -22,23 +38,6 @@ const Dashboard = () => {
               <Box>
                 <AccountCircleIcon fontSize="large" />
                 <TitleMenu>Account</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
-          {/*router demo*/}
-          <LinkWrapper to="/database?sort=&sort=&limit=0&offset=0">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Database</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
-          <LinkWrapper to="/database-public">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Database public</TitleMenu>
               </Box>
             </BoxMenu>
           </LinkWrapper>

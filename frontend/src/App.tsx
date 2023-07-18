@@ -2,7 +2,7 @@ import React from 'react'
 import IconButton from '@mui/material/IconButton'
 import Close from '@mui/icons-material/Close'
 import { SnackbarProvider, SnackbarKey, useSnackbar } from 'notistack'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Dashboard from 'pages/Dashboard'
 import Account from 'pages/Account'
 import AccountDelete from 'pages/AccountDelete'
@@ -27,6 +27,7 @@ const App: React.FC = () => {
           {IS_STANDALONE ? (
             <Routes>
               <Route path="/" element={<Workspace />} />
+              <Route path="*" element={<Navigate replace to="/" />} />
             </Routes>
           ) : (
             <Routes>
@@ -41,6 +42,7 @@ const App: React.FC = () => {
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
               </Route>
+              <Route path="*" element={<Navigate replace to="/" />} />
             </Routes>
           )}
         </Layout>
