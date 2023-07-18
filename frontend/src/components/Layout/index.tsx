@@ -11,7 +11,7 @@ import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 
 const ignorePaths = ['/login', '/account-delete', '/reset-password']
-const loginPaths = ['/login', '/reset-password']
+const loginPaths = ['/login', '/reset-password', '/database']
 
 const Layout: FC = ({ children }) => {
   const user = useSelector(selectCurrentUser)
