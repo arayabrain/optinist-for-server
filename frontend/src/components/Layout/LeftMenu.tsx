@@ -22,6 +22,11 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
     navigate('/')
   }
 
+  const onClickDatabase = () => {
+    handleDrawerClose()
+    navigate('/database')
+  }
+
   const onClickWorkspaces = () => {
     handleDrawerClose()
     navigate('/workspaces')
@@ -38,6 +43,14 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
                   <HomeIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key="database" disablePadding>
+              <ListItemButton onClick={onClickDatabase}>
+                <ListItemIcon>
+                  <HomeIcon />
+                </ListItemIcon>
+                <ListItemText primary="Database" />
               </ListItemButton>
             </ListItem>
             <ListItem key="workspaces" disablePadding>
