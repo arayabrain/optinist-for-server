@@ -9,6 +9,22 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
+          <LinkWrapper to="/database">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
+          <LinkWrapper to="/database-public">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Database public<br /><span style={{fontSize: "medium"}}>(for development)</span></TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
           <LinkWrapper to="/workspaces">
             <BoxMenu>
               <Box>
@@ -26,22 +42,6 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {/*router demo*/}
-          <LinkWrapper to="/database">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Database</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
-          <LinkWrapper to="/database-public">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Database public</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>
