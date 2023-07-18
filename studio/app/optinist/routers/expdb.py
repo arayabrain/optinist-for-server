@@ -35,7 +35,16 @@ async def search_public_experiments(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    return await search_db_experiments(db, options, sortOptions)
+    data = paginate(
+        session=db,
+        query=select(optinist_model.Experiment).filter_by(publish_status=1),
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+    )
+    for item in data.items:
+        item.fields = ExpDbExperimentFields(
+            brain_area=0, cre_driver=0, reporter_line=0, imaging_depth=0
+        )
+    return data
 
 
 @router.get(
@@ -51,11 +60,18 @@ async def search_public_cells(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
+    query = (
+        select(optinist_model.Cell)
+        .join(
+            optinist_model.Experiment,
+            optinist_model.Cell.experiment_seqid == optinist_model.Experiment.id,
+        )
+        .filter(optinist_model.Experiment.publish_status == 1)
+    )
+    query = query.filter(optinist_model.Experiment.id == exp_id) if exp_id else query
     data = paginate(
         session=db,
-        query=select(optinist_model.Cell).filter(
-            optinist_model.Cell.experiment_seqid == exp_id
-        ),
+        query=query,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
     )
     for item in data.items:
