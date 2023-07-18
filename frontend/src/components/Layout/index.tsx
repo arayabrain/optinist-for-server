@@ -17,6 +17,7 @@ const Layout: FC = ({ children }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const [loadingAuth, setLoadingAuth] = useState(IS_STANDALONE)
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
@@ -34,17 +35,25 @@ const Layout: FC = ({ children }) => {
   }, [location.pathname, user])
 
   const checkAuth = async () => {
-    if (user) return
+    if (user) {
+      if (loadingAuth) setLoadingAuth(false)
+      return
+    }
     const token = getToken()
     const isPageLogin = loginPaths.includes(window.location.pathname)
-
     try {
       if (token) {
-        dispatch(getMe())
-        if (isPageLogin) navigate('/')
+        await dispatch(getMe())
+        if (loadingAuth) setLoadingAuth(false)
+        if (isPageLogin) return
+        navigate('/')
         return
-      } else if (!isPageLogin) throw new Error('fail auth')
+      } else if (!isPageLogin) {
+        if (loadingAuth) setLoadingAuth(false)
+        throw new Error('fail auth')
+      }
     } catch {
+      if (loadingAuth) setLoadingAuth(false)
       navigate('/login')
     }
   }
@@ -59,7 +68,7 @@ const Layout: FC = ({ children }) => {
           <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
         )}
         <ChildrenWrapper open={open}>
-          {children}
+          {loadingAuth ? null : children}
         </ChildrenWrapper>
       </ContentBodyWrapper>
     </LayoutWrapper>
@@ -80,8 +89,10 @@ const ContentBodyWrapper = styled(Box)(() => ({
   overflow: 'hidden',
 }))
 
-const ChildrenWrapper = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
+const ChildrenWrapper = styled('main', {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<{
+  open?: boolean
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
@@ -96,6 +107,6 @@ const ChildrenWrapper = styled('main', { shouldForwardProp: (prop) => prop !== '
     }),
     marginLeft: 0,
   }),
-}));
+}))
 
 export default Layout
