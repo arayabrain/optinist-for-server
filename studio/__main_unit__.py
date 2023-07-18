@@ -62,11 +62,6 @@ async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/{_:path}")
-async def index(request: Request):
-    return await root(request)
-
-
 def main(develop_mode: bool = False):
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="127.0.0.1")
