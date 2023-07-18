@@ -1,7 +1,5 @@
-from datetime import datetime
 from typing import Dict, Optional
 
-from sqlalchemy.sql.functions import current_timestamp
 from sqlmodel import JSON, Column, Field, Integer, String, UniqueConstraint
 
 from studio.app.common.models.base import Base, TimestampMixin
@@ -23,25 +21,4 @@ class Experiment(Base, TimestampMixin, table=True):
     )
     publish_status: int = Field(
         sa_column=Column(Integer(), nullable=False, comment="0: private, 1: public")
-    )
-
-
-class ExperimentShareUser(Base, table=True):
-    __tablename__ = "experiments_share_users"
-    __table_args__ = (
-        UniqueConstraint(
-            "experiment_seqid", "user_id", name="idx_experiment_seqid_user_id"
-        ),
-    )
-    experiment_seqid: int = Field(
-        sa_column=Column(
-            Integer(),
-            nullable=False,
-            index=True,
-            comment="foregn key for experiments.id",
-        ),
-    )
-    user_id: int = Field(nullable=False)
-    created_at: Optional[datetime] = Field(
-        sa_column_kwargs={"server_default": current_timestamp()},
     )
