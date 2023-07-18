@@ -12,7 +12,7 @@ class DatabaseConfig(BaseSettings):
     MYSQL_SERVER: str = Field(default="db", env="MYSQL_SERVER")
     MYSQL_USER: str = Field(default=None, env="MYSQL_USER")
     MYSQL_PASSWORD: str = Field(default=None, env="MYSQL_PASSWORD")
-    MYSQL_DATABASE: str = Field(default=None, env="MYSQL_DATABASE")
+    MYSQL_DATABASE: str = Field(default=None)
     DATABASE_URL: str = Field(default=None, env="DATABASE_URL")
     ECHO_SQL: bool = Field(default=None, env="ECHO_SQL")
 
