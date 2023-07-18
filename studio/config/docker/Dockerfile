@@ -24,6 +24,4 @@ COPY main.py pyproject.toml alembic.ini ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e .
 
-RUN alembic upgrade head
-
 EXPOSE 8000
