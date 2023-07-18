@@ -44,8 +44,8 @@ class UserInfo(BaseModel):
     id: int
     name: Optional[str]
     email: Optional[str]
-    created_time: Optional[datetime]
-    updated_time: Optional[datetime]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
 
     class Config:
         orm_mode = True
