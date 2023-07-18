@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
@@ -37,3 +38,14 @@ class UserPasswordUpdate(BaseModel):
 
     class Config:
         anystr_strip_whitespace = True
+
+
+class UserInfo(BaseModel):
+    id: int
+    name: Optional[str]
+    email: Optional[str]
+    created_time: Optional[datetime]
+    updated_time: Optional[datetime]
+
+    class Config:
+        orm_mode = True
