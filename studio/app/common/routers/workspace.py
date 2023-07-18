@@ -159,10 +159,15 @@ def import_workspace(
 """,
 )
 def get_workspace_share_status(id: int, db: Session = Depends(get_db)):
-    ws = (
-        db.query(common_model.Workspace).filter(common_model.Workspace.id == id).first()
+    users = (
+        db.query(common_model.User)
+        .join(
+            common_model.WorkspacesShareUser,
+            common_model.WorkspacesShareUser.workspace_id == id,
+        )
+        .all()
     )
-    return WorkspaceShareStatus(users=[ws.user_id])
+    return WorkspaceShareStatus(users=users)
 
 
 @router.post(
@@ -176,4 +181,32 @@ def get_workspace_share_status(id: int, db: Session = Depends(get_db)):
 def update_workspace_share_status(
     id: int, data: WorkspaceSharePostStatus, db: Session = Depends(get_db)
 ):
-    return True
+    current_workspace_share = (
+        db.query(common_model.WorkspacesShareUser)
+        .filter(common_model.WorkspacesShareUser.workspace_id == id)
+        .all()
+    )
+    current_workspace_share_user_ids = [ws.user_id for ws in current_workspace_share]
+    new_workspace_share_user_ids = list(
+        set(data.user_ids) - set(current_workspace_share_user_ids)
+    )
+    delete_workspace_share_user_ids = list(
+        set(current_workspace_share_user_ids) - set(data.user_ids)
+    )
+    delete_workspace_share_user = [
+        ws
+        for ws in current_workspace_share
+        if ws.user_id in delete_workspace_share_user_ids
+    ]
+    try:
+        for user_id in new_workspace_share_user_ids:
+            workspace_share = common_model.WorkspacesShareUser(
+                workspace_id=id, user_id=user_id
+            )
+            db.add(workspace_share)
+        for ws in delete_workspace_share_user:
+            db.delete(ws)
+        db.commit()
+        return True
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
