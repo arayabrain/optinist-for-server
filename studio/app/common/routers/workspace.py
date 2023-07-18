@@ -6,14 +6,13 @@ from sqlmodel import Session, select
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import get_current_user
 from studio.app.common.db.database import get_db
-from studio.app.common.schemas.users import UserInfo
 from studio.app.common.schemas.workspace import (
     Workspace,
     WorkspaceSharePostStatus,
     WorkspaceShareStatus,
     WorkspacesSetting,
 )
-from studio.app.optinist.schemas.base import SortOptions
+from studio.app.optinist.schemas.base import SortDirection, SortOptions
 
 router = APIRouter()
 
@@ -29,7 +28,15 @@ router = APIRouter()
 def search_workspaces(
     sortOptions: SortOptions = Depends(), db: Session = Depends(get_db)
 ):
-    return paginate(session=db, query=select(common_model.Workspace))
+    sort_column = getattr(common_model.Workspace, sortOptions.sort[0] or "id")
+    return paginate(
+        session=db,
+        query=select(common_model.Workspace).order_by(
+            sort_column.desc()
+            if sortOptions.sort[1] == SortDirection.desc
+            else sort_column.asc()
+        ),
+    )
 
 
 @router.get(
@@ -51,9 +58,8 @@ def get_workspace(id: int, db: Session = Depends(get_db)):
         .filter(common_model.User.id == workspace.user_id)
         .first()
     )
-    workspace = Workspace.from_orm(workspace)
-    workspace.user = UserInfo.from_orm(user)
-    return workspace
+    workspace.__dict__["user"] = user
+    return Workspace.from_orm(workspace)
 
 
 @router.post(
