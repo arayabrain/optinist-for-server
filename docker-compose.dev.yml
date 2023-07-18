@@ -1,6 +1,24 @@
 version: "3"
 
 services:
+  db:
+    image: mariadb:10.11
+    ports:
+      - "3306:3306"
+    env_file:
+      - studio/config/.env
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    volumes:
+      - ./docker/php-phpmyadmin.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+    env_file:
+      - studio/config/.env
+    ports:
+      - 20080:80
+
   studio-dev-be:
     build:
       context: .
@@ -10,10 +28,12 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    command: python main.py --reload --host 0.0.0.0 --port 8000
+    command: bash -c "alembic upgrade head && python main.py --reload --host 0.0.0.0 --port 8000"
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
+    depends_on:
+      - db
 
   studio-dev-fe:
     image: node:16.20.1-alpine
@@ -23,3 +43,6 @@ services:
     ports:
       - "3000:3000"
     command: ash -c 'yarn install && yarn start'
+
+volumes:
+  db_data:
