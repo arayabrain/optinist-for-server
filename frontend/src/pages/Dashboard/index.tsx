@@ -26,7 +26,7 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {/*router demo*/}
-          <LinkWrapper to="/database">
+          <LinkWrapper to="/database?sort=&sort=&limit=0&offset=0">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
