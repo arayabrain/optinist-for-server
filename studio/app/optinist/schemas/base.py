@@ -16,5 +16,3 @@ class SortOptions:
         default=(None, SortDirection.asc),
         description="field-0: sort column<br/>field-1: order ('asc' or 'desc')",
     )
-    limit: int = Query(0, description="records limit")
-    offset: int = Query(0, description="records offset")
