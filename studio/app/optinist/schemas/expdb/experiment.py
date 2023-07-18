@@ -48,7 +48,7 @@ class ExpDbExperimentsSearchOptions(BaseModel):
     brain_area: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
     cre_driver: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
     reporter_line: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
-    imaging_depth: Optional[List[int]] = Field(Query(default=0))
+    imaging_depth: Optional[List[int]] = Field(Query(default=None))
 
 
 class ExpDbExperimentShareStatus(BaseModel):
