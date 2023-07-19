@@ -23,6 +23,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentsSearchOptions,
     PageWithHeader,
     PublishFlags,
+    PublishStatus,
 )
 
 router = APIRouter()
@@ -44,7 +45,7 @@ async def search_public_experiments(
     data = paginate(
         session=db,
         query=select(optinist_model.Experiment)
-        .filter_by(publish_status=1)
+        .filter_by(publish_status=PublishStatus.on)
         .order_by(
             sort_column.desc()
             if sortOptions.sort[1] == SortDirection.desc
@@ -79,7 +80,7 @@ async def search_public_cells(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_seqid == optinist_model.Experiment.id,
         )
-        .filter(optinist_model.Experiment.publish_status == 1)
+        .filter(optinist_model.Experiment.publish_status == PublishStatus.on)
     )
     query = query.filter(optinist_model.Experiment.id == exp_id) if exp_id else query
     query = query.order_by(
