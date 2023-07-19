@@ -10,8 +10,13 @@ import Header from './Header'
 import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 
-const ignorePaths = ['/login', '/account-delete', '/reset-password']
-const loginPaths = ['/login', '/reset-password', '/database']
+const authIgnorePaths = [
+  '/login',
+  '/account-delete',
+  '/reset-password',
+  '/database-public',
+]
+const redirectAfterLoginPaths = ['/login', '/reset-password']
 
 const Layout: FC = ({ children }) => {
   const user = useSelector(selectCurrentUser)
@@ -29,21 +34,25 @@ const Layout: FC = ({ children }) => {
   }
 
   useEffect(() => {
-    !IS_STANDALONE && checkAuth()
+    !IS_STANDALONE &&
+      !authIgnorePaths.includes(window.location.pathname) &&
+      checkAuth()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, user])
 
   const checkAuth = async () => {
     if (user) return
     const token = getToken()
-    const isPageLogin = loginPaths.includes(window.location.pathname)
+    const willRedirect = redirectAfterLoginPaths.includes(
+      window.location.pathname,
+    )
 
     try {
       if (token) {
         dispatch(getMe())
-        if (isPageLogin) navigate('/')
+        if (willRedirect) navigate('/')
         return
-      } else if (!isPageLogin) throw new Error('fail auth')
+      } else if (!willRedirect) throw new Error('fail auth')
     } catch {
       navigate('/login')
     }
@@ -51,16 +60,14 @@ const Layout: FC = ({ children }) => {
 
   return (
     <LayoutWrapper>
-      {ignorePaths.includes(location.pathname) ? null : (
+      {authIgnorePaths.includes(location.pathname) ? null : (
         <Header handleDrawerOpen={handleDrawerOpen} />
       )}
       <ContentBodyWrapper>
-        {ignorePaths.includes(location.pathname) ? null : (
+        {authIgnorePaths.includes(location.pathname) ? null : (
           <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
         )}
-        <ChildrenWrapper open={open}>
-          {children}
-        </ChildrenWrapper>
+        <ChildrenWrapper open={open}>{children}</ChildrenWrapper>
       </ContentBodyWrapper>
     </LayoutWrapper>
   )
@@ -80,8 +87,10 @@ const ContentBodyWrapper = styled(Box)(() => ({
   overflow: 'hidden',
 }))
 
-const ChildrenWrapper = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
+const ChildrenWrapper = styled('main', {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<{
+  open?: boolean
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
@@ -96,6 +105,6 @@ const ChildrenWrapper = styled('main', { shouldForwardProp: (prop) => prop !== '
     }),
     marginLeft: 0,
   }),
-}));
+}))
 
 export default Layout
