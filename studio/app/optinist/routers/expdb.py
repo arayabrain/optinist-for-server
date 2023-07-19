@@ -123,13 +123,21 @@ async def search_db_experiments(
             common_model.User.organization_id == common_model.Organization.id,
         )
     else:
-        query = query.join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_seqid
-            == optinist_model.Experiment.id,
-        ).join(
-            common_model.User,
-            common_model.User.id == optinist_model.ExperimentShareUser.user_id,
+        query = (
+            query.join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.experiment_seqid
+                == optinist_model.Experiment.id,
+            )
+            .join(
+                common_model.User,
+                common_model.User.id == optinist_model.ExperimentShareUser.user_id,
+            )
+            .join(
+                common_model.Organization,
+                optinist_model.Experiment.organization_id
+                == common_model.Organization.id,
+            )
         )
     query = query.filter(common_model.User.uid == current_user.uid)
     query = query.order_by(
