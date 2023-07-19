@@ -11,10 +11,10 @@ const Database = () => {
   //eslint-disable-next-line
   const [_, setParams] = useSearchParams()
 
-  const handleTypeTable = (type: string) => {
+  const handleTypeTable = (type: string, expId?: number) => {
     if (typeTable === type) return
     setTypeTable(type)
-    setParams('sort=&sort=&limit=0&offset=0')
+    setParams(type === 'cells' ? `exp_id=${expId}&sort=&sort=&limit=0&offset=0` : 'sort=&sort=&limit=0&offset=0')
   }
 
   return (
@@ -37,7 +37,7 @@ const Database = () => {
       <DataBasePublicContent>
         <DatabaseComponent
           isCell={typeTable !== 'experiments'}
-          setTypeTable={setTypeTable}
+          setTypeTable={handleTypeTable}
           user={user}
         />
       </DataBasePublicContent>
