@@ -1,6 +1,6 @@
 // import { useEffect } from 'react'
 import { useSelector /*, useDispatch */ } from 'react-redux'
-import { Box, styled } from '@mui/material'
+import { Box, styled, Button } from '@mui/material'
 import {
   DataGrid,
   GridColDef,
@@ -12,13 +12,83 @@ import {
   selectIsLoadingWorkspaceList,
   selectWorkspaceList,
 } from 'store/slice/Workspace/WorkspaceSelector'
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 
 const columns: GridColDef[] = [
   {
     field: 'workspace_id',
     headerName: 'ID',
+    width: 160,
     renderCell: (params: GridRenderCellParams<string>) => (
       <Link to={`/workspaces/${params.value}`}>{params.value}</Link>
+    ),
+  },
+  {
+    field: 'workspace_name',
+    headerName: 'Workspace Name',
+    width: 160,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Link to={`/workspaces/${params.value}`}>{params.value}</Link>
+    ),
+  },
+  {
+    field: 'owner',
+    headerName: 'Owner',
+    width: 160,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Link to={`/workspaces/${params.value}`}>{params.value}</Link>
+    ),
+  },
+  {
+    field: 'created',
+    headerName: 'Created',
+    width: 160,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Link to={`/workspaces/${params.value}`}>{params.value}</Link>
+    ),
+  },
+  {
+    field: 'workflow',
+    headerName: '',
+    width: 100,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Button>Workflow</Button>
+    ),
+  },
+  {
+    field: 'result',
+    headerName: '',
+    width: 100,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Button>Result</Button>
+    ),
+  },
+  {
+    field: 'download',
+    headerName: '',
+    width: 70,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Button>
+          <SystemUpdateAltIcon />
+        </Button>
+    ),
+  },
+  {
+    field: 'share',
+    headerName: '',
+    width: 70,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Button>
+          <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
+        </Button>
+    ),
+  },
+  {
+    field: 'delete',
+    headerName: '',
+    width: 100,
+    renderCell: (params: GridRenderCellParams<string>) => (
+        <Button>Del</Button>
     ),
   },
 ]
@@ -40,7 +110,6 @@ const Workspaces = () => {
       <WorkspacesTitle>Workspaces</WorkspacesTitle>
       <DataGrid
         autoHeight
-        checkboxSelection
         rows={workspaces.map((ws) => ({
           id: ws.workspace_id,
           workspace_id: ws.workspace_id,
@@ -59,5 +128,9 @@ const WorkspacesWrapper = styled(Box)(({ theme }) => ({
 }))
 
 const WorkspacesTitle = styled('h1')(({ theme }) => ({}))
+
+const ButtonCustom = styled(Button)(({theme}) => ({
+  backgroundColor: "black"
+}))
 
 export default Workspaces
