@@ -30,4 +30,4 @@ export type DatabaseDTO = {
   items: DatabaseType[]
 }
 
-export type DatabaseParams = { [key: string]: number | string | string[] }
+export type DatabaseParams = { [key: string]: number | string | string[] | undefined }

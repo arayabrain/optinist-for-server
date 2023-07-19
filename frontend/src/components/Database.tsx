@@ -52,7 +52,7 @@ type DatabaseProps = {
 
 const columns = (
   handleOpenAttributes: (value: string) => void,
-  setTypeTable: (value: string) => void,
+  setTypeTable: (value: string, expId: number) => void,
   handleOpenDialog: (value: string[]) => void,
   isCell?: boolean,
 ) => [
@@ -112,7 +112,9 @@ const columns = (
     width: 160,
     filterable: false,
     renderCell: (params: { row: DatabaseType }) => (
-      <Box sx={{ cursor: 'pointer' }} onClick={() => setTypeTable('cells')}>
+      <Box sx={{ cursor: 'pointer' }} onClick={() => {
+        setTypeTable('cells', Number(params.row.experiment_id))}
+      }>
         <LaunchIcon />
       </Box>
     ),
@@ -130,7 +132,7 @@ const columns = (
         }}
         onClick={() => handleOpenDialog(params.row.cell_image_urls)}
       >
-        {params.row.cell_image_urls.length > 0 && (
+        {params.row.cell_image_urls?.length > 0 && (
           <img
             src={params.row.cell_image_urls[0]}
             alt={''}
@@ -197,6 +199,7 @@ const Database = ({ setTypeTable, user, isCell }: DatabaseProps) => {
 
   const dataParamsSort = useMemo(() => {
     return {
+      exp_id: Number(searchParams.get('exp_id')) || undefined,
       offset: Number(searchParams.get('offset')) || 0,
       limit: Number(searchParams.get('limit')) || 50,
       sort: searchParams.getAll('sort') || [],
@@ -260,8 +263,8 @@ const Database = ({ setTypeTable, user, isCell }: DatabaseProps) => {
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter}`,
       )
-      //eslint-disable-next-line
     },
+      //eslint-disable-next-line
     [pagiFilter, getFilter],
   )
 
