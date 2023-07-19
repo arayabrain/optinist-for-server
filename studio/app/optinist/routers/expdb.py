@@ -28,7 +28,9 @@ router = APIRouter()
 @router.get(
     "/public/experiments",
     response_model=PageWithHeader[ExpDbExperiment],
-    description="* 公開 Experiments を検索し、結果を応答",
+    description="""
+- 公開 Experiments を検索し、結果を応答
+"""
 )
 async def search_public_experiments(
     options: ExpDbExperimentsSearchOptions = Depends(),
