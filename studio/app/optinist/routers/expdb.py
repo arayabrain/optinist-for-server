@@ -12,7 +12,7 @@ from studio.app.common.core.auth.auth_dependencies import (
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortOptions
+from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -33,16 +33,23 @@ router = APIRouter()
     response_model=PageWithHeader[ExpDbExperiment],
     description="""
 - 公開 Experiments を検索し、結果を応答
-"""
+""",
 )
 async def search_public_experiments(
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
+    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
     data = paginate(
         session=db,
-        query=select(optinist_model.Experiment).filter_by(publish_status=1),
+        query=select(optinist_model.Experiment)
+        .filter_by(publish_status=1)
+        .order_by(
+            sort_column.desc()
+            if sortOptions.sort[1] == SortDirection.desc
+            else sort_column.asc()
+        ),
         additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
     )
     for item in data.items:
@@ -65,6 +72,7 @@ async def search_public_cells(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
+    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
         select(optinist_model.Cell)
         .join(
@@ -74,6 +82,11 @@ async def search_public_cells(
         .filter(optinist_model.Experiment.publish_status == 1)
     )
     query = query.filter(optinist_model.Experiment.id == exp_id) if exp_id else query
+    query = query.order_by(
+        sort_column.desc()
+        if sortOptions.sort[1] == SortDirection.desc
+        else sort_column.asc()
+    )
     data = paginate(
         session=db,
         query=query,
@@ -99,6 +112,7 @@ async def search_db_experiments(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
+    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
     query = select(optinist_model.Experiment)
     if current_user.is_admin:
         query = query.join(
@@ -118,6 +132,11 @@ async def search_db_experiments(
             common_model.User.id == optinist_model.ExperimentShareUser.user_id,
         )
     query = query.filter(common_model.User.uid == current_user.uid)
+    query = query.order_by(
+        sort_column.desc()
+        if sortOptions.sort[1] == SortDirection.desc
+        else sort_column.asc()
+    )
     data = paginate(
         session=db,
         query=query,
@@ -144,12 +163,18 @@ async def search_db_cells(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
+    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
         select(optinist_model.Cell).filter(
             optinist_model.Cell.experiment_seqid == exp_id
         )
         if exp_id
         else select(optinist_model.Cell)
+    )
+    query = query.order_by(
+        sort_column.desc()
+        if sortOptions.sort[1] == SortDirection.desc
+        else sort_column.asc()
     )
     data = paginate(
         session=db,
