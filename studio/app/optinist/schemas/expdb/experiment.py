@@ -20,6 +20,11 @@ class PublishFlags(str, Enum):
     off = "off"
 
 
+class PublishStatus(str, Enum):
+    on = 1
+    off = 0
+
+
 class ExpDbExperimentFields(BaseModel):
     brain_area: str
     cre_driver: str
