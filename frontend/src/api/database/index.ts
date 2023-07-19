@@ -20,3 +20,8 @@ export const getCellsApi = async (params: DatabaseParams) => {
   const response = await axios.get(`/expdb/cells`, { params })
   return response.data
 }
+
+export const postPublistApi = async (id: number, status: "on" | "off") => {
+  const response = await axios.get(`/expdb/experiment/publish/${id}/${status}`)
+  return response.data
+}

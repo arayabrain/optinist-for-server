@@ -9,6 +9,7 @@ import {
   getCellsPublicApi,
   getExperimentsApi,
   getExperimentsPublicApi,
+  postPublistApi,
 } from 'api/database'
 
 export const getExperimentsDatabase = createAsyncThunk<
@@ -65,3 +66,17 @@ export const getCellsPublicDatabase = createAsyncThunk<
     return rejectWithValue(e)
   }
 })
+
+export const postPublist = createAsyncThunk<
+    DatabaseDTO,
+    {id: number, status: "on" | "off"}
+>(`${DATABASE_SLICE_NAME}/postPublist`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await postPublistApi(params.id, params.status)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+

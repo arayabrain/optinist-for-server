@@ -27,6 +27,7 @@ import {
   getExperimentsPublicDatabase,
   getCellsDatabase,
   getCellsPublicDatabase,
+  postPublist,
 } from 'store/slice/Database/DatabaseActions'
 
 type PopupAttributesProps = {
@@ -253,6 +254,11 @@ const Database = ({ setTypeTable, user, isCell }: DatabaseProps) => {
       `${filter}&sort=${dataParamsSort.sort[0]}&sort=${dataParamsSort.sort[1]}&${pagiFilter}`,
     )
   }
+
+  const handlePublish = (id: number, status: "on" | "off") => {
+    dispatch(postPublist({id, status}))
+  }
+
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getFilter()
@@ -331,7 +337,10 @@ const Database = ({ setTypeTable, user, isCell }: DatabaseProps) => {
         width: 160,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => (
-          <Box sx={{ cursor: 'pointer' }}>
+          <Box
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handlePublish(params.row.id, params.row.publish_status ? "off" : "on")}
+          >
             <SwitchCustom value={!!params.row.publish_status} />
           </Box>
         ),
