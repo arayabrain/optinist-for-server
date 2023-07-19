@@ -13,6 +13,7 @@ import Workspace from 'pages/Workspace/Workspace'
 import { IS_STANDALONE } from 'const/Mode'
 import Layout from "components/Layout";
 import Database from 'pages/Database'
+import PublicDatabase from 'pages/PublicDatabase'
 
 const App: React.FC = () => {
   return (
@@ -37,7 +38,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/database" element={<Database />} />
-              <Route path="/database-public" element={<Database />} />
+              <Route path="/database-public" element={<PublicDatabase />} />
               <Route path="/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
