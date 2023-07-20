@@ -10,16 +10,50 @@ import Header from './Header'
 import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 
-const ignorePaths = ['/login', '/account-delete', '/reset-password']
-const loginPaths = ['/login', '/reset-password', '/database']
+const authRequiredPathRegex = /^\/console\/?.*/
+const redirectAfterLoginPaths = ['/login', '/reset-password']
 
 const Layout: FC = ({ children }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
-  const [open, setOpen] = useState(false)
+
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
+  useEffect(() => {
+    !IS_STANDALONE &&
+      authRequiredPathRegex.test(window.location.pathname) &&
+      checkAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, user])
+
+  const checkAuth = async () => {
+    if (user) return
+    const token = getToken()
+    const willRedirect = redirectAfterLoginPaths.includes(
+      window.location.pathname,
+    )
+
+    try {
+      if (token) {
+        dispatch(getMe())
+        if (willRedirect) navigate('/console')
+        return
+      } else if (!willRedirect) throw new Error('fail auth')
+    } catch {
+      navigate('/login')
+    }
+  }
+
+  return authRequiredPathRegex.test(location.pathname) ? (
+    <AuthedLayout>{children}</AuthedLayout>
+  ) : (
+    <UnauthedLayout>{children}</UnauthedLayout>
+  )
+}
+
+const AuthedLayout: FC = ({ children }) => {
+  const [open, setOpen] = useState(false)
   const handleDrawerOpen = () => {
     setOpen(true)
   }
@@ -27,40 +61,22 @@ const Layout: FC = ({ children }) => {
   const handleDrawerClose = () => {
     setOpen(false)
   }
-
-  useEffect(() => {
-    !IS_STANDALONE && checkAuth()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, user])
-
-  const checkAuth = async () => {
-    if (user) return
-    const token = getToken()
-    const isPageLogin = loginPaths.includes(window.location.pathname)
-
-    try {
-      if (token) {
-        dispatch(getMe())
-        if (isPageLogin) navigate('/')
-        return
-      } else if (!isPageLogin) throw new Error('fail auth')
-    } catch {
-      navigate('/login')
-    }
-  }
-
   return (
     <LayoutWrapper>
-      {ignorePaths.includes(location.pathname) ? null : (
-        <Header handleDrawerOpen={handleDrawerOpen} />
-      )}
+      <Header handleDrawerOpen={handleDrawerOpen} />
       <ContentBodyWrapper>
-        {ignorePaths.includes(location.pathname) ? null : (
-          <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
-        )}
-        <ChildrenWrapper open={open}>
-          {children}
-        </ChildrenWrapper>
+        <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
+        <ChildrenWrapper>{children}</ChildrenWrapper>
+      </ContentBodyWrapper>
+    </LayoutWrapper>
+  )
+}
+
+const UnauthedLayout: FC = ({ children }) => {
+  return (
+    <LayoutWrapper>
+      <ContentBodyWrapper>
+        <ChildrenWrapper>{children}</ChildrenWrapper>
       </ContentBodyWrapper>
     </LayoutWrapper>
   )
@@ -80,22 +96,15 @@ const ContentBodyWrapper = styled(Box)(() => ({
   overflow: 'hidden',
 }))
 
-const ChildrenWrapper = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
-}>(({ theme, open }) => ({
+const ChildrenWrapper = styled('main', {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<{}>(({ theme }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
   transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  ...(open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    marginLeft: 0,
-  }),
-}));
+}))
 
 export default Layout

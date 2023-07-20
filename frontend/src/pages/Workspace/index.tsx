@@ -3,6 +3,7 @@ import { useSelector /*, useDispatch */ } from 'react-redux'
 import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import {
   DataGrid,
+  GridColDef,
   GridRenderCellParams,
   GridRowParams,
 } from '@mui/x-data-grid'
@@ -18,6 +19,13 @@ import { useState } from "react";
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
 
+const columns: GridColDef[] = [
+  {
+    field: 'workspace_id',
+    headerName: 'ID',
+    renderCell: (params: GridRenderCellParams<string>) => (
+      <Link to={`/console/workspaces/${params.value}`}>{params.value}</Link>
+    ),
 type PopupType = {
   open: boolean
   handleClose: () => void
