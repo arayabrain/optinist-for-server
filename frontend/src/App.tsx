@@ -2,8 +2,7 @@ import React from 'react'
 import IconButton from '@mui/material/IconButton'
 import Close from '@mui/icons-material/Close'
 import { SnackbarProvider, SnackbarKey, useSnackbar } from 'notistack'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import Layout from 'components/Layout'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Dashboard from 'pages/Dashboard'
 import Account from 'pages/Account'
 import AccountDelete from 'pages/AccountDelete'
@@ -12,6 +11,9 @@ import ResetPassword from 'pages/ResetPassword'
 import Workspaces from 'pages/Workspace'
 import Workspace from 'pages/Workspace/Workspace'
 import { IS_STANDALONE } from 'const/Mode'
+import Layout from "components/Layout";
+import Database from 'pages/Database'
+import PublicDatabase from 'pages/PublicDatabase'
 
 const App: React.FC = () => {
   return (
@@ -26,6 +28,7 @@ const App: React.FC = () => {
           {IS_STANDALONE ? (
             <Routes>
               <Route path="/" element={<Workspace />} />
+              <Route path="*" element={<Navigate replace to="/" />} />
             </Routes>
           ) : (
             <Routes>
@@ -34,10 +37,13 @@ const App: React.FC = () => {
               <Route path="/account-deleted" element={<AccountDelete />} />
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/database" element={<Database />} />
+              <Route path="/database-public" element={<PublicDatabase />} />
               <Route path="/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
               </Route>
+              <Route path="*" element={<Navigate replace to="/" />} />
             </Routes>
           )}
         </Layout>
