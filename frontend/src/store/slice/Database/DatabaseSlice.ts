@@ -17,8 +17,9 @@ const initData = {
   items: [],
 }
 
-export const initialState: { data: DatabaseDTO } = {
+export const initialState: { data: DatabaseDTO, loading: boolean } = {
   data: initData,
+  loading: false
 }
 
 export const databaseSlice = createSlice({
@@ -29,27 +30,35 @@ export const databaseSlice = createSlice({
     builder
       .addCase(getExperimentsDatabase.pending, (state, action) => {
         state.data = initData
+        state.loading = true
       })
       .addCase(getCellsDatabase.pending, (state, action) => {
         state.data = initData
+        state.loading = true
       })
       .addCase(getExperimentsPublicDatabase.pending, (state, action) => {
         state.data = initData
+        state.loading = true
       })
       .addCase(getCellsPublicDatabase.pending, (state, action) => {
         state.data = initData
+        state.loading = true
       })
       .addCase(getExperimentsDatabase.fulfilled, (state, action) => {
         state.data = action.payload
+        state.loading = false
       })
       .addCase(getCellsDatabase.fulfilled, (state, action) => {
         state.data = action.payload
+        state.loading = false
       })
       .addCase(getExperimentsPublicDatabase.fulfilled, (state, action) => {
         state.data = action.payload
+        state.loading = false
       })
       .addCase(getCellsPublicDatabase.fulfilled, (state, action) => {
         state.data = action.payload
+        state.loading = false
       })
   },
 })

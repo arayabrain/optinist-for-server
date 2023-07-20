@@ -10,7 +10,7 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/console/experiments">
+          <LinkWrapper to="/console/experiments?sort=&sort=&limit=0&offset=0">
             <BoxMenu>
               <Box>
                 <StorageIcon fontSize="large" />
