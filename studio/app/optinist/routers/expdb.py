@@ -119,7 +119,7 @@ async def search_db_experiments(
         common_model.Organization,
         optinist_model.Experiment.organization_id == common_model.Organization.id,
     )
-    if current_user.is_admin:
+    if current_user.is_admin_data:
         query = query.filter(
             common_model.Organization.id == current_user.organization_id
         )
@@ -184,7 +184,7 @@ async def search_db_cells(
             optinist_model.Experiment.organization_id == common_model.Organization.id,
         )
     )
-    if current_user.is_admin:
+    if current_user.is_admin_data:
         query = query.filter(
             common_model.Organization.id == current_user.organization_id
         )

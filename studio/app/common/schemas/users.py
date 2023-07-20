@@ -18,6 +18,10 @@ class User(BaseModel):
     def is_admin(self) -> bool:
         return self.role_id == 1
 
+    @property
+    def is_admin_data(self) -> bool:
+        return self.role_id == 1 or self.role_id == 10
+
     class Config:
         orm_mode = True
 
