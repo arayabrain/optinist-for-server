@@ -7,12 +7,19 @@ password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
 
 
 class User(BaseModel):
+    id: int
     uid: str
     email: EmailStr
+    organization_id: int
+    name: str
+    role_id: int
 
     @property
     def is_admin(self) -> bool:
-        return False
+        return self.role_id == 1
+
+    class Config:
+        orm_mode = True
 
 
 class ListUserPaging(BaseModel):

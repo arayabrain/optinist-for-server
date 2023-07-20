@@ -64,3 +64,8 @@ class ExpDbExperimentShareStatus(BaseModel):
 class ExpDbExperimentSharePostStatus(BaseModel):
     share_type: int = Field(description="1: default(per users), 2: for organization")
     user_ids: Optional[List[int]]
+
+
+class ExperimentShareType(str, Enum):
+    per_user = 1
+    for_org = 2
