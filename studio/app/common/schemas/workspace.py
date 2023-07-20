@@ -17,6 +17,14 @@ class Workspace(BaseModel):
         orm_mode = True
 
 
+class WorkspaceCreate(BaseModel):
+    name: str
+
+
+class WorkspaceUpdate(WorkspaceCreate):
+    pass
+
+
 class WorkspaceSharePostStatus(BaseModel):
     user_ids: Optional[List[int]]
 
