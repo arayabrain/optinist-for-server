@@ -40,7 +40,7 @@ const StandaloneHeader: FC = () => {
 const MultiUserHeader: FC<{ handleDrawerOpen: () => void }> = ({
   handleDrawerOpen,
 }) => {
-  const showTabsRegex = /^\/workspaces\/.+$/
+  const showTabsRegex = /^\/console\/workspaces\/.+$/
   const location = useLocation()
 
   return (
