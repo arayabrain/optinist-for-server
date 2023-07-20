@@ -78,7 +78,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         headerName: '',
         minWidth: 160,
         renderCell: (params: GridRenderCellParams<string>) => (
-          <LinkCustom to={"/workflow"}>
+          <LinkCustom to={"#"}>
             Workflow
           </LinkCustom>
         ),
@@ -88,7 +88,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         headerName: '',
         minWidth: 130,
         renderCell: (params: GridRenderCellParams<string>) => (
-            <LinkCustom to={"/result"}>
+            <LinkCustom to={"#"}>
               Result
             </LinkCustom>
         ),
@@ -299,7 +299,7 @@ const Workspaces = () => {
   }, [])
   */
   const handleOpenPopupShare = () => {
-    setOpenShare(true)
+    setOpenShare(false)
   }
 
   const handleClosePopupShare = () => {
