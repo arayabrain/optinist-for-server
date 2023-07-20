@@ -13,6 +13,7 @@ import {
   setCurrentWorkspace,
 } from 'store/slice/Workspace/WorkspaceSlice'
 import { selectActiveTab } from 'store/slice/Workspace/WorkspaceSelector'
+import { fetchExperiment } from 'store/slice/Experiments/ExperimentsActions'
 
 const Workspace: React.FC = () => {
   const dispatch = useDispatch()
@@ -23,8 +24,9 @@ const Workspace: React.FC = () => {
   useEffect(() => {
     if (IS_STANDALONE) {
       dispatch(setCurrentWorkspace(STANDALONE_WORKSPACE_ID))
-    } else {
-      workspaceId && dispatch(setCurrentWorkspace(workspaceId))
+    } else if (workspaceId) {
+      dispatch(setCurrentWorkspace(workspaceId))
+      dispatch(fetchExperiment(workspaceId))
     }
     return () => {
       dispatch(clearCurrentWorkspace())

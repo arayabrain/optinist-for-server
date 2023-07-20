@@ -102,6 +102,15 @@ export async function downloadExperimentConfigApi(
   return response.data
 }
 
+export async function fetchExperimentApi(
+  workspace_id: string,
+): Promise<ExperimentDTO> {
+  const response = await axios.get(
+    `${BASE_URL}/experiments/fetch/${workspace_id}`,
+  )
+  return response.data
+}
+
 export async function renameExperiment(
   workspaceId: string,
   uid: string,
