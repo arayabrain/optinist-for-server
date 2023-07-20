@@ -103,6 +103,18 @@ export const flowElementSlice = createSlice({
           [{ id: element.id, type: 'remove' }],
           state.flowNodes,
         )
+        state.flowEdges = applyEdgeChanges(
+          state.flowEdges
+            .filter((edge) => {
+              return (
+                edge.source === action.payload || edge.target === action.payload
+              )
+            })
+            .map((edge) => {
+              return { id: edge.id, type: 'remove' }
+            }),
+          state.flowEdges,
+        )
       }
     },
     editFlowNodePositionById: (
