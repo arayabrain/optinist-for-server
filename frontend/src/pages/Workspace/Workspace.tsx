@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Box } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { STANDALONE_WORKSPACE_ID, IS_STANDALONE } from 'const/Mode'
@@ -12,12 +12,17 @@ import {
   clearCurrentWorkspace,
   setCurrentWorkspace,
 } from 'store/slice/Workspace/WorkspaceSlice'
-import { selectActiveTab } from 'store/slice/Workspace/WorkspaceSelector'
+import {
+  selectActiveTab,
+  selectWorkspaceList,
+} from 'store/slice/Workspace/WorkspaceSelector'
 import { fetchExperiment } from 'store/slice/Experiments/ExperimentsActions'
 
 const Workspace: React.FC = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const runPipeline = useRunPipeline() // タブ切り替えによって結果取得処理が止まってしまうのを回避するため、タブの親レイヤーで呼び出している
+  const workspaces = useSelector(selectWorkspaceList)
 
   const { workspaceId } = useParams<{ workspaceId: string }>()
 
@@ -25,12 +30,21 @@ const Workspace: React.FC = () => {
     if (IS_STANDALONE) {
       dispatch(setCurrentWorkspace(STANDALONE_WORKSPACE_ID))
     } else if (workspaceId) {
-      dispatch(setCurrentWorkspace(workspaceId))
-      dispatch(fetchExperiment(workspaceId))
+      if (
+        workspaces
+          .map((workspace) => workspace.workspace_id)
+          .includes(workspaceId)
+      ) {
+        dispatch(setCurrentWorkspace(workspaceId))
+        dispatch(fetchExperiment(workspaceId))
+      } else {
+        navigate('/console/workspaces')
+      }
     }
     return () => {
       dispatch(clearCurrentWorkspace())
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, dispatch])
 
   const activeTab = useSelector(selectActiveTab)
