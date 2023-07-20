@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
-from sqlmodel import Session, select
+from sqlmodel import Session, and_, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
@@ -21,6 +21,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentSharePostStatus,
     ExpDbExperimentShareStatus,
     ExpDbExperimentsSearchOptions,
+    ExperimentShareType,
     PageWithHeader,
     PublishFlags,
     PublishStatus,
@@ -114,33 +115,32 @@ async def search_db_experiments(
     current_user: User = Depends(get_current_user),
 ):
     sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
-    query = select(optinist_model.Experiment)
+    query = select(optinist_model.Experiment).join(
+        common_model.Organization,
+        optinist_model.Experiment.organization_id == common_model.Organization.id,
+    )
     if current_user.is_admin:
-        query = query.join(
-            common_model.Organization,
-            optinist_model.Experiment.organization_id == common_model.Organization.id,
-        ).join(
-            common_model.User,
-            common_model.User.organization_id == common_model.Organization.id,
+        query = query.filter(
+            common_model.Organization.id == current_user.organization_id
         )
     else:
-        query = (
-            query.join(
-                optinist_model.ExperimentShareUser,
-                optinist_model.ExperimentShareUser.experiment_seqid
-                == optinist_model.Experiment.id,
-            )
-            .join(
-                common_model.User,
-                common_model.User.id == optinist_model.ExperimentShareUser.user_id,
-            )
-            .join(
-                common_model.Organization,
-                optinist_model.Experiment.organization_id
-                == common_model.Organization.id,
+        query = query.join(
+            optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.experiment_seqid
+            == optinist_model.Experiment.id,
+        ).filter(
+            or_(
+                and_(
+                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    common_model.Organization.id == current_user.organization_id,
+                ),
+                and_(
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.per_user,
+                    optinist_model.ExperimentShareUser.user_id == current_user.id,
+                ),
             )
         )
-    query = query.filter(common_model.User.uid == current_user.uid)
     query = query.order_by(
         sort_column.desc()
         if sortOptions.sort[1] == SortDirection.desc
