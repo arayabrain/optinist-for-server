@@ -174,11 +174,42 @@ async def search_db_cells(
 ):
     sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
-        select(optinist_model.Cell).filter(
-            optinist_model.Cell.experiment_seqid == exp_id
+        select(optinist_model.Cell)
+        .join(
+            optinist_model.Experiment,
+            optinist_model.Experiment.id == optinist_model.Cell.experiment_seqid,
         )
+        .join(
+            common_model.Organization,
+            optinist_model.Experiment.organization_id == common_model.Organization.id,
+        )
+    )
+    if current_user.is_admin:
+        query = query.filter(
+            common_model.Organization.id == current_user.organization_id
+        )
+    else:
+        query = query.join(
+            optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.experiment_seqid
+            == optinist_model.Experiment.id,
+        ).filter(
+            or_(
+                and_(
+                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    common_model.Organization.id == current_user.organization_id,
+                ),
+                and_(
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.per_user,
+                    optinist_model.ExperimentShareUser.user_id == current_user.id,
+                ),
+            )
+        )
+    query = (
+        query.filter(optinist_model.Cell.experiment_seqid == exp_id)
         if exp_id
-        else select(optinist_model.Cell)
+        else query
     )
     query = query.order_by(
         sort_column.desc()
