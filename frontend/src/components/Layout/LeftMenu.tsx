@@ -26,7 +26,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
 
   const onClickDatabase = () => {
     handleDrawerClose()
-    navigate('/console/database')
+    navigate('/console/experiments')
   }
 
   const onClickWorkspaces = () => {
