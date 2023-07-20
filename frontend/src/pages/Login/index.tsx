@@ -31,7 +31,7 @@ const Login = () => {
         dispatch(getMe())
           .unwrap()
           .then((_) => {
-            navigate('/')
+            navigate('/console')
           })
       })
       .catch((_) => {
