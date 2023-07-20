@@ -11,7 +11,7 @@ const PublicHeader: FC = () => {
             PUB STUDIO
           </Typography>
           <PublicNavMenu displayName="Home" navLink="/" />
-          <PublicNavMenu displayName="Database" navLink="/" />
+          <PublicNavMenu displayName="Console" navLink="/console" />
         </Toolbar>
       </Container>
     </AppBar>

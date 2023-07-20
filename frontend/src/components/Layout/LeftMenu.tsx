@@ -6,8 +6,10 @@ import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
-import HomeIcon from '@mui/icons-material/Home'
-import SourceIcon from '@mui/icons-material/Source'
+import WebIcon from '@mui/icons-material/Web';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import StorageIcon from '@mui/icons-material/Storage'
+import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { DRAWER_WIDTH } from 'const/Layout'
 import { Box } from '@mui/material'
 
@@ -32,6 +34,11 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
     navigate('/console/workspaces')
   }
 
+  const onClickOpenSite = () => {
+    handleDrawerClose()
+    navigate('/')
+  }
+
   return (
     <>
       <Drawer anchor="left" open={open} onClose={handleDrawerClose}>
@@ -40,7 +47,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="dashboard" disablePadding>
               <ListItemButton onClick={onClickDashboard}>
                 <ListItemIcon>
-                  <HomeIcon />
+                  <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
               </ListItemButton>
@@ -48,7 +55,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="database" disablePadding>
               <ListItemButton onClick={onClickDatabase}>
                 <ListItemIcon>
-                  <HomeIcon />
+                  <StorageIcon />
                 </ListItemIcon>
                 <ListItemText primary="Database" />
               </ListItemButton>
@@ -56,9 +63,17 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="workspaces" disablePadding>
               <ListItemButton onClick={onClickWorkspaces}>
                 <ListItemIcon>
-                  <SourceIcon />
+                  <AnalyticsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Workspaces" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key="site" disablePadding>
+              <ListItemButton onClick={onClickOpenSite}>
+                <ListItemIcon>
+                  <WebIcon />
+                </ListItemIcon>
+                <ListItemText primary="Open Site" />
               </ListItemButton>
             </ListItem>
           </List>
