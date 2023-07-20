@@ -9,7 +9,7 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/console/database">
+          <LinkWrapper to="/console/experiments">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
