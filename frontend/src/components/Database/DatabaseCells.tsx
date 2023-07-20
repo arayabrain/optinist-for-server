@@ -20,7 +20,7 @@ import {
   getCellsDatabase,
   getCellsPublicDatabase,
 } from '../../store/slice/Database/DatabaseActions'
-import Overley from 'components/common/Overley'
+import Loading from 'components/common/Loading'
 
 type CellProps = {
   user?: Object
@@ -252,7 +252,7 @@ const DatabaseCells = ({ user }: CellProps) => {
             handleCloseDialog={handleCloseDialog}
         />
         {
-          loading ? <Overley /> : null
+          loading ? <Loading /> : null
         }
       </DatabaseExperimentsWrapper>
   )

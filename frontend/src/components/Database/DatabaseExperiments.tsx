@@ -29,7 +29,7 @@ import {
   getExperimentsPublicDatabase,
   postPublist,
 } from '../../store/slice/Database/DatabaseActions'
-import Overley from 'components/common/Overley'
+import Loading from 'components/common/Loading'
 
 type PopupAttributesProps = {
   data: string
@@ -360,7 +360,6 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
             filterMode={'server'}
             sortingMode={'server'}
             onSortModelChange={handleSort}
-            loading={loading}
             initialState={{
               sorting: {
                 sortModel: [{ field: dataParams.sort[0], sort: dataParams.sort[1] as GridSortDirection }],
@@ -395,7 +394,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
             role={!!user}
         />
         {
-          loading ? <Overley /> : null
+          loading ? <Loading /> : null
         }
       </DatabaseExperimentsWrapper>
   )
