@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Response, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from firebase_admin import auth as firebase_auth
+from pydantic import ValidationError
 from sqlmodel import Session
 
 from studio.app.common.core.auth.auth_config import AUTH_CONFIG
@@ -36,6 +37,8 @@ async def get_current_user(
             )
             authed_user.__dict__["role_id"] = role_id
             return User.from_orm(authed_user)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=f"Validator Error: {e}")
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,6 +70,8 @@ async def get_current_user(
         )
         authed_user.__dict__["role_id"] = role_id
         return User.from_orm(authed_user)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=f"Validator Error: {e}")
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
