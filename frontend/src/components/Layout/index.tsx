@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, ReactNode, useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Box } from '@mui/material'
@@ -11,13 +11,12 @@ import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 
 const authRequiredPathRegex = /^\/console\/?.*/
-const redirectAfterLoginPaths = ['/login', '/reset-password']
+const redirectAfterLoginPaths = ['/login', '/reset-password', '/console']
 
-const Layout: FC = ({ children }) => {
+const Layout = ({ children }: { children?: ReactNode }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
-  const [open, setOpen] = useState(false)
-  const [loadingAuth, setLoadingAuth] = useState(IS_STANDALONE)
+  // const [loadingAuth, setLoadingAuth] = useState(IS_STANDALONE)
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
@@ -29,32 +28,19 @@ const Layout: FC = ({ children }) => {
   }, [location.pathname, user])
 
   const checkAuth = async () => {
-    if (user) {
-      if (loadingAuth) setLoadingAuth(false)
-      return
-    }
+    if (user) return
     const token = getToken()
-    const isPageLogin = loginPaths.includes(window.location.pathname)
     const willRedirect = redirectAfterLoginPaths.includes(
-      window.location.pathname,
+        window.location.pathname,
     )
 
     try {
       if (token) {
-        await dispatch(getMe())
-        if (loadingAuth) setLoadingAuth(false)
-        if (isPageLogin) return
-        navigate('/')
         dispatch(getMe())
         if (willRedirect) navigate('/console')
         return
-      } else if (!isPageLogin) {
-        if (loadingAuth) setLoadingAuth(false)
-        throw new Error('fail auth')
-      }
       } else if (!willRedirect) throw new Error('fail auth')
     } catch {
-      if (loadingAuth) setLoadingAuth(false)
       navigate('/login')
     }
   }
@@ -76,19 +62,13 @@ const AuthedLayout: FC = ({ children }) => {
     setOpen(false)
   }
   return (
-    <LayoutWrapper>
-      <Header handleDrawerOpen={handleDrawerOpen} />
-      <ContentBodyWrapper>
-        {ignorePaths.includes(location.pathname) ? null : (
+      <LayoutWrapper>
+        <Header handleDrawerOpen={handleDrawerOpen} />
+        <ContentBodyWrapper>
           <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
-        )}
-        <ChildrenWrapper open={open}>
-          {loadingAuth ? null : children}
-        </ChildrenWrapper>
-        <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
-        <ChildrenWrapper>{children}</ChildrenWrapper>
-      </ContentBodyWrapper>
-    </LayoutWrapper>
+          <ChildrenWrapper>{children}</ChildrenWrapper>
+        </ContentBodyWrapper>
+      </LayoutWrapper>
   )
 }
 
