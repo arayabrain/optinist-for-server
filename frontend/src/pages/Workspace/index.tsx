@@ -19,13 +19,6 @@ import { useState } from "react";
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
 
-const columns: GridColDef[] = [
-  {
-    field: 'workspace_id',
-    headerName: 'ID',
-    renderCell: (params: GridRenderCellParams<string>) => (
-      <Link to={`/console/workspaces/${params.value}`}>{params.value}</Link>
-    ),
 type PopupType = {
   open: boolean
   handleClose: () => void
@@ -380,11 +373,12 @@ const LinkCustom = styled(Link)(({theme}) => ({
 }))
 
 const DialogCustom = styled(Dialog)(({theme}) => ({
-  '.css-1t1j96h-MuiPaper-root-MuiDialog-paper': {
-    maxWidth: 'unset',
-    width: "46vw",
-    minWidth: "500px"
-  }
+  "& .MuiDialog-container": {
+    "& .MuiPaper-root": {
+      width: "70%",
+      maxWidth: "890px",
+    },
+  },
 }))
 
 export default Workspaces
