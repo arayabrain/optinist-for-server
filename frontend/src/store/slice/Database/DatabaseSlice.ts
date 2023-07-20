@@ -30,19 +30,19 @@ export const databaseSlice = createSlice({
     builder
       .addCase(getExperimentsDatabase.pending, (state, action) => {
         state.data = initData
-        state.loading = true
+        state.loading = false
       })
       .addCase(getCellsDatabase.pending, (state, action) => {
         state.data = initData
-        state.loading = true
+        state.loading = false
       })
       .addCase(getExperimentsPublicDatabase.pending, (state, action) => {
         state.data = initData
-        state.loading = true
+        state.loading = false
       })
       .addCase(getCellsPublicDatabase.pending, (state, action) => {
         state.data = initData
-        state.loading = true
+        state.loading = false
       })
       .addCase(getExperimentsDatabase.fulfilled, (state, action) => {
         state.data = action.payload
