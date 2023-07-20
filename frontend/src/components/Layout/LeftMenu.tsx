@@ -19,17 +19,17 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
 
   const onClickDashboard = () => {
     handleDrawerClose()
-    navigate('/')
+    navigate('/console')
   }
 
   const onClickDatabase = () => {
     handleDrawerClose()
-    navigate('/database')
+    navigate('/console/database')
   }
 
   const onClickWorkspaces = () => {
     handleDrawerClose()
-    navigate('/workspaces')
+    navigate('/console/workspaces')
   }
 
   return (

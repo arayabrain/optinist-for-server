@@ -9,7 +9,7 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/database">
+          <LinkWrapper to="/console/database">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
@@ -17,7 +17,7 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/database-public">
+          <LinkWrapper to="/">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
@@ -25,7 +25,7 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/workspaces">
+          <LinkWrapper to="/console/workspaces">
             <BoxMenu>
               <Box>
                 <StorageIcon fontSize="large" />
@@ -33,7 +33,7 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/account">
+          <LinkWrapper to="/console/account">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
