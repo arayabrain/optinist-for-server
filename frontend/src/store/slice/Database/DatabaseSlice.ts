@@ -17,9 +17,14 @@ const initData = {
   items: [],
 }
 
-export const initialState: { data: DatabaseDTO, loading: boolean } = {
+export const initialState: {
+  data: DatabaseDTO
+  loading: boolean
+  type: 'experiment' | 'cell'
+} = {
   data: initData,
-  loading: false
+  loading: false,
+  type: 'experiment',
 }
 
 export const databaseSlice = createSlice({
@@ -29,20 +34,32 @@ export const databaseSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(getExperimentsDatabase.pending, (state, action) => {
-        state.data = initData
-        state.loading = false
+        if (state.type === 'cell') {
+          state.data = initData
+          state.type = 'experiment'
+        }
+        state.loading = true
       })
       .addCase(getCellsDatabase.pending, (state, action) => {
-        state.data = initData
-        state.loading = false
+        if (state.type === 'experiment') {
+          state.data = initData
+          state.type = 'cell'
+        }
+        state.loading = true
       })
       .addCase(getExperimentsPublicDatabase.pending, (state, action) => {
-        state.data = initData
-        state.loading = false
+        if (state.type === 'cell') {
+          state.data = initData
+          state.type = 'experiment'
+        }
+        state.loading = true
       })
       .addCase(getCellsPublicDatabase.pending, (state, action) => {
-        state.data = initData
-        state.loading = false
+        if (state.type === 'experiment') {
+          state.data = initData
+          state.type = 'cell'
+        }
+        state.loading = true
       })
       .addCase(getExperimentsDatabase.fulfilled, (state, action) => {
         state.data = action.payload
