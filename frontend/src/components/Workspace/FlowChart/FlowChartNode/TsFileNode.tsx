@@ -7,7 +7,7 @@ import {
 } from 'store/slice/InputNode/InputNodeSelectors'
 import { setInputNodeFilePath } from 'store/slice/InputNode/InputNodeActions'
 import { alpha, useTheme } from '@mui/material/styles'
-import { deleteFlowElementsById } from 'store/slice/FlowElement/FlowElementSlice'
+import { deleteFlowNodeById } from 'store/slice/FlowElement/FlowElementSlice'
 import { FileSelect } from './FileSelect'
 import { toHandleId } from './FlowChartUtils'
 import { FILE_TYPE_SET } from 'store/slice/InputNode/InputNodeType'
@@ -40,7 +40,7 @@ const TsFileNodeImpl = React.memo<NodeProps>(
     const theme = useTheme()
 
     const onClickDeleteIcon = () => {
-      dispatch(deleteFlowElementsById(nodeId))
+      dispatch(deleteFlowNodeById(nodeId))
     }
 
     return (

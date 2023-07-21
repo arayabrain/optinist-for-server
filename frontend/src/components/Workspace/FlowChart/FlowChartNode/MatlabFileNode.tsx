@@ -18,7 +18,7 @@ import {
   TextField,
   Box,
 } from '@mui/material'
-import { deleteFlowElementsById } from 'store/slice/FlowElement/FlowElementSlice'
+import { deleteFlowNodeById } from 'store/slice/FlowElement/FlowElementSlice'
 import { FileSelect } from './FileSelect'
 import { toHandleId } from './FlowChartUtils'
 import { FILE_TYPE_SET } from 'store/slice/InputNode/InputNodeType'
@@ -57,7 +57,7 @@ export const MatlabFileNodeImpl = React.memo<MatlabFileNodeProps>(
     const theme = useTheme()
 
     const onClickDeleteIcon = () => {
-      dispatch(deleteFlowElementsById(nodeId))
+      dispatch(deleteFlowNodeById(nodeId))
     }
 
     return (
