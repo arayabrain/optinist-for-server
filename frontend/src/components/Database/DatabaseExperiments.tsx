@@ -1,5 +1,12 @@
-import { Box, Pagination, styled } from '@mui/material'
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { Box, MenuItem, Pagination, Select, styled } from '@mui/material'
+import {
+  ChangeEvent,
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import LaunchIcon from '@mui/icons-material/Launch'
@@ -15,8 +22,10 @@ import {
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
+  GridToolbarContainer,
+  GridToolbarFilterButton,
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
+import { DataGridPro, GridToolbar } from '@mui/x-data-grid-pro'
 import GroupsIcon from '@mui/icons-material/Groups'
 import {
   DatabaseType,
@@ -44,6 +53,24 @@ type DatabaseProps = {
   cellPath: string
 }
 
+type InputSelectProps = {
+  item: DatabaseType
+  applyValue: (v: string) => void
+}
+
+const CustomToolbar = () => {
+  return (
+    <GridToolbarContainer>
+      <GridToolbarFilterButton />
+    </GridToolbarContainer>
+  )
+}
+
+const InputSelect: FC<InputSelectProps> = ({ item, applyValue }) => {
+  const [value, setValue] = useState('')
+  return <div>adasdas</div>
+}
+
 const columns = (
   handleOpenAttributes: (value: string) => void,
   handleOpenDialog: (value: string[]) => void,
@@ -62,11 +89,13 @@ const columns = (
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
-    field: 'brain_area',
+    field: 'fields.brain_area',
     headerName: 'Brain area',
-    width: 160,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.brain_area,
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: 'singleSelect',
+    width: 160,
   },
   {
     field: 'cre_driver',
