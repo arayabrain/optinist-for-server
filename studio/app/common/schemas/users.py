@@ -1,9 +1,17 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
 password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
+
+
+class UserRole(str, Enum):
+    admin = 1
+    data_manager = 10
+    operator = 20
+    guest_operator = 30
 
 
 class User(BaseModel):
@@ -16,11 +24,11 @@ class User(BaseModel):
 
     @property
     def is_admin(self) -> bool:
-        return self.role_id == 1
+        return self.role_id == UserRole.admin
 
     @property
     def is_admin_data(self) -> bool:
-        return self.role_id == 1 or self.role_id == 10
+        return self.is_admin or self.role_id == UserRole.data_manager
 
     class Config:
         orm_mode = True
