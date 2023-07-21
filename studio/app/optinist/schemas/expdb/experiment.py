@@ -20,6 +20,11 @@ class PublishFlags(str, Enum):
     off = "off"
 
 
+class PublishStatus(str, Enum):
+    on = 1
+    off = 0
+
+
 class ExpDbExperimentFields(BaseModel):
     brain_area: str
     cre_driver: str
@@ -59,3 +64,8 @@ class ExpDbExperimentShareStatus(BaseModel):
 class ExpDbExperimentSharePostStatus(BaseModel):
     share_type: int = Field(description="1: default(per users), 2: for organization")
     user_ids: Optional[List[int]]
+
+
+class ExperimentShareType(str, Enum):
+    per_user = 1
+    for_org = 2
