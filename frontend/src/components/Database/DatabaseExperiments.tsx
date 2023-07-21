@@ -1,6 +1,6 @@
 import { Box, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import {useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import LaunchIcon from '@mui/icons-material/Launch'
 import Button from '@mui/material/Button'
@@ -45,10 +45,13 @@ type DatabaseProps = {
 }
 
 const columns = (
-    handleOpenAttributes: (value: string) => void,
-    handleOpenDialog: (value: string[]) => void,
-    cellPath: string,
-    navigate: (path: string, params: { [key: string]: string | undefined } ) => void
+  handleOpenAttributes: (value: string) => void,
+  handleOpenDialog: (value: string[]) => void,
+  cellPath: string,
+  navigate: (
+    path: string,
+    params: { [key: string]: string | undefined },
+  ) => void,
 ) => [
   {
     field: 'experiment_id',
@@ -62,42 +65,45 @@ const columns = (
     field: 'brain_area',
     headerName: 'Brain area',
     width: 160,
-    renderCell: (params: { row: DatabaseType }) => params.row.fields?.brain_area,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.brain_area,
   },
   {
     field: 'cre_driver',
     headerName: 'Cre driver',
     width: 160,
-    renderCell: (params: { row: DatabaseType }) => params.row.fields?.cre_driver,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.cre_driver,
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-        params.row.fields?.reporter_line,
+      params.row.fields?.reporter_line,
   },
   {
     field: 'imaging_depth',
     headerName: 'Imaging depth',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-        params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth,
   },
   {
     field: 'attributes',
     headerName: 'Attributes',
     width: 160,
     filterable: false,
+    sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
-        <Box
-            sx={{ cursor: 'pointer' }}
-            onClick={() =>
-                handleOpenAttributes(JSON.stringify(params.row?.attributes))
-            }
-        >
-          {JSON.stringify(params.row?.attributes)}
-        </Box>
+      <Box
+        sx={{ cursor: 'pointer' }}
+        onClick={() =>
+          handleOpenAttributes(JSON.stringify(params.row?.attributes))
+        }
+      >
+        {JSON.stringify(params.row?.attributes)}
+      </Box>
     ),
   },
   {
@@ -105,10 +111,16 @@ const columns = (
     headerName: 'Cells',
     width: 160,
     filterable: false,
+    sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
-        <Box sx={{ cursor: 'pointer' }} onClick={() => navigate(cellPath, {exp_id: params.row?.experiment_id})}>
-          <LaunchIcon />
-        </Box>
+      <Box
+        sx={{ cursor: 'pointer' }}
+        onClick={() =>
+          navigate(cellPath, { exp_id: params.row?.experiment_id })
+        }
+      >
+        <LaunchIcon />
+      </Box>
     ),
   },
   {
@@ -116,68 +128,67 @@ const columns = (
     headerName: 'Pixel Image',
     width: 160,
     filterable: false,
+    sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
-        <Box
-            sx={{
-              cursor: 'pointer',
-              display: 'flex',
-            }}
-            onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
-        >
-          {params.row?.cell_image_urls?.length > 0 && (
-              <img
-                  src={params.row?.cell_image_urls[0]}
-                  alt={''}
-                  width={'100%'}
-                  height={'100%'}
-              />
-          )}
-        </Box>
+      <Box
+        sx={{
+          cursor: 'pointer',
+          display: 'flex',
+        }}
+        onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
+      >
+        {params.row?.cell_image_urls?.length > 0 && (
+          <img
+            src={params.row?.cell_image_urls[0]}
+            alt={''}
+            width={'100%'}
+            height={'100%'}
+          />
+        )}
+      </Box>
     ),
   },
 ]
 
-const PopupAttributes =
-    ({
-       data,
-       open,
-       handleClose,
-       role = false,
-       handleChangeAttributes,
-     }: PopupAttributesProps
-    ) => {
-      return (
-          <Box>
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                aria-labelledby="draggable-dialog-title"
-            >
-              <DialogContent sx={{ minWidth: 400 }}>
-                <DialogContentText>
-                  <Content
-                      readOnly={!role}
-                      value={data}
-                      onChange={handleChangeAttributes}
-                  />
-                </DialogContentText>
-              </DialogContent>
-              <DialogActions>
-                <Button autoFocus onClick={handleClose}>
-                  Close
-                </Button>
-                {role && <Button onClick={handleClose}>Save</Button>}
-              </DialogActions>
-            </Dialog>
-          </Box>
-      )
-    }
+const PopupAttributes = ({
+  data,
+  open,
+  handleClose,
+  role = false,
+  handleChangeAttributes,
+}: PopupAttributesProps) => {
+  return (
+    <Box>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="draggable-dialog-title"
+      >
+        <DialogContent sx={{ minWidth: 400 }}>
+          <DialogContentText>
+            <Content
+              readOnly={!role}
+              value={data}
+              onChange={handleChangeAttributes}
+            />
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleClose}>
+            Close
+          </Button>
+          {role && <Button onClick={handleClose}>Save</Button>}
+        </DialogActions>
+      </Dialog>
+    </Box>
+  )
+}
 
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
-  const dataExperiments = useSelector(
-      (state: RootState) => state[DATABASE_SLICE_NAME].data,
+  const { data: dataExperiments, loading } = useSelector(
+    (state: RootState) => state[DATABASE_SLICE_NAME],
   )
-  const loading = useSelector((state: RootState) => state[DATABASE_SLICE_NAME].loading)
+
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data: string | string[] | undefined
@@ -189,9 +200,14 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const pagiFilter = useCallback((page?: number) => {
-    return `limit=${dataExperiments.limit}&offset=${page ? page - 1 : dataExperiments.offset}`
-  }, [dataExperiments.limit, dataExperiments.offset])
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${dataExperiments.limit}&offset=${
+        page ? page - 1 : dataExperiments.offset
+      }`
+    },
+    [dataExperiments.limit, dataExperiments.offset],
+  )
 
   const dataParams = useMemo(() => {
     return {
@@ -201,14 +217,15 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }
   }, [searchParams])
 
-  const dataParamsFilter = useMemo(() => (
-      {
-        brain_area: searchParams.get('brain_area') || '',
-        cre_driver: searchParams.get('cre_driver') || '',
-        reporter_line: searchParams.get('reporter_line') || '',
-        imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
-      }
-  ), [searchParams])
+  const dataParamsFilter = useMemo(
+    () => ({
+      brain_area: searchParams.get('brain_area') || '',
+      cre_driver: searchParams.get('cre_driver') || '',
+      reporter_line: searchParams.get('reporter_line') || '',
+      imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
+    }),
+    [searchParams],
+  )
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
@@ -238,80 +255,96 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const getParamsData = () => {
     const dataFilter = Object.keys(dataParamsFilter)
-        .filter(key => (dataParamsFilter  as any)[key])
-        .map(key => `${key}=${(dataParamsFilter  as any)[key]}`)
-        .join("&")
+      .filter((key) => (dataParamsFilter as any)[key])
+      .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
+      .join('&')
     return dataFilter
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter(page)}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${
+        dataParams.sort[1]
+      }&${pagiFilter(page)}`,
     )
   }
 
-  const handlePublish = (id: number, status: "on" | "off") => {
-    dispatch(postPublist({id, status}))
+  const handlePublish = (id: number, status: 'on' | 'off') => {
+    dispatch(postPublist({ id, status }))
   }
 
   const handleSort = useCallback(
-      (rowSelectionModel: GridSortModel) => {
-        const filter = getParamsData()
-        if (!rowSelectionModel[0]) {
-          setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
-          return
-        }
-        setParams(
-            `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
-        )
-      },
-      //eslint-disable-next-line
-      [pagiFilter, getParamsData],
+    (rowSelectionModel: GridSortModel) => {
+      const filter = getParamsData()
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
+        return
+      }
+      setParams(
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${
+          rowSelectionModel[0].sort
+        }&${pagiFilter()}`,
+      )
+    },
+    //eslint-disable-next-line
+    [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (model: GridFilterModel | any, details: GridCallbackDetails) => {
+  const handleFilter = (
+    model: GridFilterModel | any,
+    details: GridCallbackDetails,
+  ) => {
     let filter: string
     if (!!model.items[0]?.value) {
       //todo multiple filter with version pro. Issue task #55
-      filter = model.items.filter((item: { [key: string]: string }) => item.value).map((item: any) => {
-        return `${item.field}=${item?.value}`
-      }).join('&')
+      filter = model.items
+        .filter((item: { [key: string]: string }) => item.value)
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
     } else {
       filter = ''
     }
     if (!model.items[0]) {
       setParams(
-          `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter()}`,
+        `${filter}&sort=${dataParams.sort[0]}&sort=${
+          dataParams.sort[1]
+        }&${pagiFilter()}`,
       )
       return
     }
     setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter()}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${
+        dataParams.sort[1]
+      }&${pagiFilter()}`,
     )
   }
 
   const getColumns = useMemo(() => {
     return (dataExperiments.header?.graph_titles || []).map(
-        (graphTitle, index) => ({
-          field: `graph_urls.${index}`,
-          headerName: graphTitle,
-          renderCell: (params: { row: DatabaseType }) => {
-            return (
-                <Box sx={{ display: 'flex' }}>
-                  {params.row.graph_urls[index] ? (
-                      <img
-                          src={params.row.graph_urls[index]}
-                          alt={''}
-                          width={'100%'}
-                          height={'100%'}
-                      />
-                  ) : null}
-                </Box>
-            )
-          },
-          width: 160,
-        }),
+      (graphTitle, index) => ({
+        field: `graph_urls.${index}`,
+        headerName: graphTitle,
+        sortable: false,
+        filterable: false,
+        renderCell: (params: { row: DatabaseType }) => {
+          return (
+            <Box sx={{ display: 'flex' }}>
+              {params.row.graph_urls[index] ? (
+                <img
+                  src={params.row.graph_urls[index]}
+                  alt={''}
+                  width={'100%'}
+                  height={'100%'}
+                />
+              ) : null}
+            </Box>
+          )
+        },
+        width: 160,
+      }),
     )
   }, [dataExperiments.header?.graph_titles])
 
@@ -321,25 +354,32 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         field: 'share_type',
         headerName: '',
         width: 160,
+        sortable: false,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => (
-            <Box sx={{ cursor: 'pointer' }}>
-              <GroupsIcon />
-            </Box>
+          <Box sx={{ cursor: 'pointer' }}>
+            <GroupsIcon />
+          </Box>
         ),
       },
       {
         field: 'publish_status',
         headerName: '',
         width: 160,
+        sortable: false,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => (
-            <Box
-                sx={{ cursor: 'pointer' }}
-                onClick={() => handlePublish(params.row.id, params.row.publish_status ? "off" : "on")}
-            >
-              <SwitchCustom value={!!params.row.publish_status} />
-            </Box>
+          <Box
+            sx={{ cursor: 'pointer' }}
+            onClick={() =>
+              handlePublish(
+                params.row.id,
+                params.row.publish_status ? 'off' : 'on',
+              )
+            }
+          >
+            <SwitchCustom value={!!params.row.publish_status} />
+          </Box>
         ),
       },
     ]
@@ -352,51 +392,76 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   ].filter(Boolean) as GridEnrichedColDef[]
 
   return (
-      <DatabaseExperimentsWrapper>
-        <DataGridPro
-            columns={user ? [...columnsTable, ...ColumnPrivate] as any : columnsTable as any}
-            rows={dataExperiments?.items || []}
-            hideFooter={true}
-            filterMode={'server'}
-            sortingMode={'server'}
-            onSortModelChange={handleSort}
-            initialState={{
-              sorting: {
-                sortModel: [{ field: dataParams.sort[0], sort: dataParams.sort[1] as GridSortDirection }],
-              },
-              filter: {
-                filterModel: {
-                  items: [{ field: 'brain_area', operator: 'contains', value: dataParamsFilter.brain_area },
-                    { field: 'cre_driver', operator: 'contains', value: dataParamsFilter.cre_driver },
-                    { field: 'reporter_line', operator: 'contains', value: dataParamsFilter.reporter_line },
-                    { field: 'imaging_depth', operator: 'contains', value: dataParamsFilter.imaging_depth }],
-                },
-              },
-            }}
-            onFilterModelChange={handleFilter as any}
-        />
-        <Pagination
-            sx={{ marginTop: 2 }}
-            count={dataExperiments.total}
-            page={dataParams.offset + 1}
-            onChange={handlePage}
-        />
-        <DialogImage
-            open={dataDialog.type === 'image'}
-            data={dataDialog.data}
-            handleCloseDialog={handleCloseDialog}
-        />
-        <PopupAttributes
-            handleChangeAttributes={handleChangeAttributes}
-            data={dataDialog.data as string}
-            open={dataDialog.type === 'attribute'}
-            handleClose={handleCloseDialog}
-            role={!!user}
-        />
-        {
-          loading ? <Loading /> : null
+    <DatabaseExperimentsWrapper>
+      <DataGridPro
+        columns={
+          user
+            ? ([...columnsTable, ...ColumnPrivate] as any)
+            : (columnsTable as any)
         }
-      </DatabaseExperimentsWrapper>
+        rows={dataExperiments?.items || []}
+        hideFooter={true}
+        filterMode={'server'}
+        sortingMode={'server'}
+        onSortModelChange={handleSort}
+        initialState={{
+          sorting: {
+            sortModel: [
+              {
+                field: dataParams.sort[0],
+                sort: dataParams.sort[1] as GridSortDirection,
+              },
+            ],
+          },
+          filter: {
+            filterModel: {
+              items: [
+                {
+                  field: 'brain_area',
+                  operator: 'contains',
+                  value: dataParamsFilter.brain_area,
+                },
+                {
+                  field: 'cre_driver',
+                  operator: 'contains',
+                  value: dataParamsFilter.cre_driver,
+                },
+                {
+                  field: 'reporter_line',
+                  operator: 'contains',
+                  value: dataParamsFilter.reporter_line,
+                },
+                {
+                  field: 'imaging_depth',
+                  operator: 'contains',
+                  value: dataParamsFilter.imaging_depth,
+                },
+              ],
+            },
+          },
+        }}
+        onFilterModelChange={handleFilter as any}
+      />
+      <Pagination
+        sx={{ marginTop: 2 }}
+        count={dataExperiments.total}
+        page={dataParams.offset + 1}
+        onChange={handlePage}
+      />
+      <DialogImage
+        open={dataDialog.type === 'image'}
+        data={dataDialog.data}
+        handleCloseDialog={handleCloseDialog}
+      />
+      <PopupAttributes
+        handleChangeAttributes={handleChangeAttributes}
+        data={dataDialog.data as string}
+        open={dataDialog.type === 'attribute'}
+        handleClose={handleCloseDialog}
+        role={!!user}
+      />
+      {loading ? <Loading /> : null}
+    </DatabaseExperimentsWrapper>
   )
 }
 
