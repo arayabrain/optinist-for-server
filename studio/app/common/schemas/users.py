@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, Field
 password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
 
 
-class UserRole(str, Enum):
+class UserRole(int, Enum):
     admin = 1
     data_manager = 10
     operator = 20
