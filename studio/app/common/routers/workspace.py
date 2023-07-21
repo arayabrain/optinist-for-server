@@ -211,7 +211,10 @@ def get_workspace_share_status(
             common_model.WorkspacesShareUser,
             common_model.WorkspacesShareUser.user_id == common_model.User.id,
         )
-        .filter(common_model.WorkspacesShareUser.workspace_id == id)
+        .filter(
+            common_model.WorkspacesShareUser.workspace_id == id,
+            common_model.User.active.is_(True),
+        )
         .all()
     )
     return WorkspaceShareStatus(users=users)
