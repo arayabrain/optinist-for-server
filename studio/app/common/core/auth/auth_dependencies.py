@@ -3,10 +3,14 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Response, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from firebase_admin import auth as firebase_auth
+from pydantic import ValidationError
+from sqlmodel import Session
 
 from studio.app.common.core.auth.auth_config import AUTH_CONFIG
 from studio.app.common.core.auth.security import validate_access_token
-from studio.app.common.core.users.crud_users import get_user
+from studio.app.common.db.database import get_db
+from studio.app.common.models import User as UserModel
+from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.users import User
 
 
@@ -14,6 +18,7 @@ async def get_current_user(
     res: Response,
     ex_token: Optional[str] = Depends(APIKeyHeader(name="ExToken", auto_error=False)),
     credential: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
+    db: Session = Depends(get_db),
 ):
     if AUTH_CONFIG.USE_FIREBASE_TOKEN:
         if credential is None:
@@ -24,8 +29,16 @@ async def get_current_user(
             )
         try:
             user = firebase_auth.verify_id_token(credential.credentials)
-            authed_user: User = await get_user(user["uid"])
-            return authed_user
+            authed_user, role_id = (
+                db.query(UserModel, UserRoleModel.role_id)
+                .outerjoin(UserRoleModel, UserRoleModel.user_id == UserModel.id)
+                .filter(UserModel.uid == user["uid"], UserModel.active.is_(True))
+                .first()
+            )
+            authed_user.__dict__["role_id"] = role_id
+            return User.from_orm(authed_user)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=f"Validator Error: {e}")
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,7 +62,16 @@ async def get_current_user(
         )
 
     try:
-        return await get_user(payload["sub"])
+        authed_user, role_id = (
+            db.query(UserModel, UserRoleModel.role_id)
+            .outerjoin(UserRoleModel, UserRoleModel.user_id == UserModel.id)
+            .filter(UserModel.uid == payload["sub"])
+            .first()
+        )
+        authed_user.__dict__["role_id"] = role_id
+        return User.from_orm(authed_user)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=f"Validator Error: {e}")
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
