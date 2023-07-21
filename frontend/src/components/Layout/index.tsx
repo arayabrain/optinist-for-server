@@ -16,7 +16,6 @@ const redirectAfterLoginPaths = ['/login', '/reset-password', '/console']
 const Layout = ({ children }: { children?: ReactNode }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
-  // const [loadingAuth, setLoadingAuth] = useState(IS_STANDALONE)
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
