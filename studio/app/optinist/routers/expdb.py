@@ -27,7 +27,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
     PublishStatus,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["Experiment Database"])
 
 
 @router.get(
