@@ -112,7 +112,9 @@ async def update_user(db: Session, user_id: int, data: UserUpdate):
 
 async def upate_password(db: Session, user_id: int, data: UserPasswordUpdate):
     user = await get_user(db, user_id)
-    await authenticate_user(data=UserAuth(email=user.email, password=data.old_password))
+    await authenticate_user(
+        db, data=UserAuth(email=user.email, password=data.old_password)
+    )
     try:
         user = firebase_auth.update_user(user.uid, password=data.new_password)
         return True
