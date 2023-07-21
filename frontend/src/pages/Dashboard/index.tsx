@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import AnalyticsIcon from '@mui/icons-material/Analytics'
 
 const Dashboard = () => {
   return (
@@ -9,31 +10,23 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/database">
+          <LinkWrapper to="/console/experiments">
             <BoxMenu>
               <Box>
-                <AccountCircleIcon fontSize="large" />
+                <StorageIcon fontSize="large" />
                 <TitleMenu>Database</TitleMenu>
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/database-public">
+          <LinkWrapper to="/console/workspaces">
             <BoxMenu>
               <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Database public<br /><span style={{fontSize: "medium"}}>(for development)</span></TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
-          <LinkWrapper to="/workspaces">
-            <BoxMenu>
-              <Box>
-                <StorageIcon fontSize="large" />
+                <AnalyticsIcon fontSize="large" />
                 <TitleMenu>Workspaces</TitleMenu>
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/account">
+          <LinkWrapper to="/console/account">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
