@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -17,9 +17,9 @@ class UserRole(str, Enum):
 class User(BaseModel):
     id: int
     uid: str
+    name: Optional[str]
     email: EmailStr
     organization_id: int
-    name: str
     role_id: int
 
     @property
@@ -34,14 +34,11 @@ class User(BaseModel):
         orm_mode = True
 
 
-class ListUserPaging(BaseModel):
-    data: Optional[List[User]]
-    total_page: Optional[int]
-
-
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(max_length=255, regex=password_regex)
+    name: str
+    role_id: int
 
     class Config:
         anystr_strip_whitespace = True
@@ -49,6 +46,13 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr]
+    name: str
+    role_id: int
+
+
+class SelfUserUpdate(BaseModel):
+    email: Optional[EmailStr]
+    name: str
 
 
 class UserPasswordUpdate(BaseModel):
