@@ -22,7 +22,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
     PublishFlags,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["Experiment Database"])
 
 
 @router.get(

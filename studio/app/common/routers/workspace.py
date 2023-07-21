@@ -17,7 +17,7 @@ from studio.app.common.schemas.workspace import (
 )
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 
-router = APIRouter()
+router = APIRouter(tags=["Workspace"])
 
 
 @router.get(

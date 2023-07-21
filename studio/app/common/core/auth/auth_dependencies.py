@@ -19,59 +19,33 @@ async def get_current_user(
     credential: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
     db: Session = Depends(get_db),
 ):
-    if AUTH_CONFIG.USE_FIREBASE_TOKEN:
-        if credential is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unauthorized",
-                headers={"WWW-Authenticate": "Bearer realm='auth_required'"},
-            )
-        try:
-            user = firebase_auth.verify_id_token(credential.credentials)
-            authed_user, role_id = (
-                db.query(UserModel, UserRoleModel.role_id)
-                .outerjoin(UserRoleModel, UserRoleModel.user_id == UserModel.id)
-                .filter(UserModel.uid == user["uid"], UserModel.active.is_(True))
-                .first()
-            )
-            authed_user.__dict__["role_id"] = role_id
-            return User.from_orm(authed_user)
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer realm='invalid_token'"},
-            )
-
-    if ex_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            headers={"WWW-Authenticate": 'Bearer realm="auth_required"'},
-        )
-
-    payload, err = validate_access_token(ex_token)
-
-    if err:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            headers={"WWW-Authenticate": 'Bearer realm="auth_required"'},
-            detail=str(err),
-        )
-
+    use_firebase_auth = AUTH_CONFIG.USE_FIREBASE_TOKEN
     try:
+        assert credential is not None if use_firebase_auth else True
+        assert ex_token is not None if not use_firebase_auth else True
+
+        uid = None
+        if use_firebase_auth:
+            user = firebase_auth.verify_id_token(credential.credentials)
+            uid = user["uid"]
+        else:
+            payload, err = validate_access_token(ex_token)
+            assert err is not None, str(err)
+            uid = payload["sub"]
+
         authed_user, role_id = (
             db.query(UserModel, UserRoleModel.role_id)
             .outerjoin(UserRoleModel, UserRoleModel.user_id == UserModel.id)
-            .filter(UserModel.uid == payload["sub"])
+            .filter(UserModel.uid == uid)
             .first()
         )
         authed_user.__dict__["role_id"] = role_id
         return User.from_orm(authed_user)
-    except Exception:
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             headers={"WWW-Authenticate": 'Bearer realm="auth_required"'},
-            detail="Could not validate credentials",
+            detail=str(e) or "Could not validate credentials",
         )
 
 
