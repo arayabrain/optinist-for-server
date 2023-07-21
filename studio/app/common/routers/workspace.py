@@ -40,6 +40,7 @@ def search_workspaces(
             common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
         )
+        .group_by(common_model.Workspace.id)
         .order_by(
             sort_column.desc()
             if sortOptions.sort[1] == SortDirection.desc
