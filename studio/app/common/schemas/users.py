@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
@@ -6,13 +7,31 @@ from pydantic import BaseModel, EmailStr, Field
 password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
 
 
+class UserRole(str, Enum):
+    admin = 1
+    data_manager = 10
+    operator = 20
+    guest_operator = 30
+
+
 class User(BaseModel):
+    id: int
     uid: str
     email: EmailStr
+    organization_id: int
+    name: str
+    role_id: int
 
     @property
     def is_admin(self) -> bool:
-        return False
+        return self.role_id == UserRole.admin
+
+    @property
+    def is_admin_data(self) -> bool:
+        return self.is_admin or self.role_id == UserRole.data_manager
+
+    class Config:
+        orm_mode = True
 
 
 class ListUserPaging(BaseModel):
@@ -44,8 +63,8 @@ class UserInfo(BaseModel):
     id: int
     name: Optional[str]
     email: Optional[str]
-    created_time: Optional[datetime]
-    updated_time: Optional[datetime]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
 
     class Config:
         orm_mode = True

@@ -13,7 +13,7 @@ class DatabaseConfig(BaseSettings):
     MYSQL_USER: str = Field(default=None, env="MYSQL_USER")
     MYSQL_PASSWORD: str = Field(default=None, env="MYSQL_PASSWORD")
     MYSQL_DATABASE: str = Field(default=None, env="MYSQL_DATABASE")
-    DATABASE_URL: str = Field(default=None, env="DATABASE_URL")
+    DATABASE_URL: str = Field(default=None)
     ECHO_SQL: bool = Field(default=None, env="ECHO_SQL")
 
     @validator("DATABASE_URL", pre=True)
