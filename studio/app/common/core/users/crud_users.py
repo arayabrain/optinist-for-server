@@ -73,9 +73,10 @@ async def create_user(db: Session, data: UserCreate):
             uid=user.uid,
             email=user.email,
             name=data.name,
-            organization_id=1,
+            organization_id=data.organization_id,
             active=True,
         )
+        # it may be possible to specify the organization_id externally in the future
         db.add(user_db)
         db.flush()
         await set_role(db, user_id=user_db.id, role_id=data.role_id, auto_commit=False)
