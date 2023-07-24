@@ -37,7 +37,10 @@ async def update_password(
 
 
 @router.delete("")
-async def delete_me(current_user: User = Depends(get_current_user)):
+async def delete_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     return await crud_users.delete_user(
-        current_user.uid, organization_id=current_user.organization_id
+        db, current_user.uid, organization_id=current_user.organization_id
     )
