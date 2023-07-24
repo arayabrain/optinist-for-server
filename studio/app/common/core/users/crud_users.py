@@ -107,6 +107,7 @@ async def update_user(
             )
             .first()
         )
+        assert user_db is not None, "User not found"
         user_data = data.dict(exclude_unset=True)
         role_id = user_data.pop("role_id", None)
         for key, value in user_data.items():
@@ -120,6 +121,8 @@ async def update_user(
         firebase_auth.update_user(user_db.uid, email=data.email)
         db.commit()
         return User.from_orm(user_db)
+    except AssertionError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -157,5 +160,7 @@ async def delete_user(db: Session, user_id: int, organization_id: int):
         db.commit()
         firebase_auth.delete_user(user_db.uid)
         return User.from_orm(user_db)
+    except AssertionError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
