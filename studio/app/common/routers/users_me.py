@@ -29,7 +29,7 @@ async def update_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return await crud_users.upate_password(db, current_user.id, data)
+    return await crud_users.update_password(db, current_user.id, data)
 
 
 @router.delete("")
