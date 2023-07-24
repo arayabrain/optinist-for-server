@@ -69,7 +69,7 @@ const columns = (
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
-    field: 'fields.brain_area',
+    field: 'brain_area',
     headerName: 'Brain area',
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.brain_area,
@@ -430,24 +430,9 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               items: [
                 {
                   field: 'brain_area',
-                  operator: 'contains',
+                  operator: 'is',
                   value: dataParamsFilter.brain_area,
-                },
-                {
-                  field: 'cre_driver',
-                  operator: 'contains',
-                  value: dataParamsFilter.cre_driver,
-                },
-                {
-                  field: 'reporter_line',
-                  operator: 'contains',
-                  value: dataParamsFilter.reporter_line,
-                },
-                {
-                  field: 'imaging_depth',
-                  operator: 'contains',
-                  value: dataParamsFilter.imaging_depth,
-                },
+                }
               ],
             },
           },
