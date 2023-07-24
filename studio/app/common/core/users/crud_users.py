@@ -131,7 +131,7 @@ async def delete_user(db: Session, user_id: int):
             .first()
         )
         assert user_db is not None, "User not found"
-        db.delete(user_db)
+        user_db.active = False
         db.commit()
         firebase_auth.delete_user(user_db.uid)
         return User.from_orm(user_db)
