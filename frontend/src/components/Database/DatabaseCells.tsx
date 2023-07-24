@@ -21,6 +21,7 @@ import {
   getCellsPublicDatabase,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
+import { TypeData } from 'store/slice/Database/DatabaseSlice'
 
 type CellProps = {
   user?: Object
@@ -85,12 +86,15 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
-  const dataExperiments = useSelector(
-    (state: RootState) => state[DATABASE_SLICE_NAME].data,
+  const type: keyof TypeData = user? 'private': 'public'
+
+  const { data: dataExperiments, loading } = useSelector(
+      (state: RootState) => ({
+        data: state[DATABASE_SLICE_NAME].data[type],
+        loading: state[DATABASE_SLICE_NAME].loading
+      })
   )
-  const loading = useSelector(
-    (state: RootState) => state[DATABASE_SLICE_NAME].loading,
-  )
+
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data: string | string[] | undefined
