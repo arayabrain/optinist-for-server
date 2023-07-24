@@ -1,7 +1,6 @@
-import { Box, MenuItem, Pagination, Select, styled } from '@mui/material'
+import { Box, Pagination, styled } from '@mui/material'
 import {
   ChangeEvent,
-  FC,
   useCallback,
   useEffect,
   useMemo,
@@ -22,10 +21,8 @@ import {
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
 } from '@mui/x-data-grid'
-import { DataGridPro, GridToolbar } from '@mui/x-data-grid-pro'
+import { DataGridPro } from '@mui/x-data-grid-pro'
 import GroupsIcon from '@mui/icons-material/Groups'
 import {
   DatabaseType,
@@ -39,6 +36,7 @@ import {
   postPublist,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
+import { TypeData } from 'store/slice/Database/DatabaseSlice'
 
 type PopupAttributesProps = {
   data: string
@@ -51,24 +49,6 @@ type PopupAttributesProps = {
 type DatabaseProps = {
   user?: Object
   cellPath: string
-}
-
-type InputSelectProps = {
-  item: DatabaseType
-  applyValue: (v: string) => void
-}
-
-const CustomToolbar = () => {
-  return (
-    <GridToolbarContainer>
-      <GridToolbarFilterButton />
-    </GridToolbarContainer>
-  )
-}
-
-const InputSelect: FC<InputSelectProps> = ({ item, applyValue }) => {
-  const [value, setValue] = useState('')
-  return <div>adasdas</div>
 }
 
 const columns = (
@@ -214,8 +194,12 @@ const PopupAttributes = ({
 }
 
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
+  const type: keyof TypeData = user? 'private': 'public'
   const { data: dataExperiments, loading } = useSelector(
-    (state: RootState) => state[DATABASE_SLICE_NAME],
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading
+    })
   )
 
   const [dataDialog, setDataDialog] = useState<{

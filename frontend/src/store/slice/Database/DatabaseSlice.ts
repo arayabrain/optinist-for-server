@@ -17,12 +17,20 @@ const initData = {
   items: [],
 }
 
+export type TypeData = {
+  public: DatabaseDTO,
+  private: DatabaseDTO
+}
+
 export const initialState: {
-  data: DatabaseDTO
+  data: TypeData,
   loading: boolean
   type: 'experiment' | 'cell'
 } = {
-  data: initData,
+  data: {
+    public: initData,
+    private: initData
+  },
   loading: false,
   type: 'experiment',
 }
@@ -35,46 +43,58 @@ export const databaseSlice = createSlice({
     builder
       .addCase(getExperimentsDatabase.pending, (state, action) => {
         if (state.type === 'cell') {
-          state.data = initData
+          state.data.private = initData
           state.type = 'experiment'
         }
         state.loading = true
       })
       .addCase(getCellsDatabase.pending, (state, action) => {
         if (state.type === 'experiment') {
-          state.data = initData
+          state.data.private = initData
           state.type = 'cell'
         }
         state.loading = true
       })
       .addCase(getExperimentsPublicDatabase.pending, (state, action) => {
         if (state.type === 'cell') {
-          state.data = initData
+          state.data.public = initData
           state.type = 'experiment'
         }
         state.loading = true
       })
       .addCase(getCellsPublicDatabase.pending, (state, action) => {
         if (state.type === 'experiment') {
-          state.data = initData
+          state.data.public = initData
           state.type = 'cell'
         }
         state.loading = true
       })
       .addCase(getExperimentsDatabase.fulfilled, (state, action) => {
-        state.data = action.payload
+        state.data.private = action.payload
         state.loading = false
       })
       .addCase(getCellsDatabase.fulfilled, (state, action) => {
-        state.data = action.payload
+        state.data.private = action.payload
         state.loading = false
       })
       .addCase(getExperimentsPublicDatabase.fulfilled, (state, action) => {
-        state.data = action.payload
+        state.data.public = action.payload
         state.loading = false
       })
       .addCase(getCellsPublicDatabase.fulfilled, (state, action) => {
-        state.data = action.payload
+        state.data.public = action.payload
+        state.loading = false
+      })
+      .addCase(getExperimentsDatabase.rejected, (state, action) => {
+        state.loading = false
+      })
+      .addCase(getCellsDatabase.rejected, (state, action) => {
+        state.loading = false
+      })
+      .addCase(getExperimentsPublicDatabase.rejected, (state, action) => {
+        state.loading = false
+      })
+      .addCase(getCellsPublicDatabase.rejected, (state, action) => {
         state.loading = false
       })
   },
