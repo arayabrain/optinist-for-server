@@ -18,8 +18,14 @@ async def list_user(db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=User)
-async def create_user(data: UserCreate, db: Session = Depends(get_db)):
-    return await crud_users.create_user(db, data)
+async def create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_admin_user),
+):
+    return await crud_users.create_user(
+        db, data.copy(update={"organization_id": current_admin.organization_id})
+    )
 
 
 @router.get("/{user_id}", response_model=User)

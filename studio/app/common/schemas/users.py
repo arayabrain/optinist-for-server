@@ -20,7 +20,7 @@ class User(BaseModel):
     name: Optional[str]
     email: EmailStr
     organization_id: int
-    role_id: int
+    role_id: Optional[int]
 
     @property
     def is_admin(self) -> bool:
