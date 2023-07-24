@@ -53,7 +53,6 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
     field: 'imaging_depth',
     headerName: 'Imaging depth',
     filterable: false,
-    sortable: false,
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.imaging_depth,

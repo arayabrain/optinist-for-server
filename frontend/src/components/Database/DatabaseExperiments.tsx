@@ -232,17 +232,17 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
-      brain_area: searchParams.get('brain_area') || '',
-      cre_driver: searchParams.get('cre_driver') || '',
-      reporter_line: searchParams.get('reporter_line') || '',
-      imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
+      brain_area: searchParams.get('fields.brain_area') || undefined,
+      cre_driver: searchParams.get('fields.cre_driver') || undefined,
+      reporter_line: searchParams.get('fields.reporter_line') || undefined,
+      imaging_depth: Number(searchParams.get('fields.imaging_depth')) || undefined,
     }),
     [searchParams],
   )
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
-    dispatch(api(dataParams))
+    dispatch(api({...dataParamsFilter, ...dataParams}))
   }
 
   useEffect(() => {
@@ -270,7 +270,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     const dataFilter = Object.keys(dataParamsFilter)
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
-      .join('&')
+      .join('&').replaceAll("fields.", "")
     return dataFilter
   }
 
@@ -295,7 +295,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${
+        `${filter}&sort=${rowSelectionModel[0].field.replace("fields.", "")}&sort=${
           rowSelectionModel[0].sort
         }&${pagiFilter()}`,
       )
