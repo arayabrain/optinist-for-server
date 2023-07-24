@@ -1,16 +1,26 @@
-import { useState } from 'react'
+import {ChangeEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Pagination, styled } from '@mui/material'
+import {
+  Box,
+  DialogTitle,
+  Pagination,
+  styled,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  Radio
+} from '@mui/material'
 import LaunchIcon from '@mui/icons-material/Launch'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
-import { DataGrid } from '@mui/x-data-grid'
-import GroupsIcon from '@mui/icons-material/Groups'
+import { DataGrid, GridRenderCellParams, GridRowParams } from '@mui/x-data-grid'
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
+import CancelIcon from '@mui/icons-material/Cancel'
 
 export type Data = {
   id: number
@@ -28,6 +38,19 @@ export type Data = {
   publish_status: number
   created_time: string
   updated_time: string
+}
+
+type PopupAttributesProps = {
+  data: string
+  open: boolean
+  handleClose: () => void
+  role?: boolean
+  handleChangeAttributes: (e: any) => void
+}
+
+type PopupType = {
+  open: boolean
+  handleClose: () => void
 }
 
 const dataGraphsTitle: string[] = ['Plot1', 'Plot2', 'Plot3', 'Plot4', 'Plot5']
@@ -415,13 +438,224 @@ const datas: Data[] = [
   },
 ]
 
-type PopupAttributesProps = {
-  data: string
-  open: boolean
-  handleClose: () => void
-  role?: boolean
-  handleChangeAttributes: (e: any) => void
+const columns = (
+    handleOpenAttributes: (value: string) => void,
+    handleCellClick: () => void,
+    handleOpenDialog: (value: string[]) => void,
+) => {
+  return [
+    {
+      field: 'experiment_id',
+      headerName: 'Experiment ID',
+      width: 160,
+      renderCell: (params: { row: Data }) => params.row.experiment_id,
+    },
+    {
+      field: 'brain_area',
+      headerName: 'Brain area',
+      width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.brain_area,
+    },
+    {
+      field: 'cre_driver',
+      headerName: 'Cre driver',
+      width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.cre_driver,
+    },
+    {
+      field: 'reporter_line',
+      headerName: 'Reporter line',
+      width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.reporter_line,
+    },
+    {
+      field: 'imaging_depth',
+      headerName: 'Imaging depth',
+      width: 160,
+      renderCell: (params: { row: Data }) => params.row.fields.imaging_depth,
+    },
+    {
+      field: 'attributes',
+      headerName: 'Attributes',
+      width: 160,
+      renderCell: (params: { row: Data }) => (
+          <Box
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleOpenAttributes(params.row.attributes)}
+          >
+            {params.row.attributes}
+          </Box>
+      ),
+    },
+    {
+      field: 'cells',
+      headerName: 'Cells',
+      width: 160,
+      renderCell: (params: { row: Data }) => (
+          <Box sx={{ cursor: 'pointer' }} onClick={handleCellClick}>
+            <LaunchIcon />
+          </Box>
+      ),
+    },
+    {
+      field: 'cell_image_urls',
+      headerName: 'Pixel Image',
+      width: 160,
+      renderCell: (params: { row: Data }) => (
+          <Box
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+              }}
+              onClick={() => handleOpenDialog(params.row.cell_image_urls)}
+          >
+            <img
+                src={params.row.cell_image_urls[0]}
+                alt={''}
+                width={'100%'}
+                height={'100%'}
+            />
+          </Box>
+      ),
+    },
+  ]
 }
+
+const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) => void) => (
+    [
+      {
+        field: "name",
+        headerName: "Name",
+        minWidth: 140,
+        renderCell: (params: GridRenderCellParams<string>) => (
+            <span>{params.row.name}</span>
+        ),
+      },
+      {
+        field: "lab",
+        headerName: "Lab",
+        minWidth: 280,
+        renderCell: (params: GridRenderCellParams<string>) => (
+            <span>{params.row.email}</span>
+        ),
+      },
+      {
+        field: "email",
+        headerName: "Email",
+        minWidth: 280,
+        renderCell: (params: GridRenderCellParams<string>) => (
+            <span>{params.row.email}</span>
+        ),
+      },
+      {
+        field: "share",
+        headerName: "",
+        minWidth: 130,
+        renderCell: (params: GridRenderCellParams<string>) => {
+          if(!params.row.share) return ""
+          return (
+              <Button onClick={() => handleShareFalse(params)}>
+                <CancelIcon color={"error"}/>
+              </Button>
+          )
+        }
+      },
+    ]
+)
+
+const dataShare = [
+  {
+    id: 1,
+    name: "User 1",
+    lab: "Labxxxx",
+    email: "aaaaa@gmail.com",
+    share: false
+  },
+  {
+    id: 2,
+    name: "User 2",
+    lab: "Labxxxx",
+    email: "aaaaa@gmail.com",
+    share: true
+  },
+  {
+    id: 3,
+    name: "User 3",
+    lab: "Labxxxx",
+    email: "aaaaa@gmail.com",
+    share: true
+  }
+]
+
+const PopupShare = ({open, handleClose}: PopupType) => {
+  const [value, setValue] = useState("a")
+  const [tableShare, setTableShare] = useState(dataShare)
+  if(!open) return <></>
+  const handleShareTrue = (params: GridRowParams) => {
+    if(params.row.share) return
+    const index = tableShare.findIndex(item => item.id === params.id)
+    setTableShare(pre => {
+      pre[index].share = true
+      return pre
+    })
+  }
+
+  const handleShareFalse = (params: GridRenderCellParams<string>) => {
+    const indexSearch = tableShare.findIndex(item => item.id === params.id)
+    const newData = tableShare.map((item, index) => {
+      if(index === indexSearch) return {...item, share: false}
+      return item
+    })
+    setTableShare(newData)
+  }
+
+  const handleValue = (event: ChangeEvent<HTMLInputElement>) => {
+    setValue((event.target as HTMLInputElement).value);
+  }
+
+  return (
+    <Box>
+      <DialogCustom
+        open={open}
+        onClose={handleClose}
+        sx={{margin: 0}}
+      >
+        <DialogTitle>Share Database record</DialogTitle>
+        <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: XXXXXX</DialogTitle>
+        <DialogTitle>
+          <FormControl>
+            <RadioGroup
+              value={value}
+              row
+              aria-labelledby="demo-row-radio-buttons-group-label"
+              name="row-radio-buttons-group"
+              onChange={handleValue}
+            >
+              <FormControlLabel value="a" control={<Radio />} label={"組織内共有"} />
+              <FormControlLabel value="b" control={<Radio />} label={"ユーザー別共有"} />
+            </RadioGroup>
+          </FormControl>
+        </DialogTitle>
+          <DialogContent sx={{minHeight: 500}}>
+            {
+              value !== "a" ?
+                <DataGrid
+                  sx={{minHeight: 500}}
+                  onRowClick={handleShareTrue}
+                  rows={tableShare}
+                  columns={columnsShare(handleShareFalse)}
+                />: null
+            }
+          </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>Ok</Button>
+        </DialogActions>
+      </DialogCustom>
+    </Box>
+  )
+}
+
 
 const PopupAttributes = ({
   data,
@@ -466,89 +700,13 @@ const DatabaseExperiments = ({
 }) => {
   const [dataTable] = useState<Data[]>(datas)
   const [openDialog, setOpenDialog] = useState(false)
+  const [openShare, setOpenShare] = useState(false)
   const [openAttributes, setOpenAttributes] = useState(false)
   const [dataDialog, setDataDialog] = useState<string[] | string>()
   const navigate = useNavigate()
   const handleCellClick = () => {
     navigate(cellPath)
   }
-
-  const columns = [
-    {
-      field: 'experiment_id',
-      headerName: 'Experiment ID',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.experiment_id,
-    },
-    {
-      field: 'brain_area',
-      headerName: 'Brain area',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.brain_area,
-    },
-    {
-      field: 'cre_driver',
-      headerName: 'Cre driver',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.cre_driver,
-    },
-    {
-      field: 'reporter_line',
-      headerName: 'Reporter line',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.reporter_line,
-    },
-    {
-      field: 'imaging_depth',
-      headerName: 'Imaging depth',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.imaging_depth,
-    },
-    {
-      field: 'attributes',
-      headerName: 'Attributes',
-      width: 160,
-      renderCell: (params: { row: Data }) => (
-        <Box
-          sx={{ cursor: 'pointer' }}
-          onClick={() => handleOpenAttributes(params.row.attributes)}
-        >
-          {params.row.attributes}
-        </Box>
-      ),
-    },
-    {
-      field: 'cells',
-      headerName: 'Cells',
-      width: 160,
-      renderCell: (params: { row: Data }) => (
-        <Box sx={{ cursor: 'pointer' }} onClick={handleCellClick}>
-          <LaunchIcon />
-        </Box>
-      ),
-    },
-    {
-      field: 'cell_image_urls',
-      headerName: 'Pixel Image',
-      width: 160,
-      renderCell: (params: { row: Data }) => (
-        <Box
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-          }}
-          onClick={() => handleOpenDialog(params.row.cell_image_urls)}
-        >
-          <img
-            src={params.row.cell_image_urls[0]}
-            alt={''}
-            width={'100%'}
-            height={'100%'}
-          />
-        </Box>
-      ),
-    },
-  ]
 
   const handleOpenDialog = (data: string[]) => {
     setOpenDialog(true)
@@ -599,30 +757,30 @@ const DatabaseExperiments = ({
         columns={
           user
             ? [
-                ...columns,
-                ...getColumns,
-                {
-                  field: 'share_type',
-                  headerName: '',
-                  width: 160,
-                  renderCell: (params: { row: Data }) => (
-                    <Box sx={{ cursor: 'pointer' }}>
-                      <GroupsIcon />
-                    </Box>
-                  ),
-                },
-                {
-                  field: 'publish_status',
-                  headerName: '',
-                  width: 160,
-                  renderCell: (params: { row: Data }) => (
-                    <Box sx={{ cursor: 'pointer' }}>
-                      <SwitchCustom value={!!params.row.publish_status} />
-                    </Box>
-                  ),
-                },
-              ]
-            : [...columns, ...getColumns]
+              ...columns(handleOpenAttributes, handleCellClick, handleOpenDialog),
+              ...getColumns,
+              {
+                field: 'share_type',
+                headerName: '',
+                width: 160,
+                renderCell: (params: { row: Data }) => (
+                  <Box sx={{ cursor: 'pointer' }} onClick={() => setOpenShare(true)}>
+                    <PeopleOutlineIcon />
+                  </Box>
+                ),
+              },
+              {
+                field: 'publish_status',
+                headerName: '',
+                width: 160,
+                renderCell: (params: { row: Data }) => (
+                  <Box sx={{ cursor: 'pointer' }}>
+                    <SwitchCustom value={!!params.row.publish_status} />
+                  </Box>
+                ),
+              },
+            ]
+            : [...columns(handleOpenAttributes, handleCellClick, handleOpenDialog), ...getColumns]
         }
         rows={dataTable}
         hideFooter={true}
@@ -640,6 +798,10 @@ const DatabaseExperiments = ({
         handleClose={handleCloseAttributes}
         role={!!user}
       />
+      <PopupShare
+        open={openShare}
+        handleClose={() => setOpenShare(false)}
+      />
     </DatabaseExperimentsWrapper>
   )
 }
@@ -652,6 +814,15 @@ const DatabaseExperimentsWrapper = styled(Box)(({ theme }) => ({
 const Content = styled('textarea')(({ theme }) => ({
   width: 400,
   height: 'fit-content',
+}))
+
+const DialogCustom = styled(Dialog)(({theme}) => ({
+  "& .MuiDialog-container": {
+    "& .MuiPaper-root": {
+      width: "70%",
+      maxWidth: "890px",
+    },
+  },
 }))
 
 export default DatabaseExperiments
