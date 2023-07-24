@@ -8,7 +8,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User, UserCreate, UserUpdate
 
 router = APIRouter(
-    prefix="/admin/users", tags=["admin"], dependencies=[Depends(get_admin_user)]
+    prefix="/admin/users", tags=["users/admin"], dependencies=[Depends(get_admin_user)]
 )
 
 
