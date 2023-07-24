@@ -13,8 +13,11 @@ router = APIRouter(
 
 
 @router.get("", response_model=LimitOffsetPage[User])
-async def list_user(db: Session = Depends(get_db)):
-    return await crud_users.list_user(db)
+async def list_user(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_admin_user),
+):
+    return await crud_users.list_user(db, organization_id=current_admin.organization_id)
 
 
 @router.post("", response_model=User)
@@ -24,20 +27,39 @@ async def create_user(
     current_admin: User = Depends(get_admin_user),
 ):
     return await crud_users.create_user(
-        db, data.copy(update={"organization_id": current_admin.organization_id})
+        db, data, organization_id=current_admin.organization_id
     )
 
 
 @router.get("/{user_id}", response_model=User)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    return await crud_users.get_user(db, user_id)
+async def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_admin_user),
+):
+    return await crud_users.get_user(
+        db, user_id, organization_id=current_admin.organization_id
+    )
 
 
 @router.put("/{user_id}", response_model=User)
-async def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)):
-    return await crud_users.update_user(db, user_id, data)
+async def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_admin_user),
+):
+    return await crud_users.update_user(
+        db, user_id, data, organization_id=current_admin.organization_id
+    )
 
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, db: Session = Depends(get_db)):
-    return await crud_users.delete_user(db, user_id)
+async def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_admin_user),
+):
+    return await crud_users.delete_user(
+        db, user_id, organization_id=current_admin.organization_id
+    )

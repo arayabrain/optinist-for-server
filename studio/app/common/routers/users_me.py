@@ -20,7 +20,9 @@ async def update_me(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return await crud_users.update_user(db, current_user.id, data)
+    return await crud_users.update_user(
+        db, current_user.id, data, organization_id=current_user.organization_id
+    )
 
 
 @router.put("/password", response_model=bool)
@@ -29,9 +31,13 @@ async def update_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return await crud_users.update_password(db, current_user.id, data)
+    return await crud_users.update_password(
+        db, current_user.id, data, organization_id=current_user.organization_id
+    )
 
 
 @router.delete("")
 async def delete_me(current_user: User = Depends(get_current_user)):
-    return await crud_users.delete_user(current_user.uid)
+    return await crud_users.delete_user(
+        current_user.uid, organization_id=current_user.organization_id
+    )

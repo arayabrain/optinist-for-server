@@ -30,12 +30,16 @@ async def set_role(db: Session, user_id: int, role_id: int, auto_commit=True):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def get_user(db: Session, user_id: int) -> User:
+async def get_user(db: Session, user_id: int, organization_id: int) -> User:
     try:
         data = (
             db.query(UserModel, UserRoleModel.role_id)
             .outerjoin(UserRoleModel, UserModel.id == UserRoleModel.user_id)
-            .filter(UserModel.id == user_id, UserModel.active.is_(True))
+            .filter(
+                UserModel.id == user_id,
+                UserModel.active.is_(True),
+                UserModel.organization_id == organization_id,
+            )
             .first()
         )
         assert data is not None, "User not found"
@@ -48,11 +52,14 @@ async def get_user(db: Session, user_id: int) -> User:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def list_user(db: Session):
+async def list_user(db: Session, organization_id: int):
     try:
         users = paginate(
             db,
-            query=select(UserModel).filter(UserModel.active.is_(True)),
+            query=select(UserModel).filter(
+                UserModel.active.is_(True),
+                UserModel.organization_id == organization_id,
+            ),
         )
         for user in users.items:
             role = (
@@ -64,7 +71,7 @@ async def list_user(db: Session):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def create_user(db: Session, data: UserCreate):
+async def create_user(db: Session, data: UserCreate, organization_id: int):
     try:
         user: UserRecord = firebase_auth.create_user(
             email=data.email, password=data.password
@@ -73,7 +80,7 @@ async def create_user(db: Session, data: UserCreate):
             uid=user.uid,
             email=user.email,
             name=data.name,
-            organization_id=data.organization_id,
+            organization_id=organization_id,
             active=True,
         )
         # it may be possible to specify the organization_id externally in the future
@@ -87,11 +94,17 @@ async def create_user(db: Session, data: UserCreate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def update_user(db: Session, user_id: int, data: UserUpdate):
+async def update_user(
+    db: Session, user_id: int, data: UserUpdate, organization_id: int
+):
     try:
         user_db = (
             db.query(UserModel)
-            .filter(UserModel.active.is_(True), UserModel.id == user_id)
+            .filter(
+                UserModel.active.is_(True),
+                UserModel.id == user_id,
+                UserModel.organization_id == organization_id,
+            )
             .first()
         )
         user_data = data.dict(exclude_unset=True)
@@ -104,15 +117,20 @@ async def update_user(db: Session, user_id: int, data: UserUpdate):
             db.query(UserRoleModel).filter(UserRoleModel.user_id == user_db.id).first()
         )
         user_db.__dict__["role_id"] = role.role_id if role else None
-        db.commit()
         firebase_auth.update_user(user_db.uid, email=data.email)
+        db.commit()
         return User.from_orm(user_db)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def update_password(db: Session, user_id: int, data: UserPasswordUpdate):
-    user = await get_user(db, user_id)
+async def update_password(
+    db: Session,
+    user_id: int,
+    data: UserPasswordUpdate,
+    organization_id: int,
+):
+    user = await get_user(db, user_id, organization_id)
     await authenticate_user(
         db, data=UserAuth(email=user.email, password=data.old_password)
     )
@@ -123,11 +141,15 @@ async def update_password(db: Session, user_id: int, data: UserPasswordUpdate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_user(db: Session, user_id: int):
+async def delete_user(db: Session, user_id: int, organization_id: int):
     try:
         user_db = (
             db.query(UserModel)
-            .filter(UserModel.active.is_(True), UserModel.id == user_id)
+            .filter(
+                UserModel.active.is_(True),
+                UserModel.id == user_id,
+                UserModel.organization_id == organization_id,
+            )
             .first()
         )
         assert user_db is not None, "User not found"
