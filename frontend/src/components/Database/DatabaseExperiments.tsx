@@ -1,11 +1,5 @@
 import { Box, Pagination, styled } from '@mui/material'
-import {
-  ChangeEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import LaunchIcon from '@mui/icons-material/Launch'
@@ -194,12 +188,12 @@ const PopupAttributes = ({
 }
 
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
-  const type: keyof TypeData = user? 'private': 'public'
+  const type: keyof TypeData = user ? 'private' : 'public'
   const { data: dataExperiments, loading } = useSelector(
     (state: RootState) => ({
       data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading
-    })
+      loading: state[DATABASE_SLICE_NAME].loading,
+    }),
   )
 
   const [dataDialog, setDataDialog] = useState<{
@@ -222,27 +216,32 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     [dataExperiments.limit, dataExperiments.offset],
   )
 
+  const offset = searchParams.get('offset')
+  const limit = searchParams.get('limit')
+  const sort = searchParams.get('sort')
+
   const dataParams = useMemo(() => {
     return {
-      offset: Number(searchParams.get('offset')) || 0,
-      limit: Number(searchParams.get('limit')) || 50,
-      sort: searchParams.getAll('sort') || [],
+      offset: Number(offset) || 0,
+      limit: Number(limit) || 50,
+      sort: sort || [],
     }
-  }, [searchParams])
+  }, [offset, limit, sort])
 
   const dataParamsFilter = useMemo(
     () => ({
       brain_area: searchParams.get('fields.brain_area') || undefined,
       cre_driver: searchParams.get('fields.cre_driver') || undefined,
       reporter_line: searchParams.get('fields.reporter_line') || undefined,
-      imaging_depth: Number(searchParams.get('fields.imaging_depth')) || undefined,
+      imaging_depth:
+        Number(searchParams.get('fields.imaging_depth')) || undefined,
     }),
     [searchParams],
   )
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
-    dispatch(api({...dataParamsFilter, ...dataParams}))
+    dispatch(api({ ...dataParamsFilter, ...dataParams }))
   }
 
   useEffect(() => {
@@ -270,7 +269,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     const dataFilter = Object.keys(dataParamsFilter)
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
-      .join('&').replaceAll("fields.", "")
+      .join('&')
+      .replaceAll('fields.', '')
     return dataFilter
   }
 
@@ -295,9 +295,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace("fields.", "")}&sort=${
-          rowSelectionModel[0].sort
-        }&${pagiFilter()}`,
+        `${filter}&sort=${rowSelectionModel[0].field.replace(
+          'fields.',
+          '',
+        )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line

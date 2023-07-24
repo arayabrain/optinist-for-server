@@ -10,7 +10,7 @@ import { DATABASE_SLICE_NAME, DatabaseDTO } from './DatabaseType'
 const initData = {
   offset: 0,
   total: 0,
-  limit: 0,
+  limit: 50,
   header: {
     graph_titles: [],
   },
