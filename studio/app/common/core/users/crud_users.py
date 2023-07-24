@@ -111,7 +111,7 @@ async def update_user(db: Session, user_id: int, data: UserUpdate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def upate_password(db: Session, user_id: int, data: UserPasswordUpdate):
+async def update_password(db: Session, user_id: int, data: UserPasswordUpdate):
     user = await get_user(db, user_id)
     await authenticate_user(
         db, data=UserAuth(email=user.email, password=data.old_password)
