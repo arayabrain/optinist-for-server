@@ -13,6 +13,7 @@ export type DatabaseType = {
   experiment_id?: string
   attributes?: object
   cell_image_urls: string[]
+  cell_image_url?: string
   graph_urls: string[]
   share_type?: number
   publish_status?: number
