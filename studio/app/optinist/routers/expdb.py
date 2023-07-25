@@ -97,6 +97,10 @@ async def search_public_experiments(
     db: Session = Depends(get_db),
 ):
     sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=select(optinist_model.Experiment)
@@ -107,7 +111,7 @@ async def search_public_experiments(
             if sortOptions.sort[1] == SortDirection.desc
             else sort_column.asc()
         ),
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
         # TODO: set dummy data.
@@ -147,10 +151,14 @@ async def search_public_cells(
         if sortOptions.sort[1] == SortDirection.desc
         else sort_column.asc()
     )
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=query,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
         # TODO: set dummy data.
@@ -284,10 +292,14 @@ async def search_db_cells(
         if sortOptions.sort[1] == SortDirection.desc
         else sort_column.asc()
     )
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=query,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
 
     for item in data.items:
