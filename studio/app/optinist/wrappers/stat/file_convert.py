@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 from scipy.signal import lfilter
 
+from studio.app.common.dataclass import LineData
 from studio.app.optinist.dataclass import StatData, StatIndex, TcData, TsData
 
 
@@ -236,5 +237,9 @@ def stat_file_convert(
             data_tables=data_tables,
             dirstat=dirstat,
             oristat=oristat,
-        )
+        ),
+        "dir_ratio_change": LineData(
+            data=dirstat.ratio_change,
+            columns=np.arange(0, 360, 360 / ts.nstim_per_trial),
+        ),
     }

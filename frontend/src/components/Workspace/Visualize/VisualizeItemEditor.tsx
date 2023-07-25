@@ -16,6 +16,7 @@ import { TimeSeriesItemEditor } from './Editor/TimeSeriesItemEditor'
 import { RoiItemEditor } from './Editor/RoiItemEditor'
 import { ScatterItemEditor } from './Editor/ScatterItemEditor'
 import { BarItemEditor } from './Editor/BarItemEditor'
+import { LineItemEditor } from './Editor/LineItemEditor'
 
 export const VisualizeItemEditor = () => {
   const selectedItemId = useSelector(selectSelectedVisualizeItemId)
@@ -67,6 +68,8 @@ const DisplayEditor: React.FC<{
       return <BarItemEditor />
     case DATA_TYPE_SET.HTML:
       return <div>html editor</div>
+    case DATA_TYPE_SET.LINE:
+      return <LineItemEditor />
     default:
       return null
   }

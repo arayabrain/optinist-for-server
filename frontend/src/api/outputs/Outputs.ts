@@ -155,3 +155,12 @@ export async function deleteRoiApi(
   )
   return response.data
 }
+
+export type LineData = number[][]
+
+export async function getLineDataApi(
+  path: string,
+): Promise<{ data: LineData; columns: number[]; index: number[] }> {
+  const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
+  return response.data
+}

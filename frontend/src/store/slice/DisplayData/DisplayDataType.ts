@@ -7,6 +7,7 @@ import {
   ImageData,
   ScatterData,
   HTMLData,
+  LineData,
 } from 'api/outputs/Outputs'
 
 export const DISPLAY_DATA_SLICE_NAME = 'displayData'
@@ -39,6 +40,9 @@ export type DisplayData = {
   html: {
     [filePath: string]: HTMLDisplayData
   }
+  line: {
+    [filePath: string]: LineDisplayData
+  }
 }
 
 export const DATA_TYPE_SET = {
@@ -52,6 +56,7 @@ export const DATA_TYPE_SET = {
   HDF5: 'hdf5',
   HTML: 'html',
   FLUO: 'fluo',
+  LINE: 'line',
   BEHAVIOR: 'behavior',
   MATLAB: 'matlab',
 } as const
@@ -97,3 +102,8 @@ export interface BarDisplayData extends BaseDisplay<'bar', BarData> {
 }
 
 export interface HTMLDisplayData extends BaseDisplay<'html', HTMLData> {}
+
+export interface LineDisplayData extends BaseDisplay<'line', LineData> {
+  columns: number[]
+  index: number[]
+}

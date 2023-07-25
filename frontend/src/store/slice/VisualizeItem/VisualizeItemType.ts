@@ -45,6 +45,7 @@ export type DisplayDataItem =
   | FluoItem
   | BehaviorItem
   | MatlabItem
+  | LineItem
 
 export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
   filePath: string | null
@@ -136,4 +137,9 @@ export interface BehaviorItem extends DisplayDataItemBaseType {
 
 export interface MatlabItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.MATLAB
+}
+
+export interface LineItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.LINE
+  selectedIndex: number
 }

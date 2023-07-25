@@ -28,6 +28,7 @@ class OutputType:
     SCATTER: str = "scatter"
     BAR: str = "bar"
     HTML: str = "html"
+    LINE: str = "line"
 
 
 class NodeItem(BaseModel):

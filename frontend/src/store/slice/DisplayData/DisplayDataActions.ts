@@ -8,6 +8,7 @@ import {
   HTMLData,
   ImageData,
   HeatMapData,
+  LineData,
   getTimeSeriesInitDataApi,
   getTimeSeriesDataByIdApi,
   getTimeSeriesAllDataApi,
@@ -18,6 +19,7 @@ import {
   getScatterDataApi,
   getBarDataApi,
   getHTMLDataApi,
+  getLineDataApi,
 } from 'api/outputs/Outputs'
 import { DISPLAY_DATA_SLICE_NAME } from './DisplayDataType'
 
@@ -72,6 +74,18 @@ export const getHeatMapData = createAsyncThunk<
 >(`${DISPLAY_DATA_SLICE_NAME}/getHeatMapData`, async ({ path }, thunkAPI) => {
   try {
     const response = await getHeatMapDataApi(path)
+    return response
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e)
+  }
+})
+
+export const getLineData = createAsyncThunk<
+  { data: LineData; columns: number[]; index: number[] },
+  { path: string }
+>(`${DISPLAY_DATA_SLICE_NAME}/getLineData`, async ({ path }, thunkAPI) => {
+  try {
+    const response = await getLineDataApi(path)
     return response
   } catch (e) {
     return thunkAPI.rejectWithValue(e)

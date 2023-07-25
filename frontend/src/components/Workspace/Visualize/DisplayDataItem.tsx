@@ -12,6 +12,7 @@ import {
 } from 'store/slice/VisualizeItem/VisualizeItemSelectors'
 import { DisplayDataContext } from './DataContext'
 import { HeatMapPlot } from './Plot/HeatMapPlot'
+import { LinePlot } from './Plot/LinePlot'
 import { ImagePlot } from './Plot/ImagePlot'
 import { RoiPlot } from './Plot/RoiPlot'
 import { ScatterPlot } from './Plot/ScatterPlot'
@@ -49,6 +50,8 @@ const DisplayPlot = React.memo<{
       return <TimeSeriesPlot />
     case DATA_TYPE_SET.HEAT_MAP:
       return <HeatMapPlot />
+    case DATA_TYPE_SET.LINE:
+      return <LinePlot />
     case DATA_TYPE_SET.IMAGE:
       return <ImagePlot />
     case DATA_TYPE_SET.ROI:

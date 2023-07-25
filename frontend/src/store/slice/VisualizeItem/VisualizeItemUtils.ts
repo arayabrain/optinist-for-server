@@ -10,6 +10,7 @@ import {
   ScatterItem,
   CsvItem,
   BarItem,
+  LineItem,
 } from './VisualizeItemType'
 
 export function isDisplayDataItem(
@@ -66,5 +67,12 @@ export function isBarItem(item: VisualaizeItemType): item is BarItem {
   return (
     item.itemType === VISUALIZE_ITEM_TYPE_SET.DISPLAY_DATA &&
     item.dataType === DATA_TYPE_SET.BAR
+  )
+}
+
+export function isLineItem(item: VisualaizeItemType): item is LineItem {
+  return (
+    item.itemType === VISUALIZE_ITEM_TYPE_SET.DISPLAY_DATA &&
+    item.dataType === DATA_TYPE_SET.LINE
   )
 }

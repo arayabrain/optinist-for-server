@@ -16,6 +16,7 @@ import {
   getBarData,
   getHTMLData,
   getTimeSeriesInitData,
+  getLineData,
 } from './DisplayDataActions'
 import {
   deleteDisplayItem,
@@ -31,6 +32,7 @@ const initialState: DisplayData = {
   scatter: {},
   bar: {},
   html: {},
+  line: {},
 }
 
 export const displayDataSlice = createSlice({
@@ -202,6 +204,42 @@ export const displayDataSlice = createSlice({
         const { path } = action.meta.arg
         state.heatMap[path] = {
           type: 'heatMap',
+          data: action.payload.data,
+          columns: action.payload.columns,
+          index: action.payload.index,
+          pending: false,
+          fulfilled: true,
+          error: null,
+        }
+      })
+      .addCase(getLineData.pending, (state, action) => {
+        const { path } = action.meta.arg
+        state.line[path] = {
+          type: 'line',
+          data: [],
+          columns: [],
+          index: [],
+          pending: true,
+          fulfilled: false,
+          error: null,
+        }
+      })
+      .addCase(getLineData.rejected, (state, action) => {
+        const { path } = action.meta.arg
+        state.line[path] = {
+          type: 'line',
+          data: [],
+          columns: [],
+          index: [],
+          pending: false,
+          fulfilled: false,
+          error: action.error.message ?? 'rejected',
+        }
+      })
+      .addCase(getLineData.fulfilled, (state, action) => {
+        const { path } = action.meta.arg
+        state.line[path] = {
+          type: 'line',
           data: action.payload.data,
           columns: action.payload.columns,
           index: action.payload.index,
@@ -435,6 +473,8 @@ function deleteDisplayDataFn(
     delete state.bar[filePath]
   } else if (dataType === DATA_TYPE_SET.HTML) {
     delete state.html[filePath]
+  } else if (dataType === DATA_TYPE_SET.LINE) {
+    delete state.line[filePath]
   }
 }
 

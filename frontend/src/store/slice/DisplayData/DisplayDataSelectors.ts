@@ -32,6 +32,34 @@ export const selectTimeSeriesDataError =
       ? selectDisplayData(state).timeSeries[filePath].error
       : null
 
+export const selectLineData = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).line[filePath].data
+
+export const selectLineColumns = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).line[filePath].columns
+
+export const selectLineIndex = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).line[filePath].index
+
+export const selectLineDataIsInitialized =
+  (filePath: string) => (state: RootState) =>
+    Object.keys(selectDisplayData(state).line).includes(filePath)
+
+export const selectLineDataIsPending =
+  (filePath: string) => (state: RootState) =>
+    selectLineDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).line[filePath].pending
+
+export const selectLineDataIsFulfilled =
+  (filePath: string) => (state: RootState) =>
+    selectLineDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).line[filePath].fulfilled
+
+export const selectLineDataError = (filePath: string) => (state: RootState) =>
+  selectLineDataIsInitialized(filePath)(state)
+    ? selectDisplayData(state).line[filePath].error
+    : null
+
 export const selectHeatMapData = (filePath: string) => (state: RootState) =>
   selectDisplayData(state).heatMap[filePath].data
 

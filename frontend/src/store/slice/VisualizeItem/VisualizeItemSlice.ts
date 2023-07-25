@@ -23,6 +23,7 @@ import {
   BehaviorItem,
   MatlabItem,
   VISUALIZE_ITEM_SLICE_NAME,
+  LineItem,
 } from './VisualizeItemType'
 import {
   isDisplayDataItem,
@@ -32,6 +33,7 @@ import {
   isCsvItem,
   isScatterItem,
   isBarItem,
+  isLineItem,
 } from './VisualizeItemUtils'
 
 export const initialState: VisualaizeItem = {
@@ -140,6 +142,12 @@ const matlabItemInitialValue: MatlabItem = {
   dataType: DATA_TYPE_SET.MATLAB,
 }
 
+const lineItemInitialValue: LineItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.LINE,
+  selectedIndex: 0,
+}
+
 function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
   switch (dataType) {
     case DATA_TYPE_SET.IMAGE:
@@ -166,6 +174,8 @@ function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
       return behaviorItemInitialValue
     case DATA_TYPE_SET.MATLAB:
       return matlabItemInitialValue
+    case DATA_TYPE_SET.LINE:
+      return lineItemInitialValue
   }
 }
 
@@ -737,6 +747,18 @@ export const visualaizeItemSlice = createSlice({
         targetItem.setIndex = action.payload.setIndex
       }
     },
+    setLineItemSelectedIndex: (
+      state,
+      action: PayloadAction<{
+        itemId: number
+        selectedIndex: number
+      }>,
+    ) => {
+      const targetItem = state.items[action.payload.itemId]
+      if (isLineItem(targetItem)) {
+        targetItem.selectedIndex = action.payload.selectedIndex
+      }
+    },
     setScatterItemXIndex: (
       state,
       action: PayloadAction<{
@@ -932,6 +954,7 @@ export const {
   setCsvItemSetIndex,
   setScatterItemXIndex,
   setScatterItemYIndex,
+  setLineItemSelectedIndex,
   setBarItemIndex,
   resetAllOrderList,
   reset,
