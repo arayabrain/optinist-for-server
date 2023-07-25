@@ -36,7 +36,7 @@ const App: React.FC = () => {
             <Routes>
               <Route
                 path="/"
-                element={<Navigate replace to="/experiments" />}
+                element={<Navigate replace to="/experiments?sort=&sort=&limit=50&offset=0" />}
               />
               <Route path="/experiments" element={<PublicExperiments />} />
               <Route path="/cells" element={<PublicCells />} />
