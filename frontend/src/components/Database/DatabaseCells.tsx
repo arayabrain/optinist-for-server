@@ -215,7 +215,6 @@ const DatabaseCells = ({ user }: CellProps) => {
         filterable: false,
         sortable: false,
         renderCell: (params: { row: DatabaseType }) => {
-          console.log('params.row.graph_urls?.[index]?.[0]', params.row.graph_urls?.[index]?.[0])
           return (
             <Box sx={{ display: 'flex' }}>
               {params.row.graph_urls?.[index]?.[0] ? (

@@ -226,6 +226,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       limit: Number(limit) || 50,
       sort: sort || [],
     }
+    //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
 
   const dataParamsFilter = useMemo(
@@ -353,7 +354,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     return [
       {
         field: 'share_type',
-        headerName: '',
+        headerName: 'Share',
         width: 160,
         sortable: false,
         filterable: false,
@@ -365,7 +366,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       },
       {
         field: 'publish_status',
-        headerName: '',
+        headerName: 'Publish',
         width: 160,
         sortable: false,
         filterable: false,
