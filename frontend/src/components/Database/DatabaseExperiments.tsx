@@ -218,7 +218,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const offset = searchParams.get('offset')
   const limit = searchParams.get('limit')
-  const sort = searchParams.get('sort')
+  const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
     return {
@@ -226,7 +226,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       limit: Number(limit) || 50,
       sort: sort || [],
     }
-  }, [offset, limit, sort])
+  }, [offset, limit, JSON.stringify(sort)])
 
   const dataParamsFilter = useMemo(
     () => ({
@@ -246,7 +246,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user])
+  }, [dataParams, user, dataParamsFilter])
 
   const handleOpenDialog = (data: string[]) => {
     setDataDialog({ type: 'image', data })
@@ -276,8 +276,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${
-        dataParams.sort[1]
+      `${filter}&sort=${dataParams.sort[0] || ''}&sort=${
+        dataParams.sort[1] || ''
       }&${pagiFilter(page)}`,
     )
   }
@@ -315,23 +315,12 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&').replaceAll("fields.", "")
+        .join('&')
     } else {
       filter = ''
     }
-    if (!model.items[0]) {
-      setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${
-          dataParams.sort[1]
-        }&${pagiFilter()}`,
-      )
-      return
-    }
-    setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${
-        dataParams.sort[1]
-      }&${pagiFilter()}`,
-    )
+    const {sort} = dataParams
+    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`)
   }
 
   const getColumns = useMemo(() => {
@@ -432,7 +421,22 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
                   field: 'brain_area',
                   operator: 'is',
                   value: dataParamsFilter.brain_area,
-                }
+                },
+                {
+                  field: 'cre_driver',
+                  operator: 'contains',
+                  value: dataParamsFilter.cre_driver,
+                },
+                {
+                  field: 'reporter_line',
+                  operator: 'contains',
+                  value: dataParamsFilter.reporter_line,
+                },
+                {
+                  field: 'imaging_depth',
+                  operator: 'contains',
+                  value: dataParamsFilter.imaging_depth,
+                },
               ],
             },
           },

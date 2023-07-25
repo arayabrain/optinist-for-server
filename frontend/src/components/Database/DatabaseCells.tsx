@@ -58,7 +58,7 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
       params.row.fields?.imaging_depth,
   },
   {
-    field: 'cell_image_urls',
+    field: 'cell_image_url',
     headerName: 'Pixel Image',
     width: 160,
     filterable: false,
@@ -69,11 +69,11 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
           cursor: 'pointer',
           display: 'flex',
         }}
-        onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
+        onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
       >
-        {params.row?.cell_image_urls?.length > 0 && (
+        {params.row?.cell_image_url && (
           <img
-            src={params.row?.cell_image_urls[0]}
+            src={params.row?.cell_image_url}
             alt={''}
             width={'100%'}
             height={'100%'}
@@ -215,11 +215,12 @@ const DatabaseCells = ({ user }: CellProps) => {
         filterable: false,
         sortable: false,
         renderCell: (params: { row: DatabaseType }) => {
+          console.log('params.row.graph_urls?.[index]?.[0]', params.row.graph_urls?.[index]?.[0])
           return (
             <Box sx={{ display: 'flex' }}>
-              {params.row.graph_urls[index] ? (
+              {params.row.graph_urls?.[index]?.[0] ? (
                 <img
-                  src={params.row.graph_urls[index]}
+                  src={params.row.graph_urls?.[index]?.[0] }
                   alt={''}
                   width={'100%'}
                   height={'100%'}
