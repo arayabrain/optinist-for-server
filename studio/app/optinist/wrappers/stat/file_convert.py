@@ -209,6 +209,17 @@ def stat_file_convert(
     tc_detrended_sorted = sort_tc(
         tc_detrended, ts.stim_log, ts.nframes_epoch, ts.nstim_per_trial, ts.ntrials
     )
+    if not ts.has_base:
+        tc_detrended_sorted = np.reshape(
+            tc_detrended_sorted,
+            (ts.nframes_epoch, ts.nstim_per_trial, ts.ntrials, tc.n_cells),
+            order="F",
+        )
+        tc_detrended_sorted = np.reshape(
+            tc_detrended_sorted[:, 0 : ts.nstim_per_trial_planar, :, :],
+            (ts.nframes_epoch * ts.nstim_per_trial_planar * ts.ntrials, tc.n_cells),
+            order="F",
+        )
 
     data_tables = get_data_tables(
         tc_detrended_sorted,

@@ -9,21 +9,27 @@ class TsData(MatlabData):
 
         super().__init__(data, params, file_name=file_name)
 
-        self.nframes_stim = self.data["Nframes_stim"].item()
-        self.nstim_per_trial = self.data["Nstim_per_trial"].item()
-        self.ntrials = self.data["Ntrials"].item()
+        self.nframes_stim = int(self.data["Nframes_stim"].item())
+        self.nstim_per_trial = int(self.data["Nstim_per_trial"].item())
+        self.ntrials = int(self.data["Ntrials"].item())
         self.stim_log = self.data["stim_log"]
         self.framarate = self.data["frameRate"].item()
 
         if "Nframes_base" in [descr[0] for descr in self.data.dtype.descr]:
-            self.nframes_base = self.data["Nframes_base"].item()
+            self.has_base = True
+            self.nframes_base = int(self.data["Nframes_base"].item())
             self.nframes_post = 0
         else:
-            self.nframes_base = self.data["pre_stim"].item()
-            self.nframes_post = self.data["post_stim"].item()
+            self.has_base = False
+            self.nframes_base = int(self.data["pre_stim"].item())
+            self.nframes_post = int(self.data["post_stim"].item())
 
-            self.nstim_per_trial_radial = self.data["Nstim_per_trial_radial"].item()
-            self.nstim_per_trial_circular = self.data["Nstim_per_trial_circular"].item()
+            self.nstim_per_trial_radial = int(
+                self.data["Nstim_per_trial_radial"].item()
+            )
+            self.nstim_per_trial_circular = int(
+                self.data["Nstim_per_trial_circular"].item()
+            )
             self.nstim_per_trial_planar = self.nstim_per_trial - (
                 self.nstim_per_trial_radial + self.nstim_per_trial_circular
             )
