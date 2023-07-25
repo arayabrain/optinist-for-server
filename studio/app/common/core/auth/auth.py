@@ -3,6 +3,7 @@ import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from requests.exceptions import HTTPError
+from sqlmodel import Session
 
 from studio.app.common.core.auth import pyrebase_app
 from studio.app.common.core.auth.security import (
@@ -10,16 +11,22 @@ from studio.app.common.core.auth.security import (
     create_refresh_token,
     validate_refresh_token,
 )
+from studio.app.common.models.user import User as UserModel
 from studio.app.common.schemas.auth import AccessToken, Token, UserAuth
 
 
-async def authenticate_user(data: UserAuth):
+async def authenticate_user(db: Session, data: UserAuth):
     try:
         user = pyrebase_app.auth().sign_in_with_email_and_password(
             data.email, data.password
         )
-
-        ex_token = create_access_token(subject=user["localId"])
+        user_db = (
+            db.query(UserModel)
+            .filter(UserModel.uid == user["localId"], UserModel.active.is_(True))
+            .first()
+        )
+        assert user_db is not None
+        ex_token = create_access_token(subject=user_db.uid)
         return Token(
             access_token=user["idToken"],
             refresh_token=create_refresh_token(subject=user["refreshToken"]),
