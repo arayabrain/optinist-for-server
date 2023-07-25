@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit"
 import {delWorkspaceApi, getWorkspacesApi, postWorkspaceApi, putWorkspaceApi } from "api/Workspace"
-import {ItemsWorkspace, WorkspaceDataDTO, WorkspaceParams, WORKSPACE_SLICE_NAME } from "./WorkspaceType"
+import {ItemsWorkspace, WORKSPACE_SLICE_NAME } from "./WorkspaceType"
 
 // @ts-ignore
 export const getWorkspaceList = createAsyncThunk(`${WORKSPACE_SLICE_NAME}/getWorkspaceList`, async () => {
@@ -43,7 +43,7 @@ export const postWorkspace = createAsyncThunk<
 
 export const putWorkspace = createAsyncThunk<
     ItemsWorkspace,
-    { name: string }
+    { name?: string, id?: number }
 >(`${WORKSPACE_SLICE_NAME}/putWorkspaceList`, async (data, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   try {

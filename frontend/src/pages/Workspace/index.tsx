@@ -1,13 +1,12 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions, Input } from '@mui/material'
 import {
-  GridActionsCellItem,
   GridRenderCellParams,
-  GridRowModes,
   GridRowParams,
+  DataGrid
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
-import { Link, useSearchParams } from 'react-router-dom'
+import { DataGridPro, GridRowModesModel } from '@mui/x-data-grid-pro'
+import { Link } from 'react-router-dom'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import Loading from '../../components/common/Loading'
 import {
@@ -16,8 +15,8 @@ import {
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { ChangeEvent, useEffect, useState } from "react";
-import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import { delWorkspace, getWorkspaceList, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
 
 type PopupType = {
@@ -28,6 +27,7 @@ type PopupType = {
   value?: string
   handleOkNew?: () => void
   handleOkSave?: () => void
+  error?: string
 }
 
 const columns = (
@@ -70,7 +70,7 @@ const columns = (
             sx={{display: "flex", alignItems: "center", gap: 2}}
           >
             <span>{params.value}</span>
-            {params.value === "User 2" ? <GroupsIcon /> : ""}
+            {params.value === "User 2" ? <PeopleOutlineIcon /> : ""}
           </Box>
         ),
       },
@@ -233,9 +233,9 @@ const PopupShare = ({open, handleClose}: PopupType) => {
         <DialogTitle>Share Workspace</DialogTitle>
         <DialogTitle>アクセス許可ユーザー</DialogTitle>
         <DialogContent>
-          <DataGridPro
+          <DataGrid
             sx={{minHeight: 500}}
-            // onRowClick={handleShareTrue}
+            onRowClick={handleShareTrue}
             rows={tableShare}
             columns={columnsShare(handleShareFalse) as any}
           />
@@ -249,7 +249,14 @@ const PopupShare = ({open, handleClose}: PopupType) => {
   )
 }
 
-const PopupNew = ({open, handleClose, value, setNewWorkSpace, handleOkNew}: PopupType) => {
+const PopupNew = ({
+  open,
+  handleClose,
+  value,
+  setNewWorkSpace,
+  handleOkNew,
+  error
+}: PopupType) => {
   if(!setNewWorkSpace) return <></>
   const handleName = (event: ChangeEvent<HTMLInputElement>) => {
     setNewWorkSpace(event.target.value)
@@ -270,6 +277,8 @@ const PopupNew = ({open, handleClose, value, setNewWorkSpace, handleOkNew}: Popu
             value={value || ""}
             onChange={handleName}
           />
+          <br/>
+          {error ? <span style={{color: "red"}}>{error}</span> : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
@@ -284,9 +293,9 @@ const PopupDelete = ({open, handleClose, handleOkDel}: PopupType) => {
   return (
     <Box>
       <Dialog
-          open={open}
-          onClose={handleClose}
-          sx={{margin: 0}}
+        open={open}
+        onClose={handleClose}
+        sx={{margin: 0}}
       >
         <DialogTitle>Do you want delete?</DialogTitle>
         <DialogActions>
@@ -302,9 +311,9 @@ const PopupSave = ({open, handleClose, handleOkSave}: PopupType) => {
   return (
       <Box>
         <Dialog
-            open={open}
-            onClose={handleClose}
-            sx={{margin: 0}}
+          open={open}
+          onClose={handleClose}
+          sx={{margin: 0}}
         >
           <DialogTitle>Do you want save?</DialogTitle>
           <DialogActions>
@@ -324,12 +333,12 @@ const Workspaces = () => {
   const [open, setOpen] = useState({share: false, del: false, new: false, save: false})
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
-  const [rowModesModel, setRowModesModel] = useState<any>({});
-  const [nameEdit, setNameEdit] = useState("")
-  const [searchParams, setParams] = useSearchParams()
+  const [dataEdit, setDataEdit] = useState<{name?: string, id?: number}>()
+  const [error, setError] = useState("")
 
   useEffect(() => {
     dispatch(getWorkspaceList())
+    //eslint-disable-next-line
   }, [])
 
   const handleOpenPopupShare = () => {
@@ -368,31 +377,27 @@ const Workspaces = () => {
   }
 
   const handleOkSave = async () => {
-    await dispatch(putWorkspace({name: nameEdit}))
+    if(!dataEdit) return
+    await dispatch(putWorkspace({name: dataEdit.name, id: dataEdit.id}))
     setOpen({...open, save: false})
   }
 
   const handleOkNew = async () => {
     if(!newWorkspace) {
-      setOpen({...open, new: false})
+      setError("is not empty")
       return
     }
     await dispatch(postWorkspace({name: newWorkspace}))
     setOpen({...open, new: false})
   }
 
-  const handleEditstop = () => {
-    setOpen({...open, save: true})
-  }
-
-  const handleRowModesModelChange = (e: any) => {
-    console.log(e)
-  }
-
   const processRowUpdate = (newRow: any) => {
-    setNameEdit(newRow?.name)
-    // const updatedRow = { ...newRow, isNew: false };
-    // setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+    if(!newRow?.name) {
+      alert("is not empty")
+      return
+    }
+    setOpen({...open, save: true})
+    setDataEdit({id: newRow?.id, name: newRow?.name})
     return newRow;
   };
 
@@ -415,10 +420,8 @@ const Workspaces = () => {
         rows={data?.items}
         editMode="row"
         columns={columns(handleOpenPopupShare, handleOpenPopupDel) as any}
-        isCellEditable={(params) => params.row.user?.id === user?.id}
-        onRowEditStop={handleEditstop}
+        isCellEditable={(params) => /*params.row.user?.id === user?.id*/ !!params }
         processRowUpdate={processRowUpdate}
-        onRowModesModelChange={handleRowModesModelChange}
       />
       <PopupShare open={open.share} handleClose={handleClosePopupShare} />
       <PopupDelete open={open.del} handleClose={handleClosePopupDel} handleOkDel={handleOkDel} />
@@ -428,6 +431,7 @@ const Workspaces = () => {
         handleClose={handleClosePopupNew}
         setNewWorkSpace={setNewWorkSpace}
         value={newWorkspace}
+        error={error}
         handleOkNew={handleOkNew}
       />
       {loading ? <Loading /> : null}
