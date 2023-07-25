@@ -1,14 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel import Session
 
 from studio.app.common.core.auth import auth
+from studio.app.common.db.database import get_db
 from studio.app.common.schemas.auth import AccessToken, RefreshToken, Token, UserAuth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=Token)
-async def login(user_data: UserAuth):
-    return await auth.authenticate_user(user_data)
+async def login(user_data: UserAuth, db: Session = Depends(get_db)):
+    return await auth.authenticate_user(db, user_data)
 
 
 @router.post("/refresh", response_model=AccessToken)

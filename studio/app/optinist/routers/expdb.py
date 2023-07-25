@@ -29,6 +29,60 @@ from studio.app.optinist.schemas.expdb.experiment import (
 
 router = APIRouter(tags=["Experiment Database"])
 
+# TODO: set dummy data.
+DUMMY_EXPERIMENTS_FIELDS = {
+    "brain_area": 13,
+    "cre_driver": 20,
+    "reporter_line": 30,
+    "imaging_depth": 40,
+}
+
+# TODO: set dummy data.
+DUMMY_EXPERIMENTS_GRAPH_TITLES = [
+    "Direction Responsivity Ratio",
+    "Orientation Responsivity Ratio",
+    "Preferred Direction",
+    "Preferred Orientation",
+    "Direction Selectivity",
+    "Orientation Selectivity",
+    "Best Responsivity",
+    "Direction Tuning Width",
+    "Orientation Tuning Width",
+]
+
+# TODO: set dummy data.
+DUMMY_CELLS_GRAPH_TITLES = [
+    "Responsivity Statistic",
+    "Preferred Direction",
+    "Preferred Orientation",
+    "Direction Selectivity",
+    "Orientation Selectivity",
+    "Best Responsivity",
+    "Direction Tuning Width",
+    "Orientation Tuning Width",
+    "Tuning Curve",
+    "Tuning Curve Poler",
+]
+
+# TODO: set dummy data.
+DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
+    "http://localhost:8000/static/sample_media/pixel_image.png"
+    for i in range(5)
+]
+
+# TODO: set dummy data.
+DUMMY_EXPERIMENTS_GRAPH_URLS = [
+    "http://localhost:8000/static/sample_media/bar_chart.png"
+    for i in DUMMY_EXPERIMENTS_GRAPH_TITLES
+]
+
+# TODO: set dummy data.
+DUMMY_CELLS_GRAPH_URLS = [
+    ("http://localhost:8000/static/sample_media/bar_chart.png",
+     {"param1": 10, "param2": 20})
+    for i in DUMMY_CELLS_GRAPH_TITLES
+]
+
 
 @router.get(
     "/public/experiments",
@@ -43,6 +97,10 @@ async def search_public_experiments(
     db: Session = Depends(get_db),
 ):
     sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=select(optinist_model.Experiment)
@@ -53,12 +111,15 @@ async def search_public_experiments(
             if sortOptions.sort[1] == SortDirection.desc
             else sort_column.asc()
         ),
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
-        item.fields = ExpDbExperimentFields(
-            brain_area=0, cre_driver=0, reporter_line=0, imaging_depth=0
-        )
+        # TODO: set dummy data.
+        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
+        # TODO: set dummy data.
+        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -90,15 +151,22 @@ async def search_public_cells(
         if sortOptions.sort[1] == SortDirection.desc
         else sort_column.asc()
     )
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=query,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
-        item.fields = ExpDbExperimentFields(
-            brain_area=0, cre_driver=0, reporter_line=0, imaging_depth=0
-        )
+        # TODO: set dummy data.
+        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
+        # TODO: set dummy data.
+        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
     return data
 
 
@@ -147,15 +215,22 @@ async def search_db_experiments(
         if sortOptions.sort[1] == SortDirection.desc
         else sort_column.asc()
     )
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=query,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
-        item.fields = ExpDbExperimentFields(
-            brain_area=0, cre_driver=0, reporter_line=0, imaging_depth=0
-        )
+        # TODO: set dummy data.
+        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
+        # TODO: set dummy data.
+        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -217,11 +292,26 @@ async def search_db_cells(
         if sortOptions.sort[1] == SortDirection.desc
         else sort_column.asc()
     )
+
+    # TODO: set dummy data.
+    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+
     data = paginate(
         session=db,
         query=query,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
+
+    for item in data.items:
+        # TODO: set experiment.id
+        # item.exp_id = item.experiment.id
+        # TODO: set dummy data.
+        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
+        # TODO: set dummy data.
+        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
+
     return data
 
 
