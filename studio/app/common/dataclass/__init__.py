@@ -6,6 +6,7 @@ from studio.app.common.dataclass.html import HTMLData
 from studio.app.common.dataclass.image import ImageData
 from studio.app.common.dataclass.line import LineData
 from studio.app.common.dataclass.matlab import MatlabData
+from studio.app.common.dataclass.polar import PolarData
 from studio.app.common.dataclass.scatter import ScatterData
 from studio.app.common.dataclass.timeseries import TimeSeriesData
 
@@ -18,6 +19,7 @@ __all__ = [
     "ImageData",
     "LineData",
     "MatlabData",
+    "PolarData",
     "ScatterData",
     "TimeSeriesData",
 ]

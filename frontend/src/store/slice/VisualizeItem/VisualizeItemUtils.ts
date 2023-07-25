@@ -11,6 +11,7 @@ import {
   CsvItem,
   BarItem,
   LineItem,
+  PolarItem,
 } from './VisualizeItemType'
 
 export function isDisplayDataItem(
@@ -74,5 +75,12 @@ export function isLineItem(item: VisualaizeItemType): item is LineItem {
   return (
     item.itemType === VISUALIZE_ITEM_TYPE_SET.DISPLAY_DATA &&
     item.dataType === DATA_TYPE_SET.LINE
+  )
+}
+
+export function isPolarItem(item: VisualaizeItemType): item is PolarItem {
+  return (
+    item.itemType === VISUALIZE_ITEM_TYPE_SET.DISPLAY_DATA &&
+    item.dataType === DATA_TYPE_SET.POLAR
   )
 }

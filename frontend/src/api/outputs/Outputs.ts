@@ -164,3 +164,12 @@ export async function getLineDataApi(
   const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
   return response.data
 }
+
+export type PolarData = number[][]
+
+export async function getPolarDataApi(
+  path: string,
+): Promise<{ data: PolarData; columns: number[]; index: number[] }> {
+  const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
+  return response.data
+}

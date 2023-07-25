@@ -60,6 +60,34 @@ export const selectLineDataError = (filePath: string) => (state: RootState) =>
     ? selectDisplayData(state).line[filePath].error
     : null
 
+export const selectPolarData = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).polar[filePath].data
+
+export const selectPolarColumns = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).polar[filePath].columns
+
+export const selectPolarIndex = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).polar[filePath].index
+
+export const selectPolarDataIsInitialized =
+  (filePath: string) => (state: RootState) =>
+    Object.keys(selectDisplayData(state).polar).includes(filePath)
+
+export const selectPolarDataIsPending =
+  (filePath: string) => (state: RootState) =>
+    selectPolarDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).polar[filePath].pending
+
+export const selectPolarDataIsFulfilled =
+  (filePath: string) => (state: RootState) =>
+    selectPolarDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).polar[filePath].fulfilled
+
+export const selectPolarDataError = (filePath: string) => (state: RootState) =>
+  selectPolarDataIsInitialized(filePath)(state)
+    ? selectDisplayData(state).polar[filePath].error
+    : null
+
 export const selectHeatMapData = (filePath: string) => (state: RootState) =>
   selectDisplayData(state).heatMap[filePath].data
 

@@ -8,6 +8,7 @@ import {
   ScatterData,
   HTMLData,
   LineData,
+  PolarData,
 } from 'api/outputs/Outputs'
 
 export const DISPLAY_DATA_SLICE_NAME = 'displayData'
@@ -43,6 +44,9 @@ export type DisplayData = {
   line: {
     [filePath: string]: LineDisplayData
   }
+  polar: {
+    [filePath: string]: PolarDisplayData
+  }
 }
 
 export const DATA_TYPE_SET = {
@@ -57,6 +61,7 @@ export const DATA_TYPE_SET = {
   HTML: 'html',
   FLUO: 'fluo',
   LINE: 'line',
+  POLAR: 'polar',
   BEHAVIOR: 'behavior',
   MATLAB: 'matlab',
 } as const
@@ -104,6 +109,11 @@ export interface BarDisplayData extends BaseDisplay<'bar', BarData> {
 export interface HTMLDisplayData extends BaseDisplay<'html', HTMLData> {}
 
 export interface LineDisplayData extends BaseDisplay<'line', LineData> {
+  columns: number[]
+  index: number[]
+}
+
+export interface PolarDisplayData extends BaseDisplay<'polar', PolarData> {
   columns: number[]
   index: number[]
 }

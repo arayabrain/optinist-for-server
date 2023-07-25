@@ -21,6 +21,8 @@ export function toDataType(value: string): DATA_TYPE {
       return DATA_TYPE_SET.HTML
     case 'line':
       return DATA_TYPE_SET.LINE
+    case 'polar':
+      return DATA_TYPE_SET.POLAR
     default:
       throw new Error(`failed to map dataType: ${value}`)
   }

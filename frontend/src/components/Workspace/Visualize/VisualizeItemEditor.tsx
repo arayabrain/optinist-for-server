@@ -17,6 +17,7 @@ import { RoiItemEditor } from './Editor/RoiItemEditor'
 import { ScatterItemEditor } from './Editor/ScatterItemEditor'
 import { BarItemEditor } from './Editor/BarItemEditor'
 import { LineItemEditor } from './Editor/LineItemEditor'
+import { PolarItemEditor } from './Editor/PolarItemEditor'
 
 export const VisualizeItemEditor = () => {
   const selectedItemId = useSelector(selectSelectedVisualizeItemId)
@@ -70,6 +71,8 @@ const DisplayEditor: React.FC<{
       return <div>html editor</div>
     case DATA_TYPE_SET.LINE:
       return <LineItemEditor />
+    case DATA_TYPE_SET.POLAR:
+      return <PolarItemEditor />
     default:
       return null
   }

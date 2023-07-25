@@ -46,6 +46,7 @@ export type DisplayDataItem =
   | BehaviorItem
   | MatlabItem
   | LineItem
+  | PolarItem
 
 export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
   filePath: string | null
@@ -141,5 +142,10 @@ export interface MatlabItem extends DisplayDataItemBaseType {
 
 export interface LineItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.LINE
+  selectedIndex: number
+}
+
+export interface PolarItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.POLAR
   selectedIndex: number
 }

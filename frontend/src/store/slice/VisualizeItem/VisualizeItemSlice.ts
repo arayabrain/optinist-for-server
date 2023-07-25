@@ -24,6 +24,7 @@ import {
   MatlabItem,
   VISUALIZE_ITEM_SLICE_NAME,
   LineItem,
+  PolarItem,
 } from './VisualizeItemType'
 import {
   isDisplayDataItem,
@@ -34,6 +35,7 @@ import {
   isScatterItem,
   isBarItem,
   isLineItem,
+  isPolarItem,
 } from './VisualizeItemUtils'
 
 export const initialState: VisualaizeItem = {
@@ -148,6 +150,12 @@ const lineItemInitialValue: LineItem = {
   selectedIndex: 0,
 }
 
+const polarItemInitialValue: PolarItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.POLAR,
+  selectedIndex: 0,
+}
+
 function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
   switch (dataType) {
     case DATA_TYPE_SET.IMAGE:
@@ -176,6 +184,8 @@ function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
       return matlabItemInitialValue
     case DATA_TYPE_SET.LINE:
       return lineItemInitialValue
+    case DATA_TYPE_SET.POLAR:
+      return polarItemInitialValue
   }
 }
 
@@ -759,6 +769,18 @@ export const visualaizeItemSlice = createSlice({
         targetItem.selectedIndex = action.payload.selectedIndex
       }
     },
+    setPolartemItemSelectedIndex: (
+      state,
+      action: PayloadAction<{
+        itemId: number
+        selectedIndex: number
+      }>,
+    ) => {
+      const targetItem = state.items[action.payload.itemId]
+      if (isPolarItem(targetItem)) {
+        targetItem.selectedIndex = action.payload.selectedIndex
+      }
+    },
     setScatterItemXIndex: (
       state,
       action: PayloadAction<{
@@ -955,6 +977,7 @@ export const {
   setScatterItemXIndex,
   setScatterItemYIndex,
   setLineItemSelectedIndex,
+  setPolartemItemSelectedIndex,
   setBarItemIndex,
   resetAllOrderList,
   reset,

@@ -29,6 +29,7 @@ class OutputType:
     BAR: str = "bar"
     HTML: str = "html"
     LINE: str = "line"
+    POLAR: str = "polar"
 
 
 class NodeItem(BaseModel):

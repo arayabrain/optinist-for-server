@@ -17,6 +17,7 @@ import {
   getHTMLData,
   getTimeSeriesInitData,
   getLineData,
+  getPolarData,
 } from './DisplayDataActions'
 import {
   deleteDisplayItem,
@@ -33,6 +34,7 @@ const initialState: DisplayData = {
   bar: {},
   html: {},
   line: {},
+  polar: {},
 }
 
 export const displayDataSlice = createSlice({
@@ -240,6 +242,42 @@ export const displayDataSlice = createSlice({
         const { path } = action.meta.arg
         state.line[path] = {
           type: 'line',
+          data: action.payload.data,
+          columns: action.payload.columns,
+          index: action.payload.index,
+          pending: false,
+          fulfilled: true,
+          error: null,
+        }
+      })
+      .addCase(getPolarData.pending, (state, action) => {
+        const { path } = action.meta.arg
+        state.polar[path] = {
+          type: 'polar',
+          data: [],
+          columns: [],
+          index: [],
+          pending: true,
+          fulfilled: false,
+          error: null,
+        }
+      })
+      .addCase(getPolarData.rejected, (state, action) => {
+        const { path } = action.meta.arg
+        state.polar[path] = {
+          type: 'polar',
+          data: [],
+          columns: [],
+          index: [],
+          pending: false,
+          fulfilled: false,
+          error: action.error.message ?? 'rejected',
+        }
+      })
+      .addCase(getPolarData.fulfilled, (state, action) => {
+        const { path } = action.meta.arg
+        state.polar[path] = {
+          type: 'polar',
           data: action.payload.data,
           columns: action.payload.columns,
           index: action.payload.index,

@@ -20,6 +20,7 @@ import { CsvPlot } from './Plot/CsvPlot'
 import { TimeSeriesPlot } from './Plot/TimeSeriesPlot'
 import { BarPlot } from './Plot/BarPlot'
 import { HTMLPlot } from './Plot/HTMLPlot'
+import { PolarPlot } from './Plot/PolarPlot'
 
 export const DisplayDataItem = React.memo<{
   itemId: number
@@ -52,6 +53,8 @@ const DisplayPlot = React.memo<{
       return <HeatMapPlot />
     case DATA_TYPE_SET.LINE:
       return <LinePlot />
+    case DATA_TYPE_SET.POLAR:
+      return <PolarPlot />
     case DATA_TYPE_SET.IMAGE:
       return <ImagePlot />
     case DATA_TYPE_SET.ROI:

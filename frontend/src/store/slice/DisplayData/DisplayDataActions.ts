@@ -20,6 +20,8 @@ import {
   getBarDataApi,
   getHTMLDataApi,
   getLineDataApi,
+  getPolarDataApi,
+  PolarData,
 } from 'api/outputs/Outputs'
 import { DISPLAY_DATA_SLICE_NAME } from './DisplayDataType'
 
@@ -86,6 +88,18 @@ export const getLineData = createAsyncThunk<
 >(`${DISPLAY_DATA_SLICE_NAME}/getLineData`, async ({ path }, thunkAPI) => {
   try {
     const response = await getLineDataApi(path)
+    return response
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e)
+  }
+})
+
+export const getPolarData = createAsyncThunk<
+  { data: PolarData; columns: number[]; index: number[] },
+  { path: string }
+>(`${DISPLAY_DATA_SLICE_NAME}/getPolarData`, async ({ path }, thunkAPI) => {
+  try {
+    const response = await getPolarDataApi(path)
     return response
   } catch (e) {
     return thunkAPI.rejectWithValue(e)
