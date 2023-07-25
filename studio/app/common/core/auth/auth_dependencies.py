@@ -31,7 +31,7 @@ async def get_current_user(
             uid = user["uid"]
         else:
             payload, err = validate_access_token(ex_token)
-            assert err is not None, str(err)
+            assert err is None, str(err)
             uid = payload["sub"]
 
         user_data = (
