@@ -54,7 +54,7 @@ async def update_user(
     )
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", response_model=bool)
 async def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
