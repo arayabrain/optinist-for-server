@@ -85,13 +85,13 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
-  const type: keyof TypeData = user? 'private': 'public'
+  const type: keyof TypeData = user ? 'private' : 'public'
 
   const { data: dataExperiments, loading } = useSelector(
-      (state: RootState) => ({
-        data: state[DATABASE_SLICE_NAME].data[type],
-        loading: state[DATABASE_SLICE_NAME].loading
-      })
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+    }),
   )
 
   const [dataDialog, setDataDialog] = useState<{
@@ -108,14 +108,19 @@ const DatabaseCells = ({ user }: CellProps) => {
     return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
   }, [dataExperiments.limit, dataExperiments.offset])
 
+  const exp_id = searchParams.get('exp_id')
+  const offset = searchParams.get('offset')
+  const limit = searchParams.get('limit')
+  const sort = searchParams.get('sort')
+
   const dataParams = useMemo(() => {
     return {
-      exp_id: Number(searchParams.get('exp_id')) || undefined,
-      offset: Number(searchParams.get('offset')) || 0,
-      limit: Number(searchParams.get('limit')) || 50,
-      sort: searchParams.getAll('sort') || [],
+      exp_id: Number(exp_id) || undefined,
+      offset: Number(offset) || 0,
+      limit: Number(limit) || 50,
+      sort: sort || [],
     }
-  }, [searchParams])
+  }, [offset, limit, sort, exp_id])
 
   const dataParamsFilter = useMemo(
     () => ({
