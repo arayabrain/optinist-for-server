@@ -262,7 +262,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handleChangeAttributes = (event: any) => {
-    setDataDialog(event.target.value)
+    setDataDialog(pre => ({...pre, data: event.target.value}))
   }
 
   const getParamsData = () => {
