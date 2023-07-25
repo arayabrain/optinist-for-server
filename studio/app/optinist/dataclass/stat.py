@@ -14,13 +14,14 @@ class StatIndex:
 
 
 class StatData(BaseData):
-    def __init__(
-        self, data_tables, dirstat: StatIndex, oristat: StatIndex, file_name="stat"
-    ):
+    def __init__(self, data_tables, file_name="stat"):
         super().__init__(file_name)
         self.data_tables = data_tables
-        self.dirstat = dirstat
-        self.oristat = oristat
+        self.ncells = data_tables.shape[0]
+        self.ntrials, self.nstimplus = data_tables[0][0].shape
+        self.nstim = self.nstimplus - 1
+        self.dirstat = StatIndex(self.ncells, self.nstim)
+        self.oristat = StatIndex(self.ncells, int(self.nstim / 2))
 
 
 class AnovaStat(BaseData):

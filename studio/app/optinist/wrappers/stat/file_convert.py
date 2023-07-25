@@ -166,20 +166,17 @@ def get_r(ratio_change):
 
 
 def get_stat_data(data_tables) -> Tuple[StatIndex, StatIndex]:
-    ncells = data_tables.shape[0]
-    ntrials, nstimplus = data_tables[0][0].shape
-    nstim = nstimplus - 1
+    stat = StatData(data_tables=data_tables)
 
-    dirstat = StatIndex(ncells, nstim)
-    oristat = StatIndex(ncells, int(nstim / 2))
-
-    for i in range(ncells):
+    for i in range(stat.ncells):
         this_data = data_tables[i][0]
         temp = np.sum(this_data, axis=0)
-        dirstat.ratio_change[i] = temp[:nstim] / temp[nstim] - 1
-        oristat.ratio_change[i] = (
+        stat.dirstat.ratio_change[i] = temp[: stat.nstim] / temp[stat.nstim] - 1
+        stat.oristat.ratio_change[i] = (
             np.sum(
-                np.reshape(dirstat.ratio_change[i], (int(nstim / 2), 2), order="F")
+                np.reshape(
+                    stat.dirstat.ratio_change[i], (int(stat.nstim / 2), 2), order="F"
+                )
                 .conj()
                 .transpose(),
                 axis=0,
@@ -187,13 +184,17 @@ def get_stat_data(data_tables) -> Tuple[StatIndex, StatIndex]:
             / 2
         )
 
-        if ntrials < 1:
+        if stat.ntrials < 1:
             continue
 
-        dirstat.r_best[i], dirstat.r_null[i] = get_r(dirstat.ratio_change[i])
-        oristat.r_best[i], oristat.r_null[i] = get_r(oristat.ratio_change[i])
+        stat.dirstat.r_best[i], stat.dirstat.r_null[i] = get_r(
+            stat.dirstat.ratio_change[i]
+        )
+        stat.oristat.r_best[i], stat.oristat.r_null[i] = get_r(
+            stat.oristat.ratio_change[i]
+        )
 
-    return (dirstat, oristat)
+    return stat
 
 
 def stat_file_convert(
@@ -230,22 +231,18 @@ def stat_file_convert(
         ts.stim_index,
     )
 
-    dirstat, oristat = get_stat_data(data_tables)
+    stat = get_stat_data(data_tables)
 
     return {
-        "stat": StatData(
-            data_tables=data_tables,
-            dirstat=dirstat,
-            oristat=oristat,
-        ),
+        "stat": stat,
         "dir_ratio_change": LineData(
-            data=dirstat.ratio_change,
+            data=stat.dirstat.ratio_change,
             columns=np.arange(0, 360, 360 / ts.nstim_per_trial),
         ),
         "dir_polar": PolarData(
-            data=dirstat.ratio_change,
+            data=stat.dirstat.ratio_change,
             thetas=np.linspace(
-                0, 360, dirstat.ratio_change[0].shape[0], endpoint=False
+                0, 360, stat.dirstat.ratio_change[0].shape[0], endpoint=False
             ),
         ),
     }
