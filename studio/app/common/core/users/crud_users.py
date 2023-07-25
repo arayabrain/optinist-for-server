@@ -144,7 +144,7 @@ async def update_password(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_user(db: Session, user_id: int, organization_id: int):
+async def delete_user(db: Session, user_id: int, organization_id: int) -> bool:
     try:
         user_db = (
             db.query(UserModel)
@@ -159,7 +159,7 @@ async def delete_user(db: Session, user_id: int, organization_id: int):
         user_db.active = False
         db.commit()
         firebase_auth.delete_user(user_db.uid)
-        return User.from_orm(user_db)
+        return True
     except AssertionError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
