@@ -1,30 +1,39 @@
-// import { useEffect } from 'react'
-import { useSelector /*, useDispatch */ } from 'react-redux'
-import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
+import { useSelector, useDispatch } from 'react-redux'
+import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions, Input } from '@mui/material'
 import {
-  DataGrid,
-  GridColDef,
+  GridActionsCellItem,
   GridRenderCellParams,
+  GridRowModes,
   GridRowParams,
 } from '@mui/x-data-grid'
-import { Link } from 'react-router-dom'
+import { DataGridPro } from '@mui/x-data-grid-pro'
+import { Link, useSearchParams } from 'react-router-dom'
+import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import Loading from '../../components/common/Loading'
 import {
-  selectIsLoadingWorkspaceList,
-  // selectWorkspaceList,
+  selectIsLoadingWorkspaceList, selectWorkspaceData,
 } from 'store/slice/Workspace/WorkspaceSelector'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
+import { delWorkspace, getWorkspaceList, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
 
 type PopupType = {
   open: boolean
   handleClose: () => void
+  handleOkDel?: () => void
+  setNewWorkSpace?: (name: string) => void
+  value?: string
+  handleOkNew?: () => void
+  handleOkSave?: () => void
 }
 
-const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => void) => (
+const columns = (
+    handleOpenPopupShare: () => void,
+    handleOpenPopupDel: (id: number) => void,
+  ) => (
     [
       {
         field: 'id',
@@ -53,7 +62,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         ),
       },
       {
-        field: 'owner',
+        field: 'user',
         headerName: 'Owner',
         minWidth: 200,
         renderCell: (params: GridRenderCellParams<string>) => (
@@ -66,7 +75,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         ),
       },
       {
-        field: 'created',
+        field: 'created_at',
         headerName: 'Created',
         minWidth: 200,
         renderCell: (params: GridRenderCellParams<string>) => (
@@ -120,7 +129,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         minWidth: 130,
         renderCell: (params: GridRenderCellParams<string>) => (
           params.row.owner !== "User 2" ?
-            <ButtonCustom onClick={handleOpenPopupDel}>
+            <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
               Del
             </ButtonCustom> : ""
         ),
@@ -170,30 +179,6 @@ const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) =
     ]
 )
 
-const data = [
-  {
-    id: 1,
-    owner: "User 1",
-    name: "Name 1",
-    created: "YYYY/MM/DD HH:MI",
-    share: false
-  },
-  {
-    id: 2,
-    owner: "User 2",
-    name: "Name 2",
-    created: "YYYY/MM/DD HH:MI",
-    share: true
-  },
-  {
-    id: 3,
-    owner: "User 1",
-    name: "Name 3",
-    created: "YYYY/MM/DD HH:MI",
-    share: true
-  }
-]
-
 const dataShare = [
   {
     id: 1,
@@ -220,7 +205,6 @@ const dataShare = [
 
 const PopupShare = ({open, handleClose}: PopupType) => {
   const [tableShare, setTableShare] = useState(dataShare)
-  if(!open) return <></>
   const handleShareTrue = (params: GridRowParams) => {
     if(params.row.share) return
     const index = tableShare.findIndex(item => item.id === params.id)
@@ -249,11 +233,11 @@ const PopupShare = ({open, handleClose}: PopupType) => {
         <DialogTitle>Share Workspace</DialogTitle>
         <DialogTitle>アクセス許可ユーザー</DialogTitle>
         <DialogContent>
-          <DataGrid
+          <DataGridPro
             sx={{minHeight: 500}}
-            onRowClick={handleShareTrue}
+            // onRowClick={handleShareTrue}
             rows={tableShare}
-            columns={columnsShare(handleShareFalse)}
+            columns={columnsShare(handleShareFalse) as any}
           />
         </DialogContent>
         <DialogActions>
@@ -265,10 +249,39 @@ const PopupShare = ({open, handleClose}: PopupType) => {
   )
 }
 
-const PopupDelete = ({open, handleClose}: PopupType) => {
-  if(!open) return <></>
-  return (
+const PopupNew = ({open, handleClose, value, setNewWorkSpace, handleOkNew}: PopupType) => {
+  if(!setNewWorkSpace) return <></>
+  const handleName = (event: ChangeEvent<HTMLInputElement>) => {
+    setNewWorkSpace(event.target.value)
+  }
 
+  return (
+    <Box>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        sx={{margin: 0}}
+      >
+        <DialogTitle>Create New Workspace</DialogTitle>
+        <DialogContent sx={{minWidth: 300}}>
+          <Input
+            sx={{width: "80%"}}
+            placeholder={"Workspace Name"}
+            value={value || ""}
+            onChange={handleName}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleOkNew}>Ok</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  )
+}
+
+const PopupDelete = ({open, handleClose, handleOkDel}: PopupType) => {
+  return (
     <Box>
       <Dialog
           open={open}
@@ -278,41 +291,110 @@ const PopupDelete = ({open, handleClose}: PopupType) => {
         <DialogTitle>Do you want delete?</DialogTitle>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleClose}>Ok</Button>
+          <Button onClick={handleOkDel}>Ok</Button>
         </DialogActions>
       </Dialog>
     </Box>
   )
 }
 
-const Workspaces = () => {
-  // const dispatch = useDispatch()
-  // const workspaces = useSelector(selectWorkspaceList)
-  const loading = useSelector(selectIsLoadingWorkspaceList)
-  const [openShare, setOpenShare] = useState(false)
-  const [openDel, setOpenDel] = useState(false)
+const PopupSave = ({open, handleClose, handleOkSave}: PopupType) => {
+  return (
+      <Box>
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            sx={{margin: 0}}
+        >
+          <DialogTitle>Do you want save?</DialogTitle>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={handleOkSave}>Ok</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+  )
+}
 
-  /* TODO: Add get workspace apis and actions
+const Workspaces = () => {
+  const dispatch = useDispatch()
+  const loading = useSelector(selectIsLoadingWorkspaceList)
+  const data = useSelector(selectWorkspaceData)
+  const user = useSelector(selectCurrentUser)
+  const [open, setOpen] = useState({share: false, del: false, new: false, save: false})
+  const [idDel, setIdDel] = useState<number>()
+  const [newWorkspace, setNewWorkSpace] = useState<string>()
+  const [rowModesModel, setRowModesModel] = useState<any>({});
+  const [nameEdit, setNameEdit] = useState("")
+  const [searchParams, setParams] = useSearchParams()
+
   useEffect(() => {
     dispatch(getWorkspaceList())
-    //eslint-disable-next-line
   }, [])
-  */
+
   const handleOpenPopupShare = () => {
-    setOpenShare(false)
+    setOpen({...open, share: true})
   }
 
   const handleClosePopupShare = () => {
-    setOpenShare(false)
+    setOpen({...open, share: false})
   }
 
-  const handleOpenPopupDel = () => {
-    setOpenDel(true)
+  const handleOpenPopupDel = (id: number) => {
+    setIdDel(id)
+    setOpen({...open, del: true})
+  }
+
+  const handleOkDel = async () => {
+    if(!idDel) return
+    await dispatch(delWorkspace(idDel))
+    setOpen({...open, del: false})
   }
 
   const handleClosePopupDel = () => {
-    setOpenDel(false)
+    setOpen({...open, del: false})
   }
+
+  const handleOpenPopupNew = () => {
+    setOpen({...open, new: true})
+  }
+
+  const handleClosePopupNew = () => {
+    setOpen({...open, new: false})
+  }
+
+  const handleClosePopupSave = () => {
+    setOpen({...open, save: false})
+  }
+
+  const handleOkSave = async () => {
+    await dispatch(putWorkspace({name: nameEdit}))
+    setOpen({...open, save: false})
+  }
+
+  const handleOkNew = async () => {
+    if(!newWorkspace) {
+      setOpen({...open, new: false})
+      return
+    }
+    await dispatch(postWorkspace({name: newWorkspace}))
+    setOpen({...open, new: false})
+  }
+
+  const handleEditstop = () => {
+    setOpen({...open, save: true})
+  }
+
+  const handleRowModesModelChange = (e: any) => {
+    console.log(e)
+  }
+
+  const processRowUpdate = (newRow: any) => {
+    setNameEdit(newRow?.name)
+    // const updatedRow = { ...newRow, isNew: false };
+    // setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+    return newRow;
+  };
 
   return (
     <WorkspacesWrapper>
@@ -326,22 +408,36 @@ const Workspaces = () => {
         }}
       >
         <ButtonCustom>Import</ButtonCustom>
-        <ButtonCustom>New</ButtonCustom>
+        <ButtonCustom onClick={handleOpenPopupNew}>New</ButtonCustom>
       </Box>
-      <DataGrid
+      <DataGridPro
         autoHeight
-        rows={data}
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel)}
-        isCellEditable={(params) => params.row.owner === "User 1"}
+        rows={data?.items}
+        editMode="row"
+        columns={columns(handleOpenPopupShare, handleOpenPopupDel) as any}
+        isCellEditable={(params) => params.row.user?.id === user?.id}
+        onRowEditStop={handleEditstop}
+        processRowUpdate={processRowUpdate}
+        onRowModesModelChange={handleRowModesModelChange}
+      />
+      <PopupShare open={open.share} handleClose={handleClosePopupShare} />
+      <PopupDelete open={open.del} handleClose={handleClosePopupDel} handleOkDel={handleOkDel} />
+      <PopupSave open={open.save} handleClose={handleClosePopupSave} handleOkSave={handleOkSave} />
+      <PopupNew
+        open={open.new}
+        handleClose={handleClosePopupNew}
+        setNewWorkSpace={setNewWorkSpace}
+        value={newWorkspace}
+        handleOkNew={handleOkNew}
       />
       {loading ? <Loading /> : null}
-      <PopupShare open={openShare} handleClose={handleClosePopupShare} />
-      <PopupDelete open={openDel} handleClose={handleClosePopupDel} />
     </WorkspacesWrapper>
   )
 }
 
 const WorkspacesWrapper = styled(Box)(({ theme }) => ({
+  margin: "auto",
+  width: "90vw",
   padding: theme.spacing(2),
   overflow: 'auto',
 }))
