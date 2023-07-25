@@ -23,6 +23,10 @@ export function toDataType(value: string): DATA_TYPE {
       return DATA_TYPE_SET.LINE
     case 'polar':
       return DATA_TYPE_SET.POLAR
+    case 'histogram':
+      return DATA_TYPE_SET.HISTOGRAM
+    case 'pie':
+      return DATA_TYPE_SET.PIE
     default:
       throw new Error(`failed to map dataType: ${value}`)
   }

@@ -18,6 +18,8 @@ import {
   getTimeSeriesInitData,
   getLineData,
   getPolarData,
+  getHistogramData,
+  getPieData,
 } from './DisplayDataActions'
 import {
   deleteDisplayItem,
@@ -35,6 +37,8 @@ const initialState: DisplayData = {
   html: {},
   line: {},
   polar: {},
+  histogram: {},
+  pie: {},
 }
 
 export const displayDataSlice = createSlice({
@@ -281,6 +285,69 @@ export const displayDataSlice = createSlice({
           data: action.payload.data,
           columns: action.payload.columns,
           index: action.payload.index,
+          pending: false,
+          fulfilled: true,
+          error: null,
+        }
+      })
+      .addCase(getHistogramData.pending, (state, action) => {
+        const { path } = action.meta.arg
+        state.histogram[path] = {
+          type: 'histogram',
+          data: [],
+          pending: true,
+          fulfilled: false,
+          error: null,
+        }
+      })
+      .addCase(getHistogramData.rejected, (state, action) => {
+        const { path } = action.meta.arg
+        state.histogram[path] = {
+          type: 'histogram',
+          data: [],
+          pending: false,
+          fulfilled: false,
+          error: action.error.message ?? 'rejected',
+        }
+      })
+      .addCase(getHistogramData.fulfilled, (state, action) => {
+        const { path } = action.meta.arg
+        state.histogram[path] = {
+          type: 'histogram',
+          data: action.payload.data,
+          pending: false,
+          fulfilled: true,
+          error: null,
+        }
+      })
+      .addCase(getPieData.pending, (state, action) => {
+        const { path } = action.meta.arg
+        state.pie[path] = {
+          type: 'pie',
+          data: [],
+          columns: [],
+          pending: true,
+          fulfilled: false,
+          error: null,
+        }
+      })
+      .addCase(getPieData.rejected, (state, action) => {
+        const { path } = action.meta.arg
+        state.pie[path] = {
+          type: 'pie',
+          data: [],
+          columns: [],
+          pending: false,
+          fulfilled: false,
+          error: action.error.message ?? 'rejected',
+        }
+      })
+      .addCase(getPieData.fulfilled, (state, action) => {
+        const { path } = action.meta.arg
+        state.pie[path] = {
+          type: 'pie',
+          data: action.payload.data,
+          columns: action.payload.columns,
           pending: false,
           fulfilled: true,
           error: null,

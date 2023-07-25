@@ -21,6 +21,8 @@ import { TimeSeriesPlot } from './Plot/TimeSeriesPlot'
 import { BarPlot } from './Plot/BarPlot'
 import { HTMLPlot } from './Plot/HTMLPlot'
 import { PolarPlot } from './Plot/PolarPlot'
+import { HistogramPlot } from './Plot/HistogramPlot'
+import { PiePlot } from './Plot/PiePlot'
 
 export const DisplayDataItem = React.memo<{
   itemId: number
@@ -65,6 +67,10 @@ const DisplayPlot = React.memo<{
       return <BarPlot />
     case DATA_TYPE_SET.HTML:
       return <HTMLPlot />
+    case DATA_TYPE_SET.HISTOGRAM:
+      return <HistogramPlot />
+    case DATA_TYPE_SET.PIE:
+      return <PiePlot />
     default:
       return null
   }

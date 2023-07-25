@@ -173,3 +173,21 @@ export async function getPolarDataApi(
   const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
   return response.data
 }
+
+export type HistogramData = number[][]
+
+export async function getHistogramDataApi(
+  path: string,
+): Promise<{ data: HistogramData }> {
+  const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
+  return response.data
+}
+
+export type PieData = number[][]
+
+export async function getPieDataApi(
+  path: string,
+): Promise<{ data: PieData; columns: string[] }> {
+  const response = await axios.get(`${BASE_URL}/outputs/data/${path}`, {})
+  return response.data
+}

@@ -30,6 +30,8 @@ class OutputType:
     HTML: str = "html"
     LINE: str = "line"
     POLAR: str = "polar"
+    HISTOGRAM: str = "histogram"
+    PIE: str = "pie"
 
 
 class NodeItem(BaseModel):

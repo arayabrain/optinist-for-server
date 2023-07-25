@@ -18,6 +18,8 @@ import { ScatterItemEditor } from './Editor/ScatterItemEditor'
 import { BarItemEditor } from './Editor/BarItemEditor'
 import { LineItemEditor } from './Editor/LineItemEditor'
 import { PolarItemEditor } from './Editor/PolarItemEditor'
+import { HistogramItemEditor } from './Editor/HistogramItemEditor'
+import { PieItemEditor } from './Editor/PieItemEditor'
 
 export const VisualizeItemEditor = () => {
   const selectedItemId = useSelector(selectSelectedVisualizeItemId)
@@ -73,6 +75,10 @@ const DisplayEditor: React.FC<{
       return <LineItemEditor />
     case DATA_TYPE_SET.POLAR:
       return <PolarItemEditor />
+    case DATA_TYPE_SET.HISTOGRAM:
+      return <HistogramItemEditor />
+    case DATA_TYPE_SET.PIE:
+      return <PieItemEditor />
     default:
       return null
   }

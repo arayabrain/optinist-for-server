@@ -25,6 +25,8 @@ import {
   VISUALIZE_ITEM_SLICE_NAME,
   LineItem,
   PolarItem,
+  HistogramItem,
+  PieItem,
 } from './VisualizeItemType'
 import {
   isDisplayDataItem,
@@ -36,6 +38,7 @@ import {
   isBarItem,
   isLineItem,
   isPolarItem,
+  isHistogramItem,
 } from './VisualizeItemUtils'
 
 export const initialState: VisualaizeItem = {
@@ -156,6 +159,17 @@ const polarItemInitialValue: PolarItem = {
   selectedIndex: 0,
 }
 
+const histogramItemInitialValue: HistogramItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.HISTOGRAM,
+  bins: 20,
+}
+
+const pieItemInitialValue: PieItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.PIE,
+}
+
 function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
   switch (dataType) {
     case DATA_TYPE_SET.IMAGE:
@@ -186,6 +200,10 @@ function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
       return lineItemInitialValue
     case DATA_TYPE_SET.POLAR:
       return polarItemInitialValue
+    case DATA_TYPE_SET.HISTOGRAM:
+      return histogramItemInitialValue
+    case DATA_TYPE_SET.PIE:
+      return pieItemInitialValue
   }
 }
 
@@ -817,6 +835,18 @@ export const visualaizeItemSlice = createSlice({
         targetItem.index = action.payload.index
       }
     },
+    setHistogramItemBins: (
+      state,
+      action: PayloadAction<{
+        itemId: number
+        bins: number
+      }>,
+    ) => {
+      const targetItem = state.items[action.payload.itemId]
+      if (isHistogramItem(targetItem)) {
+        targetItem.bins = action.payload.bins
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -979,6 +1009,7 @@ export const {
   setLineItemSelectedIndex,
   setPolartemItemSelectedIndex,
   setBarItemIndex,
+  setHistogramItemBins,
   resetAllOrderList,
   reset,
 } = visualaizeItemSlice.actions

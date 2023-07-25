@@ -16,6 +16,7 @@ import {
   isBarItem,
   isLineItem,
   isPolarItem,
+  isHistogramItem,
 } from './VisualizeItemUtils'
 
 export const selectSelectedVisualizeItemId = (state: RootState) =>
@@ -542,6 +543,16 @@ export const selectPolarItemSelectedIndex =
     const item = selectVisualizeItemById(itemId)(state)
     if (isPolarItem(item)) {
       return item.selectedIndex
+    } else {
+      throw new Error('invalid VisualaizeItemType')
+    }
+  }
+
+export const selectHistogramItemBins =
+  (itemId: number) => (state: RootState) => {
+    const item = selectVisualizeItemById(itemId)(state)
+    if (isHistogramItem(item)) {
+      return item.bins
     } else {
       throw new Error('invalid VisualaizeItemType')
     }

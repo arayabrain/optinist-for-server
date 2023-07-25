@@ -47,6 +47,8 @@ export type DisplayDataItem =
   | MatlabItem
   | LineItem
   | PolarItem
+  | HistogramItem
+  | PieItem
 
 export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
   filePath: string | null
@@ -148,4 +150,13 @@ export interface LineItem extends DisplayDataItemBaseType {
 export interface PolarItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.POLAR
   selectedIndex: number
+}
+
+export interface HistogramItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.HISTOGRAM
+  bins: number
+}
+
+export interface PieItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.PIE
 }

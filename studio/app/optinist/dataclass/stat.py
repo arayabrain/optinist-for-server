@@ -8,9 +8,14 @@ class StatIndex:
         self.ratio_change = np.full((row, col), np.NaN)
         self.r_best = np.full(row, np.NaN)
         self.r_null = np.full(row, np.NaN)
-        self.si = None
         self.selective_cell_index = None
         self.selective_cell_ncells = None
+
+    @property
+    def si(self):
+        return (self.r_best - np.maximum(self.r_null, 0)) / (
+            self.r_best + np.maximum(self.r_null, 0)
+        )
 
 
 class StatData(BaseData):
@@ -27,17 +32,26 @@ class StatData(BaseData):
 class AnovaStat(BaseData):
     def __init__(
         self,
-        p_value,
-        index_visually_responsive_cell,
-        dir_index_selective_cell,
-        ori_index_selective_cell,
+        row,
         file_name="anova",
     ):
         super().__init__(file_name)
-        self.p_value = p_value
-        self.index_visually_responsive_cell = index_visually_responsive_cell
-        self.dir_index_selective_cell = dir_index_selective_cell
-        self.ori_index_selective_cell = ori_index_selective_cell
+        self.p_value = np.full(row, np.NaN)
+        self.index_visually_responsive = None
+        self.index_dir_selective = None
+        self.index_ori_selective = None
+
+    @property
+    def ncells_visually_responsive(self):
+        return np.sum(self.index_visually_responsive)
+
+    @property
+    def ncells_dir_selective(self):
+        return np.sum(self.index_dir_selective)
+
+    @property
+    def ncells_ori_selective(self):
+        return np.sum(self.index_ori_selective)
 
 
 class VectorStat(BaseData):

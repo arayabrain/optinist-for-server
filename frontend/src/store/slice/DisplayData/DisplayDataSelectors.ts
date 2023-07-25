@@ -88,6 +88,54 @@ export const selectPolarDataError = (filePath: string) => (state: RootState) =>
     ? selectDisplayData(state).polar[filePath].error
     : null
 
+export const selectHistogramData = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).histogram[filePath].data
+
+export const selectHistogramDataIsInitialized =
+  (filePath: string) => (state: RootState) =>
+    Object.keys(selectDisplayData(state).histogram).includes(filePath)
+
+export const selectHistogramDataIsPending =
+  (filePath: string) => (state: RootState) =>
+    selectHistogramDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).histogram[filePath].pending
+
+export const selectHistogramDataIsFulfilled =
+  (filePath: string) => (state: RootState) =>
+    selectHistogramDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).histogram[filePath].fulfilled
+
+export const selectHistogramDataError =
+  (filePath: string) => (state: RootState) =>
+    selectHistogramDataIsInitialized(filePath)(state)
+      ? selectDisplayData(state).histogram[filePath].error
+      : null
+
+export const selectPieData = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).pie[filePath].data
+
+export const selectPieColumns = (filePath: string) => (state: RootState) =>
+  selectDisplayData(state).pie[filePath].columns
+
+export const selectPieDataIsInitialized =
+  (filePath: string) => (state: RootState) =>
+    Object.keys(selectDisplayData(state).pie).includes(filePath)
+
+export const selectPieDataIsPending =
+  (filePath: string) => (state: RootState) =>
+    selectPieDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).pie[filePath].pending
+
+export const selectPieDataIsFulfilled =
+  (filePath: string) => (state: RootState) =>
+    selectPieDataIsInitialized(filePath)(state) &&
+    selectDisplayData(state).pie[filePath].fulfilled
+
+export const selectPieDataError = (filePath: string) => (state: RootState) =>
+  selectPieDataIsInitialized(filePath)(state)
+    ? selectDisplayData(state).pie[filePath].error
+    : null
+
 export const selectHeatMapData = (filePath: string) => (state: RootState) =>
   selectDisplayData(state).heatMap[filePath].data
 

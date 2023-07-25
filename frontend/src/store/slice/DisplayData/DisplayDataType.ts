@@ -9,6 +9,8 @@ import {
   HTMLData,
   LineData,
   PolarData,
+  PieData,
+  HistogramData,
 } from 'api/outputs/Outputs'
 
 export const DISPLAY_DATA_SLICE_NAME = 'displayData'
@@ -47,6 +49,12 @@ export type DisplayData = {
   polar: {
     [filePath: string]: PolarDisplayData
   }
+  histogram: {
+    [filePath: string]: HistogramDisplayData
+  }
+  pie: {
+    [filepath: string]: PieDisplayData
+  }
 }
 
 export const DATA_TYPE_SET = {
@@ -64,6 +72,8 @@ export const DATA_TYPE_SET = {
   POLAR: 'polar',
   BEHAVIOR: 'behavior',
   MATLAB: 'matlab',
+  HISTOGRAM: 'histogram',
+  PIE: 'pie',
 } as const
 
 export type DATA_TYPE = typeof DATA_TYPE_SET[keyof typeof DATA_TYPE_SET]
@@ -116,4 +126,11 @@ export interface LineDisplayData extends BaseDisplay<'line', LineData> {
 export interface PolarDisplayData extends BaseDisplay<'polar', PolarData> {
   columns: number[]
   index: number[]
+}
+
+export interface HistogramDisplayData
+  extends BaseDisplay<'histogram', HistogramData> {}
+
+export interface PieDisplayData extends BaseDisplay<'pie', PieData> {
+  columns: string[]
 }

@@ -22,6 +22,10 @@ import {
   getLineDataApi,
   getPolarDataApi,
   PolarData,
+  getHistogramDataApi,
+  HistogramData,
+  getPieDataApi,
+  PieData,
 } from 'api/outputs/Outputs'
 import { DISPLAY_DATA_SLICE_NAME } from './DisplayDataType'
 
@@ -187,6 +191,30 @@ export const getHTMLData = createAsyncThunk<
 >(`${DISPLAY_DATA_SLICE_NAME}/getHTMLData`, async ({ path }, thunkAPI) => {
   try {
     const response = await getHTMLDataApi(path)
+    return response
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e)
+  }
+})
+
+export const getHistogramData = createAsyncThunk<
+  { data: HistogramData },
+  { path: string }
+>(`${DISPLAY_DATA_SLICE_NAME}/getHistogramData`, async ({ path }, thunkAPI) => {
+  try {
+    const response = await getHistogramDataApi(path)
+    return response
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e)
+  }
+})
+
+export const getPieData = createAsyncThunk<
+  { data: PieData; columns: string[] },
+  { path: string }
+>(`${DISPLAY_DATA_SLICE_NAME}/getPieData`, async ({ path }, thunkAPI) => {
+  try {
+    const response = await getPieDataApi(path)
     return response
   } catch (e) {
     return thunkAPI.rejectWithValue(e)
