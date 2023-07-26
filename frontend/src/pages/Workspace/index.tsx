@@ -17,7 +17,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react";
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import { delWorkspace, getWorkspaceList, importWorkspace, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
+import { delWorkspace, exportWorkspace, getWorkspaceList, importWorkspace, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
 
 type PopupType = {
   open: boolean
@@ -33,6 +33,7 @@ type PopupType = {
 const columns = (
     handleOpenPopupShare: () => void,
     handleOpenPopupDel: (id: number) => void,
+    handleDownload: (id: number) => void,
     user?: {id: number}
   ) => (
     [
@@ -118,7 +119,7 @@ const columns = (
         headerName: '',
         minWidth: 90,
         renderCell: (params: GridRenderCellParams<string>) => (
-          <ButtonCustom>
+          <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
             <SystemUpdateAltIcon />
           </ButtonCustom>
         ),
@@ -441,6 +442,10 @@ const Workspaces = () => {
     setParams(`&${pagi(page)}`)
   }
 
+  const handleDownload = async (id: number) => {
+    dispatch(exportWorkspace(id))
+  }
+
   return (
     <WorkspacesWrapper>
       <WorkspacesTitle>Workspaces</WorkspacesTitle>
@@ -477,7 +482,7 @@ const Workspaces = () => {
       <DataGridPro
         rows={data?.items}
         editMode="row"
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user) as any}
+        columns={columns(handleOpenPopupShare, handleOpenPopupDel, handleDownload, user) as any}
         isCellEditable={(params) => params.row.user?.id === user?.id}
         processRowUpdate={processRowUpdate}
         hideFooter={true}
