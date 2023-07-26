@@ -33,6 +33,7 @@ type PopupType = {
 const columns = (
     handleOpenPopupShare: () => void,
     handleOpenPopupDel: (id: number) => void,
+    userId?: {id: number}
   ) => (
     [
       {
@@ -48,29 +49,32 @@ const columns = (
         headerName: 'Workspace Name',
         minWidth: 200,
         editable: true,
-        renderCell: (params: GridRenderCellParams<string>) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <span>{params.value}</span>
-            {params.row.owner !== "User 2" ? <EditIcon /> : ""}
-          </Box>
-        ),
+        renderCell: (params: GridRenderCellParams<string>) => {
+          console.log(params)
+          return (
+              <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+              >
+                <span>{params.value}</span>
+                {params.row.owner !== "User 2" ? <EditIcon /> : ""}
+              </Box>
+          )
+        },
       },
       {
         field: 'user',
         headerName: 'Owner',
         minWidth: 200,
-        renderCell: (params: GridRenderCellParams<string>) => (
+        renderCell: (params: GridRenderCellParams<{name: string, id: number}>) => (
           <Box
             sx={{display: "flex", alignItems: "center", gap: 2}}
           >
-            <span>{params.value}</span>
-            {params.value === "User 2" ? <PeopleOutlineIcon /> : ""}
+            <span>{params.value?.name}</span>
+            {params.value.id === userId?.id ? <PeopleOutlineIcon /> : ""}
           </Box>
         ),
       },
@@ -419,8 +423,8 @@ const Workspaces = () => {
         autoHeight
         rows={data?.items}
         editMode="row"
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel) as any}
-        isCellEditable={(params) => /*params.row.user?.id === user?.id*/ !!params }
+        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user) as any}
+        isCellEditable={(params) => params.row.user?.id === user?.id}
         processRowUpdate={processRowUpdate}
       />
       <PopupShare open={open.share} handleClose={handleClosePopupShare} />
