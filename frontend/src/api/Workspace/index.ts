@@ -32,3 +32,8 @@ export const importWorkspaceApi = async (data: Object) => {
   const response = await axios.post(`/workspace/import`, {todo_dummy: data})
   return response.data
 }
+
+export const exportWorkspaceApi = async (id: number) => {
+  const response = await axios.get(`/workspace/export/${id}`)
+  return response.data
+}

@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit"
-import {delWorkspaceApi, getWorkspacesApi, importWorkspaceApi, postWorkspaceApi, putWorkspaceApi } from "api/Workspace"
+import {delWorkspaceApi, exportWorkspaceApi, getWorkspacesApi, importWorkspaceApi, postWorkspaceApi, putWorkspaceApi } from "api/Workspace"
 import {ItemsWorkspace, WorkspaceDataDTO, WorkspaceParams, WORKSPACE_SLICE_NAME } from "./WorkspaceType"
 
 // @ts-ignore
@@ -66,6 +66,19 @@ export const importWorkspace = createAsyncThunk<
   try {
     const response = await importWorkspaceApi(data)
     await dispatch(getWorkspaceList(data))
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+
+export const exportWorkspace = createAsyncThunk<
+    ItemsWorkspace,
+    number
+>(`${WORKSPACE_SLICE_NAME}/exportWorkspaceList`, async (id, thunkAPI) => {
+  const { rejectWithValue, dispatch } = thunkAPI
+  try {
+    const response = await exportWorkspaceApi(id)
     return response
   } catch (e) {
     return rejectWithValue(e)
