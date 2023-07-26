@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, ReactNode, useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Box } from '@mui/material'
@@ -9,16 +9,18 @@ import { getMe } from 'store/slice/User/UserActions'
 import Header from './Header'
 import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
+import Loading from 'components/common/Loading'
 
 const authRequiredPathRegex = /^\/console\/?.*/
-const redirectAfterLoginPaths = ['/login', '/reset-password']
+const redirectAfterLoginPaths = ['/login', '/reset-password', '/console']
 
-const Layout: FC = ({ children }) => {
+const Layout = ({ children }: { children?: ReactNode }) => {
   const user = useSelector(selectCurrentUser)
   const location = useLocation()
-
   const navigate = useNavigate()
   const dispatch = useDispatch()
+
+  const [loading, setLoadingAuth] = useState(!IS_STANDALONE && authRequiredPathRegex.test(window.location.pathname))
 
   useEffect(() => {
     !IS_STANDALONE &&
@@ -28,22 +30,29 @@ const Layout: FC = ({ children }) => {
   }, [location.pathname, user])
 
   const checkAuth = async () => {
-    if (user) return
+    if (user) {
+      if(loading) setLoadingAuth(false)
+      return
+    }
     const token = getToken()
     const willRedirect = redirectAfterLoginPaths.includes(
-      window.location.pathname,
+        window.location.pathname,
     )
 
     try {
       if (token) {
-        dispatch(getMe())
+        await dispatch(getMe())
         if (willRedirect) navigate('/console')
         return
       } else if (!willRedirect) throw new Error('fail auth')
     } catch {
       navigate('/login')
+    } finally {
+      if(loading) setLoadingAuth(false)
     }
   }
+
+  if(loading) return <Loading />
 
   return authRequiredPathRegex.test(location.pathname) ? (
     <AuthedLayout>{children}</AuthedLayout>
@@ -62,13 +71,13 @@ const AuthedLayout: FC = ({ children }) => {
     setOpen(false)
   }
   return (
-    <LayoutWrapper>
-      <Header handleDrawerOpen={handleDrawerOpen} />
-      <ContentBodyWrapper>
-        <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
-        <ChildrenWrapper>{children}</ChildrenWrapper>
-      </ContentBodyWrapper>
-    </LayoutWrapper>
+      <LayoutWrapper>
+        <Header handleDrawerOpen={handleDrawerOpen} />
+        <ContentBodyWrapper>
+          <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
+          <ChildrenWrapper>{children}</ChildrenWrapper>
+        </ContentBodyWrapper>
+      </LayoutWrapper>
   )
 }
 
