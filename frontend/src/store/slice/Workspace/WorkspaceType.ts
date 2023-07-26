@@ -37,4 +37,4 @@ export type WorkspaceType = {
   // TODO: add fields required for workspace
 }
 
-export type WorkspaceParams = { [key: string]: string | undefined | number | string[] }
+export type WorkspaceParams = { [key: string]: string | undefined | number | string[] | object }
