@@ -29,6 +29,18 @@ type CellProps = {
 
 const columns = (handleOpenDialog: (value: string[]) => void) => [
   {
+    field: 'experiment_id',
+    headerName: 'Experiment ID',
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) => params.row?.exp_id,
+  },
+  {
+    field: 'cell_id',
+    headerName: 'Cell ID',
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) => params.row?.id,
+  },
+  {
     field: 'brain_area',
     headerName: 'Brain area',
     width: 160,
@@ -142,7 +154,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     //eslint-disable-next-line
   }, [dataParams, user])
 
-  const handleOpenDialog = (data: string[]) => {
+  const handleOpenDialog = (data: string[] | string) => {
     setDataDialog({ type: 'image', data })
   }
 
@@ -216,7 +228,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         sortable: false,
         renderCell: (params: { row: DatabaseType }) => {
           return (
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', cursor: "pointer" }} onClick={() => handleOpenDialog(params.row.graph_urls?.[index]?.[0])}>
               {params.row.graph_urls?.[index]?.[0] ? (
                 <img
                   src={params.row.graph_urls?.[index]?.[0] }
