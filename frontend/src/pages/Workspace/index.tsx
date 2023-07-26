@@ -1,12 +1,12 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions, Input } from '@mui/material'
+import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions, Input, Pagination } from '@mui/material'
 import {
   GridRenderCellParams,
   GridRowParams,
   DataGrid
 } from '@mui/x-data-grid'
-import { DataGridPro, GridRowModesModel } from '@mui/x-data-grid-pro'
-import { Link } from 'react-router-dom'
+import { DataGridPro } from '@mui/x-data-grid-pro'
+import { Link, useSearchParams } from 'react-router-dom'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import Loading from '../../components/common/Loading'
 import {
@@ -14,10 +14,10 @@ import {
 } from 'store/slice/Workspace/WorkspaceSelector'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { ChangeEvent, useEffect, useState } from "react";
+import {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react";
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import { delWorkspace, getWorkspaceList, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
+import { delWorkspace, getWorkspaceList, importWorkspace, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
 
 type PopupType = {
   open: boolean
@@ -33,7 +33,7 @@ type PopupType = {
 const columns = (
     handleOpenPopupShare: () => void,
     handleOpenPopupDel: (id: number) => void,
-    userId?: {id: number}
+    user?: {id: number}
   ) => (
     [
       {
@@ -50,18 +50,25 @@ const columns = (
         minWidth: 200,
         editable: true,
         renderCell: (params: GridRenderCellParams<string>) => {
-          console.log(params)
           return (
-              <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-              >
-                <span>{params.value}</span>
-                {params.row.owner !== "User 2" ? <EditIcon /> : ""}
-              </Box>
+            <Box
+              sx={{
+                width: 180,
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <span
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+              }}>
+                {params.row.name}
+              </span>
+              {params.row.user_id === user?.id ? <EditIcon /> : ""}
+            </Box>
           )
         },
       },
@@ -74,7 +81,7 @@ const columns = (
             sx={{display: "flex", alignItems: "center", gap: 2}}
           >
             <span>{params.value?.name}</span>
-            {params.value.id === userId?.id ? <PeopleOutlineIcon /> : ""}
+            {params.value.id !== user?.id ? <PeopleOutlineIcon /> : ""}
           </Box>
         ),
       },
@@ -101,9 +108,9 @@ const columns = (
         headerName: '',
         minWidth: 130,
         renderCell: (params: GridRenderCellParams<string>) => (
-            <LinkCustom to={"#"}>
-              Result
-            </LinkCustom>
+          <LinkCustom to={"#"}>
+            Result
+          </LinkCustom>
         ),
       },
       {
@@ -121,21 +128,21 @@ const columns = (
         headerName: '',
         minWidth: 90,
         renderCell: (params: GridRenderCellParams<string>) => (
-          params.row.owner !== "User 2" ?
+          params.row?.user_id === user?.id ?
             <ButtonCustom onClick={handleOpenPopupShare}>
-              <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
+              <PeopleOutlineIcon />
             </ButtonCustom> : ""
-        ),
+          )
       },
       {
         field: 'delete',
         headerName: '',
         minWidth: 130,
         renderCell: (params: GridRenderCellParams<string>) => (
-          params.row.owner !== "User 2" ?
-            <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
-              Del
-            </ButtonCustom> : ""
+          params.row?.user_id === user?.id ?
+          <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
+            Del
+          </ButtonCustom> : ""
         ),
       },
     ]
@@ -261,7 +268,7 @@ const PopupNew = ({
   handleOkNew,
   error
 }: PopupType) => {
-  if(!setNewWorkSpace) return <></>
+  if(!setNewWorkSpace) return null
   const handleName = (event: ChangeEvent<HTMLInputElement>) => {
     setNewWorkSpace(event.target.value)
   }
@@ -339,11 +346,23 @@ const Workspaces = () => {
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [dataEdit, setDataEdit] = useState<{name?: string, id?: number}>()
   const [error, setError] = useState("")
+  const [searchParams, setParams] = useSearchParams()
+
+  const offset = searchParams.get('offset')
+  const limit = searchParams.get('limit')
+
+  const dataParams = useMemo(() => {
+    return {
+      offset: Number(offset) || 0,
+      limit: Number(limit) || 50,
+    }
+    //eslint-disable-next-line
+  }, [offset, limit])
 
   useEffect(() => {
-    dispatch(getWorkspaceList())
+    dispatch(getWorkspaceList(dataParams))
     //eslint-disable-next-line
-  }, [])
+  }, [dataParams])
 
   const handleOpenPopupShare = () => {
     setOpen({...open, share: true})
@@ -360,7 +379,7 @@ const Workspaces = () => {
 
   const handleOkDel = async () => {
     if(!idDel) return
-    await dispatch(delWorkspace(idDel))
+    await dispatch(delWorkspace({id: idDel, params: dataParams}))
     setOpen({...open, del: false})
   }
 
@@ -382,7 +401,7 @@ const Workspaces = () => {
 
   const handleOkSave = async () => {
     if(!dataEdit) return
-    await dispatch(putWorkspace({name: dataEdit.name, id: dataEdit.id}))
+    await dispatch(putWorkspace({name: dataEdit.name, id: dataEdit.id, params: dataParams}))
     setOpen({...open, save: false})
   }
 
@@ -391,7 +410,7 @@ const Workspaces = () => {
       setError("is not empty")
       return
     }
-    await dispatch(postWorkspace({name: newWorkspace}))
+    await dispatch(postWorkspace({name: newWorkspace, params: dataParams}))
     setOpen({...open, new: false})
   }
 
@@ -405,6 +424,23 @@ const Workspaces = () => {
     return newRow;
   };
 
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    dispatch(importWorkspace({}))
+  }
+
+  const pagi = useCallback(
+      (page?: number) => {
+        return `limit=${data.limit}&offset=${
+            page ? page - 1 : data.offset
+        }`
+      },
+      [data.limit, data.offset],
+  )
+
+  const handlePage = (e: ChangeEvent<unknown>, page: number) => {
+    setParams(`&${pagi(page)}`)
+  }
+
   return (
     <WorkspacesWrapper>
       <WorkspacesTitle>Workspaces</WorkspacesTitle>
@@ -416,16 +452,41 @@ const Workspaces = () => {
           marginBottom: 2
         }}
       >
-        <ButtonCustom>Import</ButtonCustom>
+        <label htmlFor="upload-image">
+          <Button
+            sx={{
+              background: "#000000c4",
+              "&:hover": {
+                backgroundColor: "#000000fc",
+              }
+            }}
+            variant="contained"
+            component="span">
+            Import
+          </Button>
+          <input
+            id="upload-image"
+            hidden
+            accept="*"
+            type="file"
+            onChange={handleFileUpload}
+          />
+        </label>
         <ButtonCustom onClick={handleOpenPopupNew}>New</ButtonCustom>
       </Box>
       <DataGridPro
-        autoHeight
         rows={data?.items}
         editMode="row"
         columns={columns(handleOpenPopupShare, handleOpenPopupDel, user) as any}
         isCellEditable={(params) => params.row.user?.id === user?.id}
         processRowUpdate={processRowUpdate}
+        hideFooter={true}
+      />
+      <Pagination
+        sx={{ marginTop: 2 }}
+        count={data.total}
+        page={data.offset + 1}
+        onChange={handlePage}
       />
       <PopupShare open={open.share} handleClose={handleClosePopupShare} />
       <PopupDelete open={open.del} handleClose={handleClosePopupDel} handleOkDel={handleOkDel} />
