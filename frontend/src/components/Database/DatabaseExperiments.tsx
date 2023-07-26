@@ -86,8 +86,6 @@ const columns = (
     field: 'experiment_id',
     headerName: 'Experiment ID',
     width: 160,
-    filterable: false,
-    sort: 'asc',
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
@@ -246,7 +244,7 @@ const dataShare = [
 ]
 
 const PopupShare = ({open, handleClose}: PopupType) => {
-  const [value, setValue] = useState("a")
+  const [value, setValue] = useState("Organization")
   const [tableShare, setTableShare] = useState(dataShare)
   
   const handleShareTrue = (params: GridRowParams) => {
@@ -291,20 +289,24 @@ const PopupShare = ({open, handleClose}: PopupType) => {
               name="row-radio-buttons-group"
               onChange={handleValue}
             >
-              <FormControlLabel value="a" control={<Radio />} label={"組織内共有"} />
-              <FormControlLabel value="b" control={<Radio />} label={"ユーザー別共有"} />
+              <FormControlLabel value="Organization" control={<Radio />} label={"Share for Organization"} />
+              <FormControlLabel value="Users" control={<Radio />} label={"Share for Users"} />
             </RadioGroup>
           </FormControl>
         </DialogTitle>
         <DialogContent sx={{minHeight: 500}}>
           {
-            value !== "a" ?
-              <DataGrid
-                sx={{minHeight: 500}}
-                onRowClick={handleShareTrue}
-                rows={tableShare}
-                columns={columnsShare(handleShareFalse)}
-              />: null
+            value !== "Organization" ?
+              <>
+                <p>Permitted users</p>
+                <DataGrid
+                    sx={{minHeight: 500}}
+                    onRowClick={handleShareTrue}
+                    rows={tableShare}
+                    columns={columnsShare(handleShareFalse)}
+                />
+              </>
+              : null
           }
         </DialogContent>
         <DialogActions>
@@ -396,6 +398,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
+      experiment_id: searchParams.get('experiment_id') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -414,7 +417,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
-  const handleOpenDialog = (data: string[]) => {
+  const handleOpenDialog = (data: string[] | string) => {
     setDataDialog({ type: 'image', data })
   }
 
@@ -502,7 +505,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => {
           return (
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', cursor: "pointer" }} onClick={() => handleOpenDialog(params.row.graph_urls[index])}>
               {params.row.graph_urls[index] ? (
                 <img
                   src={params.row.graph_urls[index]}
