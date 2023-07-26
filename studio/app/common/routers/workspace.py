@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import LimitOffsetPage
 from fastapi_pagination.ext.sqlmodel import paginate
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import get_current_user
@@ -33,20 +33,30 @@ def search_workspaces(
     current_user: User = Depends(get_current_user),
 ):
     sort_column = getattr(common_model.Workspace, sortOptions.sort[0] or "id")
-    return paginate(
-        session=db,
-        query=select(common_model.Workspace)
+    query = (
+        select(common_model.Workspace)
+        .outerjoin(
+            common_model.WorkspacesShareUser,
+            common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
+        )
         .filter(
-            common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
+            or_(
+                common_model.WorkspacesShareUser.user_id == current_user.id,
+                common_model.Workspace.user_id == current_user.id,
+            ),
         )
         .group_by(common_model.Workspace.id)
         .order_by(
             sort_column.desc()
             if sortOptions.sort[1] == SortDirection.desc
             else sort_column.asc()
-        ),
+        )
     )
+    data = paginate(db, query)
+    for ws in data.items:
+        ws.__dict__["user"] = db.query(common_model.User).get(ws.user_id)
+    return data
 
 
 @router.get(
@@ -251,9 +261,9 @@ def update_workspace_share_status(
         .filter(common_model.WorkspacesShareUser.workspace_id == id)
         .delete(synchronize_session=False)
     )
-    [
-        db.add(common_model.WorkspacesShareUser(workspace_id=id, user_id=user_id))
+    db.bulk_save_objects(
+        common_model.WorkspacesShareUser(workspace_id=id, user_id=user_id)
         for user_id in data.user_ids
-    ]
+    )
     db.commit()
     return True
