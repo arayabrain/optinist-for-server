@@ -1,301 +1,306 @@
 import { Box, Pagination, styled } from '@mui/material'
-import { useState } from 'react'
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
-import { DataGrid } from '@mui/x-data-grid'
+import {
+  GridCallbackDetails,
+  GridEnrichedColDef,
+  GridFilterModel,
+  GridSortDirection,
+  GridSortModel,
+} from '@mui/x-data-grid'
+import { DataGridPro } from '@mui/x-data-grid-pro'
+import {
+  DatabaseType,
+  DATABASE_SLICE_NAME,
+} from '../../store/slice/Database/DatabaseType'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState } from '../../store/store'
+import {
+  getCellsDatabase,
+  getCellsPublicDatabase,
+} from '../../store/slice/Database/DatabaseActions'
+import Loading from 'components/common/Loading'
+import { TypeData } from 'store/slice/Database/DatabaseSlice'
 
-type Data = {
-  id: number
-  fields: {
-    brain_area: string
-    cre_driver: string
-    reporter_line: string
-    imaging_depth: number
-  }
-  cell_image_urls: string
-  graph_urls: string[]
-  created_time: string
-  updated_time: string
+type CellProps = {
+  user?: Object
 }
 
-const dataGraphsTitle: string[] = ['Plot1', 'Plot2', 'Plot3', 'Plot4', 'Plot5']
-
-const datas: Data[] = [
+const columns = (handleOpenDialog: (value: string[]) => void) => [
   {
-    id: 0,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
+    field: 'brain_area',
+    headerName: 'Brain area',
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.brain_area,
   },
   {
-    id: 1,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
+    field: 'cre_driver',
+    headerName: 'Cre driver',
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.cre_driver,
   },
   {
-    id: 2,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
+    field: 'reporter_line',
+    headerName: 'Reporter line',
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.reporter_line,
   },
   {
-    id: 3,
-    fields: {
-      brain_area: 'xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
+    field: 'imaging_depth',
+    headerName: 'Imaging depth',
+    filterable: false,
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.fields?.imaging_depth,
   },
   {
-    id: 4,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
-  },
-  {
-    id: 5,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
-  },
-  {
-    id: 6,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
-  },
-  {
-    id: 7,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
-  },
-  {
-    id: 8,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
-  },
-  {
-    id: 9,
-    fields: {
-      brain_area: '1xxxx',
-      cre_driver: 'xxxx',
-      reporter_line: 'xxxx',
-      imaging_depth: 0,
-    },
-    cell_image_urls: '/static/pixel_image.png',
-    graph_urls: [
-      '/static/pie_chart.png',
-      '/static/bar_chart.png',
-      '/static/bar_chart.png',
-    ],
-    created_time: '2023-07-06T09:24:45.904Z',
-    updated_time: '2023-07-06T09:24:45.904Z',
+    field: 'cell_image_url',
+    headerName: 'Pixel Image',
+    width: 160,
+    filterable: false,
+    sortable: false,
+    renderCell: (params: { row: DatabaseType }) => (
+      <Box
+        sx={{
+          cursor: 'pointer',
+          display: 'flex',
+        }}
+        onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
+      >
+        {params.row?.cell_image_url && (
+          <img
+            src={params.row?.cell_image_url}
+            alt={''}
+            width={'100%'}
+            height={'100%'}
+          />
+        )}
+      </Box>
+    ),
   },
 ]
 
-const DatabaseCells = () => {
-  const [dataTable] = useState<Data[]>(datas)
-  const [openDialog, setOpenDialog] = useState(false)
-  const [dataDialog, setDataDialog] = useState<string[] | string>()
+const DatabaseCells = ({ user }: CellProps) => {
+  const type: keyof TypeData = user ? 'private' : 'public'
 
-  const columns = [
-    {
-      field: 'brain_area',
-      headerName: 'Brain area',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.brain_area,
-    },
-    {
-      field: 'cre_driver',
-      headerName: 'Cre driver',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.cre_driver,
-    },
-    {
-      field: 'reporter_line',
-      headerName: 'Reporter line',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.reporter_line,
-    },
-    {
-      field: 'imaging_depth',
-      headerName: 'Imaging depth',
-      width: 160,
-      renderCell: (params: { row: Data }) => params.row.fields.imaging_depth,
-    },
-    {
-      field: 'cell_image_urls',
-      headerName: 'Pixel Image',
-      width: 160,
-      renderCell: (params: { row: Data }) => (
-        <Box
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-          }}
-          onClick={() => handleOpenDialog(params.row.cell_image_urls)}
-        >
-          <img
-            src={params.row.cell_image_urls}
-            alt={''}
-            width={'auto'}
-            height={'auto'}
-          />
-        </Box>
-      ),
-    },
-  ]
+  const { data: dataExperiments, loading } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+    }),
+  )
 
-  const handleOpenDialog = (data: string) => {
-    if (data.length === 1) return
-    setOpenDialog(true)
-    setDataDialog(data)
+  const [dataDialog, setDataDialog] = useState<{
+    type: string
+    data: string | string[] | undefined
+  }>({
+    type: '',
+    data: undefined,
+  })
+  const [searchParams, setParams] = useSearchParams()
+  const dispatch = useDispatch()
+
+  const pagiFilter = useMemo(() => {
+    return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
+  }, [dataExperiments.limit, dataExperiments.offset])
+
+  const exp_id = searchParams.get('exp_id')
+  const offset = searchParams.get('offset')
+  const limit = searchParams.get('limit')
+  const sort = searchParams.get('sort')
+
+  const dataParams = useMemo(() => {
+    return {
+      exp_id: Number(exp_id) || undefined,
+      offset: Number(offset) || 0,
+      limit: Number(limit) || 50,
+      sort: sort || [],
+    }
+  }, [offset, limit, sort, exp_id])
+
+  const dataParamsFilter = useMemo(
+    () => ({
+      brain_area: searchParams.get('brain_area') || '',
+      cre_driver: searchParams.get('cre_driver') || '',
+      reporter_line: searchParams.get('reporter_line') || '',
+      imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
+    }),
+    [searchParams],
+  )
+
+  const fetchApi = () => {
+    const api = !user ? getCellsPublicDatabase : getCellsDatabase
+    dispatch(api(dataParams))
+  }
+
+  useEffect(() => {
+    fetchApi()
+    //eslint-disable-next-line
+  }, [dataParams, user])
+
+  const handleOpenDialog = (data: string[]) => {
+    setDataDialog({ type: 'image', data })
   }
 
   const handleCloseDialog = () => {
-    setOpenDialog(false)
+    setDataDialog({ type: '', data: undefined })
   }
 
-  const getColumns = dataGraphsTitle.map((graphTitle, index) => ({
-    field: `graph_urls.${index}`,
-    headerName: graphTitle,
-    renderCell: (params: { row: Data }) => {
-      return (
-        <Box sx={{ display: 'flex' }}>
-          {params.row.graph_urls[index] ? (
-            <img
-              src={params.row.graph_urls[index]}
-              alt={''}
-              width={'auto'}
-              height={'auto'}
-            />
-          ) : null}
-        </Box>
+  const getParamsData = () => {
+    const dataFilter = Object.keys(dataParamsFilter)
+      .filter((key) => (dataParamsFilter as any)[key])
+      .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
+      .join('&')
+    return dataFilter
+  }
+
+  const handlePage = (e: ChangeEvent<unknown>, page: number) => {
+    const filter = getParamsData()
+    setParams(
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+    )
+  }
+
+  const handleSort = useCallback(
+    (rowSelectionModel: GridSortModel) => {
+      const filter = getParamsData()
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&sort=&sort=&${pagiFilter}`)
+        return
+      }
+      setParams(
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter}`,
       )
     },
-    width: 160,
-  }))
+    //eslint-disable-next-line
+    [pagiFilter, getParamsData],
+  )
+
+  const handleFilter = (
+    model: GridFilterModel | any,
+    details: GridCallbackDetails,
+  ) => {
+    let filter: string
+    if (!!model.items[0]?.value) {
+      //todo multiple filter with version pro. Issue task #55
+      filter = model.items
+        .filter((item: { [key: string]: string }) => item.value)
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
+    } else {
+      filter = ''
+    }
+    if (!model.items[0]) {
+      setParams(
+        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      )
+      return
+    }
+    setParams(
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+    )
+  }
+
+  const getColumns = useMemo(() => {
+    return (dataExperiments.header?.graph_titles || []).map(
+      (graphTitle, index) => ({
+        field: `graph_urls.${index}`,
+        headerName: graphTitle,
+        filterable: false,
+        sortable: false,
+        renderCell: (params: { row: DatabaseType }) => {
+          return (
+            <Box sx={{ display: 'flex' }}>
+              {params.row.graph_urls?.[index]?.[0] ? (
+                <img
+                  src={params.row.graph_urls?.[index]?.[0] }
+                  alt={''}
+                  width={'100%'}
+                  height={'100%'}
+                />
+              ) : null}
+            </Box>
+          )
+        },
+        width: 160,
+      }),
+    )
+  }, [dataExperiments.header?.graph_titles])
+
+  const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
+    Boolean,
+  ) as GridEnrichedColDef[]
 
   return (
-    <DatabaseCellsWrapper>
-      <DataGrid
-        {...datas}
-        columns={[...columns, ...getColumns]}
-        rows={dataTable}
+    <DatabaseExperimentsWrapper>
+      <DataGridPro
+        columns={[...columnsTable] as any}
+        rows={dataExperiments?.items || []}
         hideFooter={true}
+        filterMode={'server'}
+        sortingMode={'server'}
+        onSortModelChange={handleSort}
+        initialState={{
+          sorting: {
+            sortModel: [
+              {
+                field: dataParams.sort[0],
+                sort: dataParams.sort[1] as GridSortDirection,
+              },
+            ],
+          },
+          filter: {
+            filterModel: {
+              items: [
+                {
+                  field: 'brain_area',
+                  operator: 'contains',
+                  value: dataParamsFilter.brain_area,
+                },
+                {
+                  field: 'cre_driver',
+                  operator: 'contains',
+                  value: dataParamsFilter.cre_driver,
+                },
+                {
+                  field: 'reporter_line',
+                  operator: 'contains',
+                  value: dataParamsFilter.reporter_line,
+                },
+                {
+                  field: 'imaging_depth',
+                  operator: 'contains',
+                  value: dataParamsFilter.imaging_depth,
+                },
+              ],
+            },
+          },
+        }}
+        onFilterModelChange={handleFilter as any}
       />
-      <Pagination sx={{ marginTop: 2 }} count={10} />
+      <Pagination
+        sx={{ marginTop: 2 }}
+        count={dataExperiments.total}
+        page={dataParams.offset + 1}
+        onChange={handlePage}
+      />
       <DialogImage
-        open={openDialog}
-        data={dataDialog}
+        open={dataDialog.type === 'image'}
+        data={dataDialog.data}
         handleCloseDialog={handleCloseDialog}
       />
-    </DatabaseCellsWrapper>
+      {loading ? <Loading /> : null}
+    </DatabaseExperimentsWrapper>
   )
 }
 
-const DatabaseCellsWrapper = styled(Box)(({ theme }) => ({
+const DatabaseExperimentsWrapper = styled(Box)(({ theme }) => ({
   width: '100%',
   height: 'calc(100vh - 250px)',
 }))
