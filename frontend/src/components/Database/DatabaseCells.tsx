@@ -124,9 +124,9 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
-      brain_area: searchParams.get('brain_area') || '',
-      cre_driver: searchParams.get('cre_driver') || '',
-      reporter_line: searchParams.get('reporter_line') || '',
+      brain_area: searchParams.get('brain_area') || undefined,
+      cre_driver: searchParams.get('cre_driver') || undefined,
+      reporter_line: searchParams.get('reporter_line') || undefined,
       imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
     }),
     [searchParams],
@@ -134,13 +134,13 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api(dataParams))
+    dispatch(api({...dataParamsFilter, ...dataParams}))
   }
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user])
+  }, [dataParams, user, dataParamsFilter])
 
   const handleOpenDialog = (data: string[]) => {
     setDataDialog({ type: 'image', data })
@@ -180,31 +180,48 @@ const DatabaseCells = ({ user }: CellProps) => {
     [pagiFilter, getParamsData],
   )
 
+  // const handleFilter = (
+  //   model: GridFilterModel | any,
+  //   details: GridCallbackDetails,
+  // ) => {
+  //   let filter: string
+  //   if (!!model.items[0]?.value) {
+  //     filter = model.items
+  //       .filter((item: { [key: string]: string }) => item.value)
+  //       .map((item: any) => {
+  //         return `${item.field}=${item?.value}`
+  //       })
+  //       .join('&')
+  //   } else {
+  //     filter = ''
+  //   }
+  //   if (!model.items[0]) {
+  //     setParams(
+  //       `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+  //     )
+  //     return
+  //   }
+  //   setParams(
+  //     `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+  //   )
+  // }
   const handleFilter = (
-    model: GridFilterModel | any,
-    details: GridCallbackDetails,
+      model: GridFilterModel | any,
+      details: GridCallbackDetails,
   ) => {
     let filter: string
     if (!!model.items[0]?.value) {
-      //todo multiple filter with version pro. Issue task #55
       filter = model.items
-        .filter((item: { [key: string]: string }) => item.value)
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&')
+          .filter((item: { [key: string]: string }) => item.value)
+          .map((item: any) => {
+            return `${item.field}=${item?.value}`
+          })
+          .join('&')
     } else {
       filter = ''
     }
-    if (!model.items[0]) {
-      setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-      )
-      return
-    }
-    setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-    )
+    const {sort} = dataParams
+    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`)
   }
 
   const getColumns = useMemo(() => {
