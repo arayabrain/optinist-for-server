@@ -55,10 +55,14 @@ class AnovaStat(BaseData):
 
 
 class VectorStat(BaseData):
-    def __init__(self, dir_vector_angle, ori_vector_angle, file_name="vector_avg"):
+    def __init__(self, row, file_name="vector_avg"):
         super().__init__(file_name)
-        self.dir_vector_angle = dir_vector_angle
-        self.ori_vector_angle = ori_vector_angle
+        self.dir_vector_angle = np.full(row, np.NaN)
+        self.dir_vector_mag = np.full(row, np.NaN)
+        self.dir_vector_tune = np.full(row, np.NaN)
+        self.ori_vector_angle = np.full(row, np.NaN)
+        self.ori_vector_mag = np.full(row, np.NaN)
+        self.ori_vector_tune = np.full(row, np.NaN)
 
 
 class TuningStat(BaseData):
