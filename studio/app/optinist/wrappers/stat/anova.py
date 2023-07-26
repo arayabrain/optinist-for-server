@@ -65,4 +65,8 @@ def anova(
             data=stat.oristat.si[anova.index_ori_selective],
             file_name="ori_selective_hist",
         ),
+        "dir_response_strength_hist": HistogramData(
+            data=stat.dirstat.r_best[anova.index_visually_responsive] * 100,
+            file_name="dir_response_strength_hist",
+        ),
     }
