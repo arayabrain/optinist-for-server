@@ -18,13 +18,16 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useState } from "react";
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
+import { ROLE } from '@types'
+import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import { UserDTO } from 'api/users/UsersApiDTO'
 
 type PopupType = {
   open: boolean
   handleClose: () => void
 }
 
-const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => void) => (
+const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => void, user?: UserDTO) => (
     [
       {
         field: 'id',
@@ -108,7 +111,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         headerName: '',
         minWidth: 90,
         renderCell: (params: GridRenderCellParams<string>) => (
-          params.row.owner !== "User 2" ?
+          params.row.owner !== "User 2" && user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id)) ?
             <ButtonCustom onClick={handleOpenPopupShare}>
               <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
             </ButtonCustom> : ""
@@ -288,6 +291,7 @@ const PopupDelete = ({open, handleClose}: PopupType) => {
 const Workspaces = () => {
   // const dispatch = useDispatch()
   // const workspaces = useSelector(selectWorkspaceList)
+  const user = useSelector(selectCurrentUser)
   const loading = useSelector(selectIsLoadingWorkspaceList)
   const [openShare, setOpenShare] = useState(false)
   const [openDel, setOpenDel] = useState(false)
@@ -331,7 +335,7 @@ const Workspaces = () => {
       <DataGrid
         autoHeight
         rows={data}
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel)}
+        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user)}
         isCellEditable={(params) => params.row.owner === "User 1"}
       />
       {loading ? <Loading /> : null}
