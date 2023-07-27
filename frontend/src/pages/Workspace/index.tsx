@@ -4,9 +4,8 @@ import {
   GridRenderCellParams,
   GridRowParams,
   DataGrid,
-  GridEventListener
 } from '@mui/x-data-grid'
-import { DataGridPro, GridRowModesModel } from '@mui/x-data-grid-pro'
+import { DataGridPro, GridRowEditStopReasons, GridEventListener, GridRowModesModel, GridRowModel} from '@mui/x-data-grid-pro'
 import { Link, useSearchParams } from 'react-router-dom'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import Loading from '../../components/common/Loading'
@@ -347,13 +346,9 @@ const Workspaces = () => {
   const [open, setOpen] = useState({share: false, del: false, new: false, save: false})
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
-  const [dataEdit, setDataEdit] = useState<{name?: string, id?: number}>()
   const [error, setError] = useState("")
-  const [initNameCell, setInitNameCell] = useState<string>()
-
-  const [rows, setRows] = useState(data.items);
+  const [initName, setInitName] = useState("")
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
-
   const [searchParams, setParams] = useSearchParams()
 
   const offset = searchParams.get('offset')
@@ -405,13 +400,18 @@ const Workspaces = () => {
   }
 
   const handleClosePopupSave = () => {
+    setRowModesModel({
+      ...rowModesModel,
+      [Object.keys(rowModesModel)[0]]: { mode: 'view', ignoreModifications: true } as any,
+    });
     setOpen({...open, save: false})
   }
 
   const handleOkSave = async () => {
-    if(!dataEdit) return
-    await dispatch(putWorkspace({name: dataEdit.name, id: dataEdit.id, params: dataParams}))
-    setOpen({...open, save: false})
+    setRowModesModel({
+      ...rowModesModel,
+      [Object.keys(rowModesModel)[0]]: { mode: 'view' } as any,
+    });
   }
 
   const handleOkNew = async () => {
@@ -424,16 +424,6 @@ const Workspaces = () => {
     setError("")
     setNewWorkSpace("")
   }
-
-  const processRowUpdate = (newRow: any, preValue: any) => {
-    if(!newRow?.name) {
-      alert("Workspace Name cann't empty")
-      return {...newRow, name: preValue.name}
-    }
-    setOpen({...open, save: true})
-    setDataEdit({id: newRow?.id, name: newRow?.name})
-    return newRow;
-  };
 
   const onProcessRowUpdateError = (newRow: any) => {
     return newRow
@@ -463,6 +453,26 @@ const Workspaces = () => {
   const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
     setRowModesModel(newRowModesModel);
   };
+
+  const onRowEditStop: GridEventListener<"rowEditStop"> = (params, event) => {
+    setInitName(params.row.name)
+    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
+      event.defaultMuiPrevented = true;
+    }
+    //todo pending save state row edit
+    setOpen({...open, save: true})
+  };
+
+  const processRowUpdate = async (newRow: GridRowModel) => {
+    if(!newRow.name) {
+      alert("Workspace Name cann't empty")
+      setOpen({...open, save: false})
+      return { ...newRow, name: initName}
+    }
+    await dispatch(putWorkspace({name: newRow.name, id: Number(Object.keys(rowModesModel)[0]), params: dataParams}))
+    setOpen({...open, save: false})
+    return newRow
+  }
 
   return (
     <WorkspacesWrapper>
@@ -504,11 +514,14 @@ const Workspaces = () => {
       }}>
         <DataGridPro
           rows={data?.items}
-          editMode="cell"
+          editMode="row"
+          rowModesModel={rowModesModel}
           columns={columns(handleOpenPopupShare, handleOpenPopupDel, handleDownload, user) as any}
+          onRowModesModelChange={handleRowModesModelChange}
           isCellEditable={(params) => params.row.user?.id === user?.id}
-          processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={onProcessRowUpdateError}
+          onRowEditStop={onRowEditStop}
+          processRowUpdate={processRowUpdate as any}
           hideFooter={true}
         />
       </Box>
