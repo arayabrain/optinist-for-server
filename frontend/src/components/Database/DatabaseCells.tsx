@@ -180,31 +180,6 @@ const DatabaseCells = ({ user }: CellProps) => {
     [pagiFilter, getParamsData],
   )
 
-  // const handleFilter = (
-  //   model: GridFilterModel | any,
-  //   details: GridCallbackDetails,
-  // ) => {
-  //   let filter: string
-  //   if (!!model.items[0]?.value) {
-  //     filter = model.items
-  //       .filter((item: { [key: string]: string }) => item.value)
-  //       .map((item: any) => {
-  //         return `${item.field}=${item?.value}`
-  //       })
-  //       .join('&')
-  //   } else {
-  //     filter = ''
-  //   }
-  //   if (!model.items[0]) {
-  //     setParams(
-  //       `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-  //     )
-  //     return
-  //   }
-  //   setParams(
-  //     `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-  //   )
-  // }
   const handleFilter = (
       model: GridFilterModel | any,
       details: GridCallbackDetails,
