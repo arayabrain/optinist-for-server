@@ -3,9 +3,10 @@ import { Box, styled, Button, Dialog, DialogTitle, DialogContent, DialogActions,
 import {
   GridRenderCellParams,
   GridRowParams,
-  DataGrid
+  DataGrid,
+  GridEventListener
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
+import { DataGridPro, GridRowModesModel } from '@mui/x-data-grid-pro'
 import { Link, useSearchParams } from 'react-router-dom'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import Loading from '../../components/common/Loading'
@@ -348,6 +349,10 @@ const Workspaces = () => {
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [dataEdit, setDataEdit] = useState<{name?: string, id?: number}>()
   const [error, setError] = useState("")
+
+  const [rows, setRows] = useState(data.items);
+  const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
+
   const [searchParams, setParams] = useSearchParams()
 
   const offset = searchParams.get('offset')
@@ -422,11 +427,15 @@ const Workspaces = () => {
   const processRowUpdate = (newRow: any) => {
     if(!newRow?.name) {
       alert("Workspace Name cann't empty")
-      return
+      return {...newRow, name: '12312321'}
     }
     setOpen({...open, save: true})
     setDataEdit({id: newRow?.id, name: newRow?.name})
     return newRow;
+  };
+
+  const onProcessRowUpdateError = (newRow: any) => {
+    return newRow
   };
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -449,6 +458,10 @@ const Workspaces = () => {
   const handleDownload = async (id: number) => {
     dispatch(exportWorkspace(id))
   }
+
+  const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+    setRowModesModel(newRowModesModel);
+  };
 
   return (
     <WorkspacesWrapper>
@@ -490,10 +503,11 @@ const Workspaces = () => {
       }}>
         <DataGridPro
           rows={data?.items}
-          editMode="row"
+          editMode="cell"
           columns={columns(handleOpenPopupShare, handleOpenPopupDel, handleDownload, user) as any}
           isCellEditable={(params) => params.row.user?.id === user?.id}
           processRowUpdate={processRowUpdate}
+          onProcessRowUpdateError={onProcessRowUpdateError}
           hideFooter={true}
         />
       </Box>
