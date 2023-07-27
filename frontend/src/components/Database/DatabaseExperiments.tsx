@@ -23,6 +23,7 @@ import GroupsIcon from '@mui/icons-material/Groups'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
+  ImageUrls,
 } from '../../store/slice/Database/DatabaseType'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store/store'
@@ -59,6 +60,7 @@ type PopupAttributesProps = {
   handleClose: () => void
   role?: boolean
   handleChangeAttributes: (e: any) => void
+  exp_id?: string
 }
 
 type PopupType = {
@@ -75,7 +77,7 @@ type DatabaseProps = {
 
 const columns = (
   handleOpenAttributes: (value: string) => void,
-  handleOpenDialog: (value: string[]) => void,
+  handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (
     path: string,
@@ -158,24 +160,27 @@ const columns = (
     width: 160,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{
-          cursor: 'pointer',
-          display: 'flex',
-        }}
-        onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
-      >
-        {params.row?.cell_image_urls?.length > 0 && (
-          <img
-            src={params.row?.cell_image_urls[0]}
-            alt={''}
-            width={'100%'}
-            height={'100%'}
-          />
-        )}
-      </Box>
-    ),
+    renderCell: (params: { row: DatabaseType }) => {
+      console.log(params.row)
+      return (
+        <Box
+          sx={{
+            cursor: 'pointer',
+            display: 'flex',
+          }}
+          onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
+        >
+          {params.row?.cell_image_urls?.length > 0 && (
+            <img
+              src={params.row?.cell_image_urls[0].url}
+              alt={''}
+              width={'100%'}
+              height={'100%'}
+            />
+          )}
+        </Box>
+      )
+    },
   },
 ]
 
@@ -324,7 +329,9 @@ const PopupAttributes = ({
   handleClose,
   role = false,
   handleChangeAttributes,
+  exp_id
 }: PopupAttributesProps) => {
+  console.log(exp_id)
   return (
     <Box>
       <Dialog
@@ -357,7 +364,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const [openShare, setOpenShare] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
     type: string
-    data: string | string[] | undefined
+    data: ImageUrls | ImageUrls[] | undefined
+    exp_id?: string
   }>({
     type: '',
     data: undefined,
@@ -417,16 +425,16 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
-  const handleOpenDialog = (data: string[] | string) => {
-    setDataDialog({ type: 'image', data })
+  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, exp_id?: string) => {
+    setDataDialog({ type: 'image', data: data, exp_id: exp_id })
   }
 
   const handleCloseDialog = () => {
     setDataDialog({ type: '', data: undefined })
   }
 
-  const handleOpenAttributes = (data: string) => {
-    setDataDialog({ type: 'attribute', data })
+  const handleOpenAttributes = (data: ImageUrls, exp_id?: string) => {
+    setDataDialog({ type: 'attribute', data})
   }
 
   const handleChangeAttributes = (event: any) => {
@@ -505,7 +513,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => {
           return (
-            <Box sx={{ display: 'flex', cursor: "pointer" }} onClick={() => handleOpenDialog(params.row.graph_urls[index])}>
+            <Box
+              sx={{ display: 'flex', cursor: "pointer" }}
+              // onClick={() => handleOpenDialog(params.row.graph_urls[index], params.row.experiment_id)
+            >
               {params.row.graph_urls[index] ? (
                 <img
                   src={params.row.graph_urls[index]}
@@ -633,10 +644,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       />
       <PopupAttributes
         handleChangeAttributes={handleChangeAttributes}
-        data={dataDialog.data as string}
+        data={dataDialog.data as ImageUrls}
         open={dataDialog.type === 'attribute'}
         handleClose={handleCloseDialog}
         role={!!user}
+        exp_id={dataDialog.exp_id}
       />
       {loading ? <Loading /> : null}
       <PopupShare
