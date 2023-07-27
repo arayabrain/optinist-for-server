@@ -36,8 +36,27 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
     for item in items:
         expdbcell = ExpDbCell.from_orm(item[0])
         expdbcell.experiment_id = item[1]
+        expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        expdbcell.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
+        # TODO: set dummy data.
+        expdbcell.graph_urls = DUMMY_CELLS_GRAPH_URLS
         expdbcells.append(expdbcell)
     return expdbcells
+
+
+def experiment_transformer(items: Sequence) -> Sequence:
+    experiments = []
+    for item in items:
+        exp = ExpDbExperiment.from_orm(item)
+        # TODO: set dummy data.
+        exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        exp.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
+        # TODO: set dummy data.
+        exp.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
+        experiments.append(exp)
+    return experiments
 
 
 # TODO: set dummy data.
@@ -136,15 +155,9 @@ async def search_public_experiments(
             if sortOptions.sort[1] == SortDirection.desc
             else sort_column.asc()
         ),
+        transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -189,13 +202,6 @@ async def search_public_cells(
         transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
     return data
 
 
@@ -259,15 +265,9 @@ async def search_db_experiments(
     data = paginate(
         session=db,
         query=query,
+        transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -341,16 +341,6 @@ async def search_db_cells(
         transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-
-    for item in data.items:
-        # TODO: set experiment.id
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
-
     return data
 
 
