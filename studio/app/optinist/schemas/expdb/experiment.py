@@ -54,6 +54,9 @@ class ExpDbExperiment(BaseModel):
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
+    class Config:
+        orm_mode = True
+
 
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
