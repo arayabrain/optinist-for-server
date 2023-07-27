@@ -1,9 +1,10 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
+import { ImageUrls } from "store/slice/Database/DatabaseType";
 
 type DialogImageProps = {
   open: boolean
-  data?: string[] | string
+  data?: ImageUrls[] | ImageUrls
   handleCloseDialog: () => void
 }
 
@@ -25,18 +26,18 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
               }}
             >
               {
-                typeof data === "string" ?
+                !Array.isArray(data) ?
                   <Box sx={{
                     display: "flex",
                     flexDirection: "column",
                   }}>
                     <img
-                      src={data}
+                      src={data.url}
                       alt={""}
                       width={"100%"}
                       height={"100%"}
                     />
-                    <span>{data}</span>
+                    <span>{data.url}</span>
                   </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
@@ -46,7 +47,7 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
                   >
                     <img
                       key={index}
-                      src={item}
+                      src={item.url}
                       alt={""}
                       width={"100%"}
                       height={"100%"}
