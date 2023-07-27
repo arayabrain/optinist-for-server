@@ -38,6 +38,7 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
     field: 'cell_id',
     headerName: 'Cell ID',
     width: 160,
+    filterable: false,
     renderCell: (params: { row: DatabaseType }) => params.row?.id,
   },
   {
@@ -123,22 +124,23 @@ const DatabaseCells = ({ user }: CellProps) => {
   const exp_id = searchParams.get('exp_id')
   const offset = searchParams.get('offset')
   const limit = searchParams.get('limit')
-  const sort = searchParams.get('sort')
+  const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
     return {
       exp_id: Number(exp_id) || undefined,
-      offset: Number(offset) || 0,
-      limit: Number(limit) || 50,
       sort: sort || [],
+      limit: Number(limit) || 50,
+      offset: Number(offset) || 0,
     }
-  }, [offset, limit, sort, exp_id])
+  }, [offset, limit, JSON.stringify(sort), exp_id])
 
   const dataParamsFilter = useMemo(
     () => ({
-      brain_area: searchParams.get('brain_area') || '',
-      cre_driver: searchParams.get('cre_driver') || '',
-      reporter_line: searchParams.get('reporter_line') || '',
+      experiment_id: searchParams.get('experiment_id') || undefined,
+      brain_area: searchParams.get('brain_area') || undefined,
+      cre_driver: searchParams.get('cre_driver') || undefined,
+      reporter_line: searchParams.get('reporter_line') || undefined,
       imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
     }),
     [searchParams],
@@ -146,13 +148,13 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api(dataParams))
+    dispatch(api({...dataParamsFilter,...dataParams}))
   }
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user])
+  }, [dataParams, user, dataParamsFilter])
 
   const handleOpenDialog = (data: string[] | string) => {
     setDataDialog({ type: 'image', data })
@@ -270,6 +272,11 @@ const DatabaseCells = ({ user }: CellProps) => {
           filter: {
             filterModel: {
               items: [
+                {
+                  field: 'experiment_id',
+                  operator: 'contains',
+                  value: dataParamsFilter.experiment_id,
+                },
                 {
                   field: 'brain_area',
                   operator: 'contains',
