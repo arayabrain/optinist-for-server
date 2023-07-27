@@ -1,18 +1,20 @@
 from datetime import datetime
-from typing import List, Tuple
+from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from studio.app.optinist.schemas.expdb.experiment import ExpDbExperimentFields
+from studio.app.optinist.schemas.expdb.experiment import (
+    ExpDbExperimentFields,
+    ImageInfo,
+)
 
 
 class ExpDbCell(BaseModel):
     id: int
-    exp_id: int = None
+    experiment_uid: int
+    experiment_id: str = None
     fields: ExpDbExperimentFields = None
-    cell_image_url: str = None
-    graph_urls: List[Tuple[str, dict]] = Field(
-        [], description="[0]:graph_url, [1]:graph_params"
-    )
+    cell_image_url: ImageInfo = None
+    graph_urls: List[ImageInfo] = None
     created_at: datetime = None
     updated_at: datetime = None
