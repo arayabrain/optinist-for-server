@@ -92,7 +92,7 @@ const columns = (
         headerName: 'Created',
         minWidth: 200,
         renderCell: (params: GridRenderCellParams<string>) => (
-          <span>{moment(params.value).format("YYYY/MM/DD HH:MM")}</span>
+          <span>{moment(params.value).format("YYYY/MM/DD hh:mm")}</span>
         ),
       },
       {
@@ -303,6 +303,7 @@ const PopupNew = ({
 }
 
 const PopupDelete = ({open, handleClose, handleOkDel}: PopupType) => {
+  if(!handleOkDel) return null
   return (
     <Box>
       <Dialog
