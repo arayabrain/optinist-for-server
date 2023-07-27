@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination.ext.sqlmodel import paginate
 from sqlmodel import Session, and_, or_, select
@@ -27,6 +29,16 @@ from studio.app.optinist.schemas.expdb.experiment import (
 )
 
 router = APIRouter(tags=["Experiment Database"])
+
+
+def expdbcell_transformer(items: Sequence) -> Sequence:
+    expdbcells = []
+    for item in items:
+        expdbcell = ExpDbCell.from_orm(item[0])
+        expdbcell.experiment_id = item[1]
+        expdbcells.append(expdbcell)
+    return expdbcells
+
 
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_FIELDS = {
@@ -150,7 +162,7 @@ async def search_public_cells(
 ):
     sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
-        select(optinist_model.Cell)
+        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
@@ -174,12 +186,10 @@ async def search_public_cells(
     data = paginate(
         session=db,
         query=query,
+        transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
     for item in data.items:
-        item.experiment_id = (
-            db.query(optinist_model.Experiment).get(item.experiment_uid).experiment_id
-        )
         # TODO: set dummy data.
         item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
         # TODO: set dummy data.
@@ -276,7 +286,7 @@ async def search_db_cells(
 ):
     sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
-        select(optinist_model.Cell)
+        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
             optinist_model.Experiment,
             optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
@@ -328,14 +338,12 @@ async def search_db_cells(
     data = paginate(
         session=db,
         query=query,
+        transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
 
     for item in data.items:
         # TODO: set experiment.id
-        item.experiment_id = (
-            db.query(optinist_model.Experiment).get(item.experiment_uid).experiment_id
-        )
         # TODO: set dummy data.
         item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
         # TODO: set dummy data.
