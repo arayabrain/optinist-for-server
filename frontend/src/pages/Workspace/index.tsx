@@ -18,6 +18,7 @@ import {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react";
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import { delWorkspace, exportWorkspace, getWorkspaceList, importWorkspace, postWorkspace, putWorkspace } from 'store/slice/Workspace/WorkspacesActions'
+import moment from 'moment'
 
 type PopupType = {
   open: boolean
@@ -91,7 +92,7 @@ const columns = (
         headerName: 'Created',
         minWidth: 200,
         renderCell: (params: GridRenderCellParams<string>) => (
-          <span>{params.value}</span>
+          <span>{moment(params.value).format("YYYY/MM/DD HH:MM")}</span>
         ),
       },
       {
@@ -394,6 +395,7 @@ const Workspaces = () => {
 
   const handleClosePopupNew = () => {
     setOpen({...open, new: false})
+    setError("")
   }
 
   const handleClosePopupSave = () => {
@@ -413,11 +415,13 @@ const Workspaces = () => {
     }
     await dispatch(postWorkspace({name: newWorkspace, params: dataParams}))
     setOpen({...open, new: false})
+    setError("")
+    setNewWorkSpace("")
   }
 
   const processRowUpdate = (newRow: any) => {
     if(!newRow?.name) {
-      alert("is not empty")
+      alert("Workspace Name cann't empty")
       return
     }
     setOpen({...open, save: true})
@@ -479,14 +483,20 @@ const Workspaces = () => {
         </label>
         <ButtonCustom onClick={handleOpenPopupNew}>New</ButtonCustom>
       </Box>
-      <DataGridPro
-        rows={data?.items}
-        editMode="row"
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel, handleDownload, user) as any}
-        isCellEditable={(params) => params.row.user?.id === user?.id}
-        processRowUpdate={processRowUpdate}
-        hideFooter={true}
-      />
+      <Box
+        sx={{
+          minHeight: 500,
+          height: 'calc(100vh - 350px)'
+      }}>
+        <DataGridPro
+          rows={data?.items}
+          editMode="row"
+          columns={columns(handleOpenPopupShare, handleOpenPopupDel, handleDownload, user) as any}
+          isCellEditable={(params) => params.row.user?.id === user?.id}
+          processRowUpdate={processRowUpdate}
+          hideFooter={true}
+        />
+      </Box>
       <Pagination
         sx={{ marginTop: 2 }}
         count={data.total}
