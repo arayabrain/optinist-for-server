@@ -349,6 +349,7 @@ const Workspaces = () => {
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [dataEdit, setDataEdit] = useState<{name?: string, id?: number}>()
   const [error, setError] = useState("")
+  const [initNameCell, setInitNameCell] = useState<string>()
 
   const [rows, setRows] = useState(data.items);
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
@@ -424,10 +425,10 @@ const Workspaces = () => {
     setNewWorkSpace("")
   }
 
-  const processRowUpdate = (newRow: any) => {
+  const processRowUpdate = (newRow: any, preValue: any) => {
     if(!newRow?.name) {
       alert("Workspace Name cann't empty")
-      return {...newRow, name: '12312321'}
+      return {...newRow, name: preValue.name}
     }
     setOpen({...open, save: true})
     setDataEdit({id: newRow?.id, name: newRow?.name})
