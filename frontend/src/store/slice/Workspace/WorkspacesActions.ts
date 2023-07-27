@@ -76,7 +76,7 @@ export const exportWorkspace = createAsyncThunk<
     ItemsWorkspace,
     number
 >(`${WORKSPACE_SLICE_NAME}/exportWorkspaceList`, async (id, thunkAPI) => {
-  const { rejectWithValue, dispatch } = thunkAPI
+  const { rejectWithValue } = thunkAPI
   try {
     const response = await exportWorkspaceApi(id)
     return response

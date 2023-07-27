@@ -1,4 +1,3 @@
-import { WorkspaceParams } from "store/slice/Workspace/WorkspaceType"
 import axios from "utils/axios"
 import qs from 'qs'
 
