@@ -1,4 +1,5 @@
 from studio.app.optinist.wrappers.stat.anova import anova
+from studio.app.optinist.wrappers.stat.curvefit_tuning import curvefit_tuning
 from studio.app.optinist.wrappers.stat.file_convert import stat_file_convert
 from studio.app.optinist.wrappers.stat.vector_average import vector_average
 
@@ -14,6 +15,10 @@ stat_wrapper_dict = {
         },
         "vector_average": {
             "function": vector_average,
+            "conda_name": "stat",
+        },
+        "curvefit_tuning": {
+            "function": curvefit_tuning,
             "conda_name": "stat",
         },
     }

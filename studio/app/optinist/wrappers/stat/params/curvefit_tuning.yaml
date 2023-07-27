@@ -1,0 +1,3 @@
+do_interpolation: True
+interp_method: 'spline'
+p_threshold: 0.05

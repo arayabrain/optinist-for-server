@@ -36,7 +36,8 @@ class AnovaStat(BaseData):
         file_name="anova",
     ):
         super().__init__(file_name)
-        self.p_value = np.full(row, np.NaN)
+        self.p_value_responsive = np.full(row, np.NaN)
+        self.p_value_selective = np.full(row, np.NaN)
         self.index_visually_responsive = None
         self.index_dir_selective = None
         self.index_ori_selective = None
@@ -66,6 +67,7 @@ class VectorStat(BaseData):
 
 
 class TuningStat(BaseData):
-    def __init__(self, tuning_width, file_name="tuning"):
+    def __init__(self, row, file_name="tuning"):
         super().__init__(file_name)
-        self.tuning_width = tuning_width
+        self.dir_tuning_width = np.full(row, np.NaN)
+        self.ori_tuning_width = np.full(row, np.NaN)

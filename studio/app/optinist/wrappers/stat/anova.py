@@ -12,10 +12,11 @@ def anova(
 
     for i in range(stat.ncells):
         this_data = stat.data_tables[i][0]
-        _, anova.p_value[i] = f_oneway(*this_data.T)
+        _, anova.p_value_responsive[i] = f_oneway(*this_data.T)
+        _, anova.p_value_selective[i] = f_oneway(*this_data[:, : stat.nstim].T)
 
     anova.index_visually_responsive = np.where(
-        (anova.p_value < params["p_value_threshold"])
+        (anova.p_value_responsive < params["p_value_threshold"])
         & (stat.dirstat.r_best >= params["r_best_threshold"]),
         True,
         False,
