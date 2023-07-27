@@ -590,6 +590,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
             filterModel: {
               items: [
                 {
+                  field: 'experiment_id',
+                  operator: 'contains',
+                  value: dataParamsFilter.experiment_id,
+                },
+                {
                   field: 'brain_area',
                   operator: 'is',
                   value: dataParamsFilter.brain_area,
