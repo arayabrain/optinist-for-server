@@ -31,6 +31,8 @@ import {
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
+import { UserDTO } from 'api/users/UsersApiDTO'
+import { ROLE } from '@types'
 
 type PopupAttributesProps = {
   data: string
@@ -41,7 +43,7 @@ type PopupAttributesProps = {
 }
 
 type DatabaseProps = {
-  user?: Object
+  user?: UserDTO
   cellPath: string
 }
 
@@ -397,7 +399,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          user
+          user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id))
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)
         }
