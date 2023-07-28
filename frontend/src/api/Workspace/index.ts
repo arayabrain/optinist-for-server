@@ -40,3 +40,13 @@ export const exportWorkspaceApi = async (id: number): Promise<void> => {
   const response = await axios.get(`/workspace/export/${id}`)
   return response.data
 }
+
+export const getListUserShareWorkspaceApi = async (id: number) => {
+  const response = await axios.get(`/workspace/share/${id}/status`)
+  return response.data
+}
+
+export const postListUserShareWorkspaceApi = async (id: number, data: {user_ids: number[]}) => {
+  const response = await axios.post(`/workspace/share/${id}/status`, data)
+  return response.data
+}

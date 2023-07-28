@@ -31,7 +31,8 @@ import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt'
 import CancelIcon from '@mui/icons-material/Cancel'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import EditIcon from '@mui/icons-material/Edit'
-import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
+import GroupsIcon from '@mui/icons-material/Groups'
+
 import {
   delWorkspace,
   exportWorkspace,
@@ -118,7 +119,7 @@ const columns = (
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <span>{params.value?.name}</span>
-        {params.value.id !== user?.id ? <PeopleOutlineIcon /> : ''}
+        {params.value.id !== user?.id ? <GroupsIcon /> : ''}
       </Box>
     ),
   },
@@ -173,7 +174,7 @@ const columns = (
     renderCell: (params: GridRenderCellParams<string>) =>
       params.row?.user?.id === user?.id && (
         <ButtonCustom onClick={handleOpenPopupShare}>
-          <PeopleOutlineIcon />
+          <GroupsIcon />
         </ButtonCustom>
       ),
   },

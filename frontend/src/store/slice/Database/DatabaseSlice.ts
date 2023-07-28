@@ -4,6 +4,8 @@ import {
   getCellsDatabase,
   getExperimentsPublicDatabase,
   getCellsPublicDatabase,
+  getListUserShare,
+  postListUserShare,
 } from './DatabaseActions'
 import { DATABASE_SLICE_NAME, DatabaseDTO, ListShare } from './DatabaseType'
 
@@ -20,21 +22,24 @@ const initData = {
 export type TypeData = {
   public: DatabaseDTO
   private: DatabaseDTO
-  listShare: ListShare | {}
 }
 
 export const initialState: {
   data: TypeData
   loading: boolean
   type: 'experiment' | 'cell'
+  listShare?: {
+    share_type: number
+    users: ListShare[]
+  }
 } = {
   data: {
     public: initData,
     private: initData,
-    listShare: {}
   },
   loading: false,
   type: 'experiment',
+  listShare: undefined
 }
 
 export const databaseSlice = createSlice({
@@ -71,6 +76,13 @@ export const databaseSlice = createSlice({
         }
         state.loading = true
       })
+      .addCase(getListUserShare.pending, (state, action) => {
+        state.listShare = undefined
+        state.loading = true
+      })
+      .addCase(postListUserShare.pending, (state) => {
+        state.loading = true
+      })
       .addMatcher(
         isAnyOf(
           getCellsDatabase.fulfilled,
@@ -93,10 +105,22 @@ export const databaseSlice = createSlice({
       )
       .addMatcher(
         isAnyOf(
+          getListUserShare.fulfilled,
+        ),
+        (state, action) => {
+          state.listShare = action.payload
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(
           getExperimentsDatabase.rejected,
           getCellsDatabase.rejected,
           getExperimentsPublicDatabase.rejected,
           getCellsPublicDatabase.rejected,
+          getListUserShare.rejected,
+          postListUserShare.rejected,
+          postListUserShare.fulfilled
         ),
         (state) => {
           state.loading = false

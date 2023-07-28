@@ -35,3 +35,8 @@ export const getListUserShareApi = async (id: number) => {
   const response = await axios.get(`/expdb/share/${id}/status`)
   return response.data
 }
+
+export const postListUserShareApi = async (id: number, data: {share_type: number; user_ids: number[]}) => {
+  const response = await axios.post(`/expdb/share/${id}/status`, data)
+  return response.data
+}
