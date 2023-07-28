@@ -25,6 +25,7 @@ const ResetPassword = () => {
             await sendResetPasswordMailApi(values.email)
             setTimeout(()=>{
                 alert(` You'll receive a link to reset your password at ${values.email}. Please check your mail!`)
+                navigate('/login')
             },300)
         }
         catch {
