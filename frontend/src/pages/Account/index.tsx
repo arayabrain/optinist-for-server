@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
 import { deleteMe } from 'store/slice/User/UserActions'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import { ROLE } from '@types'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const dispatch = useDispatch()
@@ -86,7 +87,10 @@ const Account = () => {
       </BoxFlex>
       <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
-        <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
+        {
+          user && ROLE.ADMIN === user.role_id ?
+            <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit> : null
+        }
       </BoxFlex>
       {
         isLoading && <Loading />
