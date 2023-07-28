@@ -12,7 +12,7 @@ from studio.app.common.core.auth.auth_dependencies import (
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortDirection, SortOptions
+from studio.app.optinist.schemas.base import SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -135,7 +135,7 @@ async def search_public_experiments(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
 
     # TODO: set dummy data.
     graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
@@ -150,11 +150,7 @@ async def search_public_experiments(
             )
         )
         .group_by(optinist_model.Experiment.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        ),
+        .order_by(*sa_sort_list),
         transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
@@ -173,7 +169,10 @@ async def search_public_cells(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Cell,
+        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+    )
     query = (
         select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
@@ -187,11 +186,7 @@ async def search_public_cells(
             )
         )
     )
-    query = query.group_by(optinist_model.Cell.id).order_by(
-        sort_column.desc()
-        if sortOptions.sort[1] == SortDirection.desc
-        else sort_column.asc()
-    )
+    query = query.group_by(optinist_model.Cell.id).order_by(*sa_sort_list)
 
     # TODO: set dummy data.
     graph_titles = DUMMY_CELLS_GRAPH_TITLES
@@ -218,7 +213,7 @@ async def search_db_experiments(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
     query = select(optinist_model.Experiment).join(
         common_model.Organization,
         optinist_model.Experiment.organization_id == common_model.Organization.id,
@@ -252,11 +247,7 @@ async def search_db_experiments(
             )
         )
         .group_by(optinist_model.Experiment.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
 
     # TODO: set dummy data.
@@ -284,7 +275,10 @@ async def search_db_cells(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Cell,
+        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+    )
     query = (
         select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
@@ -325,11 +319,7 @@ async def search_db_cells(
             )
         )
         .group_by(optinist_model.Cell.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
 
     # TODO: set dummy data.
