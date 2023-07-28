@@ -18,12 +18,13 @@ import {
 export const getWorkspaceList = createAsyncThunk<
   WorkspaceDataDTO,
   { [key: string]: number }
->(`${WORKSPACE_SLICE_NAME}/getWorkspaceList`, async (params) => {
+>(`${WORKSPACE_SLICE_NAME}/getWorkspaceList`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
   try {
-    const response = await getWorkspacesApi(params as { [key: string]: number })
+    const response = await getWorkspacesApi(params)
     return response
   } catch (e) {
-    return null
+    return rejectWithValue(e)
   }
 })
 
