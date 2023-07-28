@@ -29,6 +29,7 @@ import { RootState } from '../../store/store'
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
+  getListUserShare,
   postPublist,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
@@ -75,6 +76,14 @@ type PopupType = {
 type DatabaseProps = {
   user?: Object
   cellPath: string
+}
+
+type UsersShare = {
+  id: number
+  name: string
+  email: string
+  created_at: string
+  updated_at: string
 }
 
 const columns = (
@@ -207,7 +216,7 @@ const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) =
     headerName: "",
     minWidth: 130,
     renderCell: (params: GridRenderCellParams<string>) => {
-      if(!params.row.share) return null
+      if(!params.row.share) return ''
       return (
         <Button onClick={() => handleShareFalse(params)}>
           <CancelIcon color={"error"}/>
@@ -267,7 +276,7 @@ const PopupShare = ({open, handleClose, data}: PopupType) => {
     setValue(Number((event.target as HTMLInputElement).value));
   }
 
-  if(!open) return null;
+  if(!data) return null;
 
   return (
     <Box>
@@ -277,24 +286,24 @@ const PopupShare = ({open, handleClose, data}: PopupType) => {
         sx={{margin: 0}}
       >
         <DialogTitle>Share Database record</DialogTitle>
-        <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: XXXXXX</DialogTitle>
+        <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>
         <DialogTitle>
           <FormControl>
             <RadioGroup
-              value={value}
+              value={value || data.shareType}
               row
               aria-labelledby="demo-row-radio-buttons-group-label"
               name="row-radio-buttons-group"
               onChange={handleValue}
             >
-              <FormControlLabel value="1" control={<Radio />} label={"Share for Organization"} />
-              <FormControlLabel value="2" control={<Radio />} label={"Share for Users"} />
+              <FormControlLabel value={1} control={<Radio />} label={"Share for Organization"} />
+              <FormControlLabel value={2} control={<Radio />} label={"Share for Users"} />
             </RadioGroup>
           </FormControl>
         </DialogTitle>
         <DialogContent sx={{minHeight: 500}}>
           {
-            value !== SHARE.ORGANIZATION ?
+            (value || data.shareType === SHARE.USERS) && value !== SHARE.ORGANIZATION ?
               <>
                 <p>Permitted users</p>
                 <DataGrid
@@ -352,8 +361,7 @@ const PopupAttributes = ({
 }
 
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
-
-  const [openShare, setOpenShare] = useState(false)
+  const [openShare, setOpenShare] = useState<{open: boolean, id?: number}>({open: false})
   const [dataDialog, setDataDialog] = useState<{
     type?: string
     data?: string | string[]
@@ -376,6 +384,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       loading: state[DATABASE_SLICE_NAME].loading,
     }),
   )
+
+  const dataListShare = useSelector
 
   const pagiFilter = useCallback(
     (page?: number) => {
@@ -420,6 +430,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
+  useEffect(() => {
+    if(!openShare.id) return
+    dispatch(getListUserShare({id: openShare.id}))
+  }, [openShare])
+
   const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
     let newData: string | (string[]) = []
     if(Array.isArray(data)) {
@@ -440,9 +455,9 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     setDataDialog(pre => ({...pre, data: event.target.value}))
   }
 
-  const handleOpenShare = (id?: string, value?: number) => {
-    setDataDialog({expId: id, shareType: value})
-    setOpenShare(true)
+  const handleOpenShare = (expId?: string, value?: number, id?: number) => {
+    setDataDialog({expId: expId, shareType: value})
+    setOpenShare({open: true, id: id})
   }
 
   const getParamsData = () => {
@@ -548,7 +563,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           return (
             <Box
               sx={{ cursor: 'pointer' }}
-              onClick={() => handleOpenShare(row.experiment_id, value)}
+              onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
             >
               <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "black" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
             </Box>
@@ -661,9 +676,9 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       />
       {loading ? <Loading /> : null}
       <PopupShare
-        open={openShare}
+        open={openShare.open}
         data={dataDialog as { expId: string; shareType: number; }}
-        handleClose={() => setOpenShare(false)}
+        handleClose={() => setOpenShare({...openShare, open: false})}
       />
     </DatabaseExperimentsWrapper>
   )
