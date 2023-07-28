@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
-  DataRequestEdit,
+  WorkspacePostDataDTO,
   delWorkspaceApi,
   exportWorkspaceApi,
   getWorkspacesApi,
@@ -15,12 +15,10 @@ import {
   WORKSPACE_SLICE_NAME,
 } from './WorkspaceType'
 
-// @ts-ignore
 export const getWorkspaceList = createAsyncThunk<
   WorkspaceDataDTO,
   { [key: string]: number }
->(`${WORKSPACE_SLICE_NAME}/getWorkspaceList`, async (params, thunkAPI) => {
-  // const { rejectWithValue } = thunkAPI
+>(`${WORKSPACE_SLICE_NAME}/getWorkspaceList`, async (params) => {
   try {
     const response = await getWorkspacesApi(params as { [key: string]: number })
     return response
@@ -43,31 +41,31 @@ export const delWorkspace = createAsyncThunk<boolean, WorkspaceParams>(
   },
 )
 
-export const postWorkspace = createAsyncThunk<ItemsWorkspace, DataRequestEdit>(
-  `${WORKSPACE_SLICE_NAME}/postWorkspaceList`,
-  async (data, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI
-    try {
-      const response = await postWorkspaceApi(data)
-      return response
-    } catch (e) {
-      return rejectWithValue(e)
-    }
-  },
-)
+export const postWorkspace = createAsyncThunk<
+  ItemsWorkspace,
+  WorkspacePostDataDTO
+>(`${WORKSPACE_SLICE_NAME}/postWorkspaceList`, async (data, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await postWorkspaceApi(data)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
 
-export const putWorkspace = createAsyncThunk<ItemsWorkspace, DataRequestEdit>(
-  `${WORKSPACE_SLICE_NAME}/putWorkspaceList`,
-  async (data, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI
-    try {
-      const response = await putWorkspaceApi(data)
-      return response
-    } catch (e) {
-      return rejectWithValue(e)
-    }
-  },
-)
+export const putWorkspace = createAsyncThunk<
+  ItemsWorkspace,
+  WorkspacePostDataDTO
+>(`${WORKSPACE_SLICE_NAME}/putWorkspaceList`, async (data, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await putWorkspaceApi(data)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
 
 export const importWorkspace = createAsyncThunk<
   ItemsWorkspace,
@@ -83,7 +81,7 @@ export const importWorkspace = createAsyncThunk<
   }
 })
 
-export const exportWorkspace = createAsyncThunk<ItemsWorkspace, number>(
+export const exportWorkspace = createAsyncThunk<void, number>(
   `${WORKSPACE_SLICE_NAME}/exportWorkspaceList`,
   async (id, thunkAPI) => {
     const { rejectWithValue } = thunkAPI
