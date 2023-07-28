@@ -2,7 +2,7 @@ import {Box, Button,
   Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, Radio, RadioGroup, styled } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
 import { SHARE } from "../@types";
-import {ChangeEvent, useCallback, useEffect, useState} from "react";
+import {ChangeEvent, MouseEvent, useCallback, useEffect, useState} from "react";
 import { useDispatch } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
@@ -61,7 +61,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     setShareType(Number((event.target as HTMLInputElement).value));
   }
 
-  const columnsShare = useCallback((handleShareFalse: (e: any, parmas: GridRenderCellParams<string>) => void) =>  [
+  const columnsShare = useCallback((handleShareFalse: (e: MouseEvent<HTMLButtonElement>, parmas: GridRenderCellParams<string>) => void) =>  [
     {
       field: "name",
       headerName: "Name",
