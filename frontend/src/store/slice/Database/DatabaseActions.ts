@@ -9,6 +9,7 @@ import {
   getCellsPublicApi,
   getExperimentsApi,
   getExperimentsPublicApi,
+  getListUserShareApi,
   postPublistApi,
 } from 'api/database'
 
@@ -79,4 +80,18 @@ export const postPublist = createAsyncThunk<
     return rejectWithValue(e)
   }
 })
+
+export const getListUserShare = createAsyncThunk<
+    DatabaseDTO,
+    {id: number}
+>(`${DATABASE_SLICE_NAME}/getListUserShare`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await getListUserShareApi(params.id)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+
 

@@ -30,3 +30,8 @@ export const postPublistApi = async (id: number, status: 'on' | 'off') => {
   const response = await axios.post(`/expdb/experiment/publish/${id}/${status}`)
   return response.data
 }
+
+export const getListUserShareApi = async (id: number) => {
+  const response = await axios.get(`/expdb/share/${id}/status`)
+  return response.data
+}

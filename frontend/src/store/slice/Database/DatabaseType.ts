@@ -42,4 +42,12 @@ export type DatabaseDTO = {
   items: DatabaseType[]
 }
 
+export type ListShare = {
+  id: number,
+  name: string
+  email: string
+  created_at: string
+  updated_at: string
+}
+
 export type DatabaseParams = { [key: string]: number | string | string[] | undefined }

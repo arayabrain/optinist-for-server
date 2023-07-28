@@ -5,7 +5,7 @@ import {
   getExperimentsPublicDatabase,
   getCellsPublicDatabase,
 } from './DatabaseActions'
-import { DATABASE_SLICE_NAME, DatabaseDTO } from './DatabaseType'
+import { DATABASE_SLICE_NAME, DatabaseDTO, ListShare } from './DatabaseType'
 
 const initData = {
   offset: 0,
@@ -20,6 +20,7 @@ const initData = {
 export type TypeData = {
   public: DatabaseDTO,
   private: DatabaseDTO
+  listShare: ListShare | {}
 }
 
 export const initialState: {
@@ -29,7 +30,8 @@ export const initialState: {
 } = {
   data: {
     public: initData,
-    private: initData
+    private: initData,
+    listShare: {}
   },
   loading: false,
   type: 'experiment',
