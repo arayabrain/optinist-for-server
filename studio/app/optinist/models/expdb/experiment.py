@@ -30,10 +30,10 @@ class ExperimentShareUser(Base, table=True):
     __tablename__ = "experiments_share_users"
     __table_args__ = (
         UniqueConstraint(
-            "experiment_seqid", "user_id", name="idx_experiment_seqid_user_id"
+            "experiment_uid", "user_id", name="idx_experiment_uid_user_id"
         ),
     )
-    experiment_seqid: int = Field(
+    experiment_uid: int = Field(
         sa_column=Column(
             Integer(),
             nullable=False,
