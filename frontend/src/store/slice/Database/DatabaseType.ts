@@ -42,6 +42,11 @@ export type DatabaseDTO = {
   items: DatabaseType[]
 }
 
+export type ListShareDTO = {
+  share_type: number
+  users: ListShare[]
+}
+
 export type ListShare = {
   id: number,
   name: string
