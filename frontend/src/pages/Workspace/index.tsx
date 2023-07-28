@@ -106,15 +106,16 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
           </ButtonCustom>
         ),
       },
+      user && [ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id) &&
       {
         field: 'share',
         headerName: '',
         minWidth: 90,
         renderCell: (params: GridRenderCellParams<string>) => (
-          params.row.owner !== "User 2" && user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id)) ?
-            <ButtonCustom onClick={handleOpenPopupShare}>
-              <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
-            </ButtonCustom> : ""
+            params.row.owner !== "User 2" && user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id)) ?
+                <ButtonCustom onClick={handleOpenPopupShare}>
+                  <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
+                </ButtonCustom> : ""
         ),
       },
       {
@@ -139,14 +140,6 @@ const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) =
         minWidth: 140,
         renderCell: (params: GridRenderCellParams<string>) => (
             <span>{params.row.name}</span>
-        ),
-      },
-      {
-        field: "lab",
-        headerName: "Lab",
-        minWidth: 280,
-        renderCell: (params: GridRenderCellParams<string>) => (
-            <span>{params.row.email}</span>
         ),
       },
       {
@@ -201,21 +194,18 @@ const dataShare = [
   {
     id: 1,
     name: "User 1",
-    lab: "Labxxxx",
     email: "aaaaa@gmail.com",
     share: false
   },
   {
     id: 2,
     name: "User 2",
-    lab: "Labxxxx",
     email: "aaaaa@gmail.com",
     share: true
   },
   {
     id: 3,
     name: "User 3",
-    lab: "Labxxxx",
     email: "aaaaa@gmail.com",
     share: true
   }
@@ -223,7 +213,7 @@ const dataShare = [
 
 const PopupShare = ({open, handleClose}: PopupType) => {
   const [tableShare, setTableShare] = useState(dataShare)
-  if(!open) return <></>
+  if(!open) return null
   const handleShareTrue = (params: GridRowParams) => {
     if(params.row.share) return
     const index = tableShare.findIndex(item => item.id === params.id)
@@ -269,9 +259,8 @@ const PopupShare = ({open, handleClose}: PopupType) => {
 }
 
 const PopupDelete = ({open, handleClose}: PopupType) => {
-  if(!open) return <></>
+  if(!open) return null
   return (
-
     <Box>
       <Dialog
           open={open}
@@ -335,7 +324,7 @@ const Workspaces = () => {
       <DataGrid
         autoHeight
         rows={data}
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user)}
+        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user).filter(Boolean) as any}
         isCellEditable={(params) => params.row.owner === "User 1"}
       />
       {loading ? <Loading /> : null}
