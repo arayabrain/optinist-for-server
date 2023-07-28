@@ -33,7 +33,7 @@ import {
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { SHARE } from '@types'
-import PopupShare from './PopupShare'
+import PopupShare from '../PopupShare'
 
 export type Data = {
   id: number
@@ -532,7 +532,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
             id={openShare.id}
             open={openShare.open}
             data={dataDialog as { expId: string; shareType: number; }}
-            dataListShare={dataShare}
+            usersShare={dataShare}
             handleClose={(isSubmit) => {
               if(isSubmit) fetchApi();
               setOpenShare({...openShare, open: false})}
