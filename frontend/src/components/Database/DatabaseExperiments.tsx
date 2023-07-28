@@ -262,7 +262,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handleChangeAttributes = (event: any) => {
-    setDataDialog(pre => ({...pre, data: event.target.value}))
+    setDataDialog((pre) => ({ ...pre, data: event.target.value }))
   }
 
   const getParamsData = () => {
@@ -306,13 +306,12 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   )
 
   const handleFilter = (
-    model: GridFilterModel | any,
-    details: GridCallbackDetails,
+    model: GridFilterModel,
   ) => {
     let filter: string
     if (!!model.items[0]?.value) {
       filter = model.items
-        .filter((item: { [key: string]: string }) => item.value)
+        .filter((item) => item.value)
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
@@ -320,8 +319,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     } else {
       filter = ''
     }
-    const {sort} = dataParams
-    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`)
+    const { sort } = dataParams
+    setParams(
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+    )
   }
 
   const getColumns = useMemo(() => {
