@@ -36,11 +36,11 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
     renderCell: (params: { row: DatabaseType }) => params.row?.exp_id,
   },
   {
-    field: 'cell_id',
+    field: 'id',
     headerName: 'Cell ID',
     width: 160,
     filterable: false,
-    renderCell: (params: { row: DatabaseType }) => params.row?.id,
+    renderCell: (params: { value: number }) => params.value,
   },
   {
     field: 'brain_area',
@@ -209,7 +209,6 @@ const DatabaseCells = ({ user }: CellProps) => {
   ) => {
     let filter: string
     if (!!model.items[0]?.value) {
-      //todo multiple filter with version pro. Issue task #55
       filter = model.items
         .filter((item: { [key: string]: string }) => item.value)
         .map((item: any) => {
