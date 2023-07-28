@@ -10,7 +10,6 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import SwitchCustom from '../common/SwitchCustom'
 import {
-  GridCallbackDetails,
   GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,

@@ -3,7 +3,6 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridCallbackDetails,
   GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
