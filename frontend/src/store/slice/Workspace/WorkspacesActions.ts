@@ -101,7 +101,7 @@ export const exportWorkspace = createAsyncThunk<void, number>(
 export const getListUserShareWorkSpaces = createAsyncThunk<
     ListShareDTO,
     {id: number}
->(`${WORKSPACE_SLICE_NAME}/getListUserShareWorkspaces`, async (params, thunkAPI) => {
+>(`${WORKSPACE_SLICE_NAME}/getListUserShareWorkSpaces`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
   try {
     const response = await getListUserShareWorkspaceApi(params.id)
@@ -111,11 +111,11 @@ export const getListUserShareWorkSpaces = createAsyncThunk<
   }
 })
 
-export const postListUserShare = createAsyncThunk<
+export const postListUserShareWorkspaces = createAsyncThunk<
     ListShareDTO,
     {
       id: number
-      data: {share_type: number; user_ids: number[]}
+      data: {user_ids: number[]}
     }
 >(`${WORKSPACE_SLICE_NAME}/postListUserShareWorkspaces`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI

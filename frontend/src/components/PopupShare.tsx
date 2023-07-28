@@ -1,38 +1,42 @@
 import {Box, Button,
   Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, Radio, RadioGroup, styled } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
-import { SHARE } from "@types";
+import { SHARE } from "../@types";
 import {ChangeEvent, useCallback, useEffect, useState} from "react";
 import { useDispatch } from "react-redux";
-import { postListUserShare } from "store/slice/Database/DatabaseActions";
+import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
-import { ListShare } from "store/slice/Database/DatabaseType";
+import { ListShare } from "../store/slice/Database/DatabaseType";
+import { ListUserShareWorkSpace } from "../store/slice/Workspace/WorkspaceType";
+import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
 
 type PopupType = {
   open: boolean
   id: number
   handleClose: (v: boolean) => void
-  data: {
+  isWorkspace?: boolean
+  title?: string
+  data?: {
     expId: string
     shareType: number
   }
-  dataListShare?: {
-    share_type: number
-    users: ListShare[]
+  usersShare?: {
+    share_type?: number
+    users: (ListShare | ListUserShareWorkSpace)[]
   }
 }
 
-const PopupShare = ({open, handleClose, data, dataListShare, id}: PopupType) => {
-  const [shareType, setShareType] = useState(data.shareType)
-  const [userList, setUserList] = useState<number[]>(dataListShare?.users.map(user => user.id) || [])
+const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title}: PopupType) => {
+  const [shareType, setShareType] = useState(data?.shareType || 0)
+  const [userList, setUserList] = useState<number[]>(usersShare?.users.map(user => user.id) || [])
   const dispatch = useDispatch();
 
 
   useEffect(() => {
-    if(dataListShare) {
-      setUserList(dataListShare.users.map(user => user.id));
+    if(usersShare) {
+      setUserList(usersShare.users.map(user => user.id));
     }
-  }, [dataListShare])
+  }, [usersShare])
 
   const handleShareTrue = (params: GridRowParams) => {
     if(!params) return
@@ -53,7 +57,7 @@ const PopupShare = ({open, handleClose, data, dataListShare, id}: PopupType) => 
   }
 
   const handleValue = (event: ChangeEvent<HTMLInputElement>) => {
-    setUserList(dataListShare?.users.map(user => user.id) || [])
+    setUserList(usersShare?.users.map(user => user.id) || [])
     setShareType(Number((event.target as HTMLInputElement).value));
   }
 
@@ -90,11 +94,15 @@ const PopupShare = ({open, handleClose, data, dataListShare, id}: PopupType) => 
   ], [userList])
 
   const handleOke = async () => {
-    await dispatch(postListUserShare({id, data: {user_ids: userList, share_type: shareType }}))
+    if(!isWorkspace) {
+      await dispatch(postListUserShare({id, data: {user_ids: userList, share_type: shareType }}))
+    } else {
+      await dispatch(postListUserShareWorkspaces({id, data: {user_ids: userList}}))
+    }
     handleClose(true);
   }
 
-  if(!data || !dataListShare) return null;
+  if(!data || !usersShare) return null;
 
   return (
       <Box>
@@ -103,36 +111,36 @@ const PopupShare = ({open, handleClose, data, dataListShare, id}: PopupType) => 
             onClose={handleClose}
             sx={{margin: 0}}
         >
-          <DialogTitle>Share Database record</DialogTitle>
-          <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>
-          <DialogTitle>
-            <FormControl>
-              <RadioGroup
-                  value={shareType}
-                  row
-                  aria-labelledby="demo-row-radio-buttons-group-label"
-                  name="row-radio-buttons-group"
-                  onChange={handleValue}
-              >
-                <FormControlLabel value={1} control={<Radio />} label={"Share for Organization"} />
-                <FormControlLabel value={2} control={<Radio />} label={"Share for Users"} />
-              </RadioGroup>
-            </FormControl>
-          </DialogTitle>
+          <DialogTitle>{title || "Share Database record"}</DialogTitle>
+          {isWorkspace ? null : <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>}
+          {isWorkspace ? null : (
+              <DialogTitle>
+                <FormControl>
+                  <RadioGroup
+                      value={shareType}
+                      row
+                      aria-labelledby="demo-row-radio-buttons-group-label"
+                      name="row-radio-buttons-group"
+                      onChange={handleValue}
+                  >
+                    <FormControlLabel value={1} control={<Radio/>} label={"Share for Organization"}/>
+                    <FormControlLabel value={2} control={<Radio/>} label={"Share for Users"}/>
+                  </RadioGroup>
+                </FormControl>
+              </DialogTitle>
+          )}
           <DialogContent sx={{minHeight: 500}}>
+            <p>Permitted users</p>
             {
-              shareType === SHARE.USERS ?
-                  <>
-                    <p>Permitted users</p>
-                    <DataGrid
-                        sx={{minHeight: 500}}
-                        onRowClick={handleShareTrue}
-                        rows={dataListShare.users.map(user => ({...user, share: true}))}
-                        columns={columnsShare(handleShareFalse)}
-                        hideFooterPagination
-                    />
-                  </>
-                  : null
+              (shareType === SHARE.USERS || isWorkspace) ?
+                  <DataGrid
+                      sx={{minHeight: 500}}
+                      onRowClick={handleShareTrue}
+                      rows={usersShare.users.map(user => ({...user, share: true}))}
+                      columns={columnsShare(handleShareFalse)}
+                      hideFooterPagination
+                  />
+                : null
             }
           </DialogContent>
           <DialogActions>

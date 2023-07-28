@@ -28,9 +28,10 @@ export type Workspace = {
     selectedTab: number
   }
   loading: boolean
+  listUserShare?: ListUserShareWorkspaceDTO
 }
 
-export type ListShareWorkSpaces = {
+export type ListUserShareWorkSpace = {
   id: number,
   name: string
   email: string
@@ -38,8 +39,8 @@ export type ListShareWorkSpaces = {
   updated_at: string
 }
 
-export type ListShareWorkspacesDTO = {
-  users: ListShareWorkSpaces[]
+export type ListUserShareWorkspaceDTO = {
+  users: ListUserShareWorkSpace[]
 }
 
 export type WorkspaceParams = { [key: string]: string | undefined | number | string[] | object }
