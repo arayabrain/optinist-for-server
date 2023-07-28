@@ -1,10 +1,10 @@
 import axios from 'utils/axios'
 import qs from 'qs'
-import { ItemsWorkspace } from 'store/slice/Workspace/WorkspaceType'
+import { ItemsWorkspace, WorkspaceDataDTO } from 'store/slice/Workspace/WorkspaceType'
 
 export type WorkspacePostDataDTO = { name: string; id?: number }
 
-export const getWorkspacesApi = async (params: { [key: string]: number }) => {
+export const getWorkspacesApi = async (params: { [key: string]: number }): Promise<WorkspaceDataDTO> => {
   const paramsNew = qs.stringify(params, { indices: false })
   const response = await axios.get(`/workspaces?${paramsNew}`)
   return response.data
