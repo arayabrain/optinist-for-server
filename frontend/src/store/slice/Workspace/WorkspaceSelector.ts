@@ -9,8 +9,5 @@ export const selectActiveTab = (state: RootState) =>
 export const selectCurrentWorkspaceId = (state: RootState) =>
   state.workspace.currentWorkspace.workspaceId
 
-export const selectWorkspaceList = (state: RootState) =>
-  state.workspace.workspace
-
 export const selectIsLoadingWorkspaceList = (state: RootState) =>
   state.workspace.loading

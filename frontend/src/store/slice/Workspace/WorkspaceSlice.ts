@@ -66,7 +66,6 @@ export const workspaceSlice = createSlice({
           postWorkspace.pending,
           putWorkspace.pending,
           delWorkspace.pending,
-          delWorkspace.fulfilled,
         ),
         (state) => {
           state.loading = true
