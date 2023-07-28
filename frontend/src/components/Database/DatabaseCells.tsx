@@ -13,6 +13,7 @@ import { DataGridPro } from '@mui/x-data-grid-pro'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
+  ImageUrls,
 } from '../../store/slice/Database/DatabaseType'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store/store'
@@ -27,7 +28,7 @@ type CellProps = {
   user?: Object
 }
 
-const columns = (handleOpenDialog: (value: string[]) => void) => [
+const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -84,9 +85,9 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
         }}
         onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
       >
-        {params.row?.cell_image_url && (
+        {params.row?.cell_image_url?.url && (
           <img
-            src={params.row?.cell_image_url}
+            src={params.row?.cell_image_url?.url}
             alt={''}
             width={'100%'}
             height={'100%'}
@@ -109,11 +110,14 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const [dataDialog, setDataDialog] = useState<{
     type: string
-    data: string | string[] | undefined
+    data?: string | string[]
+    expId?: string
+    nameCol?: string
   }>({
     type: '',
     data: undefined,
   })
+
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
@@ -133,6 +137,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }
+    //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort), exp_id])
 
   const dataParamsFilter = useMemo(
@@ -156,8 +161,12 @@ const DatabaseCells = ({ user }: CellProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
-  const handleOpenDialog = (data: string[] | string) => {
-    setDataDialog({ type: 'image', data })
+  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
+    let newData: string | (string[]) = []
+    if(Array.isArray(data)) {
+      newData = data.map(d => d.url);
+    } else newData = data.url
+    setDataDialog({ type: 'image', data: newData, expId: expId, nameCol: graphTitle })
   }
 
   const handleCloseDialog = () => {
@@ -229,16 +238,21 @@ const DatabaseCells = ({ user }: CellProps) => {
         filterable: false,
         sortable: false,
         renderCell: (params: { row: DatabaseType }) => {
+          const {row} = params
+          const {graph_urls} = row
+          const graph_url = graph_urls[index]
+          if(!graph_url) return null
           return (
-            <Box sx={{ display: 'flex', cursor: "pointer" }} onClick={() => handleOpenDialog(params.row.graph_urls?.[index]?.[0])}>
-              {params.row.graph_urls?.[index]?.[0] ? (
-                <img
-                  src={params.row.graph_urls?.[index]?.[0] }
-                  alt={''}
-                  width={'100%'}
-                  height={'100%'}
-                />
-              ) : null}
+            <Box
+              sx={{ display: 'flex', cursor: "pointer" }}
+              onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
+            >
+              <img
+                src={graph_url.url}
+                alt={''}
+                width={'100%'}
+                height={'100%'}
+              />
             </Box>
           )
         },
@@ -312,6 +326,8 @@ const DatabaseCells = ({ user }: CellProps) => {
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}
+        nameCol={dataDialog.nameCol}
+        expId={dataDialog.expId}
         handleCloseDialog={handleCloseDialog}
       />
       {loading ? <Loading /> : null}

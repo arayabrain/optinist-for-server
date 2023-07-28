@@ -1,14 +1,15 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
-import { ImageUrls } from "store/slice/Database/DatabaseType";
 
 type DialogImageProps = {
   open: boolean
-  data?: ImageUrls[] | ImageUrls
+  data?: string | (string[])
   handleCloseDialog: () => void
+  expId?: string
+  nameCol?: string
 }
 
-const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
+const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
   if(!data) return <></>
   return (
     <>
@@ -31,13 +32,16 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
                     display: "flex",
                     flexDirection: "column",
                   }}>
+                    <p>Expriment ID: {expId}</p>
+                    <p>{nameCol}</p>
+
                     <img
-                      src={data.url}
+                      src={data}
                       alt={""}
                       width={"100%"}
                       height={"100%"}
                     />
-                    <span>{data.url}</span>
+                    <span>{data}</span>
                   </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
@@ -47,7 +51,7 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
                   >
                     <img
                       key={index}
-                      src={item.url}
+                      src={item}
                       alt={""}
                       width={"100%"}
                       height={"100%"}
