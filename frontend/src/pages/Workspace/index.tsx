@@ -64,8 +64,8 @@ const columns = (
     field: 'id',
     headerName: 'ID',
     minWidth: 160,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) => (
       <span>{params.value}</span>
     ),
@@ -75,8 +75,8 @@ const columns = (
     headerName: 'Workspace Name',
     minWidth: 200,
     editable: true,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) => {
       const { row, value } = params
       return (
@@ -110,8 +110,8 @@ const columns = (
   {
     field: 'user',
     headerName: 'Owner',
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     minWidth: 200,
     renderCell: (
       params: GridRenderCellParams<{ name: string; id: number }>,
@@ -126,8 +126,8 @@ const columns = (
     field: 'created_at',
     headerName: 'Created',
     minWidth: 200,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) => (
       <span>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
     ),
@@ -136,8 +136,8 @@ const columns = (
     field: 'workflow',
     headerName: '',
     minWidth: 160,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) => (
       <LinkCustom to={'#'}>Workflow</LinkCustom>
     ),
@@ -146,8 +146,8 @@ const columns = (
     field: 'result',
     headerName: '',
     minWidth: 130,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (_params: GridRenderCellParams<string>) => (
       <LinkCustom to={'#'}>Result</LinkCustom>
     ),
@@ -156,8 +156,8 @@ const columns = (
     field: 'download',
     headerName: '',
     minWidth: 90,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) => (
       <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
@@ -168,8 +168,8 @@ const columns = (
     field: 'share',
     headerName: '',
     minWidth: 90,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
       params.row?.user?.id === user?.id && (
         <ButtonCustom onClick={handleOpenPopupShare}>
@@ -181,8 +181,8 @@ const columns = (
     field: 'delete',
     headerName: '',
     minWidth: 130,
-    filterable: false, // todo enable when finish api
-    sortable: false, // todo enable when finish api
+    filterable: false, // todo enable when api complete
+    sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
       params.row?.user_id === user?.id && (
         <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
@@ -288,7 +288,7 @@ const PopupShare = ({ open, handleClose }: PopupType) => {
             sx={{ minHeight: 500 }}
             onRowClick={handleShareTrue}
             rows={tableShare}
-            columns={columnsShare(handleShareFalse) as any}
+            columns={columnsShare(handleShareFalse)}
           />
         </DialogContent>
         <DialogActions>
@@ -507,7 +507,7 @@ const Workspaces = () => {
         }}
       >
         <DataGridPro
-          // todo enable when finish api
+          // todo enable when api complete
           // filterMode={'server'}
           // sortingMode={'server'}
           // onSortModelChange={handleSort}
