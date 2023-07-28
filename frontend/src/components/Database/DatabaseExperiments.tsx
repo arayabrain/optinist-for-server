@@ -305,10 +305,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (
-    model: GridFilterModel,
-  ) => {
-    let filter: string
+  const handleFilter = (model: GridFilterModel) => {
+    let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
         .filter((item) => item.value)
@@ -316,8 +314,6 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
-    } else {
-      filter = ''
     }
     const { sort } = dataParams
     setParams(

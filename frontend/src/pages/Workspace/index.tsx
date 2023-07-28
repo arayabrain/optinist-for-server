@@ -78,6 +78,7 @@ const columns = (
     filterable: false, // todo enable when finish api
     sortable: false, // todo enable when finish api
     renderCell: (params: GridRenderCellParams<string>) => {
+      const { row, value } = params
       return (
         <Box
           sx={{
@@ -95,14 +96,12 @@ const columns = (
               textOverflow: 'ellipsis',
             }}
           >
-            {params.row.name}
+            {value}
           </span>
-          {params.row.user_id === user?.id ? (
-            <IconButton onClick={() => onEdit?.(params.row.id)}>
+          {row.user?.id === user?.id && (
+            <IconButton onClick={() => onEdit?.(row.id)}>
               <EditIcon style={{ fontSize: 18 }} />
             </IconButton>
-          ) : (
-            ''
           )}
         </Box>
       )
@@ -149,7 +148,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when finish api
     sortable: false, // todo enable when finish api
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (_params: GridRenderCellParams<string>) => (
       <LinkCustom to={'#'}>Result</LinkCustom>
     ),
   },
@@ -172,12 +171,10 @@ const columns = (
     filterable: false, // todo enable when finish api
     sortable: false, // todo enable when finish api
     renderCell: (params: GridRenderCellParams<string>) =>
-      params.row?.user_id === user?.id ? (
+      params.row?.user?.id === user?.id && (
         <ButtonCustom onClick={handleOpenPopupShare}>
           <PeopleOutlineIcon />
         </ButtonCustom>
-      ) : (
-        ''
       ),
   },
   {
@@ -187,12 +184,10 @@ const columns = (
     filterable: false, // todo enable when finish api
     sortable: false, // todo enable when finish api
     renderCell: (params: GridRenderCellParams<string>) =>
-      params.row?.user_id === user?.id ? (
+      params.row?.user_id === user?.id && (
         <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
           Del
         </ButtonCustom>
-      ) : (
-        ''
       ),
   },
 ]
@@ -444,7 +439,7 @@ const Workspaces = () => {
     (page?: number) => {
       return `limit=${data.limit}&offset=${page ? page - 1 : data.offset}`
     },
-    [data.limit, data.offset],
+    [data?.limit, data?.offset],
   )
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
