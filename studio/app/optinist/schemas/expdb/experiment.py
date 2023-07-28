@@ -36,23 +36,41 @@ class ExpDbExperimentHeader(BaseModel):
     graph_titles: List[str] = []
 
 
+class ImageInfo(BaseModel):
+    url: str
+    thumb_url: str
+    params: Optional[dict]
+
+
 class ExpDbExperiment(BaseModel):
     id: int
     experiment_id: str
     fields: ExpDbExperimentFields = None
     attributes: Optional[dict] = {}
-    cell_image_urls: List[str] = []
-    graph_urls: List[str] = []
+    cell_image_urls: List[ImageInfo] = None
+    graph_urls: List[ImageInfo] = None
     share_type: int = Field(description="1: default(per users), 2: for organization")
     publish_status: int = Field(description="0: private, 1: public")
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
+    class Config:
+        orm_mode = True
+
 
 class ExpDbExperimentsSearchOptions(BaseModel):
-    brain_area: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
-    cre_driver: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
-    reporter_line: Optional[List[str]] = Field(Query(default=None, description="完全一致"))
+    experiment_id: Optional[str] = Field(
+        Query(default="", description="partial match (experiments.experiment_id)")
+    )
+    brain_area: Optional[List[str]] = Field(
+        Query(default=None, description="complete match")
+    )
+    cre_driver: Optional[List[str]] = Field(
+        Query(default=None, description="complete match")
+    )
+    reporter_line: Optional[List[str]] = Field(
+        Query(default=None, description="complete match")
+    )
     imaging_depth: Optional[List[int]] = Field(Query(default=None))
 
 
