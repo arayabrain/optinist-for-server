@@ -1,6 +1,7 @@
 import axios from 'utils/axios'
 import qs from 'qs'
 import { ItemsWorkspace, WorkspaceDataDTO } from 'store/slice/Workspace/WorkspaceType'
+import { ListShareDTO } from 'store/slice/Database/DatabaseType';
 
 export type WorkspacePostDataDTO = { name: string; id?: number }
 
@@ -41,12 +42,12 @@ export const exportWorkspaceApi = async (id: number): Promise<void> => {
   return response.data
 }
 
-export const getListUserShareWorkspaceApi = async (id: number) => {
+export const getListUserShareWorkspaceApi = async (id: number): Promise<ListShareDTO> => {
   const response = await axios.get(`/workspace/share/${id}/status`)
   return response.data
 }
 
-export const postListUserShareWorkspaceApi = async (id: number, data: {user_ids: number[]}) => {
+export const postListUserShareWorkspaceApi = async (id: number, data: {user_ids: number[]}): Promise<boolean> => {
   const response = await axios.post(`/workspace/share/${id}/status`, data)
   return response.data
 }

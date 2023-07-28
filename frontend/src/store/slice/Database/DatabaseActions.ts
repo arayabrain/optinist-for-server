@@ -71,8 +71,8 @@ export const getCellsPublicDatabase = createAsyncThunk<
 })
 
 export const postPublist = createAsyncThunk<
-    DatabaseDTO,
-    {id: number, status: "on" | "off"}
+  boolean,
+  { id: number; status: 'on' | 'off' }
 >(`${DATABASE_SLICE_NAME}/postPublist`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
   try {
@@ -83,25 +83,25 @@ export const postPublist = createAsyncThunk<
   }
 })
 
-export const getListUserShare = createAsyncThunk<
-    ListShareDTO,
-    {id: number}
->(`${DATABASE_SLICE_NAME}/getListUserShare`, async (params, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await getListUserShareApi(params.id)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
+export const getListUserShare = createAsyncThunk<ListShareDTO, { id: number }>(
+  `${DATABASE_SLICE_NAME}/getListUserShare`,
+  async (params, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getListUserShareApi(params.id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
 export const postListUserShare = createAsyncThunk<
-    ListShareDTO,
-    {
-      id: number
-      data: {share_type: number; user_ids: number[]}
-    }
+  boolean,
+  {
+    id: number
+    data: { share_type: number; user_ids: number[] }
+  }
 >(`${DATABASE_SLICE_NAME}/postListUserShare`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
   try {
@@ -111,4 +111,3 @@ export const postListUserShare = createAsyncThunk<
     return rejectWithValue(e)
   }
 })
-
