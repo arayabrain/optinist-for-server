@@ -69,7 +69,10 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
           cursor: 'pointer',
           display: 'flex',
         }}
-        onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
+        onClick={() =>
+          params.row?.cell_image_url &&
+          handleOpenDialog([params.row.cell_image_url])
+        }
       >
         {params.row?.cell_image_url && (
           <img
@@ -134,7 +137,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api({...dataParamsFilter, ...dataParams}))
+    dispatch(api({ ...dataParamsFilter, ...dataParams }))
   }
 
   useEffect(() => {
@@ -180,23 +183,22 @@ const DatabaseCells = ({ user }: CellProps) => {
     [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (
-      model: GridFilterModel | any,
-      details: GridCallbackDetails,
-  ) => {
+  const handleFilter = (model: GridFilterModel) => {
     let filter: string
     if (!!model.items[0]?.value) {
       filter = model.items
-          .filter((item: { [key: string]: string }) => item.value)
-          .map((item: any) => {
-            return `${item.field}=${item?.value}`
-          })
-          .join('&')
+        .filter((item) => item.value)
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
     } else {
       filter = ''
     }
-    const {sort} = dataParams
-    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`)
+    const { sort } = dataParams
+    setParams(
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`,
+    )
   }
 
   const getColumns = useMemo(() => {
@@ -211,7 +213,7 @@ const DatabaseCells = ({ user }: CellProps) => {
             <Box sx={{ display: 'flex' }}>
               {params.row.graph_urls?.[index]?.[0] ? (
                 <img
-                  src={params.row.graph_urls?.[index]?.[0] }
+                  src={params.row.graph_urls?.[index]?.[0]}
                   alt={''}
                   width={'100%'}
                   height={'100%'}
