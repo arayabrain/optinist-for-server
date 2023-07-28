@@ -3,8 +3,12 @@ import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import { ROLE } from '@types'
 
 const Dashboard = () => {
+  const user = useSelector(selectCurrentUser)
   return (
     <BoxWrapper>
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
@@ -26,14 +30,17 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Account</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
+          {
+            user && user.role_id === ROLE.ADMIN ?
+              <LinkWrapper to="/console/account">
+                <BoxMenu>
+                  <Box>
+                    <AccountCircleIcon fontSize="large" />
+                    <TitleMenu>Account</TitleMenu>
+                  </Box>
+                </BoxMenu>
+              </LinkWrapper>: null
+          }
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>
