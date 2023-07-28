@@ -22,19 +22,12 @@ export type WorkspaceDataDTO = {
 }
 
 export type Workspace = {
-  workspaces: WorkspaceType[]
+  workspace: WorkspaceDataDTO
   currentWorkspace: {
     workspaceId?: string
     selectedTab: number
   }
-  data: WorkspaceDataDTO
-
   loading: boolean
-}
-
-export type WorkspaceType = {
-  workspace_id: string
-  // TODO: add fields required for workspace
 }
 
 export type WorkspaceParams = { [key: string]: string | undefined | number | string[] | object }
