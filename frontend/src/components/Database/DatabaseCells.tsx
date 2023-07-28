@@ -3,7 +3,6 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridCallbackDetails,
   GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
@@ -153,7 +152,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api({...dataParamsFilter,...dataParams}))
+    dispatch(api({ ...dataParamsFilter, ...dataParams }))
   }
 
   useEffect(() => {
@@ -203,29 +202,19 @@ const DatabaseCells = ({ user }: CellProps) => {
     [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (
-    model: GridFilterModel | any,
-    details: GridCallbackDetails,
-  ) => {
-    let filter: string
+  const handleFilter = (model: GridFilterModel) => {
+    let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
-        .filter((item: { [key: string]: string }) => item.value)
+        .filter((item) => item.value)
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
-    } else {
-      filter = ''
     }
-    if (!model.items[0]) {
-      setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-      )
-      return
-    }
+    const { sort } = dataParams
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`,
     )
   }
 
