@@ -63,27 +63,26 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
     width: 160,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{
-          cursor: 'pointer',
-          display: 'flex',
-        }}
-        onClick={() =>
-          params.row?.cell_image_url &&
-          handleOpenDialog([params.row.cell_image_url])
-        }
-      >
-        {params.row?.cell_image_url && (
+    renderCell: (params: { row: DatabaseType }) => {
+      const { cell_image_url } = params.row
+      if (!cell_image_url) return null
+      return (
+        <Box
+          sx={{
+            cursor: 'pointer',
+            display: 'flex',
+          }}
+          onClick={() => handleOpenDialog([cell_image_url])}
+        >
           <img
             src={params.row?.cell_image_url}
             alt={''}
             width={'100%'}
             height={'100%'}
           />
-        )}
-      </Box>
-    ),
+        </Box>
+      )
+    },
   },
 ]
 
@@ -184,7 +183,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (model: GridFilterModel) => {
-    let filter: string
+    let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
         .filter((item) => item.value)
@@ -192,8 +191,6 @@ const DatabaseCells = ({ user }: CellProps) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
-    } else {
-      filter = ''
     }
     const { sort } = dataParams
     setParams(
