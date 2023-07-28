@@ -125,20 +125,20 @@ const DatabaseCells = ({ user }: CellProps) => {
     return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
   }, [dataExperiments.limit, dataExperiments.offset])
 
-  const exp_id = searchParams.get('exp_id')
+  const id = searchParams.get('id')
   const offset = searchParams.get('offset')
   const limit = searchParams.get('limit')
   const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
     return {
-      exp_id: Number(exp_id) || undefined,
+      exp_id: Number(id) || undefined,
       sort: sort || [],
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }
     //eslint-disable-next-line
-  }, [offset, limit, JSON.stringify(sort), exp_id])
+  }, [offset, limit, JSON.stringify(sort), id])
 
   const dataParamsFilter = useMemo(
     () => ({
