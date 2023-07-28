@@ -6,7 +6,7 @@ from studio.app.common.models.base import Base, TimestampMixin
 class Cell(Base, TimestampMixin, table=True):
     __tablename__ = "cells"
 
-    experiment_seqid: int = Field(
+    experiment_uid: int = Field(
         sa_column=Column(
             Integer(),
             nullable=False,

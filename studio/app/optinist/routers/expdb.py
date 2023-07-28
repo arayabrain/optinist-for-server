@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination.ext.sqlmodel import paginate
 from sqlmodel import Session, and_, or_, select
 
@@ -22,12 +22,42 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentShareStatus,
     ExpDbExperimentsSearchOptions,
     ExperimentShareType,
+    ImageInfo,
     PageWithHeader,
     PublishFlags,
     PublishStatus,
 )
 
 router = APIRouter(tags=["Experiment Database"])
+
+
+def expdbcell_transformer(items: Sequence) -> Sequence:
+    expdbcells = []
+    for item in items:
+        expdbcell = ExpDbCell.from_orm(item[0])
+        expdbcell.experiment_id = item[1]
+        expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        expdbcell.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
+        # TODO: set dummy data.
+        expdbcell.graph_urls = DUMMY_CELLS_GRAPH_URLS
+        expdbcells.append(expdbcell)
+    return expdbcells
+
+
+def experiment_transformer(items: Sequence) -> Sequence:
+    experiments = []
+    for item in items:
+        exp = ExpDbExperiment.from_orm(item)
+        # TODO: set dummy data.
+        exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set dummy data.
+        exp.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
+        # TODO: set dummy data.
+        exp.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
+        experiments.append(exp)
+    return experiments
+
 
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_FIELDS = {
@@ -66,21 +96,30 @@ DUMMY_CELLS_GRAPH_TITLES = [
 
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
-    "http://localhost:8000/static/sample_media/pixel_image.png"
-    for i in range(5)
+    ImageInfo(
+        url="http://localhost:8000/static/sample_media/pixel_image.png",
+        thumb_url="http://localhost:8000/static/sample_media/pixel_image.png",
+    )
+    for _ in range(5)
 ]
 
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_GRAPH_URLS = [
-    "http://localhost:8000/static/sample_media/bar_chart.png"
-    for i in DUMMY_EXPERIMENTS_GRAPH_TITLES
+    ImageInfo(
+        url="http://localhost:8000/static/sample_media/bar_chart.png",
+        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+    )
+    for _ in DUMMY_EXPERIMENTS_GRAPH_TITLES
 ]
 
 # TODO: set dummy data.
 DUMMY_CELLS_GRAPH_URLS = [
-    ("http://localhost:8000/static/sample_media/bar_chart.png",
-     {"param1": 10, "param2": 20})
-    for i in DUMMY_CELLS_GRAPH_TITLES
+    ImageInfo(
+        url="http://localhost:8000/static/sample_media/bar_chart.png",
+        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+        params={"param1": 10, "param2": 20},
+    )
+    for _ in DUMMY_CELLS_GRAPH_TITLES
 ]
 
 
@@ -105,21 +144,20 @@ async def search_public_experiments(
         session=db,
         query=select(optinist_model.Experiment)
         .filter_by(publish_status=PublishStatus.on)
+        .filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
         .group_by(optinist_model.Experiment.id)
         .order_by(
             sort_column.desc()
             if sortOptions.sort[1] == SortDirection.desc
             else sort_column.asc()
         ),
+        transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -131,21 +169,24 @@ async def search_public_experiments(
 """,
 )
 async def search_public_cells(
-    exp_id: Optional[int] = Query(None, description="experiments.id"),
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
     sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
-        select(optinist_model.Cell)
+        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
             optinist_model.Experiment,
-            optinist_model.Cell.experiment_seqid == optinist_model.Experiment.id,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on)
+        .filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
     )
-    query = query.filter(optinist_model.Experiment.id == exp_id) if exp_id else query
     query = query.group_by(optinist_model.Cell.id).order_by(
         sort_column.desc()
         if sortOptions.sort[1] == SortDirection.desc
@@ -158,15 +199,9 @@ async def search_public_cells(
     data = paginate(
         session=db,
         query=query,
+        transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
     return data
 
 
@@ -195,7 +230,7 @@ async def search_db_experiments(
     else:
         query = query.join(
             optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_seqid
+            optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
         ).filter(
             or_(
@@ -210,10 +245,18 @@ async def search_db_experiments(
                 ),
             )
         )
-    query = query.group_by(optinist_model.Experiment.id).order_by(
-        sort_column.desc()
-        if sortOptions.sort[1] == SortDirection.desc
-        else sort_column.asc()
+    query = (
+        query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+        .group_by(optinist_model.Experiment.id)
+        .order_by(
+            sort_column.desc()
+            if sortOptions.sort[1] == SortDirection.desc
+            else sort_column.asc()
+        )
     )
 
     # TODO: set dummy data.
@@ -222,15 +265,9 @@ async def search_db_experiments(
     data = paginate(
         session=db,
         query=query,
+        transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-    for item in data.items:
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
     return data
 
 
@@ -243,17 +280,16 @@ async def search_db_experiments(
 )
 async def search_db_cells(
     db: Session = Depends(get_db),
-    exp_id: Optional[int] = Query(None, description="experiments.id"),
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
     sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
     query = (
-        select(optinist_model.Cell)
+        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
             optinist_model.Experiment,
-            optinist_model.Experiment.id == optinist_model.Cell.experiment_seqid,
+            optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
         )
         .join(
             common_model.Organization,
@@ -267,7 +303,7 @@ async def search_db_cells(
     else:
         query = query.join(
             optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_seqid
+            optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
         ).filter(
             or_(
@@ -283,14 +319,17 @@ async def search_db_cells(
             )
         )
     query = (
-        query.filter(optinist_model.Cell.experiment_seqid == exp_id)
-        if exp_id
-        else query
-    )
-    query = query.group_by(optinist_model.Cell.id).order_by(
-        sort_column.desc()
-        if sortOptions.sort[1] == SortDirection.desc
-        else sort_column.asc()
+        query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+        .group_by(optinist_model.Cell.id)
+        .order_by(
+            sort_column.desc()
+            if sortOptions.sort[1] == SortDirection.desc
+            else sort_column.asc()
+        )
     )
 
     # TODO: set dummy data.
@@ -299,19 +338,9 @@ async def search_db_cells(
     data = paginate(
         session=db,
         query=query,
+        transformer=expdbcell_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
-
-    for item in data.items:
-        # TODO: set experiment.id
-        # item.exp_id = item.experiment.id
-        # TODO: set dummy data.
-        item.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        item.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        item.graph_urls = DUMMY_CELLS_GRAPH_URLS
-
     return data
 
 
@@ -390,7 +419,7 @@ def get_experiment_database_share_status(
         db.query(common_model.User)
         .join(
             optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_seqid == id,
+            optinist_model.ExperimentShareUser.experiment_uid == id,
         )
         .all()
     )
@@ -432,12 +461,12 @@ def update_experiment_database_share_status(
 
     (
         db.query(optinist_model.ExperimentShareUser)
-        .filter(optinist_model.ExperimentShareUser.experiment_seqid == id)
+        .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
         .delete(synchronize_session=False)
     )
 
     [
-        db.add(optinist_model.ExperimentShareUser(experiment_seqid=id, user_id=user_id))
+        db.add(optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id))
         for user_id in data.user_ids
     ]
 
