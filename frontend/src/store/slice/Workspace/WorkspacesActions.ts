@@ -112,7 +112,7 @@ export const getListUserShareWorkSpaces = createAsyncThunk<
 })
 
 export const postListUserShareWorkspaces = createAsyncThunk<
-    ListShareDTO,
+    boolean,
     {
       id: number
       data: {user_ids: number[]}
