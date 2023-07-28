@@ -20,8 +20,12 @@ export type DatabaseType = {
   experiment_id?: string
   attributes?: object
   cell_image_urls: ImageUrls[]
-  cell_image_url?: string
-  graph_urls: string[]
+  cell_image_url?: {
+    url: string,
+    thumb_url: string,
+    params: {}
+  }
+  graph_urls: {url: string, params: {}, thumb_url: string}[]
   share_type?: number
   publish_status?: number
   created_at: string
