@@ -29,7 +29,6 @@ import {
   selectWorkspaceListUserShare,
 } from 'store/slice/Workspace/WorkspaceSelector'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt'
-import CancelIcon from '@mui/icons-material/Cancel'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import EditIcon from '@mui/icons-material/Edit'
 import GroupsIcon from '@mui/icons-material/Groups'
@@ -253,7 +252,12 @@ const Workspaces = () => {
   const listUserShare = useSelector(selectWorkspaceListUserShare)
   const data = useSelector(selectWorkspaceData)
   const user = useSelector(selectCurrentUser)
-  const [open, setOpen] = useState({ share: false, del: false, new: false, shareId: 0 })
+  const [open, setOpen] = useState({
+    share: false,
+    del: false,
+    new: false,
+    shareId: 0,
+  })
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
@@ -277,12 +281,12 @@ const Workspaces = () => {
   }, [dataParams])
 
   const handleOpenPopupShare = (shareId: number) => {
-    setOpen({ ...open, share: true, shareId})
+    setOpen({ ...open, share: true, shareId })
   }
 
   useEffect(() => {
-    if(!open.share || !open.shareId) return
-    dispatch(getListUserShareWorkSpaces({id: open.shareId}))
+    if (!open.share || !open.shareId) return
+    dispatch(getListUserShareWorkSpaces({ id: open.shareId }))
     //eslint-disable-next-line
   }, [open.share, open.shareId])
 
@@ -441,22 +445,22 @@ const Workspaces = () => {
         page={data.offset + 1}
         onChange={handlePage}
       />
-      {open.share ?
-          <PopupShare
-              isWorkspace
-              title="Share Workspace"
-              usersShare={listUserShare}
-              open={open.share}
-              handleClose={(_isSubmit: boolean) => {
-                if(_isSubmit) {
-                  dispatch(getWorkspaceList(dataParams))
-                }
-                handleClosePopupShare()
-              }}
-              id={open.shareId}
-              data={{ expId: '', shareType: 0 }}
-          /> :  null
-      }
+      {open.share ? (
+        <PopupShare
+          isWorkspace
+          title="Share Workspace"
+          usersShare={listUserShare}
+          open={open.share}
+          handleClose={(_isSubmit: boolean) => {
+            if (_isSubmit) {
+              dispatch(getWorkspaceList(dataParams))
+            }
+            handleClosePopupShare()
+          }}
+          id={open.shareId}
+          data={{ expId: '', shareType: 0 }}
+        />
+      ) : null}
       <PopupDelete
         open={open.del}
         handleClose={handleClosePopupDel}
