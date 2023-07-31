@@ -34,10 +34,14 @@ def search_workspaces(
 ):
     sort_column = getattr(common_model.Workspace, sortOptions.sort[0] or "id")
     query = (
-        select(common_model.Workspace)
+        select(common_model.Workspace, common_model.User)
         .outerjoin(
             common_model.WorkspacesShareUser,
             common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
+        )
+        .join(
+            common_model.User,
+            common_model.User.id == common_model.WorkspacesShareUser.user_id,
         )
         .filter(
             common_model.Workspace.deleted.is_(False),
@@ -53,9 +57,14 @@ def search_workspaces(
             else sort_column.asc()
         )
     )
-    data = paginate(db, query)
-    for ws in data.items:
-        ws.__dict__["user"] = db.query(common_model.User).get(ws.user_id)
+
+    data = paginate(
+        db,
+        query,
+        transformer=lambda items: [
+            Workspace(**workspace.__dict__, user=user) for workspace, user in items
+        ],
+    )
     return data
 
 
