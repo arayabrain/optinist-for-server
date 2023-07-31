@@ -15,6 +15,18 @@ import { selectAlgorithmNodeNotExist } from '../AlgorithmNode/AlgorithmNodeSelec
 import { getExperiments } from '../Experiments/ExperimentsActions'
 import { useSnackbar } from 'notistack'
 import { RUN_STATUS } from './PipelineType'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import {
+  selectIsCurrentUserOwnerWorkspaceItem,
+  selectWorkspaceItemExists,
+} from '../Workspace/WorkspaceSelector'
+import { selectCurrentUserId } from '../User/UserSelector'
+import { IS_STANDALONE, STANDALONE_WORKSPACE_ID } from 'const/Mode'
+import {
+  clearCurrentWorkspace,
+  setActiveTab,
+  setCurrentWorkspace,
+} from '../Workspace/WorkspaceSlice'
 
 const POLLING_INTERVAL = 5000
 
@@ -22,9 +34,39 @@ export type UseRunPipelineReturnType = ReturnType<typeof useRunPipeline>
 
 export function useRunPipeline() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const { workspaceId } = useParams<{ workspaceId: string }>()
+  const _workspaceId = Number(workspaceId)
+  const workspaceExists = useSelector(selectWorkspaceItemExists(_workspaceId))
+  const currentUserId = useSelector(selectCurrentUserId)
+  const isOwner = useSelector(
+    selectIsCurrentUserOwnerWorkspaceItem(_workspaceId, currentUserId),
+  )
+
+  React.useEffect(() => {
+    if (IS_STANDALONE) {
+      dispatch(setCurrentWorkspace(STANDALONE_WORKSPACE_ID))
+    } else {
+      if (workspaceExists) {
+        dispatch(setCurrentWorkspace(_workspaceId))
+        const selectedTab = location.state?.tab
+        selectedTab && dispatch(setActiveTab(selectedTab))
+      } else {
+        navigate('/console/workspaces')
+      }
+    }
+    return () => {
+      dispatch(clearCurrentWorkspace())
+    }
+  }, [dispatch, navigate, workspaceExists, _workspaceId, location.state])
+
   const uid = useSelector(selectPipelineLatestUid)
   const isCanceled = useSelector(selectPipelineIsCanceled)
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
+  const runDisabled = !isOwner ? true : isStartedSuccess
+
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)
   const runPostData = useSelector(selectRunPostData)
@@ -78,7 +120,7 @@ export function useRunPipeline() {
     algorithmNodeNotExist,
     uid,
     status,
-    isStartedSuccess,
+    runDisabled,
     handleRunPipeline,
     handleRunPipelineByUid,
     handleCancelPipeline,

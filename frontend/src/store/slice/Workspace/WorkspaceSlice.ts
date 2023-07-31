@@ -31,7 +31,7 @@ export const workspaceSlice = createSlice({
     setActiveTab: (state, action: PayloadAction<number>) => {
       state.currentWorkspace.selectedTab = action.payload
     },
-    setCurrentWorkspace: (state, action: PayloadAction<string>) => {
+    setCurrentWorkspace: (state, action: PayloadAction<number>) => {
       state.currentWorkspace.workspaceId = action.payload
     },
     clearCurrentWorkspace: (state) => {

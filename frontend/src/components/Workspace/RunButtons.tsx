@@ -31,7 +31,7 @@ import { setRunBtnOption } from 'store/slice/Pipeline/PipelineSlice'
 export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
   const {
     uid,
-    isStartedSuccess,
+    runDisabled,
     filePathIsUndefined,
     algorithmNodeNotExist,
     handleCancelPipeline,
@@ -103,7 +103,7 @@ export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
         }}
         variant="contained"
         ref={anchorRef}
-        disabled={isStartedSuccess}
+        disabled={runDisabled}
       >
         <Button onClick={handleClick}>{RUN_BTN_LABELS[runBtnOption]}</Button>
         <Button size="small" onClick={handleToggle}>

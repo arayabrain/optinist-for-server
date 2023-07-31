@@ -67,7 +67,7 @@ export const deleteExperimentByList = createAsyncThunk<
 
 export const importExperimentByUid = createAsyncThunk<
   RunPostData,
-  { workspaceId: string; uid: string }
+  { workspaceId: number; uid: string }
 >(
   `${EXPERIMENTS_SLICE_NAME}/importExperimentByUid`,
   async ({ workspaceId, uid }, thunkAPI) => {
