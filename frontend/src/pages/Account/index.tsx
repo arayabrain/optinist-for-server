@@ -9,6 +9,8 @@ import { updateMePasswordApi } from 'api/users/UsersMe'
 import { deleteMe } from 'store/slice/User/UserActions'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { ROLE } from '@types'
+import { UserDTO } from 'api/users/UsersApiDTO'
+import { isAdmin } from 'utils/checkAdmin'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const dispatch = useDispatch()
@@ -88,7 +90,7 @@ const Account = () => {
       <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
         {
-          user && ROLE.ADMIN === user.role_id ?
+          isAdmin(user) ?
             <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit> : null
         }
       </BoxFlex>

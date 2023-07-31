@@ -6,6 +6,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { ROLE } from '@types'
+import { isAdmin } from 'utils/checkAdmin'
 
 const Dashboard = () => {
   const user = useSelector(selectCurrentUser)
@@ -31,8 +32,8 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {
-            user && user.role_id === ROLE.ADMIN ?
-              <LinkWrapper to="/console/account">
+            isAdmin(user) ?
+              <LinkWrapper to="/console/account-manager">
                 <BoxMenu>
                   <Box>
                     <AccountCircleIcon fontSize="large" />
