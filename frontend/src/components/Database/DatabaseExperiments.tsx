@@ -182,7 +182,7 @@ const columns = (
         >
           {params.row?.cell_image_urls?.length > 0 && (
             <img
-              src={params.row?.cell_image_urls[0].url}
+              src={params.row?.cell_image_urls[0].thumb_url}
               alt={''}
               width={'100%'}
               height={'100%'}
@@ -536,7 +536,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               onClick={() => handleOpenDialog(graph_url, row.experiment_id, graphTitle)}
             >
               <img
-                src={graph_url.url}
+                src={graph_url.thumb_url}
                 alt={''}
                 width={'100%'}
                 height={'100%'}
