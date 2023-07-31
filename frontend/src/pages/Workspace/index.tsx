@@ -13,7 +13,6 @@ import {
 import { GridRenderCellParams, GridRowParams, DataGrid } from '@mui/x-data-grid'
 import {
   DataGridPro,
-  GridRowEditStopReasons,
   GridEventListener,
   GridRowModesModel,
   GridRowModel,
@@ -359,7 +358,7 @@ const Workspaces = () => {
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
-  const [initName, setInitName] = useState("")
+  const [initName, setInitName] = useState('')
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
   const [searchParams, setParams] = useSearchParams()
 
@@ -458,12 +457,25 @@ const Workspaces = () => {
     setInitName(params.row.name)
   }
 
+  const onCellClick: GridEventListener<'cellClick'> | undefined = (event) => {
+    if (event.field === 'name') return
+    setRowModesModel((pre) => {
+      const object: GridRowModesModel = {}
+      Object.keys(pre).forEach(key => {
+        object[key] = {
+          mode: GridRowModes.View, ignoreModifications: true
+        }
+      })
+      return object
+    })
+  }
+
   const processRowUpdate = async (newRow: GridRowModel) => {
-    if(!newRow.name) {
+    if (!newRow.name) {
       alert("Workspace Name cann't empty")
-      return {...newRow, name: initName}
+      return { ...newRow, name: initName }
     }
-    if(newRow.name === initName) return newRow
+    if (newRow.name === initName) return newRow
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
     return newRow
@@ -515,6 +527,7 @@ const Workspaces = () => {
           // sortingMode={'server'}
           // onSortModelChange={handleSort}
           // onFilterModelChange={handleFilter as any}
+          onCellClick={onCellClick}
           rows={data?.items}
           editMode="row"
           rowModesModel={rowModesModel}
@@ -602,7 +615,7 @@ const DialogCustom = styled(Dialog)(({ theme }) => ({
   },
 }))
 
-const ButtonIcon = styled('button')(({theme}) => ({
+const ButtonIcon = styled('button')(({ theme }) => ({
   minWidth: '32px',
   minHeight: '32px',
   width: '32px',
@@ -615,9 +628,8 @@ const ButtonIcon = styled('button')(({theme}) => ({
   cursor: 'pointer',
   background: 'transparent',
   '&:hover': {
-    background: 'rgb(239 239 239)'
-  }
+    background: 'rgb(239 239 239)',
+  },
 }))
-
 
 export default Workspaces
