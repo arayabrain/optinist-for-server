@@ -9,7 +9,6 @@ import {
   DialogActions,
   Input,
   Pagination,
-  IconButton,
 } from '@mui/material'
 import { GridRenderCellParams, GridRowParams, DataGrid } from '@mui/x-data-grid'
 import {
@@ -99,9 +98,9 @@ const columns = (
             {value}
           </span>
           {row.user?.id === user?.id && (
-            <IconButton onClick={() => onEdit?.(row.id)}>
-              <EditIcon style={{ fontSize: 18 }} />
-            </IconButton>
+            <ButtonIcon onClick={() => onEdit?.(row.id)}>
+              <EditIcon style={{ fontSize: 16 }} />
+            </ButtonIcon>
           )}
         </Box>
       )
@@ -603,6 +602,17 @@ const DialogCustom = styled(Dialog)(({ theme }) => ({
       maxWidth: '890px',
     },
   },
+}))
+
+const ButtonIcon = styled('button')(({theme}) => ({
+  width: '32px',
+  height: '32px',
+  border: 'none',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer'
 }))
 
 export default Workspaces
