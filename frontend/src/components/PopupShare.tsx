@@ -81,6 +81,8 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     {
       field: "share",
       headerName: "",
+      filterable: false,
+      sortable: false,
       minWidth: 130,
       renderCell: (params: GridRenderCellParams<string>) => {
         if(!params.row.share) return ''
@@ -123,14 +125,16 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                       name="row-radio-buttons-group"
                       onChange={handleValue}
                   >
-                    <FormControlLabel value={1} control={<Radio/>} label={"Share for Organization"}/>
-                    <FormControlLabel value={2} control={<Radio/>} label={"Share for Users"}/>
+                    <FormControlLabel value={2} control={<Radio/>} label={"Share for Organization"}/>
+                    <FormControlLabel value={1} control={<Radio/>} label={"Share for Users"}/>
                   </RadioGroup>
                 </FormControl>
               </DialogTitle>
           )}
           <DialogContent sx={{minHeight: 500}}>
-            <p>Permitted users</p>
+            {
+              !isWorkspace && shareType !== SHARE.USERS ? null : <p>Permitted users</p>
+            }
             {
               (shareType === SHARE.USERS || isWorkspace) ?
                   <DataGrid
