@@ -456,9 +456,6 @@ const Workspaces = () => {
 
   const onRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
     setInitName(params.row.name)
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true
-    }
   }
 
   const processRowUpdate = async (newRow: GridRowModel) => {
@@ -466,6 +463,7 @@ const Workspaces = () => {
       alert("Workspace Name cann't empty")
       return {...newRow, name: initName}
     }
+    if(newRow.name === initName) return newRow
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
     return newRow
