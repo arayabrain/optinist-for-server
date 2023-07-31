@@ -605,6 +605,8 @@ const DialogCustom = styled(Dialog)(({ theme }) => ({
 }))
 
 const ButtonIcon = styled('button')(({theme}) => ({
+  minWidth: '32px',
+  minHeight: '32px',
   width: '32px',
   height: '32px',
   border: 'none',
@@ -612,7 +614,12 @@ const ButtonIcon = styled('button')(({theme}) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  background: 'transparent',
+  '&:hover': {
+    background: 'rgb(239 239 239)'
+  }
 }))
+
 
 export default Workspaces
