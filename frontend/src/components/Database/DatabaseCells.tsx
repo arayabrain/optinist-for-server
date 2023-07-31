@@ -1,4 +1,4 @@
-import { Box, Pagination, styled } from '@mui/material'
+import { Box, Input, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -28,12 +28,29 @@ type CellProps = {
   user?: Object
 }
 
+let timeout: NodeJS.Timeout | undefined = undefined
+
 const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
     width: 160,
-    renderCell: (params: { row: DatabaseType }) => params.row?.exp_id,
+    renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
     field: 'id',
@@ -121,9 +138,14 @@ const DatabaseCells = ({ user }: CellProps) => {
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
-  const pagiFilter = useMemo(() => {
-    return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
-  }, [dataExperiments.limit, dataExperiments.offset])
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${dataExperiments.limit}&offset=${
+        page ? page - 1 : dataExperiments.offset
+      }`
+    },
+    [dataExperiments.limit, dataExperiments.offset],
+  )
 
   const id = searchParams.get('id')
   const offset = searchParams.get('offset')
@@ -184,7 +206,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter(page)}`,
     )
   }
 
@@ -192,11 +214,11 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter}`)
+        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter}`,
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -220,12 +242,12 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     if (!model.items[0]) {
       setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter()}`,
       )
       return
     }
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter()}`,
     )
   }
 

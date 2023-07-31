@@ -1,4 +1,4 @@
-import { Box, DialogTitle, FormControl, FormControlLabel, Pagination, Radio, RadioGroup, styled } from '@mui/material'
+import { Box, DialogTitle, FormControl, FormControlLabel, Input, Pagination, Radio, RadioGroup, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import LaunchIcon from '@mui/icons-material/Launch'
@@ -72,19 +72,33 @@ type DatabaseProps = {
   cellPath: string
 }
 
+let timeout: NodeJS.Timeout | undefined = undefined
+
 const columns = (
   handleOpenAttributes: (value: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
-  navigate: (
-    path: string,
-    params: { [key: string]: string | undefined },
-  ) => void,
+  navigate: (path: string) => void,
 ) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
     width: 160,
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
@@ -144,7 +158,7 @@ const columns = (
       <Box
         sx={{ cursor: 'pointer' }}
         onClick={() =>
-          navigate(cellPath, { exp_id: params.row?.experiment_id })
+          navigate(`${cellPath}?experiment_id=${params.row?.experiment_id}` )
         }
       >
         <LaunchIcon />
@@ -301,10 +315,10 @@ const PopupShare = ({open, handleClose}: PopupType) => {
               <>
                 <p>Permitted users</p>
                 <DataGrid
-                    sx={{minHeight: 500}}
-                    onRowClick={handleShareTrue}
-                    rows={tableShare}
-                    columns={columnsShare(handleShareFalse)}
+                  sx={{minHeight: 500}}
+                  onRowClick={handleShareTrue}
+                  rows={tableShare}
+                  columns={columnsShare(handleShareFalse)}
                 />
               </>
               : null
@@ -353,7 +367,6 @@ const PopupAttributes = ({
     </Box>
   )
 }
-
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const [openShare, setOpenShare] = useState(false)
