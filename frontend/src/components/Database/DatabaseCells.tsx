@@ -102,9 +102,9 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
         }}
         onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
       >
-        {params.row?.cell_image_url?.url && (
+        {params.row?.cell_image_url?.thumb_url && (
           <img
-            src={params.row?.cell_image_url?.url}
+            src={params.row?.cell_image_url?.thumb_url}
             alt={''}
             width={'100%'}
             height={'100%'}
@@ -269,7 +269,7 @@ const DatabaseCells = ({ user }: CellProps) => {
               onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
             >
               <img
-                src={graph_url.url}
+                src={graph_url.thumb_url}
                 alt={''}
                 width={'100%'}
                 height={'100%'}
