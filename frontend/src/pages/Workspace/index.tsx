@@ -360,6 +360,7 @@ const Workspaces = () => {
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
+  const [initName, setInitName] = useState("")
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
   const [searchParams, setParams] = useSearchParams()
 
@@ -455,6 +456,7 @@ const Workspaces = () => {
   }
 
   const onRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
+    setInitName(params.row.name)
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true
     }
@@ -463,7 +465,7 @@ const Workspaces = () => {
   const processRowUpdate = async (newRow: GridRowModel) => {
     if(!newRow.name) {
       alert("Workspace Name cann't empty")
-      return
+      return {...newRow, name: initName}
     }
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
