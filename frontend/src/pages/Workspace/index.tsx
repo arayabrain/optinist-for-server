@@ -461,6 +461,10 @@ const Workspaces = () => {
   }
 
   const processRowUpdate = async (newRow: GridRowModel) => {
+    if(!newRow.name) {
+      alert("Workspace Name cann't empty")
+      return
+    }
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
     return newRow
