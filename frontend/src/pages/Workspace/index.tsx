@@ -21,13 +21,18 @@ import EditIcon from '@mui/icons-material/Edit';
 import { ROLE } from '@types'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
+import { isAdminOrManager } from 'utils/checkAdmin'
 
 type PopupType = {
   open: boolean
   handleClose: () => void
 }
 
-const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => void, user?: UserDTO) => (
+const columns = (
+    handleOpenPopupShare: () => void,
+    handleOpenPopupDel: () => void,
+    user: UserDTO,
+) => (
     [
       {
         field: 'id',
@@ -51,7 +56,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
             }}
           >
             <span>{params.value}</span>
-            {params.row.owner !== "User 2" ? <EditIcon /> : ""}
+            {params.row.user_id === user.id ? <EditIcon /> : ""}
           </Box>
         ),
       },
@@ -63,8 +68,8 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
           <Box
             sx={{display: "flex", alignItems: "center", gap: 2}}
           >
-            <span>{params.value}</span>
-            {params.value === "User 2" ? <GroupsIcon /> : ""}
+            <span>{params.row?.user.name}</span>
+            {params.row.user_id !== user.id ? <GroupsIcon /> : ""}
           </Box>
         ),
       },
@@ -73,7 +78,7 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         headerName: 'Created',
         minWidth: 200,
         renderCell: (params: GridRenderCellParams<string>) => (
-          <span>{params.value}</span>
+          <span>{params.row.created_at}</span>
         ),
       },
       {
@@ -106,16 +111,16 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
           </ButtonCustom>
         ),
       },
-      user && [ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id) &&
+      isAdminOrManager?.(user) &&
       {
         field: 'share',
         headerName: '',
         minWidth: 90,
         renderCell: (params: GridRenderCellParams<string>) => (
-            params.row.owner !== "User 2" && user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id)) ?
-                <ButtonCustom onClick={handleOpenPopupShare}>
-                  <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
-                </ButtonCustom> : ""
+          params.row?.user_id !== user.id ?
+            <ButtonCustom onClick={handleOpenPopupShare}>
+              <SystemUpdateAltIcon sx={{transform: 'rotate(180deg)'}}/>
+            </ButtonCustom> : ""
         ),
       },
       {
@@ -123,11 +128,11 @@ const columns = (handleOpenPopupShare: () => void, handleOpenPopupDel: () => voi
         headerName: '',
         minWidth: 130,
         renderCell: (params: GridRenderCellParams<string>) => (
-          params.row.owner !== "User 2" ?
+          params.row?.user_id === user.id ?
             <ButtonCustom onClick={handleOpenPopupDel}>
               Del
             </ButtonCustom> : ""
-        ),
+          )
       },
     ]
 )
@@ -168,25 +173,46 @@ const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) =
 
 const data = [
   {
+    id: 0,
+    name: "User1",
+    user_id: 5,
+    user: {
+      id: 5,
+      name: "admin",
+      email: "123@gmail.com",
+      created_at: "2023-07-31T10:31:18.088Z",
+      updated_at: "2023-07-31T10:31:18.088Z"
+    },
+    created_at: "2023-07-31T10:31:18.088Z",
+    updated_at: "2023-07-31T10:31:18.088Z"
+  },
+  {
     id: 1,
-    owner: "User 1",
-    name: "Name 1",
-    created: "YYYY/MM/DD HH:MI",
-    share: false
+    name: "User2",
+    user_id: 2,
+    user: {
+      id: 2,
+      name: "manager",
+      email: "asfdsf@gmail.com",
+      created_at: "2023-07-31T10:31:18.088Z",
+      updated_at: "2023-07-31T10:31:18.088Z"
+    },
+    created_at: "2023-07-31T10:31:18.088Z",
+    updated_at: "2023-07-31T10:31:18.088Z"
   },
   {
     id: 2,
-    owner: "User 2",
-    name: "Name 2",
-    created: "YYYY/MM/DD HH:MI",
-    share: true
-  },
-  {
-    id: 3,
-    owner: "User 1",
-    name: "Name 3",
-    created: "YYYY/MM/DD HH:MI",
-    share: true
+    name: "User1",
+    user_id: 5,
+    user: {
+      id: 5,
+      name: "admin",
+      email: "123@gmail.com",
+      created_at: "2023-07-31T10:31:18.088Z",
+      updated_at: "2023-07-31T10:31:18.088Z"
+    },
+    created_at: "2023-07-31T10:31:18.088Z",
+    updated_at: "2023-07-31T10:31:18.088Z"
   }
 ]
 
@@ -291,6 +317,7 @@ const Workspaces = () => {
     //eslint-disable-next-line
   }, [])
   */
+
   const handleOpenPopupShare = () => {
     setOpenShare(false)
   }
@@ -321,12 +348,15 @@ const Workspaces = () => {
         <ButtonCustom>Import</ButtonCustom>
         <ButtonCustom>New</ButtonCustom>
       </Box>
-      <DataGrid
-        autoHeight
-        rows={data}
-        columns={columns(handleOpenPopupShare, handleOpenPopupDel, user).filter(Boolean) as any}
-        isCellEditable={(params) => params.row.owner === "User 1"}
-      />
+      {
+        user ?
+          <DataGrid
+            autoHeight
+            rows={data}
+            columns={columns(handleOpenPopupShare, handleOpenPopupDel, user).filter(Boolean) as any}
+            isCellEditable={(params) => params.row?.user_id === user.id}
+          /> : null
+      }
       {loading ? <Loading /> : null}
       <PopupShare open={openShare} handleClose={handleClosePopupShare} />
       <PopupDelete open={openDel} handleClose={handleClosePopupDel} />
