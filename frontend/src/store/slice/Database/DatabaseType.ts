@@ -10,7 +10,6 @@ export type ImageUrls = {
 
 export type DatabaseType = {
   id: number
-  exp_id?: string
   fields: {
     brain_area: string
     cre_driver: string
