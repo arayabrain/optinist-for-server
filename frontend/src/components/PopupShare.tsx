@@ -133,17 +133,17 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
           )}
           <DialogContent sx={{minHeight: 500}}>
             {
-              !isWorkspace && shareType !== SHARE.USERS ? null : <p>Permitted users</p>
-            }
-            {
               (shareType === SHARE.USERS || isWorkspace) ?
+                <>
+                  <p>Permitted users</p>
                   <DataGrid
-                      sx={{minHeight: 500}}
-                      onRowClick={handleShareTrue}
-                      rows={usersShare.users.map(user => ({...user, share: true}))}
-                      columns={columnsShare(handleShareFalse)}
-                      hideFooterPagination
+                    sx={{minHeight: 500}}
+                    onRowClick={handleShareTrue}
+                    rows={usersShare.users.map(user => ({...user, share: true}))}
+                    columns={columnsShare(handleShareFalse)}
+                    hideFooterPagination
                   />
+                </>
                 : null
             }
           </DialogContent>
