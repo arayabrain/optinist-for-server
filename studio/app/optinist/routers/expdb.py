@@ -98,7 +98,7 @@ DUMMY_CELLS_GRAPH_TITLES = [
 DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
     ImageInfo(
         url="http://localhost:8000/static/sample_media/pixel_image.png",
-        thumb_url="http://localhost:8000/static/sample_media/pixel_image.png",
+        thumb_url="http://localhost:8000/static/sample_media/pixel_image_thumb.png",
     )
     for _ in range(5)
 ]
@@ -106,20 +106,20 @@ DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_GRAPH_URLS = [
     ImageInfo(
-        url="http://localhost:8000/static/sample_media/bar_chart.png",
-        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
     )
-    for _ in DUMMY_EXPERIMENTS_GRAPH_TITLES
+    for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
 ]
 
 # TODO: set dummy data.
 DUMMY_CELLS_GRAPH_URLS = [
     ImageInfo(
-        url="http://localhost:8000/static/sample_media/bar_chart.png",
-        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
         params={"param1": 10, "param2": 20},
     )
-    for _ in DUMMY_CELLS_GRAPH_TITLES
+    for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
 ]
 
 

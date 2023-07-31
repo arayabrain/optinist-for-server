@@ -1,7 +1,7 @@
 import { Box, DialogTitle, FormControl, FormControlLabel, Input, Pagination, Radio, RadioGroup, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import LaunchIcon from '@mui/icons-material/Launch'
+import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -156,12 +156,12 @@ const columns = (
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
       <Box
-        sx={{ cursor: 'pointer' }}
+        sx={{ cursor: 'pointer', color: 'dodgerblue' }}
         onClick={() =>
           navigate(`${cellPath}?experiment_id=${params.row?.experiment_id}` )
         }
       >
-        <LaunchIcon />
+        <ContentPasteSearchIcon />
       </Box>
     ),
   },
