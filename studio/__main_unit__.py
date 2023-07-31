@@ -25,7 +25,7 @@ from studio.app.common.routers import (
     workspace,
 )
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.routers import expdb, hdf5, nwb, roi
+from studio.app.optinist.routers import expdb, expdb_batch, hdf5, nwb, roi
 
 app = FastAPI(docs_url="/docs", openapi_url="/openapi")
 
@@ -50,7 +50,7 @@ app.include_router(nwb.router, dependencies=[Depends(get_current_user)])
 app.include_router(roi.router, dependencies=[Depends(get_current_user)])
 app.include_router(expdb.public_router)
 app.include_router(expdb.router, dependencies=[Depends(get_current_user)])
-
+app.include_router(expdb_batch.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -198,7 +198,11 @@ def get_stat_data(data_tables) -> Tuple[StatIndex, StatIndex]:
 
 
 def stat_file_convert(
-    tc: TcData, ts: TsData, output_dir: str, params: dict = None
+    tc: TcData,
+    ts: TsData,
+    output_dir: str,
+    params: dict = None,
+    export_plot: bool = False,
 ) -> dict(stat=StatData):
     tc_detrended = detrend_tc(
         tc.data,
@@ -233,16 +237,27 @@ def stat_file_convert(
 
     stat = get_stat_data(data_tables)
 
-    return {
-        "stat": stat,
-        "dir_ratio_change": LineData(
-            data=stat.dirstat.ratio_change,
-            columns=np.arange(0, 360, 360 / ts.nstim_per_trial),
+    line = LineData(
+        data=stat.dirstat.ratio_change,
+        columns=np.arange(0, 360, 360 / ts.nstim_per_trial),
+        file_name="dir_ratio_change_line",
+    )
+
+    polar = PolarData(
+        data=stat.dirstat.ratio_change,
+        thetas=np.linspace(
+            0, 360, stat.dirstat.ratio_change[0].shape[0], endpoint=False
         ),
-        "dir_polar": PolarData(
-            data=stat.dirstat.ratio_change,
-            thetas=np.linspace(
-                0, 360, stat.dirstat.ratio_change[0].shape[0], endpoint=False
-            ),
-        ),
-    }
+        file_name="dir_ratio_change_polar",
+    )
+
+    if export_plot:
+        line.save_plot(output_dir)
+        polar.save_plot(output_dir)
+        return stat
+    else:
+        return {
+            "stat": stat,
+            "dir_ratio_change": line,
+            "dir_polar": polar,
+        }
