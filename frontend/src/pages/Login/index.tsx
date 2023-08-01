@@ -1,6 +1,6 @@
 import { Box, Stack, styled, Typography } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { getMe, login } from 'store/slice/User/UserActions'
+import { login } from 'store/slice/User/UserActions'
 import { AppDispatch } from 'store/store'
 import { ChangeEvent, FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -28,11 +28,7 @@ const Login = () => {
     dispatch(login(values))
       .unwrap()
       .then((_) => {
-        dispatch(getMe())
-          .unwrap()
-          .then((_) => {
-            navigate('/console')
-          })
+        navigate('/console')
       })
       .catch((_) => {
         setErrors({ email: 'Email or password is wrong', password: '' })
