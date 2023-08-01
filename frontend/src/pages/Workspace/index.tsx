@@ -9,12 +9,10 @@ import {
   DialogActions,
   Input,
   Pagination,
-  IconButton,
 } from '@mui/material'
 import { GridRenderCellParams } from '@mui/x-data-grid'
 import {
   DataGridPro,
-  GridRowEditStopReasons,
   GridEventListener,
   GridRowModesModel,
   GridRowModel,
@@ -91,9 +89,9 @@ const columns = (
             {value}
           </span>
           {row.user?.id === user?.id && (
-            <IconButton onClick={() => onEdit?.(row.id)}>
-              <EditIcon style={{ fontSize: 18 }} />
-            </IconButton>
+            <ButtonIcon onClick={() => onEdit?.(row.id)}>
+              <EditIcon style={{ fontSize: 16 }} />
+            </ButtonIcon>
           )}
         </Box>
       )
@@ -261,6 +259,7 @@ const Workspaces = () => {
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
+  const [initName, setInitName] = useState('')
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
   const [searchParams, setParams] = useSearchParams()
 
@@ -362,12 +361,28 @@ const Workspaces = () => {
   }
 
   const onRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true
-    }
+    setInitName(params.row.name)
+  }
+
+  const onCellClick: GridEventListener<'cellClick'> | undefined = (event) => {
+    if (event.field === 'name') return
+    setRowModesModel((pre) => {
+      const object: GridRowModesModel = {}
+      Object.keys(pre).forEach(key => {
+        object[key] = {
+          mode: GridRowModes.View, ignoreModifications: true
+        }
+      })
+      return object
+    })
   }
 
   const processRowUpdate = async (newRow: GridRowModel) => {
+    if (!newRow.name) {
+      alert("Workspace Name cann't empty")
+      return { ...newRow, name: initName }
+    }
+    if (newRow.name === initName) return newRow
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
     return newRow
@@ -419,6 +434,7 @@ const Workspaces = () => {
           // sortingMode={'server'}
           // onSortModelChange={handleSort}
           // onFilterModelChange={handleFilter as any}
+          onCellClick={onCellClick}
           rows={data?.items}
           editMode="row"
           rowModesModel={rowModesModel}
@@ -509,6 +525,23 @@ const LinkCustom = styled(Link)(({ theme }) => ({
   borderRadius: 5,
   '&:hover': {
     backgroundColor: '#000000fc',
+  },
+}))
+
+const ButtonIcon = styled('button')(({ theme }) => ({
+  minWidth: '32px',
+  minHeight: '32px',
+  width: '32px',
+  height: '32px',
+  border: 'none',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  background: 'transparent',
+  '&:hover': {
+    background: 'rgb(239 239 239)',
   },
 }))
 
