@@ -4,11 +4,9 @@ import StorageIcon from '@mui/icons-material/Storage'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
-import { isAdmin } from 'utils/checkRole'
-
+import { isAdmin } from 'store/slice/User/UserSelector'
 const Dashboard = () => {
-  const user = useSelector(selectCurrentUser)
+  const admin = useSelector(isAdmin)
   return (
     <BoxWrapper>
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
@@ -31,7 +29,7 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {
-            isAdmin(user) ?
+            admin ?
               <LinkWrapper to="/console/account-manager">
                 <BoxMenu>
                   <Box>
