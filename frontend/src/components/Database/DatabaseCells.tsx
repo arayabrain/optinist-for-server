@@ -3,7 +3,6 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridCallbackDetails,
   GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
@@ -63,24 +62,26 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
     width: 160,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{
-          cursor: 'pointer',
-          display: 'flex',
-        }}
-        onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
-      >
-        {params.row?.cell_image_url && (
+    renderCell: (params: { row: DatabaseType }) => {
+      const { cell_image_url } = params.row
+      if (!cell_image_url) return null
+      return (
+        <Box
+          sx={{
+            cursor: 'pointer',
+            display: 'flex',
+          }}
+          onClick={() => handleOpenDialog([cell_image_url])}
+        >
           <img
             src={params.row?.cell_image_url}
             alt={''}
             width={'100%'}
             height={'100%'}
           />
-        )}
-      </Box>
-    ),
+        </Box>
+      )
+    },
   },
 ]
 
@@ -124,9 +125,9 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
-      brain_area: searchParams.get('brain_area') || '',
-      cre_driver: searchParams.get('cre_driver') || '',
-      reporter_line: searchParams.get('reporter_line') || '',
+      brain_area: searchParams.get('brain_area') || undefined,
+      cre_driver: searchParams.get('cre_driver') || undefined,
+      reporter_line: searchParams.get('reporter_line') || undefined,
       imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
     }),
     [searchParams],
@@ -134,13 +135,13 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api(dataParams))
+    dispatch(api({ ...dataParamsFilter, ...dataParams }))
   }
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user])
+  }, [dataParams, user, dataParamsFilter])
 
   const handleOpenDialog = (data: string[]) => {
     setDataDialog({ type: 'image', data })
@@ -180,30 +181,19 @@ const DatabaseCells = ({ user }: CellProps) => {
     [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (
-    model: GridFilterModel | any,
-    details: GridCallbackDetails,
-  ) => {
-    let filter: string
+  const handleFilter = (model: GridFilterModel) => {
+    let filter = ''
     if (!!model.items[0]?.value) {
-      //todo multiple filter with version pro. Issue task #55
       filter = model.items
-        .filter((item: { [key: string]: string }) => item.value)
+        .filter((item) => item.value)
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
-    } else {
-      filter = ''
     }
-    if (!model.items[0]) {
-      setParams(
-        `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
-      )
-      return
-    }
+    const { sort } = dataParams
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`,
     )
   }
 
@@ -219,7 +209,7 @@ const DatabaseCells = ({ user }: CellProps) => {
             <Box sx={{ display: 'flex' }}>
               {params.row.graph_urls?.[index]?.[0] ? (
                 <img
-                  src={params.row.graph_urls?.[index]?.[0] }
+                  src={params.row.graph_urls?.[index]?.[0]}
                   alt={''}
                   width={'100%'}
                   height={'100%'}
