@@ -1,7 +1,7 @@
-import { Box, Pagination, styled } from '@mui/material'
+import { Box, DialogTitle, FormControl, FormControlLabel, Input, Pagination, Radio, RadioGroup, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import LaunchIcon from '@mui/icons-material/Launch'
+import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -67,19 +67,33 @@ type DatabaseProps = {
   cellPath: string
 }
 
+let timeout: NodeJS.Timeout | undefined = undefined
+
 const columns = (
   handleOpenAttributes: (value: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
-  navigate: (
-    path: string,
-    params: { [key: string]: string | undefined },
-  ) => void,
+  navigate: (path: string) => void,
 ) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
     width: 160,
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
@@ -137,12 +151,12 @@ const columns = (
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
       <Box
-        sx={{ cursor: 'pointer' }}
+        sx={{ cursor: 'pointer', color: 'dodgerblue' }}
         onClick={() =>
-          navigate(cellPath, { exp_id: params.row?.experiment_id })
+          navigate(`${cellPath}?experiment_id=${params.row?.experiment_id}` )
         }
       >
-        <LaunchIcon />
+        <ContentPasteSearchIcon />
       </Box>
     ),
   },
@@ -163,7 +177,7 @@ const columns = (
         >
           {params.row?.cell_image_urls?.length > 0 && (
             <img
-              src={params.row?.cell_image_urls[0].url}
+              src={params.row?.cell_image_urls[0].thumb_url}
               alt={''}
               width={'100%'}
               height={'100%'}
@@ -209,7 +223,6 @@ const PopupAttributes = ({
     </Box>
   )
 }
-
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const [openShare, setOpenShare] = useState<{open: boolean, id?: number}>({open: false})
   const [dataDialog, setDataDialog] = useState<{
@@ -389,7 +402,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               onClick={() => handleOpenDialog(graph_url, row.experiment_id, graphTitle)}
             >
               <img
-                src={graph_url.url}
+                src={graph_url.thumb_url}
                 alt={''}
                 width={'100%'}
                 height={'100%'}
