@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import {
   getExperimentsDatabase,
   getCellsDatabase,
@@ -18,18 +18,18 @@ const initData = {
 }
 
 export type TypeData = {
-  public: DatabaseDTO,
+  public: DatabaseDTO
   private: DatabaseDTO
 }
 
 export const initialState: {
-  data: TypeData,
+  data: TypeData
   loading: boolean
   type: 'experiment' | 'cell'
 } = {
   data: {
     public: initData,
-    private: initData
+    private: initData,
   },
   loading: false,
   type: 'experiment',
@@ -69,34 +69,37 @@ export const databaseSlice = createSlice({
         }
         state.loading = true
       })
-      .addCase(getExperimentsDatabase.fulfilled, (state, action) => {
-        state.data.private = action.payload
-        state.loading = false
-      })
-      .addCase(getCellsDatabase.fulfilled, (state, action) => {
-        state.data.private = action.payload
-        state.loading = false
-      })
-      .addCase(getExperimentsPublicDatabase.fulfilled, (state, action) => {
-        state.data.public = action.payload
-        state.loading = false
-      })
-      .addCase(getCellsPublicDatabase.fulfilled, (state, action) => {
-        state.data.public = action.payload
-        state.loading = false
-      })
-      .addCase(getExperimentsDatabase.rejected, (state, action) => {
-        state.loading = false
-      })
-      .addCase(getCellsDatabase.rejected, (state, action) => {
-        state.loading = false
-      })
-      .addCase(getExperimentsPublicDatabase.rejected, (state, action) => {
-        state.loading = false
-      })
-      .addCase(getCellsPublicDatabase.rejected, (state, action) => {
-        state.loading = false
-      })
+      .addMatcher(
+        isAnyOf(
+          getCellsDatabase.fulfilled,
+          getExperimentsDatabase.fulfilled,
+        ),
+        (state, action) => {
+          state.data.private = action.payload
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          getCellsPublicDatabase.fulfilled,
+          getExperimentsPublicDatabase.fulfilled,
+        ),
+        (state, action) => {
+          state.data.public = action.payload
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          getExperimentsDatabase.rejected,
+          getCellsDatabase.rejected,
+          getExperimentsPublicDatabase.rejected,
+          getCellsPublicDatabase.rejected,
+        ),
+        (state) => {
+          state.loading = false
+        },
+      )
   },
 })
 

@@ -12,7 +12,6 @@ import { IS_STANDALONE } from 'const/Mode'
 import Loading from 'components/common/Loading'
 
 const authRequiredPathRegex = /^\/console\/?.*/
-const redirectAfterLoginPaths = ['/login', '/reset-password', '/console']
 
 const Layout = ({ children }: { children?: ReactNode }) => {
   const user = useSelector(selectCurrentUser)
@@ -20,11 +19,11 @@ const Layout = ({ children }: { children?: ReactNode }) => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const [loading, setLoadingAuth] = useState(!IS_STANDALONE && authRequiredPathRegex.test(window.location.pathname))
+  const [loading, setLoadingAuth] = useState(!IS_STANDALONE && authRequiredPathRegex.test(location.pathname))
 
   useEffect(() => {
     !IS_STANDALONE &&
-      authRequiredPathRegex.test(window.location.pathname) &&
+      authRequiredPathRegex.test(location.pathname) &&
       checkAuth()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, user])
@@ -35,18 +34,17 @@ const Layout = ({ children }: { children?: ReactNode }) => {
       return
     }
     const token = getToken()
-    const willRedirect = redirectAfterLoginPaths.includes(
-        window.location.pathname,
-    )
+    const isLogin = location.pathname === '/login'
+
 
     try {
       if (token) {
         await dispatch(getMe())
-        if (willRedirect) navigate('/console')
+        if (isLogin) navigate('/console')
         return
-      } else if (!willRedirect) throw new Error('fail auth')
+      } else if (!isLogin) throw new Error('fail auth')
     } catch {
-      navigate('/login')
+      navigate('/login', { replace: true })
     } finally {
       if(loading) setLoadingAuth(false)
     }
