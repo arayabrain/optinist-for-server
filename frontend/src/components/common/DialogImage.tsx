@@ -10,7 +10,7 @@ type DialogImageProps = {
 }
 
 const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
-  if(!data) return <></>
+  if(!data) return null
   return (
     <>
     {

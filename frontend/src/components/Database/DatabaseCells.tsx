@@ -1,4 +1,4 @@
-import { Box, Pagination, styled } from '@mui/material'
+import { Box, Input, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -27,12 +27,29 @@ type CellProps = {
   user?: Object
 }
 
+let timeout: NodeJS.Timeout | undefined = undefined
+
 const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
     width: 160,
-    renderCell: (params: { row: DatabaseType }) => params.row?.exp_id,
+    renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
     field: 'id',
@@ -76,24 +93,25 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
     width: 160,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{
-          cursor: 'pointer',
-          display: 'flex',
-        }}
-        onClick={() => params.row?.cell_image_url && handleOpenDialog([params.row.cell_image_url])}
-      >
-        {params.row?.cell_image_url?.url && (
+    renderCell: (params: { row: DatabaseType }) => {
+      const { cell_image_url } = params.row
+      if (!cell_image_url) return null
+      return (
+        <Box
+          sx={{
+            cursor: 'pointer',
+            display: 'flex',
+          }}
+          onClick={() => handleOpenDialog([cell_image_url])}
+        >
           <img
-            src={params.row?.cell_image_url?.url}
+            src={params.row?.cell_image_url?.thumb_url}
             alt={''}
             width={'100%'}
             height={'100%'}
           />
-        )}
       </Box>
-    ),
+    )}
   },
 ]
 
@@ -120,9 +138,14 @@ const DatabaseCells = ({ user }: CellProps) => {
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
-  const pagiFilter = useMemo(() => {
-    return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
-  }, [dataExperiments.limit, dataExperiments.offset])
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${dataExperiments.limit}&offset=${
+        page ? page - 1 : dataExperiments.offset
+      }`
+    },
+    [dataExperiments.limit, dataExperiments.offset],
+  )
 
   const id = searchParams.get('id')
   const offset = searchParams.get('offset')
@@ -183,7 +206,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter(page)}`,
     )
   }
 
@@ -191,11 +214,11 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter}`)
+        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter}`,
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -214,7 +237,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
@@ -236,7 +259,7 @@ const DatabaseCells = ({ user }: CellProps) => {
               onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
             >
               <img
-                src={graph_url.url}
+                src={graph_url.thumb_url}
                 alt={''}
                 width={'100%'}
                 height={'100%'}
