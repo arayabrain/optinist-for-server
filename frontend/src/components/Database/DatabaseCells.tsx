@@ -1,4 +1,4 @@
-import { Box, Pagination, styled } from '@mui/material'
+import { Box, Input, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -12,6 +12,7 @@ import { DataGridPro } from '@mui/x-data-grid-pro'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
+  ImageUrls,
 } from '../../store/slice/Database/DatabaseType'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store/store'
@@ -26,7 +27,37 @@ type CellProps = {
   user?: Object
 }
 
-const columns = (handleOpenDialog: (value: string[]) => void) => [
+let timeout: NodeJS.Timeout | undefined = undefined
+
+const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
+  {
+    field: 'experiment_id',
+    headerName: 'Experiment ID',
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
+    width: 160,
+    renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+  },
+  {
+    field: 'id',
+    headerName: 'Cell ID',
+    width: 160,
+    filterable: false,
+    renderCell: (params: { value: number }) => params.value,
+  },
   {
     field: 'brain_area',
     headerName: 'Brain area',
@@ -74,7 +105,7 @@ const columns = (handleOpenDialog: (value: string[]) => void) => [
           onClick={() => handleOpenDialog([cell_image_url])}
         >
           <img
-            src={params.row?.cell_image_url}
+            src={params.row?.cell_image_url?.thumb_url}
             alt={''}
             width={'100%'}
             height={'100%'}
@@ -97,34 +128,44 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const [dataDialog, setDataDialog] = useState<{
     type: string
-    data: string | string[] | undefined
+    data?: string | string[]
+    expId?: string
+    nameCol?: string
   }>({
     type: '',
     data: undefined,
   })
+
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
-  const pagiFilter = useMemo(() => {
-    return `limit=${dataExperiments.limit}&offset=${dataExperiments.offset}`
-  }, [dataExperiments.limit, dataExperiments.offset])
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${dataExperiments.limit}&offset=${
+        page ? page - 1 : dataExperiments.offset
+      }`
+    },
+    [dataExperiments.limit, dataExperiments.offset],
+  )
 
-  const exp_id = searchParams.get('exp_id')
+  const id = searchParams.get('id')
   const offset = searchParams.get('offset')
   const limit = searchParams.get('limit')
-  const sort = searchParams.get('sort')
+  const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
     return {
-      exp_id: Number(exp_id) || undefined,
-      offset: Number(offset) || 0,
-      limit: Number(limit) || 50,
+      exp_id: Number(id) || undefined,
       sort: sort || [],
+      limit: Number(limit) || 50,
+      offset: Number(offset) || 0,
     }
-  }, [offset, limit, sort, exp_id])
+    //eslint-disable-next-line
+  }, [offset, limit, JSON.stringify(sort), id])
 
   const dataParamsFilter = useMemo(
     () => ({
+      experiment_id: searchParams.get('experiment_id') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -143,8 +184,12 @@ const DatabaseCells = ({ user }: CellProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
-  const handleOpenDialog = (data: string[]) => {
-    setDataDialog({ type: 'image', data })
+  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
+    let newData: string | (string[]) = []
+    if(Array.isArray(data)) {
+      newData = data.map(d => d.url);
+    } else newData = data.url
+    setDataDialog({ type: 'image', data: newData, expId: expId, nameCol: graphTitle })
   }
 
   const handleCloseDialog = () => {
@@ -162,7 +207,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter}`,
+      `${filter}&sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&${pagiFilter(page)}`,
     )
   }
 
@@ -170,11 +215,11 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter}`)
+        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter}`,
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -193,7 +238,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
@@ -205,16 +250,21 @@ const DatabaseCells = ({ user }: CellProps) => {
         filterable: false,
         sortable: false,
         renderCell: (params: { row: DatabaseType }) => {
+          const {row} = params
+          const {graph_urls} = row
+          const graph_url = graph_urls[index]
+          if(!graph_url) return null
           return (
-            <Box sx={{ display: 'flex' }}>
-              {params.row.graph_urls?.[index]?.[0] ? (
-                <img
-                  src={params.row.graph_urls?.[index]?.[0]}
-                  alt={''}
-                  width={'100%'}
-                  height={'100%'}
-                />
-              ) : null}
+            <Box
+              sx={{ display: 'flex', cursor: "pointer" }}
+              onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
+            >
+              <img
+                src={graph_url.thumb_url}
+                alt={''}
+                width={'100%'}
+                height={'100%'}
+              />
             </Box>
           )
         },
@@ -248,6 +298,11 @@ const DatabaseCells = ({ user }: CellProps) => {
           filter: {
             filterModel: {
               items: [
+                {
+                  field: 'experiment_id',
+                  operator: 'contains',
+                  value: dataParamsFilter.experiment_id,
+                },
                 {
                   field: 'brain_area',
                   operator: 'contains',
@@ -283,6 +338,8 @@ const DatabaseCells = ({ user }: CellProps) => {
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}
+        nameCol={dataDialog.nameCol}
+        expId={dataDialog.expId}
         handleCloseDialog={handleCloseDialog}
       />
       {loading ? <Loading /> : null}

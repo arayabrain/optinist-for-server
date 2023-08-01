@@ -3,12 +3,14 @@ import {Box, styled} from "@mui/material";
 
 type DialogImageProps = {
   open: boolean
-  data?: string[] | string
+  data?: string | (string[])
   handleCloseDialog: () => void
+  expId?: string
+  nameCol?: string
 }
 
-const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
-  if(!data) return <></>
+const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
+  if(!data) return null
   return (
     <>
     {
@@ -25,11 +27,14 @@ const DialogImage = ({data, handleCloseDialog, open}: DialogImageProps) => {
               }}
             >
               {
-                typeof data === "string" ?
+                !Array.isArray(data) ?
                   <Box sx={{
                     display: "flex",
                     flexDirection: "column",
                   }}>
+                    <p>Expriment ID: {expId}</p>
+                    <p>{nameCol}</p>
+
                     <img
                       src={data}
                       alt={""}
