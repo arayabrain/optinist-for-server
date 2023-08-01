@@ -5,8 +5,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
-import { ROLE } from '@types'
-import { isAdmin } from 'utils/checkAdmin'
+import { isAdmin } from 'utils/checkRole'
 
 const Dashboard = () => {
   const user = useSelector(selectCurrentUser)
