@@ -409,6 +409,9 @@ def get_experiment_database_share_status(
         db.query(common_model.User)
         .join(
             optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+        )
+        .filter(
             optinist_model.ExperimentShareUser.experiment_uid == id,
         )
         .all()
