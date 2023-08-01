@@ -31,7 +31,7 @@ import {
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
-import { ROLE } from '@types'
+import { isAdminOrManager } from 'store/slice/User/UserSelector'
 
 type PopupAttributesProps = {
   data: string
@@ -190,6 +190,7 @@ const PopupAttributes = ({
 
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
+  const adminOrManager = useSelector(isAdminOrManager)
   const { data: dataExperiments, loading } = useSelector(
     (state: RootState) => ({
       data: state[DATABASE_SLICE_NAME].data[type],
@@ -395,7 +396,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          user && ([ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id))
+          adminOrManager
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)
         }
