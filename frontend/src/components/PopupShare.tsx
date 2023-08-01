@@ -1,14 +1,22 @@
-import {Box, Button,
-  Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, Radio, RadioGroup, styled } from "@mui/material";
-import {DataGrid, GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
+import {
+  Box, Button,
+  Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
+} from "@mui/material";
+import {DataGrid, GridRenderCellParams, GridRowParams} from "@mui/x-data-grid";
 import { SHARE } from "../@types";
-import {ChangeEvent, MouseEvent, useCallback, useEffect, useState} from "react";
-import { useDispatch } from "react-redux";
+import {ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
 import { ListShare } from "../store/slice/Database/DatabaseType";
 import { ListUserShareWorkSpace } from "../store/slice/Workspace/WorkspaceType";
 import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
+import {selectListSearch, selectListSearchLoading} from "../store/slice/User/UserSelector";
+import {getListSearch} from "../store/slice/User/UserActions";
+import Loading from "./common/Loading";
+import {UserDTO} from "../api/users/UsersApiDTO";
+import CheckIcon from '@mui/icons-material/Check';
+import {resetUserSearch} from "../store/slice/User/UserSlice";
 
 type PopupType = {
   open: boolean
@@ -26,42 +34,106 @@ type PopupType = {
   }
 }
 
+type TableSearch = {
+  usersSuggest: UserDTO[]
+  onClose: () => void
+  handleAddListUser: (user: UserDTO) => void
+  stateUserShare: UserDTO[]
+}
+
+const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserShare}: TableSearch) => {
+
+  const ref = useRef<HTMLLIElement | null>(null)
+
+  useEffect(() => {
+    window.addEventListener('mousedown', onMouseDown)
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown)
+    }
+    //eslint-disable-next-line
+  }, [])
+
+  const onMouseDown = (event: MouseEvent) => {
+    if(ref.current?.contains((event as any).target) || (event as any).target.id === 'inputSearch') return;
+    onClose?.()
+  }
+
+  return (
+    <TableListSearchWrapper ref={ref} onBlur={() => console.log(123)}>
+      <UlCustom>
+        {usersSuggest.map(item => {
+          const isSelected = stateUserShare.some(i => i.id === item.id)
+          return (
+              <LiCustom onClick={() => handleAddListUser(item)} style={{
+                cursor: isSelected ? 'not-allowed' : 'pointer'
+              }}
+              >
+                {`${item.name} (${item.email})`}
+                {isSelected ? <CheckIcon style={{fontSize: 14}}/> : null}
+              </LiCustom>
+          )
+        })}
+      </UlCustom>
+    </TableListSearchWrapper>
+  )
+}
 const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title}: PopupType) => {
   const [shareType, setShareType] = useState(data?.shareType || 0)
-  const [userList, setUserList] = useState<number[]>(usersShare?.users.map(user => user.id) || [])
-  const dispatch = useDispatch();
-
+  const [userIdsSelected, setUserIdsSelected] = useState<number[]>(usersShare?.users.map(user => user.id) || [])
+  const usersSuggest = useSelector(selectListSearch)
+  const loading = useSelector(selectListSearchLoading)
+  const [textSearch, setTextSearch] = useState('')
+  const [stateUserShare, setStateUserShare] = useState(usersShare || undefined)
+  const dispatch = useDispatch()
+  let timeout = useRef<NodeJS.Timeout | undefined>()
 
   useEffect(() => {
     if(usersShare) {
-      setUserList(usersShare.users.map(user => user.id));
+      setUserIdsSelected(usersShare.users.map(user => user.id));
+      setStateUserShare(usersShare)
     }
   }, [usersShare])
 
+  useEffect(() => {
+
+  }, [data])
+
+  useEffect(() => {
+    if(timeout.current) clearTimeout(timeout.current)
+    if(!textSearch) {
+      dispatch(resetUserSearch())
+      return
+    }
+    timeout.current = setTimeout(() => {
+      dispatch(getListSearch({keyword: textSearch}))
+    }, 300)
+    //eslint-disable-next-line
+  }, [textSearch])
+
   const handleShareTrue = (params: GridRowParams) => {
     if(!params) return
-    const index = userList.findIndex(item => {
+    const index = userIdsSelected.findIndex(item => {
       return item === params.id
     })
     if(index < 0) {
-      userList.push(Number(params.id))
+      userIdsSelected.push(Number(params.id))
     }
   }
 
   const handleShareFalse = (e: any, params: GridRenderCellParams<string>) => {
     e.preventDefault()
     e.stopPropagation()
-    if(userList.includes(Number(params.id))) {
-      setUserList(userList.filter(id => id !== Number(params.id)))
-    } else setUserList([...userList, Number(params.id)])
+    if(userIdsSelected.includes(Number(params.id))) {
+      setUserIdsSelected(userIdsSelected.filter(id => id !== Number(params.id)))
+    } else setUserIdsSelected([...userIdsSelected, Number(params.id)])
   }
 
   const handleValue = (event: ChangeEvent<HTMLInputElement>) => {
-    setUserList(usersShare?.users.map(user => user.id) || [])
+    setUserIdsSelected(usersShare?.users.map(user => user.id) || [])
     setShareType(Number((event.target as HTMLInputElement).value));
   }
 
-  const columnsShare = useCallback((handleShareFalse: (e: MouseEvent<HTMLButtonElement>, parmas: GridRenderCellParams<string>) => void) =>  [
+  const columnsShare = useCallback((handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, parmas: GridRenderCellParams<string>) => void) =>  [
     {
       field: "name",
       headerName: "Name",
@@ -75,7 +147,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       headerName: "Email",
       minWidth: 280,
       renderCell: (params: GridRenderCellParams<string>) => (
-          <span>{params.row.email}</span>
+        <span>{params.row.email}</span>
       ),
     },
     {
@@ -87,72 +159,113 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       renderCell: (params: GridRenderCellParams<string>) => {
         if(!params.row.share) return ''
         return (
-            <Button onClick={(e) => handleShareFalse(e, params)}>
-              {userList.includes(params.row.id) ? <CancelIcon color={"error"}/> : null}
-            </Button>
+          <Button onClick={(e) => handleShareFalse(e, params)}>
+            {userIdsSelected.includes(params.row.id) ? <CancelIcon color={"error"}/> : null}
+          </Button>
         )
       }
     },
-  ], [userList])
+  ], [userIdsSelected])
 
   const handleOke = async () => {
     if(!isWorkspace) {
-      await dispatch(postListUserShare({id, data: {user_ids: userList, share_type: shareType }}))
+      await dispatch(postListUserShare({id, data: {user_ids: userIdsSelected, share_type: shareType }}))
     } else {
-      await dispatch(postListUserShareWorkspaces({id, data: {user_ids: userList}}))
+      await dispatch(postListUserShareWorkspaces({id, data: {user_ids: userIdsSelected}}))
     }
     handleClose(true);
+  }
+
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    setTextSearch(event.target.value)
+  }
+
+  const handleCloseSearch = () => {
+    setTextSearch('')
+    dispatch(resetUserSearch())
+  }
+
+  const handleAddListUser = (user: any) => {
+    if(!usersSuggest || !stateUserShare) return
+    if(!stateUserShare.users.find((item: any) => item.id === user.id)) {
+      setStateUserShare({...stateUserShare, users: [...stateUserShare.users, user]})
+      setUserIdsSelected([...userIdsSelected, user.id])
+    }
   }
 
   if(!data || !usersShare) return null;
 
   return (
-      <Box>
-        <DialogCustom
-            open={open}
-            onClose={handleClose}
-            sx={{margin: 0}}
-        >
-          <DialogTitle>{title || "Share Database record"}</DialogTitle>
-          {isWorkspace ? null : <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>}
-          {isWorkspace ? null : (
-              <DialogTitle>
-                <FormControl>
-                  <RadioGroup
-                      value={shareType}
-                      row
-                      aria-labelledby="demo-row-radio-buttons-group-label"
-                      name="row-radio-buttons-group"
-                      onChange={handleValue}
-                  >
-                    <FormControlLabel value={2} control={<Radio/>} label={"Share for Organization"}/>
-                    <FormControlLabel value={1} control={<Radio/>} label={"Share for Users"}/>
-                  </RadioGroup>
-                </FormControl>
-              </DialogTitle>
-          )}
-          <DialogContent sx={{minHeight: 500}}>
-            {
-              (shareType === SHARE.USERS || isWorkspace) ?
-                <>
-                  <p>Permitted users</p>
+    <Box>
+      <DialogCustom
+        open={open}
+        onClose={handleClose}
+        sx={{margin: 0}}
+      >
+        <DialogTitle>{title || "Share Database record"}</DialogTitle>
+        {isWorkspace ? null : <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>}
+        {isWorkspace ? null : (
+          <DialogTitle>
+            <FormControl>
+              <RadioGroup
+                value={shareType}
+                row
+                aria-labelledby="demo-row-radio-buttons-group-label"
+                name="row-radio-buttons-group"
+                onChange={handleValue}
+              >
+                <FormControlLabel value={2} control={<Radio/>} label={"Share for Organization"}/>
+                <FormControlLabel value={1} control={<Radio/>} label={"Share for Users"}/>
+              </RadioGroup>
+            </FormControl>
+          </DialogTitle>
+      )}
+        <DialogContent sx={{minHeight: 500}}>
+          {
+            (shareType === SHARE.USERS || isWorkspace) ?
+              <>
+                <Box style={{position: 'relative'}}>
+                  <Input
+                      id="inputSearch"
+                      sx={{width: "60%"}}
+                      placeholder={"Search and add users"}
+                      value={textSearch}
+                      onChange={handleSearch}
+                  />
+                  {
+                    textSearch && usersSuggest ?
+                        <TableListSearch
+                            onClose={handleCloseSearch}
+                            usersSuggest={usersSuggest}
+                            stateUserShare={stateUserShare?.users || []}
+                            handleAddListUser={handleAddListUser}
+                        /> : null
+                  }
+                </Box>
+                <p>Permitted users</p>
+                {
+                    stateUserShare &&
                   <DataGrid
                     sx={{minHeight: 500}}
                     onRowClick={handleShareTrue}
-                    rows={usersShare.users.map(user => ({...user, share: true}))}
+                    rows={stateUserShare?.users.map((user: any) => ({...user, share: true}))}
                     columns={columnsShare(handleShareFalse)}
                     hideFooterPagination
                   />
-                </>
-                : null
-            }
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => handleClose(false)}>Cancel</Button>
-            <Button onClick={handleOke}>Ok</Button>
-          </DialogActions>
-        </DialogCustom>
-      </Box>
+                }
+              </>
+              : null
+          }
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleClose(false)}>Cancel</Button>
+          <Button onClick={handleOke}>Ok</Button>
+        </DialogActions>
+      </DialogCustom>
+      {
+        loading ? <Loading /> : null
+      }
+    </Box>
   )
 }
 
@@ -163,6 +276,36 @@ const DialogCustom = styled(Dialog)(({ theme }) => ({
       maxWidth: "890px",
     },
   },
+}))
+
+const TableListSearchWrapper = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  background: "#fff",
+  zIndex: 100,
+  width: "60%",
+  boxShadow: '0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)',
+  borderBottomLeftRadius: 8,
+  borderBottomRightRadius: 8,
+  maxHeight: 200,
+  overflow: 'auto'
+}))
+
+const UlCustom = styled('ul')(({ theme }) => ({
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
+}))
+
+const LiCustom = styled('li')(({ theme }) => ({
+  padding: theme.spacing(1, 2),
+  fontSize: 14,
+  cursor: "pointer",
+  display: 'flex',
+  justifyContent: "space-between",
+  alignItems: 'center',
+  "&:hover": {
+    backgroundColor: 'rgba(0,0,0,.04)'
+  }
 }))
 
 export default PopupShare

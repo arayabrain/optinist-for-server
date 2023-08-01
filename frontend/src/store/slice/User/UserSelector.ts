@@ -5,3 +5,5 @@ export const selectCurrentUserUid = (state: RootState) =>
   selectCurrentUser(state)?.uid
 export const selectCurrentUserEmail = (state: RootState) =>
   selectCurrentUser(state)?.email
+export const selectListSearch = (state: RootState) => state.user.listUserSearch
+export const selectListSearchLoading = (state: RootState) => state.user.loading
