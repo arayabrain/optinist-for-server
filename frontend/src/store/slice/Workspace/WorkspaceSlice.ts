@@ -1,11 +1,22 @@
-import { PayloadAction, createSlice } from '@reduxjs/toolkit'
+import { PayloadAction, createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { WORKSPACE_SLICE_NAME, Workspace } from './WorkspaceType'
 import { importExperimentByUid } from '../Experiments/ExperimentsActions'
+import {
+  delWorkspace,
+  getWorkspaceList,
+  postWorkspace,
+  putWorkspace,
+} from './WorkspacesActions'
 
 const initialState: Workspace = {
-  workspaces: [{ workspace_id: 'default' }],
   currentWorkspace: {
     selectedTab: 0,
+  },
+  workspace: {
+    items: [],
+    total: 0,
+    limit: 50,
+    offset: 0,
   },
   loading: false,
 }
@@ -27,10 +38,39 @@ export const workspaceSlice = createSlice({
     },
   },
   extraReducers(builder) {
-    builder.addCase(importExperimentByUid.fulfilled, (state, action) => {
-      state.currentWorkspace.workspaceId = action.meta.arg.workspaceId
-    })
-    // TODO: add case for set loading on get workspaces pending
+    builder
+      .addCase(importExperimentByUid.fulfilled, (state, action) => {
+        state.currentWorkspace.workspaceId = action.meta.arg.workspaceId
+      })
+      .addCase(getWorkspaceList.fulfilled, (state, action) => {
+        state.workspace = action.payload
+        state.loading = false
+      })
+      .addMatcher(
+        isAnyOf(
+          getWorkspaceList.rejected,
+          postWorkspace.fulfilled,
+          postWorkspace.rejected,
+          putWorkspace.fulfilled,
+          putWorkspace.rejected,
+          delWorkspace.fulfilled,
+          delWorkspace.rejected,
+        ),
+        (state) => {
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          getWorkspaceList.pending,
+          postWorkspace.pending,
+          putWorkspace.pending,
+          delWorkspace.pending,
+        ),
+        (state) => {
+          state.loading = true
+        },
+      )
   },
 })
 
