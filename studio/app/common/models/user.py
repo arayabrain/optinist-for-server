@@ -1,8 +1,16 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy.sql.functions import current_timestamp
-from sqlmodel import JSON, Column, Field, Integer, String, UniqueConstraint
+from sqlmodel import (
+    JSON,
+    Column,
+    Field,
+    Integer,
+    Relationship,
+    String,
+    UniqueConstraint,
+)
 
 from studio.app.common.models.base import Base, TimestampMixin
 
@@ -17,6 +25,10 @@ class User(Base, TimestampMixin, table=True):
     email: str = Field(sa_column=Column(String(255), nullable=False))
     attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
     active: bool = Field(nullable=False)
+
+    workspace: List["Workspace"] = Relationship(  # noqa: F821
+        back_populates="user", sa_relationship_kwargs={"uselist": True}
+    )
 
 
 class Organization(Base, table=True):
