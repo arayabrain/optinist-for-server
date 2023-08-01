@@ -10,7 +10,6 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import SwitchCustom from '../common/SwitchCustom'
 import {
-  GridCallbackDetails,
   GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
@@ -262,7 +261,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handleChangeAttributes = (event: any) => {
-    setDataDialog(pre => ({...pre, data: event.target.value}))
+    setDataDialog((pre) => ({ ...pre, data: event.target.value }))
   }
 
   const getParamsData = () => {
@@ -305,23 +304,20 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     [pagiFilter, getParamsData],
   )
 
-  const handleFilter = (
-    model: GridFilterModel | any,
-    details: GridCallbackDetails,
-  ) => {
-    let filter: string
+  const handleFilter = (model: GridFilterModel) => {
+    let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
-        .filter((item: { [key: string]: string }) => item.value)
+        .filter((item) => item.value)
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
-    } else {
-      filter = ''
     }
-    const {sort} = dataParams
-    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`)
+    const { sort } = dataParams
+    setParams(
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+    )
   }
 
   const getColumns = useMemo(() => {
