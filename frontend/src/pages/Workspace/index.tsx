@@ -40,7 +40,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
-import { isCheckMe } from 'utils/checkRole'
+import { isMe } from 'utils/checkRole'
 
 type PopupType = {
   open: boolean
@@ -98,7 +98,7 @@ const columns = (
           >
             {value}
           </span>
-          {isCheckMe(user, row?.user?.id) ? (
+          {isMe(user, row?.user?.id) ? (
             <ButtonIcon onClick={() => onEdit?.(row.id)}>
               <EditIcon style={{ fontSize: 16 }} />
             </ButtonIcon>
@@ -118,7 +118,7 @@ const columns = (
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <span>{params.value?.name}</span>
-        {params.value.id !== user?.id ? <GroupsIcon /> : ''}
+        {!isMe(user, params.value.id) ? <GroupsIcon /> : ''}
       </Box>
     ),
   },
@@ -171,7 +171,7 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
-      isCheckMe(user, params.row?.user?.id) ? (
+      isMe(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={handleOpenPopupShare}>
           <GroupsIcon />
         </ButtonCustom>
@@ -184,7 +184,7 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
-      isCheckMe(user, params.row?.user?.id) ? (
+      isMe(user, params.row?.user?.id) ? (
       <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
         Del
       </ButtonCustom>
@@ -534,7 +534,7 @@ const Workspaces = () => {
                 ).filter(Boolean) as any
               }
               onRowModesModelChange={handleRowModesModelChange}
-              isCellEditable={(params) => params.row.user?.id === user?.id}
+              isCellEditable={(params) => isMe(user, params.row.user?.id)}
               onProcessRowUpdateError={onProcessRowUpdateError}
               onRowEditStop={onRowEditStop}
               processRowUpdate={processRowUpdate as any}
