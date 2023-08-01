@@ -2,6 +2,12 @@ export const DATABASE_SLICE_NAME = 'database'
 
 export type OrderBy = 'ASC' | 'DESC' | ''
 
+export type ImageUrls = {
+  url: string
+  thumb_url: string
+  params: {}
+}
+
 export type DatabaseType = {
   id: number
   fields: {
@@ -12,9 +18,13 @@ export type DatabaseType = {
   }
   experiment_id?: string
   attributes?: object
-  cell_image_urls: string[]
-  cell_image_url?: string
-  graph_urls: string[]
+  cell_image_urls: ImageUrls[]
+  cell_image_url?: {
+    url: string,
+    thumb_url: string,
+    params: {}
+  }
+  graph_urls: {url: string, params: {}, thumb_url: string}[]
   share_type?: number
   publish_status?: number
   created_at: string

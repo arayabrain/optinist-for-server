@@ -280,7 +280,7 @@ const PopupShare = ({ open, handleClose }: PopupType) => {
     <Box>
       <DialogCustom open={open} onClose={handleClose} sx={{ margin: 0 }}>
         <DialogTitle>Share Workspace</DialogTitle>
-        <DialogTitle>アクセス許可ユーザー</DialogTitle>
+        <DialogTitle>Permitted users</DialogTitle>
         <DialogContent>
           <DataGrid
             sx={{ minHeight: 500 }}
