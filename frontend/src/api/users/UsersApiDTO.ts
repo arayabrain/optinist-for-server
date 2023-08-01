@@ -1,7 +1,10 @@
 export type UserDTO = {
   id: number
-  uid: string
+  uid?: string
   email: string
+  name?: string
+  create_at?: string
+  update_at?: string
 }
 
 export type AddUserDTO = {
