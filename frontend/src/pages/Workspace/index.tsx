@@ -25,7 +25,6 @@ import {
   selectWorkspaceData,
 } from 'store/slice/Workspace/WorkspaceSelector'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import {
   delWorkspace,
   exportWorkspace,
@@ -39,10 +38,9 @@ import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import CancelIcon from '@mui/icons-material/Cancel';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
-import { ROLE } from '@types'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
-import { isAdminOrManager } from 'utils/checkAdmin'
+import { isCheckMe } from 'utils/checkRole'
 
 type PopupType = {
   open: boolean
@@ -100,11 +98,11 @@ const columns = (
           >
             {value}
           </span>
-          {row.user?.id === user?.id && (
+          {isCheckMe(user, row?.user?.id) ? (
             <ButtonIcon onClick={() => onEdit?.(row.id)}>
               <EditIcon style={{ fontSize: 16 }} />
             </ButtonIcon>
-          )}
+          ) : null}
         </Box>
       )
     },
@@ -120,7 +118,7 @@ const columns = (
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <span>{params.value?.name}</span>
-        {params.value.id !== user?.id ? <PeopleOutlineIcon /> : ''}
+        {params.value.id !== user?.id ? <GroupsIcon /> : ''}
       </Box>
     ),
   },
@@ -154,7 +152,6 @@ const columns = (
       <LinkCustom to={'#'}>Result</LinkCustom>
     ),
   },
-  isAdminOrManager?.(user) &&
   {
     field: 'download',
     headerName: '',
@@ -174,11 +171,11 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
-      params.row?.user?.id === user?.id && (
+      isCheckMe(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={handleOpenPopupShare}>
-          <PeopleOutlineIcon />
+          <GroupsIcon />
         </ButtonCustom>
-      ),
+      ): null
   },
   {
     field: 'delete',
@@ -187,11 +184,11 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
-      params.row?.user_id === user?.id && (
-        <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
-          Del
-        </ButtonCustom>
-      ),
+      isCheckMe(user, params.row?.user?.id) ? (
+      <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
+        Del
+      </ButtonCustom>
+      ) : null
   },
 ]
 
@@ -204,14 +201,6 @@ const columnsShare = (
     minWidth: 140,
     renderCell: (params: GridRenderCellParams<string>) => (
       <span>{params.row.name}</span>
-    ),
-  },
-  {
-    field: 'lab',
-    headerName: 'Lab',
-    minWidth: 280,
-    renderCell: (params: GridRenderCellParams<string>) => (
-      <span>{params.row.email}</span>
     ),
   },
   {
@@ -519,39 +508,39 @@ const Workspaces = () => {
       </Box>
       {
         user ?
-            <Box
-                sx={{
-                  minHeight: 500,
-                  height: 'calc(100vh - 350px)',
-                }}
-            >
-              <DataGridPro
-                  // todo enable when api complete
-                  // filterMode={'server'}
-                  // sortingMode={'server'}
-                  // onSortModelChange={handleSort}
-                  // onFilterModelChange={handleFilter as any}
-                  onCellClick={onCellClick}
-                  rows={data?.items}
-                  editMode="row"
-                  rowModesModel={rowModesModel}
-                  columns={
-                    columns(
-                        handleOpenPopupShare,
-                        handleOpenPopupDel,
-                        handleDownload,
-                        user,
-                        onEditName,
-                    ) as any
-                  }
-                  onRowModesModelChange={handleRowModesModelChange}
-                  isCellEditable={(params) => params.row.user?.id === user?.id}
-                  onProcessRowUpdateError={onProcessRowUpdateError}
-                  onRowEditStop={onRowEditStop}
-                  processRowUpdate={processRowUpdate as any}
-                  hideFooter={true}
-              />
-            </Box> : null
+          <Box
+            sx={{
+              minHeight: 500,
+              height: 'calc(100vh - 350px)',
+            }}
+          >
+            <DataGridPro
+              // todo enable when api complete
+              // filterMode={'server'}
+              // sortingMode={'server'}
+              // onSortModelChange={handleSort}
+              // onFilterModelChange={handleFilter as any}
+              onCellClick={onCellClick}
+              rows={data?.items}
+              editMode="row"
+              rowModesModel={rowModesModel}
+              columns={
+                columns(
+                  handleOpenPopupShare,
+                  handleOpenPopupDel,
+                  handleDownload,
+                  user,
+                  onEditName,
+                ).filter(Boolean) as any
+              }
+              onRowModesModelChange={handleRowModesModelChange}
+              isCellEditable={(params) => params.row.user?.id === user?.id}
+              onProcessRowUpdateError={onProcessRowUpdateError}
+              onRowEditStop={onRowEditStop}
+              processRowUpdate={processRowUpdate as any}
+              hideFooter={true}
+            />
+          </Box> : null
       }
       <Pagination
         sx={{ marginTop: 2 }}

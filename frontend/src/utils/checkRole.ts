@@ -9,3 +9,7 @@ export const isAdminOrManager = (user?: UserDTO) => {
   if(!user || ![ROLE.ADMIN, ROLE.MANAGER].includes(user.role_id)) return false
   return true
 }
+
+export const isCheckMe = (user?: UserDTO, idUserWorkSpace?: number) => {
+  return user && idUserWorkSpace && user.id === idUserWorkSpace
+}

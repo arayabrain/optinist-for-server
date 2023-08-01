@@ -8,9 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
 import { deleteMe } from 'store/slice/User/UserActions'
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
-import { ROLE } from '@types'
-import { UserDTO } from 'api/users/UsersApiDTO'
-import { isAdmin } from 'utils/checkAdmin'
+import { isAdmin } from 'utils/checkRole'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const dispatch = useDispatch()
