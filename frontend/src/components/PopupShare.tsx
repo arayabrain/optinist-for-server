@@ -192,10 +192,9 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     }
   }
 
-  const handleCancelSearch = (event: any) => {
+  const handleClosePopup = (event: any) => {
     if(event.key === 'Escape') {
-      setTextSearch('')
-      dispatch(resetUserSearch())
+      handleClose(false)
     }
   }
 
@@ -207,6 +206,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
         open={open}
         onClose={handleClose}
         sx={{margin: 0}}
+        onKeyDown={handleClosePopup}
       >
         <DialogTitle>{title || "Share Database record"}</DialogTitle>
         {isWorkspace ? null : <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>}
@@ -237,7 +237,6 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                     placeholder={"Search and add users"}
                     value={textSearch}
                     onChange={handleSearch}
-                    onKeyDown={handleCancelSearch}
                   />
                   {
                     textSearch && usersSuggest ?
