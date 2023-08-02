@@ -44,7 +44,7 @@ const AccountManager = () => {
       {
         headerName: 'UID',
         field: 'uid',
-        minWidth: 300
+        minWidth: 350
       },
       {
         headerName: 'Name',
@@ -59,11 +59,13 @@ const AccountManager = () => {
       {
         headerName: 'Mail',
         field: 'email',
-        minWidth: 300
+        minWidth: 350
       },
       {
         headerName: '',
         field: 'action',
+        sortable: 'false',
+        filterable: 'false',
         width: 200,
         renderCell: (params: {row: UserDTO}) => {
           return (
