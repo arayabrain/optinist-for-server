@@ -92,24 +92,18 @@ const AccountManager = () => {
   )
   return (
     <AccountManagerWrapper>
-      {
-        listUser ?
-          <>
-            <DataGridPro
-              sx={{ minHeight: 400, height: 'calc(100vh - 250px)'}}
-              columns={columns as any}
-              rows={listUser.items}
-              hideFooter
-            />
-            <Pagination
-              sx={{ marginTop: 2 }}
-              count={listUser.total}
-              page={listUser.offset + 1}
-              onChange={handlePage}
-            />
-          </>
-            : null
-      }
+      <DataGridPro
+        sx={{ minHeight: 400, height: 'calc(100vh - 250px)'}}
+        columns={columns as any}
+        rows={listUser?.items || []}
+        hideFooter
+      />
+      <Pagination
+        sx={{ marginTop: 2 }}
+        count={listUser?.total || 0}
+        page={(listUser?.offset || 0) + 1 }
+        onChange={handlePage}
+      />
       {
         loading ? <Loading /> : null
       }
