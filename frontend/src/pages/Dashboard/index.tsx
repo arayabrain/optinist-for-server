@@ -26,11 +26,19 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account-manager?limit=50&offset=0">
+          <LinkWrapper to="/console/account">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
                 <TitleMenu>Account</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
+          <LinkWrapper to="/console/account-manager?limit=50&offset=0">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Account Manager</TitleMenu>
               </Box>
             </BoxMenu>
           </LinkWrapper>
