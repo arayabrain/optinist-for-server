@@ -38,7 +38,6 @@ import {
 import PopupShare from 'components/PopupShare'
 import moment from 'moment'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import CancelIcon from '@mui/icons-material/Cancel';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
@@ -193,40 +192,6 @@ const columns = (
         Del
       </ButtonCustom>
       ) : null
-  },
-]
-
-const columnsShare = (
-  handleShareFalse: (parmas: GridRenderCellParams<string>) => void,
-) => [
-  {
-    field: 'name',
-    headerName: 'Name',
-    minWidth: 140,
-    renderCell: (params: GridRenderCellParams<string>) => (
-      <span>{params.row.name}</span>
-    ),
-  },
-  {
-    field: 'email',
-    headerName: 'Email',
-    minWidth: 280,
-    renderCell: (params: GridRenderCellParams<string>) => (
-      <span>{params.row.email}</span>
-    ),
-  },
-  {
-    field: 'share',
-    headerName: '',
-    minWidth: 130,
-    renderCell: (params: GridRenderCellParams<string>) => {
-      if (!params.row.share) return ''
-      return (
-        <Button onClick={() => handleShareFalse(params)}>
-          <CancelIcon color={'error'} />
-        </Button>
-      )
-    },
   },
 ]
 

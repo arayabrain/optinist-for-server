@@ -251,14 +251,6 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const type: keyof TypeData = user ? 'private' : 'public'
-  const { data: dataExperiments, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
-  )
-
   const { dataShare } = useSelector(
       (state: RootState) => ({
         dataShare: state[DATABASE_SLICE_NAME].listShare,

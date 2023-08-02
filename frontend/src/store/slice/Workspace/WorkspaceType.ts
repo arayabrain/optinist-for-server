@@ -1,3 +1,5 @@
+import {UserDTO} from "../../../api/users/UsersApiDTO";
+
 export const WORKSPACE_SLICE_NAME = 'workspace'
 
 export type ItemsWorkspace = {
@@ -40,7 +42,7 @@ export type ListUserShareWorkSpace = {
 }
 
 export type ListUserShareWorkspaceDTO = {
-  users: ListUserShareWorkSpace[]
+  users: UserDTO[]
 }
 
 export type WorkspaceParams = { [key: string]: string | undefined | number | string[] | object }
