@@ -430,7 +430,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               sx={{ cursor: 'pointer' }}
               onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
             >
-              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "black" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
+              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "bredlack" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
             </Box>
           )
         }
