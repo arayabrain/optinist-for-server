@@ -34,6 +34,11 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
     navigate('/console/workspaces')
   }
 
+  const onClickAccountManager = () => {
+    handleDrawerClose()
+    navigate('/console/account-manager?limit=50&offset=0')
+  }
+
   const onClickOpenSite = () => {
     handleDrawerClose()
     navigate('/')
@@ -66,6 +71,14 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
                   <AnalyticsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Workspaces" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key="account-manager" disablePadding>
+              <ListItemButton onClick={onClickAccountManager}>
+                <ListItemIcon>
+                  <AnalyticsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Account Manager" />
               </ListItemButton>
             </ListItem>
             <ListItem key="site" disablePadding>
