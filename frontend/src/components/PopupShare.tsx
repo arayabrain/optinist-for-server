@@ -8,8 +8,6 @@ import { ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, use
 import { useDispatch, useSelector } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
-import { ListShare } from "../store/slice/Database/DatabaseType";
-import { ListUserShareWorkSpace } from "../store/slice/Workspace/WorkspaceType";
 import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
 import { selectListSearch, selectListSearchLoading } from "../store/slice/User/UserSelector";
 import { getListSearch } from "../store/slice/User/UserActions";
@@ -30,7 +28,7 @@ type PopupType = {
   }
   usersShare?: {
     share_type?: number
-    users: (ListShare | ListUserShareWorkSpace)[]
+    users: UserDTO[]
   }
 }
 
@@ -169,9 +167,9 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
         newType = 0
       }
       else if(newUserIds.length > 0) newType = SHARE.USERS
-      await dispatch(postListUserShare({id, data: {user_ids: newUserIds, share_type: newType }}))
+      await dispatch(postListUserShare({id, data: {user_ids: newUserIds as number[], share_type: newType }}))
     } else {
-      await dispatch(postListUserShareWorkspaces({id, data: {user_ids: newUserIds}}))
+      await dispatch(postListUserShareWorkspaces({id, data: {user_ids: newUserIds as number[]}}))
     }
     handleClose(true);
   }
