@@ -3,8 +3,7 @@ import {
   AddUserDTO,
   UserDTO,
   ListUsersQueryDTO,
-  UserListDTO,
-  UpdateUserDTO,
+  UpdateUserDTO, ListUserDTO,
 } from './UsersApiDTO'
 
 export const createUserApi = async (data: AddUserDTO): Promise<UserDTO> => {
@@ -19,7 +18,7 @@ export const getUserApi = async (uid: string): Promise<UserDTO> => {
 
 export const listUsersApi = async (
   data: ListUsersQueryDTO,
-): Promise<UserListDTO> => {
+): Promise<ListUserDTO> => {
   const response = await axios.get('/admin/users', { params: data })
   return response.data
 }
