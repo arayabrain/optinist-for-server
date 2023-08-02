@@ -45,16 +45,22 @@ const AccountManager = () => {
       {
         headerName: 'UID',
         field: 'uid',
+        sortable: false,
+        filterable: false,
         minWidth: 350
       },
       {
         headerName: 'Name',
         field: 'name',
+        sortable: false,
+        filterable: false,
         minWidth: 200
       },
       {
         headerName: 'Role',
         field: 'role_id',
+        sortable: false,
+        filterable: false,
         minWidth: 200,
         renderCell: (params: {value: number}) => {
           let role
@@ -80,13 +86,15 @@ const AccountManager = () => {
       {
         headerName: 'Mail',
         field: 'email',
+        sortable: false,
+        filterable: false,
         minWidth: 350
       },
       {
         headerName: '',
         field: 'action',
-        sortable: 'false',
-        filterable: 'false',
+        sortable: false,
+        filterable: false,
         width: 200,
         renderCell: (params: {row: UserDTO}) => {
           return (
