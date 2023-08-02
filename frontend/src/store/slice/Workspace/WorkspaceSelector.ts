@@ -2,6 +2,7 @@ import { RootState } from 'store/store'
 
 export const selectWorkspace = (state: RootState) => state.workspace
 export const selectWorkspaceData = (state: RootState) => state.workspace.workspace
+export const selectWorkspaceListUserShare = (state: RootState) => state.workspace.listUserShare
 
 export const selectActiveTab = (state: RootState) =>
   state.workspace.currentWorkspace.selectedTab

@@ -6,13 +6,13 @@ from sqlmodel import Session, and_, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
-    get_admin_user,
+    get_admin_data_user,
     get_current_user,
 )
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortDirection, SortOptions
+from studio.app.optinist.schemas.base import SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -98,7 +98,7 @@ DUMMY_CELLS_GRAPH_TITLES = [
 DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
     ImageInfo(
         url="http://localhost:8000/static/sample_media/pixel_image.png",
-        thumb_url="http://localhost:8000/static/sample_media/pixel_image.png",
+        thumb_url="http://localhost:8000/static/sample_media/pixel_image_thumb.png",
     )
     for _ in range(5)
 ]
@@ -106,20 +106,20 @@ DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
 # TODO: set dummy data.
 DUMMY_EXPERIMENTS_GRAPH_URLS = [
     ImageInfo(
-        url="http://localhost:8000/static/sample_media/bar_chart.png",
-        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
     )
-    for _ in DUMMY_EXPERIMENTS_GRAPH_TITLES
+    for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
 ]
 
 # TODO: set dummy data.
 DUMMY_CELLS_GRAPH_URLS = [
     ImageInfo(
-        url="http://localhost:8000/static/sample_media/bar_chart.png",
-        thumb_url="http://localhost:8000/static/sample_media/bar_chart.png",
+        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
         params={"param1": 10, "param2": 20},
     )
-    for _ in DUMMY_CELLS_GRAPH_TITLES
+    for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
 ]
 
 
@@ -135,7 +135,7 @@ async def search_public_experiments(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
 
     # TODO: set dummy data.
     graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
@@ -150,11 +150,7 @@ async def search_public_experiments(
             )
         )
         .group_by(optinist_model.Experiment.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        ),
+        .order_by(*sa_sort_list),
         transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
@@ -173,7 +169,10 @@ async def search_public_cells(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Cell,
+        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+    )
     query = (
         select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
@@ -187,11 +186,7 @@ async def search_public_cells(
             )
         )
     )
-    query = query.group_by(optinist_model.Cell.id).order_by(
-        sort_column.desc()
-        if sortOptions.sort[1] == SortDirection.desc
-        else sort_column.asc()
-    )
+    query = query.group_by(optinist_model.Cell.id).order_by(*sa_sort_list)
 
     # TODO: set dummy data.
     graph_titles = DUMMY_CELLS_GRAPH_TITLES
@@ -218,7 +213,7 @@ async def search_db_experiments(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(optinist_model.Experiment, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
     query = select(optinist_model.Experiment).join(
         common_model.Organization,
         optinist_model.Experiment.organization_id == common_model.Organization.id,
@@ -252,11 +247,7 @@ async def search_db_experiments(
             )
         )
         .group_by(optinist_model.Experiment.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
 
     # TODO: set dummy data.
@@ -284,7 +275,10 @@ async def search_db_cells(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(optinist_model.Cell, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Cell,
+        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+    )
     query = (
         select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
         .join(
@@ -325,11 +319,7 @@ async def search_db_cells(
             )
         )
         .group_by(optinist_model.Cell.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
 
     # TODO: set dummy data.
@@ -355,7 +345,7 @@ async def publish_db_experiment(
     id: int,
     flag: PublishFlags,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -392,7 +382,7 @@ async def publish_db_experiment(
 def get_experiment_database_share_status(
     id: int,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -419,6 +409,9 @@ def get_experiment_database_share_status(
         db.query(common_model.User)
         .join(
             optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+        )
+        .filter(
             optinist_model.ExperimentShareUser.experiment_uid == id,
         )
         .all()
@@ -438,7 +431,7 @@ def update_experiment_database_share_status(
     id: int,
     data: ExpDbExperimentSharePostStatus,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)

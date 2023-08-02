@@ -1,10 +1,12 @@
 export type UserDTO = {
-  uid: string
+  uid?: string
   email: string
   id?: number
   name?: string
   organization_id?: number
   role_id: number
+  create_at?: string
+  update_at?: string
 }
 
 export type AddUserDTO = {
