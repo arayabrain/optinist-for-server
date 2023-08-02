@@ -64,7 +64,7 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
         {usersSuggest.map(item => {
           const isSelected = stateUserShare.some(i => i.id === item.id)
           return (
-              <LiCustom onClick={() => handleAddListUser(item)} style={{
+              <LiCustom key={item.id} onClick={() => handleAddListUser(item)} style={{
                 cursor: isSelected ? 'not-allowed' : 'pointer'
               }}
               >
