@@ -39,6 +39,7 @@ import {
   putWorkspace,
 } from 'store/slice/Workspace/WorkspacesActions'
 import moment from 'moment'
+import { UserDTO } from "../../api/users/UsersApiDTO";
 
 type PopupType = {
   open: boolean
@@ -55,7 +56,7 @@ const columns = (
   handleOpenPopupShare: () => void,
   handleOpenPopupDel: (id: number) => void,
   handleDownload: (id: number) => void,
-  user?: { id: number },
+  user?: UserDTO,
   onEdit?: (id: number) => void,
 ) => [
   {
