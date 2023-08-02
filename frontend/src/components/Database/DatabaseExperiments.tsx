@@ -1,13 +1,13 @@
-import { Box, Pagination, styled } from '@mui/material'
+import { Box, Input, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import DialogImage from '../common/DialogImage'
-import LaunchIcon from '@mui/icons-material/Launch'
+import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
+import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
 import {
   GridEnrichedColDef,
@@ -20,25 +20,48 @@ import GroupsIcon from '@mui/icons-material/Groups'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
+  ImageUrls,
 } from '../../store/slice/Database/DatabaseType'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store/store'
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
+  getListUserShare,
   postPublist,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
+import { SHARE } from '@types'
+import PopupShare from '../PopupShare'
+
+export type Data = {
+  id: number
+  fields: {
+    brain_area: string
+    cre_driver: string
+    reporter_line: string
+    imaging_depth: number
+  }
+  experiment_id: string
+  attributes: string
+  cell_image_urls: string[]
+  graph_urls: string[]
+  share_type: number
+  publish_status: number
+  created_time: string
+  updated_time: string
+}
 
 type PopupAttributesProps = {
-  data: string
+  data?: string | (string[])
   open: boolean
   handleClose: () => void
   role?: boolean
   handleChangeAttributes: (e: any) => void
+  exp_id?: string
 }
 
 type DatabaseProps = {
@@ -46,21 +69,33 @@ type DatabaseProps = {
   cellPath: string
 }
 
+let timeout: NodeJS.Timeout | undefined = undefined
+
 const columns = (
   handleOpenAttributes: (value: string) => void,
-  handleOpenDialog: (value: string[]) => void,
+  handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
-  navigate: (
-    path: string,
-    params: { [key: string]: string | undefined },
-  ) => void,
+  navigate: (path: string) => void,
 ) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
     width: 160,
-    filterable: false,
-    sort: 'asc',
+    filterOperators: [
+      {
+        label: 'Contains', value: 'contains',
+        InputComponent: ({applyValue, item}: any) => {
+          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+            if(timeout) clearTimeout(timeout)
+            timeout = setTimeout(() => {
+              applyValue({...item, value: e.target.value})
+            }, 300)
+          }
+          } />
+        }
+      },
+    ],
+    type: "string",
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   {
@@ -118,12 +153,12 @@ const columns = (
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
       <Box
-        sx={{ cursor: 'pointer' }}
+        sx={{ cursor: 'pointer', color: 'dodgerblue' }}
         onClick={() =>
-          navigate(cellPath, { exp_id: params.row?.experiment_id })
+          navigate(`${cellPath}?experiment_id=${params.row?.experiment_id}` )
         }
       >
-        <LaunchIcon />
+        <ContentPasteSearchIcon />
       </Box>
     ),
   },
@@ -133,24 +168,26 @@ const columns = (
     width: 160,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{
-          cursor: 'pointer',
-          display: 'flex',
-        }}
-        onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
-      >
-        {params.row?.cell_image_urls?.length > 0 && (
-          <img
-            src={params.row?.cell_image_urls[0]}
-            alt={''}
-            width={'100%'}
-            height={'100%'}
-          />
-        )}
-      </Box>
-    ),
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Box
+          sx={{
+            cursor: 'pointer',
+            display: 'flex',
+          }}
+          onClick={() => handleOpenDialog(params.row?.cell_image_urls)}
+        >
+          {params.row?.cell_image_urls?.length > 0 && (
+            <img
+              src={params.row?.cell_image_urls[0].thumb_url}
+              alt={''}
+              width={'100%'}
+              height={'100%'}
+            />
+          )}
+        </Box>
+      )
+    },
   },
 ]
 
@@ -160,6 +197,7 @@ const PopupAttributes = ({
   handleClose,
   role = false,
   handleChangeAttributes,
+  exp_id
 }: PopupAttributesProps) => {
   return (
     <Box>
@@ -187,7 +225,6 @@ const PopupAttributes = ({
     </Box>
   )
 }
-
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
   const adminOrManager = useSelector(isAdminOrManager)
@@ -198,16 +235,35 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }),
   )
 
+  const [openShare, setOpenShare] = useState<{open: boolean, id?: number}>({open: false})
   const [dataDialog, setDataDialog] = useState<{
-    type: string
-    data: string | string[] | undefined
+    type?: string
+    data?: string | string[]
+    expId?: string
+    nameCol?: string
+    shareType?: number
   }>({
     type: '',
     data: undefined,
   })
+
   const [searchParams, setParams] = useSearchParams()
-  const navigate = useNavigate()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const type: keyof TypeData = user ? 'private' : 'public'
+  const { data: dataExperiments, loading } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+    }),
+  )
+
+  const { dataShare } = useSelector(
+      (state: RootState) => ({
+        dataShare: state[DATABASE_SLICE_NAME].listShare,
+      }),
+  )
 
   const pagiFilter = useCallback(
     (page?: number) => {
@@ -233,6 +289,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
+      experiment_id: searchParams.get('experiment_id') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -251,8 +308,18 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
-  const handleOpenDialog = (data: string[]) => {
-    setDataDialog({ type: 'image', data })
+  useEffect(() => {
+    if(!openShare.open || !openShare.id) return
+    dispatch(getListUserShare({id: openShare.id}))
+    //eslint-disable-next-line
+  }, [openShare])
+
+  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
+    let newData: string | (string[]) = []
+    if(Array.isArray(data)) {
+      newData = data.map(d => d.url);
+    } else newData = data.url
+    setDataDialog({ type: 'image', data: newData, expId: expId, nameCol: graphTitle })
   }
 
   const handleCloseDialog = () => {
@@ -260,11 +327,16 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handleOpenAttributes = (data: string) => {
-    setDataDialog({ type: 'attribute', data })
+    setDataDialog({ type: 'attribute', data})
   }
 
   const handleChangeAttributes = (event: any) => {
     setDataDialog((pre) => ({ ...pre, data: event.target.value }))
+  }
+
+  const handleOpenShare = (expId?: string, value?: number, id?: number) => {
+    setDataDialog({expId: expId, shareType: value})
+    setOpenShare({open: true, id: id})
   }
 
   const getParamsData = () => {
@@ -331,16 +403,21 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         sortable: false,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => {
+          const {row} = params
+          const {graph_urls} = row
+          const graph_url = graph_urls[index]
+          if(!graph_url) return null
           return (
-            <Box sx={{ display: 'flex' }}>
-              {params.row.graph_urls[index] ? (
-                <img
-                  src={params.row.graph_urls[index]}
-                  alt={''}
-                  width={'100%'}
-                  height={'100%'}
-                />
-              ) : null}
+            <Box
+              sx={{ display: 'flex', cursor: "pointer" }}
+              onClick={() => handleOpenDialog(graph_url, row.experiment_id, graphTitle)}
+            >
+              <img
+                src={graph_url.thumb_url}
+                alt={''}
+                width={'100%'}
+                height={'100%'}
+              />
             </Box>
           )
         },
@@ -357,11 +434,17 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         width: 160,
         sortable: false,
         filterable: false,
-        renderCell: (params: { row: DatabaseType }) => (
-          <Box sx={{ cursor: 'pointer' }}>
-            <GroupsIcon />
-          </Box>
-        ),
+        renderCell: (params: { value: number, row: DatabaseType }) => {
+          const { value, row } = params
+          return (
+            <Box
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
+            >
+              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "bredlack" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
+            </Box>
+          )
+        }
       },
       {
         field: 'publish_status',
@@ -398,8 +481,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         columns={
           adminOrManager
             ? ([...columnsTable, ...ColumnPrivate] as any)
-            : (columnsTable as any)
-        }
+            : (columnsTable as any)}
         rows={dataExperiments?.items || []}
         hideFooter={true}
         filterMode={'server'}
@@ -417,6 +499,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           filter: {
             filterModel: {
               items: [
+                {
+                  field: 'experiment_id',
+                  operator: 'contains',
+                  value: dataParamsFilter.experiment_id,
+                },
                 {
                   field: 'brain_area',
                   operator: 'is',
@@ -452,26 +539,40 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}
+        expId={dataDialog.expId}
+        nameCol={dataDialog.nameCol}
         handleCloseDialog={handleCloseDialog}
       />
       <PopupAttributes
         handleChangeAttributes={handleChangeAttributes}
-        data={dataDialog.data as string}
+        data={dataDialog.data}
         open={dataDialog.type === 'attribute'}
         handleClose={handleCloseDialog}
         role={!!user}
       />
       {loading ? <Loading /> : null}
+      {openShare.open && openShare.id ?
+          <PopupShare
+            id={openShare.id}
+            open={openShare.open}
+            data={dataDialog as { expId: string; shareType: number; }}
+            usersShare={dataShare}
+            handleClose={(isSubmit) => {
+              if(isSubmit) fetchApi();
+              setOpenShare({...openShare, open: false})}
+            }
+          /> : null
+      }
     </DatabaseExperimentsWrapper>
   )
 }
 
-const DatabaseExperimentsWrapper = styled(Box)(({ theme }) => ({
+const DatabaseExperimentsWrapper = styled(Box)(() => ({
   width: '100%',
   height: 'calc(100vh - 250px)',
 }))
 
-const Content = styled('textarea')(({ theme }) => ({
+const Content = styled('textarea')(() => ({
   width: 400,
   height: 'fit-content',
 }))
