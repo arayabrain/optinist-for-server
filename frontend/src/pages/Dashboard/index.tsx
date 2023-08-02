@@ -26,7 +26,7 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account">
+          <LinkWrapper to="/console/account-manager?limit=50&offset=0">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />

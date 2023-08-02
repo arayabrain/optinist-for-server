@@ -136,7 +136,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (_params: GridRenderCellParams<string>) => (
       <LinkCustom to={'#'}>Workflow</LinkCustom>
     ),
   },
