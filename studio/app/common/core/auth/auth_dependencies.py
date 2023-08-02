@@ -62,3 +62,13 @@ async def get_admin_user(current_user: User = Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient privileges",
         )
+
+
+async def get_admin_data_user(current_user: User = Depends(get_current_user)):
+    if current_user.is_admin_data:
+        return current_user
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient privileges",
+        )

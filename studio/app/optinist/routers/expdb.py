@@ -6,7 +6,7 @@ from sqlmodel import Session, and_, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
-    get_admin_user,
+    get_admin_data_user,
     get_current_user,
 )
 from studio.app.common.db.database import get_db
@@ -345,7 +345,7 @@ async def publish_db_experiment(
     id: int,
     flag: PublishFlags,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -382,7 +382,7 @@ async def publish_db_experiment(
 def get_experiment_database_share_status(
     id: int,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -409,6 +409,9 @@ def get_experiment_database_share_status(
         db.query(common_model.User)
         .join(
             optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+        )
+        .filter(
             optinist_model.ExperimentShareUser.experiment_uid == id,
         )
         .all()
@@ -428,7 +431,7 @@ def update_experiment_database_share_status(
     id: int,
     data: ExpDbExperimentSharePostStatus,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
