@@ -66,16 +66,16 @@ const AccountManager = () => {
           let role
           switch (params.value) {
             case ROLE.ADMIN:
-              role = "admin";
+              role = "Admin";
               break;
             case ROLE.MANAGER:
-              role = "manager";
+              role = "Manager";
               break;
             case ROLE.OPERATOR:
-              role = "operator";
+              role = "Operator";
               break;
             case ROLE.GUEST_OPERATOR:
-              role = "guest operator";
+              role = "Guest Operator";
               break;
           }
           return (
