@@ -9,6 +9,7 @@ import ListItemText from '@mui/material/ListItemText'
 import WebIcon from '@mui/icons-material/Web';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import StorageIcon from '@mui/icons-material/Storage'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { DRAWER_WIDTH } from 'const/Layout'
 import { Box } from '@mui/material'
@@ -76,7 +77,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="account-manager" disablePadding>
               <ListItemButton onClick={onClickAccountManager}>
                 <ListItemIcon>
-                  <AnalyticsIcon />
+                  <ManageAccountsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Account Manager" />
               </ListItemButton>
