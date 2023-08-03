@@ -1,4 +1,5 @@
 import os
+import signal
 from dataclasses import asdict
 from datetime import datetime
 from glob import glob
@@ -6,7 +7,7 @@ from typing import Dict
 
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
 from studio.app.common.core.utils.config_handler import ConfigWriter
-from studio.app.common.core.utils.file_reader import Reader
+from studio.app.common.core.utils.file_reader import JsonReader, Reader
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.pickle_handler import PickleReader
 from studio.app.common.core.workflow.workflow import Message, OutputPath
@@ -30,6 +31,7 @@ class WorkflowResult:
             [self.workflow_dirpath, DIRPATH.EXPERIMENT_YML]
         )
         self.error_filepath = join_filepath([self.workflow_dirpath, "error.log"])
+        self.pid_filepath = join_filepath([self.workflow_dirpath, "pid.json"])
 
     def get(self, nodeIdList):
         results: Dict[str, Message] = {}
@@ -37,6 +39,7 @@ class WorkflowResult:
             if os.path.exists(self.error_filepath):
                 error_message = Reader.read(self.error_filepath)
                 if error_message != "":
+                    # breakpoint()
                     results[node_id] = Message(
                         status="error",
                         message=error_message,
@@ -79,6 +82,20 @@ class WorkflowResult:
                     filename=DIRPATH.EXPERIMENT_YML,
                     config=asdict(config),
                 )
+
+    def cancel(self):
+        if not os.path.exists(self.pid_filepath):
+            return False
+
+        pid_data = JsonReader.read(self.pid_filepath)
+
+        if not os.path.exists(pid_data["last_script_file"]):
+            return False
+
+        os.remove(pid_data["last_script_file"])
+        os.kill(pid_data["last_pid"], signal.SIGTERM)
+
+        return True
 
 
 class NodeResult:
