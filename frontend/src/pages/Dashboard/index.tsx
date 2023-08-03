@@ -26,14 +26,6 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Account</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>
