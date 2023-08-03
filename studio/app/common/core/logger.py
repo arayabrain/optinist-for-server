@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Dict
 
+from studio.app.common.core.utils.file_reader import JsonReader
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
@@ -60,4 +61,17 @@ class Logger:
             level = msg["level"]
             if "debug" in level and "msg" in msg:
                 if "Traceback" in msg["msg"]:
-                    self.logger.error(msg)
+                    if "Signals.SIGTERM" in msg["msg"]:
+                        pid_filepath = join_filepath(
+                            [
+                                DIRPATH.OUTPUT_DIR,
+                                self.workspace_id,
+                                self.unique_id,
+                                "pid.json",
+                            ]
+                        )
+                        pid_data = JsonReader.read(pid_filepath)
+                        if pid_data["last_script_file"] in msg["msg"]:
+                            self.logger.error("Workflow cancelled")
+                    else:
+                        self.logger.error(msg)
