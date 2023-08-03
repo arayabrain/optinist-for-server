@@ -255,6 +255,7 @@ const AccountManager = () => {
     return {
       sort: sort
     }
+    //eslint-disable-next-line
   }, [JSON.stringify(sort)])
 
   const filterParams = useMemo(() => {
