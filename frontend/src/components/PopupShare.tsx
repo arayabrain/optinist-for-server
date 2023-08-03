@@ -1,6 +1,6 @@
 import {
   Box, Button,
-  Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
 } from "@mui/material";
 import { DataGrid, GridRenderCellParams } from "@mui/x-data-grid";
 import { SHARE } from "../@types";
@@ -208,25 +208,27 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
         sx={{margin: 0}}
         onKeyDown={handleClosePopup}
       >
-        <DialogTitle>{title || "Share Database record"}</DialogTitle>
-        {isWorkspace ? null : <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: {data.expId}</DialogTitle>}
+        <DialogTitle>{title || "Share Database Record"}</DialogTitle>
         {isWorkspace ? null : (
-          <DialogTitle>
-            <FormControl>
-              <RadioGroup
-                value={shareType !== SHARE.ORGANIZATION ? SHARE.USERS : SHARE.ORGANIZATION}
-                row
-                aria-labelledby="demo-row-radio-buttons-group-label"
-                name="row-radio-buttons-group"
-                onChange={handleValue}
-              >
-                <FormControlLabel value={SHARE.ORGANIZATION} control={<Radio/>} label={"Share for Organization"}/>
-                <FormControlLabel value={SHARE.USERS} control={<Radio/>} label={"Share for Users"}/>
-              </RadioGroup>
-            </FormControl>
-          </DialogTitle>
-      )}
-        <DialogContent sx={{minHeight: 500}}>
+          <DialogContent>
+            <DialogContentText sx={{fontSize: 16, fontWeight: 400}}><ul><li>Experiment ID: {data.expId}</li></ul></DialogContentText>
+            <DialogContentText>
+              <FormControl>
+                <RadioGroup
+                  value={shareType !== SHARE.ORGANIZATION ? SHARE.USERS : SHARE.ORGANIZATION}
+                  row
+                  aria-labelledby="demo-row-radio-buttons-group-label"
+                  name="row-radio-buttons-group"
+                  onChange={handleValue}
+                >
+                  <FormControlLabel value={SHARE.ORGANIZATION} control={<Radio/>} label={"Share for Organization"}/>
+                  <FormControlLabel value={SHARE.USERS} control={<Radio/>} label={"Share for Users"}/>
+                </RadioGroup>
+              </FormControl>
+            </DialogContentText>
+          </DialogContent>
+        )}
+        <DialogContent sx={{minHeight: 400}}>
           {
             (shareType !== SHARE.ORGANIZATION || isWorkspace) ?
               <>
@@ -252,7 +254,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                 {
                     stateUserShare &&
                   <DataGrid
-                    sx={{minHeight: 500}}
+                    sx={{minHeight: 400}}
                     // onRowClick={handleShareTrue}
                     rows={stateUserShare?.users.map((user: any) => ({...user, share: true}))}
                     columns={columnsShare(handleShareFalse)}
