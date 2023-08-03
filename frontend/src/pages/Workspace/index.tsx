@@ -22,7 +22,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import Loading from '../../components/common/Loading'
 import {
   selectIsLoadingWorkspaceList,
-  selectWorkspaceData,
+  selectWorkspaceData, selectWorkspaceListUserShare,
 } from 'store/slice/Workspace/WorkspaceSelector'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
