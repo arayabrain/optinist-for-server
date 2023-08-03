@@ -29,7 +29,7 @@ type ModalComponentProps = {
 const initState = {
   email: '',
   password: '',
-  roleId: '',
+  role_id: '',
   name: '',
   confirmPassword: '',
 }
@@ -95,7 +95,7 @@ const ModalComponent =
   const validateForm = (): { [key: string]: string } => {
     const errorName = validateField('name', 100, formData.display_name)
     const errorEmail = validateEmail(formData.email)
-    const errorRole = validateField('roleId', 50, formData.roleId)
+    const errorRole = validateField('role_id', 50, formData.roleId)
     const errorPassword = validatePassword(formData.password)
     const errorConfirmPassword = validatePassword(
       formData.confirmPassword,
@@ -106,7 +106,7 @@ const ModalComponent =
       password: errorPassword,
       confirmPassword: errorConfirmPassword,
       name: errorName,
-      roleId: errorRole,
+      role_id: errorRole,
     }
   }
 
@@ -183,12 +183,12 @@ const ModalComponent =
           />
           <LabelModal>Role: </LabelModal>
           <SelectError
-            value={formData?.roleId || ''}
+            value={formData?.role_id || ''}
             options={Object.keys(ROLE).filter(key => !Number(key))}
             name="role_id"
             onChange={(e) => onChangeData(e, 50)}
             onBlur={(e) => onChangeData(e, 50)}
-            errorMessage={errors.roleId}
+            errorMessage={errors.role_id}
           />
           <LabelModal>e-mail: </LabelModal>
           <InputError
