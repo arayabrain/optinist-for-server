@@ -227,15 +227,17 @@ async def search_db_experiments(
             optinist_model.ExperimentShareUser,
             optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
+            isouter=True,
         ).filter(
             or_(
                 and_(
-                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.for_org.value,
                     common_model.Organization.id == current_user.organization_id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user,
+                    == ExperimentShareType.per_user.value,
                     optinist_model.ExperimentShareUser.user_id == current_user.id,
                 ),
             )
@@ -299,15 +301,17 @@ async def search_db_cells(
             optinist_model.ExperimentShareUser,
             optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
+            isouter=True,
         ).filter(
             or_(
                 and_(
-                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.for_org.value,
                     common_model.Organization.id == current_user.organization_id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user,
+                    == ExperimentShareType.per_user.value,
                     optinist_model.ExperimentShareUser.user_id == current_user.id,
                 ),
             )
