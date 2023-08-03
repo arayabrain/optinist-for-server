@@ -15,6 +15,9 @@ export type AddUserDTO = {
 }
 
 export type ListUsersQueryDTO = {
+  name?: string
+  email?: string
+  sort?: string[]
   offset?: number
   limit?: number
 }
