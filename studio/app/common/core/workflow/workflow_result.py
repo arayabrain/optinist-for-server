@@ -5,6 +5,8 @@ from datetime import datetime
 from glob import glob
 from typing import Dict
 
+from fastapi import HTTPException
+
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
 from studio.app.common.core.utils.config_handler import ConfigWriter
 from studio.app.common.core.utils.file_reader import JsonReader, Reader
@@ -85,12 +87,12 @@ class WorkflowResult:
 
     def cancel(self):
         if not os.path.exists(self.pid_filepath):
-            return False
+            raise HTTPException(status_code=404)
 
         pid_data = JsonReader.read(self.pid_filepath)
 
         if not os.path.exists(pid_data["last_script_file"]):
-            return False
+            raise HTTPException(status_code=404)
 
         os.remove(pid_data["last_script_file"])
         os.kill(pid_data["last_pid"], signal.SIGTERM)
