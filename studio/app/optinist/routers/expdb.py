@@ -107,7 +107,7 @@ DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
 DUMMY_EXPERIMENTS_GRAPH_URLS = [
     ImageInfo(
         url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
     )
     for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
 ]
@@ -116,7 +116,7 @@ DUMMY_EXPERIMENTS_GRAPH_URLS = [
 DUMMY_CELLS_GRAPH_URLS = [
     ImageInfo(
         url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
         params={"param1": 10, "param2": 20},
     )
     for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
@@ -405,18 +405,19 @@ def get_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
-    users = (
-        db.query(common_model.User)
-        .join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+    if exp.share_type == ExperimentShareType.per_user:
+        users = (
+            db.query(common_model.User)
+            .filter(common_model.User.active.is_(True))
+            .join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+            )
+            .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
+            .all()
         )
-        .filter(
-            optinist_model.ExperimentShareUser.experiment_uid == id,
-        )
-        .all()
-    )
-
+    else:
+        users = []
     return ExpDbExperimentShareStatus(share_type=exp.share_type, users=users)
 
 
@@ -458,10 +459,11 @@ def update_experiment_database_share_status(
         .delete(synchronize_session=False)
     )
 
-    [
-        db.add(optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id))
-        for user_id in data.user_ids
-    ]
+    if data.share_type == ExperimentShareType.per_user:
+        db.bulk_save_objects(
+            optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id)
+            for user_id in data.user_ids
+        )
 
     exp.share_type = data.share_type
 

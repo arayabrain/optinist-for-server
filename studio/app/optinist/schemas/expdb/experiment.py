@@ -20,7 +20,7 @@ class PublishFlags(str, Enum):
     off = "off"
 
 
-class PublishStatus(str, Enum):
+class PublishStatus(int, Enum):
     on = 1
     off = 0
 
@@ -75,15 +75,20 @@ class ExpDbExperimentsSearchOptions(BaseModel):
 
 
 class ExpDbExperimentShareStatus(BaseModel):
-    share_type: int = Field(description="1: default(per users), 2: for organization")
+    share_type: int = Field(
+        description="0: no share, 1: default(per users), 2: for organization"
+    )
     users: Optional[List[UserInfo]]
 
 
 class ExpDbExperimentSharePostStatus(BaseModel):
-    share_type: int = Field(description="1: default(per users), 2: for organization")
+    share_type: int = Field(
+        description="0: no share, 1: default(per users), 2: for organization"
+    )
     user_ids: Optional[List[int]]
 
 
-class ExperimentShareType(str, Enum):
+class ExperimentShareType(int, Enum):
+    no_share = 0
     per_user = 1
     for_org = 2
