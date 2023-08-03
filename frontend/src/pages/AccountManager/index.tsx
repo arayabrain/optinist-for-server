@@ -5,10 +5,10 @@ import {Box, Button, Pagination, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useSearchParams} from "react-router-dom";
-import {getListUser} from "../../store/slice/User/UserActions";
+import {createUser, getListUser} from "../../store/slice/User/UserActions";
 import { DataGridPro } from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
-import {UserDTO} from "../../api/users/UsersApiDTO";
+import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
 import {GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
 import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
@@ -41,6 +41,7 @@ const ModalComponent =
      setOpenModal,
      dataEdit,
    }: ModalComponentProps) => {
+
   const [formData, setFormData] = useState<{ [key: string]: string }>(
       dataEdit || initState,
   )
@@ -94,9 +95,9 @@ const ModalComponent =
   }
 
   const validateForm = (): { [key: string]: string } => {
-    const errorName = validateField('name', 100, formData.display_name)
+    const errorName = validateField('name', 100, formData.name)
     const errorEmail = validateEmail(formData.email)
-    const errorRole = validateField('role_id', 50, formData.roleId)
+    const errorRole = validateField('role_id', 50, formData.role_id)
     const errorPassword = validatePassword(formData.password)
     const errorConfirmPassword = validatePassword(
       formData.confirmPassword,
@@ -146,9 +147,9 @@ const ModalComponent =
       return
     }
     try {
-      await onSubmitEdit(dataEdit?.uid, formData)
+      await onSubmitEdit(dataEdit?.id, formData)
       setTimeout(() => {
-        if (!dataEdit?.uid) {
+        if (!dataEdit?.id) {
           alert('Your account has been created successfully!')
         } else {
           alert('Your account has been successfully updated!')
@@ -156,7 +157,7 @@ const ModalComponent =
       }, 1)
       setOpenModal(false)
     } catch {
-      if (!dataEdit?.uid) {
+      if (!dataEdit?.id) {
         setTimeout(() => {
           alert('This email already exists!')
         }, 300)
@@ -172,7 +173,7 @@ const ModalComponent =
   return (
     <Modal>
       <ModalBox>
-        <TitleModal>{dataEdit?.uid ? 'Edit' : 'Add'} Account</TitleModal>
+        <TitleModal>{dataEdit?.id ? 'Edit' : 'Add'} Account</TitleModal>
         <BoxData>
           <LabelModal>Name: </LabelModal>
           <InputError
@@ -284,19 +285,19 @@ const AccountManager = () => {
 
   const getParamsData = () => {
     const dataFilter = Object.keys(filterParams)
-        .filter((key) => (filterParams as any)[key])
-        .map((key) => `${key}=${(filterParams as any)[key]}`)
-        .join('&')
+      .filter((key) => (filterParams as any)[key])
+      .map((key) => `${key}=${(filterParams as any)[key]}`)
+      .join('&')
     return dataFilter
   }
 
   const paramsManager = useCallback(
-      (page?: number) => {
-        return `limit=${limit}&offset=${
-            page ? page - 1 : offset
-        }`
-      },
-      [limit, offset],
+    (page?: number) => {
+      return `limit=${limit}&offset=${
+        page ? page - 1 : offset
+      }`
+    },
+    [limit, offset],
   )
 
   const handleSort = useCallback(
@@ -318,15 +319,15 @@ const AccountManager = () => {
     let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
-          .filter((item) => item.value)
-          .map((item: any) => {
-            return `${item.field}=${item?.value}`
-          })
-          .join('&')
+        .filter((item) => item.value)
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
     }
     const { sort } = sortParams
     setParams(
-        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
     )
   }
 
@@ -334,17 +335,37 @@ const AccountManager = () => {
     setOpenModal(true)
   }
 
+  const handleEdit = (dataEdit: UserDTO) => {
+    setOpenModal(true)
+    setDataEdit(dataEdit)
+  }
+
   const onSubmitEdit = async (
-      id: number | string | undefined,
-      data: { [key: string]: string },
+    id: number | string | undefined,
+    data: { [key: string]: string },
   ) => {
+    const {confirmPassword, role_id, ...newData} = data
+    let newRole
+    switch (role_id) {
+      case "ADMIN":
+        newRole = 1;
+        break;
+      case "MANAGER":
+        newRole = 10;
+        break;
+      case "OPERATOR":
+        newRole = 20;
+        break;
+      case "GUEST_OPERATOR":
+        newRole = 30;
+        break;
+    }
     if (id !== undefined) {
-      // await editUser(id, data)
+      // todo dispatch edit user
       setOpenModal(false)
     } else {
-      // await createUser(data)
+      await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
     }
-    // await getList(id !== undefined ? paginate.page : 0)
     return undefined
   }
 
@@ -383,7 +404,7 @@ const AccountManager = () => {
               break;
           }
           return (
-              <span>{role}</span>
+            <span>{role}</span>
           )
         }
       },
@@ -399,10 +420,14 @@ const AccountManager = () => {
         filterable: false,
         width: 200,
         renderCell: (params: {row: UserDTO}) => {
+          const { id, role_id, name, email} = params.row
+          if(!id || !role_id || !name || !email) return null
           return (
             <>
               <ALink
                 sx={{ color: 'red' }}
+                //get user edit
+                onClick={() => handleEdit({id, role_id, name, email})}
               >
                 <EditIcon sx={{ color: 'black' }} />
               </ALink>
