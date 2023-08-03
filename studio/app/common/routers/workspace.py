@@ -15,7 +15,7 @@ from studio.app.common.schemas.workspace import (
     WorkspacesSetting,
     WorkspaceUpdate,
 )
-from studio.app.optinist.schemas.base import SortDirection, SortOptions
+from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(tags=["Workspace"])
 
@@ -32,7 +32,7 @@ def search_workspaces(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(common_model.Workspace, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=common_model.Workspace)
     query = (
         select(common_model.Workspace)
         .outerjoin(
@@ -47,15 +47,9 @@ def search_workspaces(
             ),
         )
         .group_by(common_model.Workspace.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
     data = paginate(db, query)
-    for ws in data.items:
-        ws.__dict__["user"] = db.query(common_model.User).get(ws.user_id)
     return data
 
 

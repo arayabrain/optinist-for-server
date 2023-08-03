@@ -1,9 +1,10 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { deleteMeApi, getMeApi, updateMeApi } from 'api/users/UsersMe'
-import {ListUsersQueryDTO, UpdateUserDTO} from 'api/users/UsersApiDTO'
+import {ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
 import { LoginDTO, loginApi } from 'api/auth/Auth'
 import {listUsersApi} from "../../../api/users/UsersAdmin";
+import {getListSearchApi} from "../../../api/users/UsersAdmin";
 
 export const login = createAsyncThunk(
   `${USER_SLICE_NAME}/login`,
@@ -58,6 +59,21 @@ export const getListUser = createAsyncThunk(
     async (params: ListUsersQueryDTO, thunkAPI) => {
       try {
         const responseData = await listUsersApi(params)
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
+)
+
+export const getListSearch = createAsyncThunk<
+    UserDTO[],
+    {keyword: string | null}
+>(
+    `${USER_SLICE_NAME}/getListSearch`,
+    async (params, thunkAPI) => {
+      try {
+        const responseData = await getListSearchApi(params)
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)

@@ -3,7 +3,9 @@ import { WORKSPACE_SLICE_NAME, Workspace } from './WorkspaceType'
 import { importExperimentByUid } from '../Experiments/ExperimentsActions'
 import {
   delWorkspace,
+  getListUserShareWorkSpaces,
   getWorkspaceList,
+  postListUserShareWorkspaces,
   postWorkspace,
   putWorkspace,
 } from './WorkspacesActions'
@@ -19,6 +21,7 @@ const initialState: Workspace = {
     offset: 0,
   },
   loading: false,
+  listUserShare: undefined
 }
 
 export const workspaceSlice = createSlice({
@@ -46,6 +49,10 @@ export const workspaceSlice = createSlice({
         state.workspace = action.payload
         state.loading = false
       })
+      .addCase(getListUserShareWorkSpaces.fulfilled, (state, action) => {
+        state.listUserShare = action.payload
+        state.loading = false
+      })
       .addMatcher(
         isAnyOf(
           getWorkspaceList.rejected,
@@ -55,6 +62,8 @@ export const workspaceSlice = createSlice({
           putWorkspace.rejected,
           delWorkspace.fulfilled,
           delWorkspace.rejected,
+          getListUserShareWorkSpaces.rejected,
+          postListUserShareWorkspaces.rejected
         ),
         (state) => {
           state.loading = false
@@ -66,6 +75,8 @@ export const workspaceSlice = createSlice({
           postWorkspace.pending,
           putWorkspace.pending,
           delWorkspace.pending,
+          getListUserShareWorkSpaces.pending,
+          postListUserShareWorkspaces.pending
         ),
         (state) => {
           state.loading = true

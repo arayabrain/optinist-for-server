@@ -35,3 +35,8 @@ export const deleteUserApi = async (uid: string): Promise<string> => {
   const response = await axios.delete(`/admin/users/${uid}`)
   return response.data
 }
+
+export const getListSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
+  const response = await axios.get(`/users/search/share_users${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+  return response.data
+}

@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { User } from './UserType'
-import {deleteMe, getListUser, getMe, login, updateMe} from './UserActions'
+import {deleteMe, getListUser, getListSearch, getMe, login, updateMe} from './UserActions'
 import {
   removeExToken,
   removeToken,
@@ -10,7 +10,12 @@ import {
   saveToken,
 } from 'utils/auth/AuthUtils'
 
-const initialState: User = { currentUser: undefined, listUser: undefined, loading: false }
+const initialState: User = {
+  currentUser: undefined,
+  listUserSearch: undefined,
+  listUser: undefined,
+  loading: false
+}
 
 export const userSlice = createSlice({
   name: USER_SLICE_NAME,
@@ -21,6 +26,9 @@ export const userSlice = createSlice({
       removeExToken()
       state = initialState
     },
+    resetUserSearch: (state) => {
+      state.listUserSearch = []
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -38,6 +46,16 @@ export const userSlice = createSlice({
       })
       .addCase(updateMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
+      })
+      .addCase(getListSearch.pending, (state, action) => {
+        state.loading = true
+      })
+      .addCase(getListSearch.fulfilled, (state, action) => {
+        state.loading = false
+        state.listUserSearch = action.payload
+      })
+      .addCase(getListSearch.rejected, (state) => {
+        state.loading = false
       })
       .addCase(getListUser.pending, (state) => {
         state.loading = true
@@ -59,5 +77,5 @@ export const userSlice = createSlice({
   },
 })
 
-export const { logout } = userSlice.actions
+export const { logout, resetUserSearch } = userSlice.actions
 export default userSlice.reducer

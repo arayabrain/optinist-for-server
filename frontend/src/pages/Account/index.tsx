@@ -7,9 +7,10 @@ import { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
 import { deleteMe } from 'store/slice/User/UserActions'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import {isAdmin, selectCurrentUser} from 'store/slice/User/UserSelector'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
+  const admin = useSelector(isAdmin)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
@@ -86,7 +87,10 @@ const Account = () => {
       </BoxFlex>
       <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
-        <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
+        {
+          admin ?
+            <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit> : null
+        }
       </BoxFlex>
       {
         isLoading && <Loading />

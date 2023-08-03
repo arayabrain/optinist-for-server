@@ -1,8 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.sql.functions import current_timestamp
-from sqlmodel import Column, Field, Integer, String, UniqueConstraint
+from sqlmodel import (
+    Column,
+    Field,
+    ForeignKey,
+    Integer,
+    Relationship,
+    String,
+    UniqueConstraint,
+)
 
 from studio.app.common.models.base import Base, TimestampMixin
 
@@ -11,8 +20,15 @@ class Workspace(Base, TimestampMixin, table=True):
     __tablename__ = "workspaces"
 
     name: str = Field(sa_column=Column(String(100), nullable=False))
-    user_id: int = Field(nullable=False, index=True)
+    user_id: int = Field(
+        sa_column=Column(
+            BIGINT(unsigned=True), ForeignKey("users.id", name="user"), nullable=False
+        ),
+    )
     deleted: bool = Field(nullable=False)
+    user: Optional["User"] = Relationship(  # noqa: F821
+        back_populates="workspace",
+    )
 
 
 class WorkspacesShareUser(Base, table=True):
