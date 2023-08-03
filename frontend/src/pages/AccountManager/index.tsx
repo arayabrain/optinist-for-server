@@ -1,6 +1,6 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import {ChangeEvent, useEffect, useMemo, useState, MouseEvent} from "react";
+import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
 import {Box, Button, Pagination, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
@@ -10,6 +10,7 @@ import { DataGridPro } from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
 import {UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
+import {GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
 import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
 import {SelectChangeEvent} from "@mui/material/Select";
@@ -243,8 +244,25 @@ const AccountManager = () => {
 
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
-  const limit = searchParams.get('limit') || undefined
-  const offset = searchParams.get('offset') || undefined
+
+  const limit = searchParams.get('limit') || 50
+  const offset = searchParams.get('offset') || 0
+  const name = searchParams.get('name') || undefined
+  const email = searchParams.get('email') || undefined
+  const sort = searchParams.getAll('sort') || []
+
+  const sortParams = useMemo(() => {
+    return {
+      sort: sort
+    }
+  }, [JSON.stringify(sort)])
+
+  const filterParams = useMemo(() => {
+    return {
+      name: name,
+      email: email
+    }
+  }, [name, email])
 
   const params = useMemo(() => {
     return {
@@ -254,13 +272,61 @@ const AccountManager = () => {
   }, [limit, offset])
 
   useEffect(() => {
-    dispatch(getListUser(params))
+    dispatch(getListUser({...filterParams, ...sortParams, ...params}))
     //eslint-disable-next-line
   }, [params])
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
     if(!listUser) return
     setParams(`limit=${listUser.limit}&offset=${page - 1}`)
+  }
+
+  const getParamsData = () => {
+    const dataFilter = Object.keys(filterParams)
+        .filter((key) => (filterParams as any)[key])
+        .map((key) => `${key}=${(filterParams as any)[key]}`)
+        .join('&')
+    return dataFilter
+  }
+
+  const paramsManager = useCallback(
+      (page?: number) => {
+        return `limit=${limit}&offset=${
+            page ? page - 1 : offset
+        }`
+      },
+      [limit, offset],
+  )
+
+  const handleSort = useCallback(
+    (rowSelectionModel: GridSortModel) => {
+      const filter = getParamsData()
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&sort=&sort=&${paramsManager()}`)
+        return
+      }
+      setParams(
+        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+      )
+    },
+    //eslint-disable-next-line
+    [paramsManager, getParamsData],
+  )
+
+  const handleFilter = (model: GridFilterModel) => {
+    let filter = ''
+    if (!!model.items[0]?.value) {
+      filter = model.items
+          .filter((item) => item.value)
+          .map((item: any) => {
+            return `${item.field}=${item?.value}`
+          })
+          .join('&')
+    }
+    const { sort } = sortParams
+    setParams(
+        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
+    )
   }
 
   const handleOpenModal = () => {
@@ -286,21 +352,17 @@ const AccountManager = () => {
       {
         headerName: 'UID',
         field: 'uid',
-        sortable: false,
         filterable: false,
         minWidth: 350
       },
       {
         headerName: 'Name',
         field: 'name',
-        sortable: false,
-        filterable: false,
         minWidth: 200
       },
       {
         headerName: 'Role',
         field: 'role_id',
-        sortable: false,
         filterable: false,
         minWidth: 200,
         renderCell: (params: {value: number}) => {
@@ -327,8 +389,6 @@ const AccountManager = () => {
       {
         headerName: 'Mail',
         field: 'email',
-        sortable: false,
-        filterable: false,
         minWidth: 350
       },
       {
@@ -369,7 +429,37 @@ const AccountManager = () => {
         sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
         columns={columns as any}
         rows={listUser?.items || []}
+        filterMode={'server'}
+        sortingMode={'server'}
         hideFooter
+        onSortModelChange={handleSort}
+        initialState={{
+          sorting: {
+            sortModel: [
+              {
+                field: sortParams.sort[0],
+                sort: sortParams.sort[1] as GridSortDirection,
+              },
+            ],
+          },
+          filter: {
+            filterModel: {
+              items: [
+                {
+                  field: 'name',
+                  operator: 'contains',
+                  value: filterParams.name,
+                },
+                {
+                  field: 'email',
+                  operator: 'contains',
+                  value: filterParams.email,
+                }
+              ],
+            },
+          },
+        }}
+        onFilterModelChange={handleFilter as any}
       />
       <Pagination
         sx={{ marginTop: 2 }}
