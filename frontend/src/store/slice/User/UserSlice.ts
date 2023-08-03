@@ -47,19 +47,16 @@ export const userSlice = createSlice({
       .addCase(updateMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
       })
-      .addCase(getListSearch.pending, (state, action) => {
-        state.loading = true
-      })
       .addCase(getListSearch.fulfilled, (state, action) => {
         state.loading = false
         state.listUserSearch = action.payload
       })
-      .addCase(getListSearch.rejected, (state) => {
-        state.loading = false
-      })
-      .addCase(getListUser.pending, (state) => {
-        state.loading = true
-      })
+      .addMatcher(
+        isAnyOf(getListUser.pending, getListSearch.rejected, getListSearch.pending),
+        (state) => {
+          state.loading = true
+        },
+      )
       .addMatcher(
         isAnyOf(getListUser.rejected),
         (state) => {
