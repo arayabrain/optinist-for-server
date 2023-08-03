@@ -13,12 +13,15 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { DRAWER_WIDTH } from 'const/Layout'
 import { Box } from '@mui/material'
+import {useSelector} from "react-redux";
+import {isAdmin} from "../../store/slice/User/UserSelector";
 
 const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
   open,
   handleDrawerClose,
 }) => {
   const navigate = useNavigate()
+  const admin = useSelector(isAdmin)
 
   const onClickDashboard = () => {
     handleDrawerClose()
@@ -74,14 +77,17 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
                 <ListItemText primary="Workspaces" />
               </ListItemButton>
             </ListItem>
-            <ListItem key="account-manager" disablePadding>
-              <ListItemButton onClick={onClickAccountManager}>
-                <ListItemIcon>
-                  <ManageAccountsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Account Manager" />
-              </ListItemButton>
-            </ListItem>
+            {
+              admin ?
+                <ListItem key="account-manager" disablePadding>
+                  <ListItemButton onClick={onClickAccountManager}>
+                    <ListItemIcon>
+                      <ManageAccountsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Account Manager" />
+                  </ListItemButton>
+                </ListItem> : null
+            }
             <ListItem key="site" disablePadding>
               <ListItemButton onClick={onClickOpenSite}>
                 <ListItemIcon>
