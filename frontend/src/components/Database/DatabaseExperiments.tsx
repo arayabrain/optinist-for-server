@@ -540,20 +540,20 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         data={dataDialog.data}
         open={dataDialog.type === 'attribute'}
         handleClose={handleCloseDialog}
-        role={!!user}
+        role={!!adminOrManager}
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ?
-          <PopupShare
-            id={openShare.id}
-            open={openShare.open}
-            data={dataDialog as { expId: string; shareType: number; }}
-            usersShare={dataShare}
-            handleClose={(isSubmit) => {
-              if(isSubmit) fetchApi();
-              setOpenShare({...openShare, open: false})}
-            }
-          /> : null
+        <PopupShare
+          id={openShare.id}
+          open={openShare.open}
+          data={dataDialog as { expId: string; shareType: number; }}
+          usersShare={dataShare}
+          handleClose={(isSubmit) => {
+            if(isSubmit) fetchApi();
+            setOpenShare({...openShare, open: false})}
+          }
+        /> : null
       }
     </DatabaseExperimentsWrapper>
   )
