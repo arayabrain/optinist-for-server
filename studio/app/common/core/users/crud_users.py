@@ -63,6 +63,7 @@ async def list_user(db: Session, organization_id: int):
             .filter(
                 UserModel.active.is_(True), UserModel.organization_id == organization_id
             )
+            .order_by(UserModel.name)
         )
         users = paginate(db, query=query, unique=False)
         return users
