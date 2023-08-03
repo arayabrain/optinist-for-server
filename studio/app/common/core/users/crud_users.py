@@ -54,18 +54,17 @@ async def get_user(db: Session, user_id: int, organization_id: int) -> User:
 
 async def list_user(db: Session, organization_id: int):
     try:
-        users = paginate(
-            db,
-            query=select(UserModel).filter(
-                UserModel.active.is_(True),
-                UserModel.organization_id == organization_id,
-            ),
-        )
-        for user in users.items:
-            role = (
-                db.query(UserRoleModel).filter(UserRoleModel.user_id == user.id).first()
+        query = (
+            select(
+                UserRoleModel.role_id,
+                *UserModel.__table__.columns,
             )
-            user.__dict__["role_id"] = role.role_id if role else None
+            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
+            .filter(
+                UserModel.active.is_(True), UserModel.organization_id == organization_id
+            )
+        )
+        users = paginate(db, query=query, unique=False)
         return users
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -114,10 +113,7 @@ async def update_user(
             setattr(user_db, key, value)
         if role_id is not None:
             await set_role(db, user_id=user_db.id, role_id=role_id, auto_commit=False)
-        role = (
-            db.query(UserRoleModel).filter(UserRoleModel.user_id == user_db.id).first()
-        )
-        user_db.__dict__["role_id"] = role.role_id if role else None
+        user_db.__dict__["role_id"] = role_id
         firebase_auth.update_user(user_db.uid, email=data.email)
         db.commit()
         return User.from_orm(user_db)

@@ -110,9 +110,8 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
             width={'100%'}
             height={'100%'}
           />
-        </Box>
-      )
-    },
+      </Box>
+    )}
   },
 ]
 
