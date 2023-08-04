@@ -67,12 +67,12 @@ const AccountManager = () => {
   }
 
   const paramsManager = useCallback(
-      (page?: number) => {
-        return `limit=${limit}&offset=${
-            page ? page - 1 : offset
-        }`
-      },
-      [limit, offset],
+    (page?: number) => {
+      return `limit=${limit}&offset=${
+          page ? page - 1 : offset
+      }`
+    },
+    [limit, offset],
   )
 
   const handleSort = useCallback(
