@@ -3,8 +3,9 @@ import { USER_SLICE_NAME } from './UserType'
 import { deleteMeApi, getMeApi, updateMeApi } from 'api/users/UsersMe'
 import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
 import { LoginDTO, loginApi } from 'api/auth/Auth'
-import {createUserApi, listUsersApi} from "../../../api/users/UsersAdmin";
+import {createUserApi, listUsersApi, updateUserApi} from "../../../api/users/UsersAdmin";
 import {getListSearchApi} from "../../../api/users/UsersAdmin";
+import {WorkspaceParams} from "../Workspace/WorkspaceType";
 
 export const login = createAsyncThunk(
   `${USER_SLICE_NAME}/login`,
@@ -89,6 +90,23 @@ export const createUser = createAsyncThunk<
     async (params, thunkAPI) => {
       try {
         const responseData = await createUserApi(params)
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
+)
+
+export const updateUser = createAsyncThunk<
+    UserDTO,
+    {id: number, data: UpdateUserDTO, params: WorkspaceParams}
+>(
+    `${USER_SLICE_NAME}/updateUser`,
+    async (props, thunkAPI) => {
+      const { dispatch } = thunkAPI
+      try {
+        const responseData = await updateUserApi(props.id, props.data)
+        await dispatch(getListUser(props.params as { [key: string]: number }))
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
