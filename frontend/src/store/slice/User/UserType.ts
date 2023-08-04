@@ -4,4 +4,6 @@ export const USER_SLICE_NAME = 'user'
 
 export type User = {
   currentUser?: UserDTO
+  listUserSearch?: UserDTO[]
+  loading: boolean
 }

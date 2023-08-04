@@ -1,4 +1,4 @@
-import { Box, DialogTitle, FormControl, FormControlLabel, Input, Pagination, Radio, RadioGroup, styled } from '@mui/material'
+import { Box, Input, Pagination, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
@@ -7,7 +7,6 @@ import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
-import { DataGrid, GridRenderCellParams, GridRowParams } from '@mui/x-data-grid'
 import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
 import {
@@ -28,11 +27,15 @@ import { RootState } from '../../store/store'
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
+  getListUserShare,
   postPublist,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
-import CancelIcon from '@mui/icons-material/Cancel'
+import { UserDTO } from 'api/users/UsersApiDTO'
+import { isAdminOrManager } from 'store/slice/User/UserSelector'
+import { SHARE } from '@types'
+import PopupShare from '../PopupShare'
 
 export type Data = {
   id: number
@@ -61,13 +64,8 @@ type PopupAttributesProps = {
   exp_id?: string
 }
 
-type PopupType = {
-  open: boolean
-  handleClose: () => void
-}
-
 type DatabaseProps = {
-  user?: Object
+  user?: UserDTO
   cellPath: string
 }
 
@@ -193,145 +191,6 @@ const columns = (
   },
 ]
 
-const columnsShare = (handleShareFalse: (parmas: GridRenderCellParams<string>) => void) =>  [
-  {
-    field: "name",
-    headerName: "Name",
-    minWidth: 140,
-    renderCell: (params: GridRenderCellParams<string>) => (
-        <span>{params.row.name}</span>
-    ),
-  },
-  {
-    field: "lab",
-    headerName: "Lab",
-    minWidth: 280,
-    renderCell: (params: GridRenderCellParams<string>) => (
-        <span>{params.row.email}</span>
-    ),
-  },
-  {
-    field: "email",
-    headerName: "Email",
-    minWidth: 280,
-    renderCell: (params: GridRenderCellParams<string>) => (
-        <span>{params.row.email}</span>
-    ),
-  },
-  {
-    field: "share",
-    headerName: "",
-    minWidth: 130,
-    renderCell: (params: GridRenderCellParams<string>) => {
-      if(!params.row.share) return ""
-      return (
-          <Button onClick={() => handleShareFalse(params)}>
-            <CancelIcon color={"error"}/>
-          </Button>
-      )
-    }
-  },
-]
-
-const dataShare = [
-  {
-    id: 1,
-    name: "User 1",
-    lab: "Labxxxx",
-    email: "aaaaa@gmail.com",
-    share: false
-  },
-  {
-    id: 2,
-    name: "User 2",
-    lab: "Labxxxx",
-    email: "aaaaa@gmail.com",
-    share: true
-  },
-  {
-    id: 3,
-    name: "User 3",
-    lab: "Labxxxx",
-    email: "aaaaa@gmail.com",
-    share: true
-  }
-]
-
-const PopupShare = ({open, handleClose}: PopupType) => {
-  const [value, setValue] = useState("Organization")
-  const [tableShare, setTableShare] = useState(dataShare)
-  
-  const handleShareTrue = (params: GridRowParams) => {
-    if(params.row.share) return
-    const index = tableShare.findIndex(item => item.id === params.id)
-    setTableShare(pre => {
-      pre[index].share = true
-      return pre
-    })
-  }
-
-  const handleShareFalse = (params: GridRenderCellParams<string>) => {
-    const indexSearch = tableShare.findIndex(item => item.id === params.id)
-    const newData = tableShare.map((item, index) => {
-      if(index === indexSearch) return {...item, share: false}
-      return item
-    })
-    setTableShare(newData)
-  }
-
-  const handleValue = (event: ChangeEvent<HTMLInputElement>) => {
-    setValue((event.target as HTMLInputElement).value);
-  }
-
-  if(!open) return null;
-
-  return (
-    <Box>
-      <DialogCustom
-        open={open}
-        onClose={handleClose}
-        sx={{margin: 0}}
-      >
-        <DialogTitle>Share Database record</DialogTitle>
-        <DialogTitle sx={{fontSize: 16, fontWeight: 400}}>Experiment ID: XXXXXX</DialogTitle>
-        <DialogTitle>
-          <FormControl>
-            <RadioGroup
-              value={value}
-              row
-              aria-labelledby="demo-row-radio-buttons-group-label"
-              name="row-radio-buttons-group"
-              onChange={handleValue}
-            >
-              <FormControlLabel value="Organization" control={<Radio />} label={"Share for Organization"} />
-              <FormControlLabel value="Users" control={<Radio />} label={"Share for Users"} />
-            </RadioGroup>
-          </FormControl>
-        </DialogTitle>
-        <DialogContent sx={{minHeight: 500}}>
-          {
-            value !== "Organization" ?
-              <>
-                <p>Permitted users</p>
-                <DataGrid
-                  sx={{minHeight: 500}}
-                  onRowClick={handleShareTrue}
-                  rows={tableShare}
-                  columns={columnsShare(handleShareFalse)}
-                />
-              </>
-              : null
-          }
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleClose}>Ok</Button>
-        </DialogActions>
-      </DialogCustom>
-    </Box>
-  )
-}
-
 const PopupAttributes = ({
   data,
   open,
@@ -367,13 +226,22 @@ const PopupAttributes = ({
   )
 }
 const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
+  const type: keyof TypeData = user ? 'private' : 'public'
+  const adminOrManager = useSelector(isAdminOrManager)
+  const { data: dataExperiments, loading } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+    }),
+  )
 
-  const [openShare, setOpenShare] = useState(false)
+  const [openShare, setOpenShare] = useState<{open: boolean, id?: number}>({open: false})
   const [dataDialog, setDataDialog] = useState<{
-    type: string
+    type?: string
     data?: string | string[]
     expId?: string
     nameCol?: string
+    shareType?: number
   }>({
     type: '',
     data: undefined,
@@ -383,12 +251,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const type: keyof TypeData = user ? 'private' : 'public'
-  const { data: dataExperiments, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
+  const { dataShare } = useSelector(
+      (state: RootState) => ({
+        dataShare: state[DATABASE_SLICE_NAME].listShare,
+      }),
   )
 
   const pagiFilter = useCallback(
@@ -434,6 +300,12 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     //eslint-disable-next-line
   }, [dataParams, user, dataParamsFilter])
 
+  useEffect(() => {
+    if(!openShare.open || !openShare.id) return
+    dispatch(getListUserShare({id: openShare.id}))
+    //eslint-disable-next-line
+  }, [openShare])
+
   const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
     let newData: string | (string[]) = []
     if(Array.isArray(data)) {
@@ -454,8 +326,9 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     setDataDialog((pre) => ({ ...pre, data: event.target.value }))
   }
 
-  const handleOpenShare = () => {
-    setOpenShare(true)
+  const handleOpenShare = (expId?: string, value?: number, id?: number) => {
+    setDataDialog({expId: expId, shareType: value})
+    setOpenShare({open: true, id: id})
   }
 
   const getParamsData = () => {
@@ -553,11 +426,17 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         width: 160,
         sortable: false,
         filterable: false,
-        renderCell: (params: { row: DatabaseType }) => (
-          <Box sx={{ cursor: 'pointer' }} onClick={handleOpenShare}>
-            <GroupsIcon />
-          </Box>
-        ),
+        renderCell: (params: { value: number, row: DatabaseType }) => {
+          const { value, row } = params
+          return (
+            <Box
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
+            >
+              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "bredlack" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
+            </Box>
+          )
+        }
       },
       {
         field: 'publish_status',
@@ -592,7 +471,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          user
+          adminOrManager
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)}
         rows={dataExperiments?.items || []}
@@ -661,13 +540,21 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         data={dataDialog.data}
         open={dataDialog.type === 'attribute'}
         handleClose={handleCloseDialog}
-        role={!!user}
+        role={!!adminOrManager}
       />
       {loading ? <Loading /> : null}
-      <PopupShare
-        open={openShare}
-        handleClose={() => setOpenShare(false)}
-      />
+      {openShare.open && openShare.id ?
+        <PopupShare
+          id={openShare.id}
+          open={openShare.open}
+          data={dataDialog as { expId: string; shareType: number; }}
+          usersShare={dataShare}
+          handleClose={(isSubmit) => {
+            if(isSubmit) fetchApi();
+            setOpenShare({...openShare, open: false})}
+          }
+        /> : null
+      }
     </DatabaseExperimentsWrapper>
   )
 }
@@ -680,15 +567,6 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 const Content = styled('textarea')(() => ({
   width: 400,
   height: 'fit-content',
-}))
-
-const DialogCustom = styled(Dialog)(({ theme }) => ({
-  "& .MuiDialog-container": {
-    "& .MuiPaper-root": {
-      width: "70%",
-      maxWidth: "890px",
-    },
-  },
 }))
 
 export default DatabaseExperiments
