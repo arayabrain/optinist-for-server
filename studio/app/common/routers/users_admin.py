@@ -5,7 +5,13 @@ from sqlmodel import Session
 from studio.app.common.core.auth.auth_dependencies import get_admin_user
 from studio.app.common.core.users import crud_users
 from studio.app.common.db.database import get_db
-from studio.app.common.schemas.users import User, UserCreate, UserUpdate
+from studio.app.common.schemas.users import (
+    User,
+    UserCreate,
+    UserSearchOptions,
+    UserUpdate,
+)
+from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(
     prefix="/admin/users", tags=["users/admin"], dependencies=[Depends(get_admin_user)]
@@ -15,9 +21,16 @@ router = APIRouter(
 @router.get("", response_model=LimitOffsetPage[User])
 async def list_user(
     db: Session = Depends(get_db),
+    options: UserSearchOptions = Depends(),
+    sortOptions: SortOptions = Depends(),
     current_admin: User = Depends(get_admin_user),
 ):
-    return await crud_users.list_user(db, organization_id=current_admin.organization_id)
+    return await crud_users.list_user(
+        db,
+        organization_id=current_admin.organization_id,
+        options=options,
+        sortOptions=sortOptions,
+    )
 
 
 @router.post("", response_model=User)

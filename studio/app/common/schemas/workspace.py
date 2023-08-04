@@ -10,6 +10,7 @@ class Workspace(BaseModel):
     id: Optional[int]
     name: str
     user: Optional[UserInfo]
+    shared_count: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
