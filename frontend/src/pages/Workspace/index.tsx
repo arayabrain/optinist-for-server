@@ -421,7 +421,15 @@ const Workspaces = () => {
             onChange={handleFileUpload}
           />
         </label>
-        <ButtonCustom onClick={handleOpenPopupNew}>New</ButtonCustom>
+        <Button
+          sx={{
+            background: '#000000c4',
+            '&:hover': {
+              backgroundColor: '#000000fc',
+            },
+          }}
+          variant="contained"
+          onClick={handleOpenPopupNew}>New</Button>
       </Box>
       {
         user ?
