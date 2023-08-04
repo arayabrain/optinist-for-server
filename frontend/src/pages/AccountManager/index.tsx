@@ -187,7 +187,7 @@ const ModalComponent =
             onBlur={(e) => onChangeData(e, 255)}
             errorMessage={errors.email}
           />
-          {!dataEdit?.uid ? (
+          {!dataEdit?.id ? (
             <>
               <LabelModal>Password: </LabelModal>
               <InputError
@@ -420,12 +420,27 @@ const AccountManager = () => {
         renderCell: (params: {row: UserDTO}) => {
           const { id, role_id, name, email} = params.row
           if(!id || !role_id || !name || !email) return null
+          let role: any
+          switch (role_id) {
+            case ROLE.ADMIN:
+              role = "ADMIN";
+              break;
+            case ROLE.DATA_MANAGER:
+              role = "DATA_MANAGER";
+              break;
+            case ROLE.OPERATOR:
+              role = "OPERATOR";
+              break;
+            case ROLE.GUEST_OPERATOR:
+              role = "GUEST_OPERATOR";
+              break;
+          }
+
           return (
             <>
               <ALink
                 sx={{ color: 'red' }}
-                //get user edit
-                onClick={() => handleEdit({id, role_id, name, email})}
+                onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
               >
                 <EditIcon sx={{ color: 'black' }} />
               </ALink>
