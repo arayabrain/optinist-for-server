@@ -52,7 +52,13 @@ export const userSlice = createSlice({
         state.listUserSearch = action.payload
       })
       .addMatcher(
-        isAnyOf(getListUser.pending, getListSearch.rejected, getListSearch.pending),
+        isAnyOf(getListSearch.rejected),
+        (state) => {
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(getListUser.pending, getListSearch.pending),
         (state) => {
           state.loading = true
         },
