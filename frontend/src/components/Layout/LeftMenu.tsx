@@ -35,7 +35,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
 
   const onClickWorkspaces = () => {
     handleDrawerClose()
-    navigate('/console/workspaces')
+    navigate('/console/workspaces?limit=50&offset=0')
   }
 
   const onClickAccountManager = () => {
