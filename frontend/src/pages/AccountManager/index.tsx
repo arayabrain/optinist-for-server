@@ -335,16 +335,16 @@ const AccountManager = () => {
     let newRole
     switch (role_id) {
       case "ADMIN":
-        newRole = 1;
+        newRole = ROLE.ADMIN;
         break;
       case "DATA_MANAGER":
-        newRole = 10;
+        newRole = ROLE.DATA_MANAGER;
         break;
       case "OPERATOR":
-        newRole = 20;
+        newRole = ROLE.OPERATOR;
         break;
       case "GUEST_OPERATOR":
-        newRole = 30;
+        newRole = ROLE.GUEST_OPERATOR;
         break;
     }
     if (id !== undefined) {
