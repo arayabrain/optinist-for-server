@@ -130,8 +130,8 @@ const AccountManager = () => {
             case ROLE.ADMIN:
               role = "Admin";
               break;
-            case ROLE.MANAGER:
-              role = "Manager";
+            case ROLE.DATA_MANAGER:
+              role = "Data Manager";
               break;
             case ROLE.OPERATOR:
               role = "Operator";
