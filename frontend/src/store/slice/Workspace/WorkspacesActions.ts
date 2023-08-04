@@ -7,7 +7,10 @@ import {
   importWorkspaceApi,
   postWorkspaceApi,
   putWorkspaceApi,
+  getListUserShareWorkspaceApi,
+  postListUserShareWorkspaceApi,
 } from 'api/Workspace'
+import { ListShareDTO } from '../Database/DatabaseType'
 import {
   ItemsWorkspace,
   WorkspaceDataDTO,
@@ -94,3 +97,32 @@ export const exportWorkspace = createAsyncThunk<void, number>(
     }
   },
 )
+
+export const getListUserShareWorkSpaces = createAsyncThunk<
+    ListShareDTO,
+    {id: number}
+>(`${WORKSPACE_SLICE_NAME}/getListUserShareWorkSpaces`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await getListUserShareWorkspaceApi(params.id)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+
+export const postListUserShareWorkspaces = createAsyncThunk<
+    boolean,
+    {
+      id: number
+      data: {user_ids: number[]}
+    }
+>(`${WORKSPACE_SLICE_NAME}/postListUserShareWorkspaces`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await postListUserShareWorkspaceApi(params.id, params.data)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
