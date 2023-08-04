@@ -14,5 +14,5 @@ export const isAdmin = (state: RootState) => {
 }
 
 export const isAdminOrManager = (state: RootState) => {
-  return [ROLE.ADMIN, ROLE.MANAGER].includes(state.user.currentUser?.role_id as number)
+  return [ROLE.ADMIN, ROLE.DATA_MANAGER].includes(state.user.currentUser?.role_id as number)
 }
