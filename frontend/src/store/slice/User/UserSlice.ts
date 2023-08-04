@@ -59,6 +59,7 @@ export const userSlice = createSlice({
       .addMatcher(
         isAnyOf(
           getListSearch.rejected,
+          getListUser.rejected,
           createUser.rejected,),
         (state) => {
           state.loading = false
@@ -71,12 +72,6 @@ export const userSlice = createSlice({
           createUser.pending),
         (state) => {
           state.loading = true
-        },
-      )
-      .addMatcher(
-        isAnyOf(getListUser.rejected),
-        (state) => {
-          state.loading = false
         },
       )
       .addMatcher(
