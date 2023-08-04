@@ -508,12 +508,17 @@ const WorkspacesWrapper = styled(Box)(({ theme }) => ({
 
 const WorkspacesTitle = styled('h1')(({ theme }) => ({}))
 
-const ButtonCustom = styled(Button)(({ theme }) => ({
+const ButtonCustom = styled('button')(({ theme }) => ({
   backgroundColor: '#000000c4',
   color: '#FFF',
   fontSize: 16,
   padding: theme.spacing(0.5, 1.25),
   textTransform: 'unset',
+  borderRadius: 4,
+  height: 30,
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
   '&:hover': {
     backgroundColor: '#000000fc',
   },
