@@ -40,7 +40,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
 
   const onClickAccountManager = () => {
     handleDrawerClose()
-    navigate('/console/account-manager?sort=&sort=&limit=50&offset=0')
+    navigate('/console/account-manager')
   }
 
   const onClickOpenSite = () => {
