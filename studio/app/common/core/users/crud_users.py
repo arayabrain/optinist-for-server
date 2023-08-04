@@ -12,8 +12,10 @@ from studio.app.common.schemas.users import (
     User,
     UserCreate,
     UserPasswordUpdate,
+    UserSearchOptions,
     UserUpdate,
 )
+from studio.app.optinist.schemas.base import SortOptions
 
 
 async def set_role(db: Session, user_id: int, role_id: int, auto_commit=True):
@@ -52,20 +54,30 @@ async def get_user(db: Session, user_id: int, organization_id: int) -> User:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def list_user(db: Session, organization_id: int):
+async def list_user(
+    db: Session,
+    organization_id: int,
+    options: UserSearchOptions,
+    sortOptions: SortOptions,
+):
     try:
-        query = (
-            select(
-                UserRoleModel.role_id,
-                *UserModel.__table__.columns,
-            )
+        sa_sort_list = sortOptions.get_sa_sort_list(sa_table=UserModel)
+        users = paginate(
+            db,
+            query=select(UserRoleModel.role_id, *UserModel.__table__.columns)
             .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
             .filter(
-                UserModel.active.is_(True), UserModel.organization_id == organization_id
+                UserModel.active.is_(True),
+                UserModel.organization_id == organization_id,
             )
-            .order_by(UserModel.name)
+            .filter(
+                UserModel.name.like("%{0}%".format(options.name)),
+                UserModel.email.like("%{0}%".format(options.email)),
+            )
+            .group_by(UserModel.id)
+            .order_by(*sa_sort_list),
+            unique=False,
         )
-        users = paginate(db, query=query, unique=False)
         return users
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

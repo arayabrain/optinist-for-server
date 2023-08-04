@@ -76,7 +76,7 @@ export const userSlice = createSlice({
       .addMatcher(
         isAnyOf(getListUser.rejected),
         (state) => {
-          state = initialState
+          state.loading = false
         },
       )
       .addMatcher(
