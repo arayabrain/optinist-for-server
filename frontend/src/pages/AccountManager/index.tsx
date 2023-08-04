@@ -41,7 +41,6 @@ const ModalComponent =
      setOpenModal,
      dataEdit,
    }: ModalComponentProps) => {
-
   const [formData, setFormData] = useState<{ [key: string]: string }>(
       dataEdit || initState,
   )
@@ -425,7 +424,7 @@ const AccountManager = () => {
               <ALink
                 sx={{ color: 'red' }}
                 //get user edit
-                onClick={() => handleEdit({id, role_id, name, email})}
+                // onClick={() => handleEdit({id, role_id, name, email})}
               >
                 <EditIcon sx={{ color: 'black' }} />
               </ALink>
