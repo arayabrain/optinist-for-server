@@ -74,7 +74,6 @@ async def list_user(
                 UserModel.name.like("%{0}%".format(options.name)),
                 UserModel.email.like("%{0}%".format(options.email)),
             )
-            .group_by(UserModel.id)
             .order_by(*sa_sort_list),
             unique=False,
         )
