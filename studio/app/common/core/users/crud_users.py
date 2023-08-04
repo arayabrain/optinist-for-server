@@ -61,7 +61,9 @@ async def list_user(
     sortOptions: SortOptions,
 ):
     try:
-        sa_sort_list = sortOptions.get_sa_sort_list(sa_table=UserModel)
+        sa_sort_list = sortOptions.get_sa_sort_list(
+            sa_table=UserModel, mapping={"role_id": UserRoleModel.role_id}
+        )
         users = paginate(
             db,
             query=select(UserRoleModel.role_id, *UserModel.__table__.columns)
