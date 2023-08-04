@@ -38,11 +38,11 @@ const initState = {
 }
 
 const ModalComponent =
-   ({
-     onSubmitEdit,
-     setOpenModal,
-     dataEdit,
-   }: ModalComponentProps) => {
+  ({
+    onSubmitEdit,
+    setOpenModal,
+    dataEdit,
+  }: ModalComponentProps) => {
   const [formData, setFormData] = useState<{ [key: string]: string }>(
       dataEdit || initState,
   )
