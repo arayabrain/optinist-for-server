@@ -1,7 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo} from "react";
-import {Box, Button, Pagination, styled} from "@mui/material";
+import {Box, Button, Input, Pagination, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useSearchParams} from "react-router-dom";
@@ -11,6 +11,8 @@ import Loading from "../../components/common/Loading";
 import {UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
 import {GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
+
+let timeout: NodeJS.Timeout | undefined = undefined
 
 const AccountManager = () => {
 
@@ -117,7 +119,22 @@ const AccountManager = () => {
       {
         headerName: 'Name',
         field: 'name',
-        minWidth: 200
+        minWidth: 200,
+        filterOperators: [
+          {
+            label: 'Contains', value: 'contains',
+            InputComponent: ({applyValue, item}: any) => {
+              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+                if(timeout) clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                  applyValue({...item, value: e.target.value})
+                }, 300)
+              }
+              } />
+            }
+          },
+        ],
+        type: "string",
       },
       {
         headerName: 'Role',
@@ -148,7 +165,22 @@ const AccountManager = () => {
       {
         headerName: 'Mail',
         field: 'email',
-        minWidth: 350
+        minWidth: 350,
+        filterOperators: [
+          {
+            label: 'Contains', value: 'contains',
+            InputComponent: ({applyValue, item}: any) => {
+              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+                if(timeout) clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                  applyValue({...item, value: e.target.value})
+                }, 300)
+              }
+              } />
+            }
+          },
+        ],
+        type: "string",
       },
       {
         headerName: '',
