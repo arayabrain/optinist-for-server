@@ -5,7 +5,7 @@ import {Box, Button, Pagination, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useSearchParams} from "react-router-dom";
-import {createUser, getListUser} from "../../store/slice/User/UserActions";
+import {createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
 import { DataGridPro } from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
@@ -97,8 +97,8 @@ const ModalComponent =
     const errorName = validateField('name', 100, formData.name)
     const errorEmail = validateEmail(formData.email)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorPassword = validatePassword(formData.password)
-    const errorConfirmPassword = validatePassword(
+    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password)
+    const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
       formData.confirmPassword,
       true,
     )
@@ -347,8 +347,12 @@ const AccountManager = () => {
         break;
     }
     if (id !== undefined) {
-      // todo dispatch edit user
-      setOpenModal(false)
+      await dispatch(updateUser(
+        {
+          id: id as number,
+          data: {name: newData.name, email: newData.email, role_id: newRole},
+          params: {...filterParams, ...sortParams, ...params
+        }}))
     } else {
       const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
       if(!(data as any).error) {
