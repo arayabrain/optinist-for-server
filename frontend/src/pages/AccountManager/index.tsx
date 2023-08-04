@@ -148,20 +148,7 @@ const ModalComponent =
     }
     try {
       await onSubmitEdit(dataEdit?.id, formData)
-      setTimeout(() => {
-        if (!dataEdit?.id) {
-          alert('Your account has been created successfully!')
-        } else {
-          alert('Your account has been successfully updated!')
-        }
-      }, 1)
       setOpenModal(false)
-    } catch {
-      if (!dataEdit?.id) {
-        setTimeout(() => {
-          alert('This email already exists!')
-        }, 300)
-      }
     } finally {
       setIsDisabled(false)
     }
@@ -350,7 +337,7 @@ const AccountManager = () => {
       case "ADMIN":
         newRole = 1;
         break;
-      case "MANAGER":
+      case "DATA_MANAGER":
         newRole = 10;
         break;
       case "OPERATOR":
@@ -364,7 +351,18 @@ const AccountManager = () => {
       // todo dispatch edit user
       setOpenModal(false)
     } else {
-      await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
+      const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
+      if(!(data as any).error) {
+        setTimeout(() => {
+          alert('Your account has been created successfully!')
+        }, 1)
+
+      }
+        else {
+        setTimeout(() => {
+          alert('This email already exists!')
+        }, 300)
+      }
     }
     return undefined
   }
@@ -393,7 +391,7 @@ const AccountManager = () => {
             case ROLE.ADMIN:
               role = "Admin";
               break;
-            case ROLE.MANAGER:
+            case ROLE.DATA_MANAGER:
               role = "Manager";
               break;
             case ROLE.OPERATOR:
