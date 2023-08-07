@@ -3,10 +3,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
 import {Box, Button, Input, Pagination, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
-import {selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
-import {useSearchParams} from "react-router-dom";
+import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
-import { DataGridPro } from "@mui/x-data-grid-pro";
+import {DataGridPro} from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
@@ -226,9 +226,13 @@ const AccountManager = () => {
 
   const dispatch = useDispatch()
 
+  const navigate = useNavigate()
+
   const listUser = useSelector(selectListUser)
   const loading = useSelector(selectLoading)
   const user = useSelector(selectCurrentUser)
+  const admin = useSelector(isAdmin)
+
   const [searchParams, setParams] = useSearchParams()
 
   const [openModal, setOpenModal] = useState(false)
@@ -239,6 +243,11 @@ const AccountManager = () => {
   const name = searchParams.get('name') || undefined
   const email = searchParams.get('email') || undefined
   const sort = searchParams.getAll('sort') || []
+
+  useEffect(() => {
+    if(!admin) navigate('/console')
+    //eslint-disable-next-line
+  }, [JSON.stringify(admin)])
 
   const sortParams = useMemo(() => {
     return {
