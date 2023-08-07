@@ -23,7 +23,15 @@ router = APIRouter(tags=["Workspace"])
 
 shared_count_subquery = (
     select(func.count())
-    .where(common_model.WorkspacesShareUser.workspace_id == common_model.Workspace.id)
+    .select_from(common_model.WorkspacesShareUser)
+    .join(
+        common_model.User,
+        common_model.WorkspacesShareUser.user_id == common_model.User.id,
+    )
+    .where(
+        common_model.WorkspacesShareUser.workspace_id == common_model.Workspace.id,
+        common_model.User.active.is_(True),
+    )
     .correlate(common_model.Workspace)
     .as_scalar()
 )
