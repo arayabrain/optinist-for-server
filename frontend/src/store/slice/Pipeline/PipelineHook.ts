@@ -27,6 +27,7 @@ import {
   setActiveTab,
   setCurrentWorkspace,
 } from '../Workspace/WorkspaceSlice'
+import { clearExperiments } from '../Experiments/ExperimentsSlice'
 
 const POLLING_INTERVAL = 5000
 
@@ -58,6 +59,7 @@ export function useRunPipeline() {
       }
     }
     return () => {
+      dispatch(clearExperiments())
       dispatch(clearCurrentWorkspace())
     }
   }, [dispatch, navigate, workspaceExists, _workspaceId, location.state])
