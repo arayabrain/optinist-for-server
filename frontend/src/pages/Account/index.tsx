@@ -4,18 +4,19 @@ import Loading from "components/common/Loading"
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
 import { useState } from 'react'
-import { useNavigate } from "react-router-dom";
-import { updateMePasswordApi } from 'api/users/UsersMe'
-import { deleteMe } from 'store/slice/User/UserActions'
-import {isAdmin, selectCurrentUser} from 'store/slice/User/UserSelector'
+// import { useNavigate } from "react-router-dom";
+import {
+  // deleteMe
+  updateMePassword } from 'store/slice/User/UserActions'
+import {isAdmin, selectCurrentUser, selectListSearchLoading} from 'store/slice/User/UserSelector'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const admin = useSelector(isAdmin)
+  const loading = useSelector(selectListSearchLoading)
   const dispatch = useDispatch()
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
   const [isChangePwModalOpen, setIsChangePwModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleCloseDeleteComfirmModal = () => {
     setIsDeleteConfirmModalOpen(false)
@@ -26,16 +27,7 @@ const Account = () => {
   }
 
   const onConfirmDelete = async () => {
-    if(!user) return
-    setIsLoading(true)
-    try {
-      dispatch(deleteMe())
-      navigate('/login')
-    }
-    catch {}
-    finally {
-      setIsLoading(false)
-    }
+    //todo call api delete me
     handleCloseDeleteComfirmModal()
   }
 
@@ -48,18 +40,13 @@ const Account = () => {
   }
 
   const onConfirmChangePw = async (oldPass: string, newPass: string) => {
-    setIsLoading(true)
-    try {
-      await updateMePasswordApi({old_password: oldPass, new_password: newPass})
-      alert('Your password has been successfully changed.')
-      handleCloseChangePw()
-    }
-    catch {
+    const data = await dispatch(updateMePassword({old_password: oldPass, new_password: newPass}))
+    if((data as any).error) {
       alert('Failed to Change Password!')
+      return
     }
-    finally {
-      setIsLoading(false)
-    }
+    alert('Your password has been successfully changed.')
+    handleCloseChangePw()
   }
 
   return (
@@ -93,7 +80,7 @@ const Account = () => {
         }
       </BoxFlex>
       {
-        isLoading && <Loading />
+        loading ? <Loading /> : null
       }
     </AccountWrapper>
   )

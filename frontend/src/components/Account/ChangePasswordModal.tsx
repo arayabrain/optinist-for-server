@@ -62,22 +62,24 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
   }
 
   const validateForm = () => {
+    const errorPassword = !values.password ? 'This field is required' : ''
     const errorNewPass = validatePassword(values.new_password)
     const errorConfirmPass = validatePassword(values.confirm_password)
     return {
+      password: errorPassword,
       new_password: errorNewPass,
       confirm_password: errorConfirmPass
     }
   }
 
-  const onChangePass = () => {
+  const onChangePass = async () => {
     const newErrors: { [key: string]: string } = validateForm()
-    if(errors.new_password || errors.confirm_password) return
-    if(newErrors.new_password || newErrors.confirm_password) {
+    if(errors.new_password || errors.confirm_password || errors.password) return
+    if(newErrors.new_password || newErrors.confirm_password || newErrors.password) {
       setErrors(newErrors)
       return
     }
-    onSubmit(values.password, values.new_password)
+    await onSubmit(values.password, values.new_password)
   }
 
   const onCloseModal = () => {
