@@ -82,7 +82,7 @@ export const importExperimentByUid = createAsyncThunk<
   },
 )
 
-export const fetchExperiment = createAsyncThunk<ExperimentDTO, string>(
+export const fetchExperiment = createAsyncThunk<ExperimentDTO, number>(
   `${EXPERIMENTS_SLICE_NAME}/fetchExperiment`,
   async (workspaceId, thunkAPI) => {
     try {

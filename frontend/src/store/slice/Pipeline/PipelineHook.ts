@@ -12,15 +12,14 @@ import { run, pollRunResult, runByCurrentUid } from './PipelineActions'
 import { cancelPipeline } from './PipelineSlice'
 import { selectFilePathIsUndefined } from '../InputNode/InputNodeSelectors'
 import { selectAlgorithmNodeNotExist } from '../AlgorithmNode/AlgorithmNodeSelectors'
-import { getExperiments } from '../Experiments/ExperimentsActions'
+import {
+  fetchExperiment,
+  getExperiments,
+} from '../Experiments/ExperimentsActions'
 import { useSnackbar } from 'notistack'
 import { RUN_STATUS } from './PipelineType'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import {
-  selectIsCurrentUserOwnerWorkspaceItem,
-  selectWorkspaceItemExists,
-} from '../Workspace/WorkspaceSelector'
-import { selectCurrentUserId } from '../User/UserSelector'
+import { selectCurrentUser } from '../User/UserSelector'
 import { IS_STANDALONE, STANDALONE_WORKSPACE_ID } from 'const/Mode'
 import {
   clearCurrentWorkspace,
@@ -28,6 +27,10 @@ import {
   setCurrentWorkspace,
 } from '../Workspace/WorkspaceSlice'
 import { clearExperiments } from '../Experiments/ExperimentsSlice'
+import { AppDispatch } from 'store/store'
+import { getWorkspace } from '../Workspace/WorkspacesActions'
+import { isMe } from 'utils/checkRole'
+import { selectCurrentWorkspaceOwnerId } from '../Workspace/WorkspaceSelector'
 
 const POLLING_INTERVAL = 5000
 
@@ -35,39 +38,41 @@ export type UseRunPipelineReturnType = ReturnType<typeof useRunPipeline>
 
 export function useRunPipeline() {
   const dispatch = useDispatch()
+  const appDispatch: AppDispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
 
   const { workspaceId } = useParams<{ workspaceId: string }>()
   const _workspaceId = Number(workspaceId)
-  const workspaceExists = useSelector(selectWorkspaceItemExists(_workspaceId))
-  const currentUserId = useSelector(selectCurrentUserId)
-  const isOwner = useSelector(
-    selectIsCurrentUserOwnerWorkspaceItem(_workspaceId, currentUserId),
-  )
+  const currentUser = useSelector(selectCurrentUser)
 
   React.useEffect(() => {
     if (IS_STANDALONE) {
       dispatch(setCurrentWorkspace(STANDALONE_WORKSPACE_ID))
     } else {
-      if (workspaceExists) {
-        dispatch(setCurrentWorkspace(_workspaceId))
-        const selectedTab = location.state?.tab
-        selectedTab && dispatch(setActiveTab(selectedTab))
-      } else {
-        navigate('/console/workspaces')
-      }
+      appDispatch(getWorkspace({ id: _workspaceId }))
+        .unwrap()
+        .then((_) => {
+          dispatch(fetchExperiment(_workspaceId))
+          const selectedTab = location.state?.tab
+          selectedTab && dispatch(setActiveTab(selectedTab))
+        })
+        .catch((_) => {
+          navigate('/console/workspaces')
+        })
     }
     return () => {
       dispatch(clearExperiments())
       dispatch(clearCurrentWorkspace())
     }
-  }, [dispatch, navigate, workspaceExists, _workspaceId, location.state])
+  }, [dispatch, appDispatch, navigate, _workspaceId, location.state])
 
   const uid = useSelector(selectPipelineLatestUid)
+  const ownerId = useSelector(selectCurrentWorkspaceOwnerId)
   const isCanceled = useSelector(selectPipelineIsCanceled)
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
-  const runDisabled = !isOwner ? true : isStartedSuccess
+  const runDisabled =
+    IS_STANDALONE || isMe(currentUser, ownerId) ? isStartedSuccess : true
 
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)

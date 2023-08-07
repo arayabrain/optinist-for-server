@@ -1,4 +1,4 @@
-import {UserDTO} from "../../../api/users/UsersApiDTO";
+import { UserDTO } from '../../../api/users/UsersApiDTO'
 
 export const WORKSPACE_SLICE_NAME = 'workspace'
 
@@ -28,13 +28,14 @@ export type Workspace = {
   currentWorkspace: {
     workspaceId?: number
     selectedTab: number
+    ownerId?: number
   }
   loading: boolean
   listUserShare?: ListUserShareWorkspaceDTO
 }
 
 export type ListUserShareWorkSpace = {
-  id: number,
+  id: number
   name: string
   email: string
   created_at: string

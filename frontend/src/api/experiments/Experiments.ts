@@ -103,7 +103,7 @@ export async function downloadExperimentConfigApi(
 }
 
 export async function fetchExperimentApi(
-  workspace_id: string,
+  workspace_id: number,
 ): Promise<ExperimentDTO> {
   const response = await axios.get(
     `${BASE_URL}/experiments/fetch/${workspace_id}`,
