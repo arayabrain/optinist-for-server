@@ -462,8 +462,8 @@ const Workspaces = () => {
       }
       <Pagination
         sx={{ marginTop: 2 }}
-        count={data.total}
-        page={data.offset + 1}
+        count={Math.ceil(data.total / data.limit)}
+        page={Math.ceil(data.offset / data.limit) + 1}
         onChange={handlePage}
       />
       {open.share ? (
