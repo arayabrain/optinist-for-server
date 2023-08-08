@@ -42,15 +42,8 @@ export const userSlice = createSlice({
       .addCase(updateMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
       })
-      .addCase(getListSearch.pending, (state, action) => {
-        state.loading = true
-      })
       .addCase(getListSearch.fulfilled, (state, action) => {
-        state.loading = false
         state.listUserSearch = action.payload
-      })
-      .addCase(getListSearch.rejected, (state) => {
-        state.loading = false
       })
       .addMatcher(
         isAnyOf(login.rejected, getMe.rejected, deleteMe.fulfilled),
