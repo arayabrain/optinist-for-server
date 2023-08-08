@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import plotly.io as pio
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
@@ -33,5 +33,14 @@ class PieData(BaseData):
         return OutputPath(path=self.json_path, type=OutputType.PIE)
 
     def save_plot(self, output_dir):
-        fig = px.pie(values=self.data[0], names=self.columns)
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=self.columns,
+                    values=self.data[0],
+                    sort=False,
+                    direction="clockwise",
+                )
+            ]
+        )
         pio.write_image(fig, join_filepath([output_dir, f"{self.file_name}.png"]))
