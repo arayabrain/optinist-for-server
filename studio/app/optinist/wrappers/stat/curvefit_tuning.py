@@ -164,7 +164,11 @@ class OriTempTuning(TempTuning):
 
 
 def curvefit_tuning(
-    stat: StatData, anova: AnovaStat, output_dir: str, params: dict = None
+    stat: StatData,
+    anova: AnovaStat,
+    output_dir: str,
+    params: dict = None,
+    export_plot: bool = False,
 ) -> dict(tuning=TuningStat):
     tuning = TuningStat(stat.ncells)
 
@@ -181,14 +185,22 @@ def curvefit_tuning(
         ori_temp = OriTempTuning(stat.oristat.ratio_change[i], interp_method, do_interp)
         tuning.ori_tuning_width[i] = ori_temp.tuning_width
 
-    return {
-        "tuning": tuning,
-        "dir_tuning_width_hist": HistogramData(
-            data=tuning.dir_tuning_width[anova.index_dir_selective],
-            file_name="dir_tuning_width_hist",
-        ),
-        "ori_tuning_width_hist": HistogramData(
-            data=tuning.ori_tuning_width[anova.index_ori_selective],
-            file_name="ori_tuning_width_hist",
-        ),
-    }
+    dir_tuning_width_hist = HistogramData(
+        data=tuning.dir_tuning_width[anova.index_dir_selective],
+        file_name="dir_tuning_width_hist",
+    )
+    ori_tuning_width_hist = HistogramData(
+        data=tuning.ori_tuning_width[anova.index_ori_selective],
+        file_name="ori_tuning_width_hist",
+    )
+
+    if export_plot:
+        dir_tuning_width_hist.save_plot(output_dir)
+        ori_tuning_width_hist.save_plot(output_dir)
+        return tuning
+    else:
+        return {
+            "tuning": tuning,
+            "dir_tuning_width_hist": dir_tuning_width_hist,
+            "ori_tuning_width_hist": ori_tuning_width_hist,
+        }

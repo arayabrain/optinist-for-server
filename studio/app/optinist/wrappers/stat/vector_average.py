@@ -23,7 +23,11 @@ def get_1d_vector_average(ratio):
 
 
 def vector_average(
-    stat: StatData, anova: AnovaStat, output_dir: str, params: dict = None
+    stat: StatData,
+    anova: AnovaStat,
+    output_dir: str,
+    params: dict = None,
+    export_plot: bool = False,
 ) -> dict(vector=VectorStat):
     vector = VectorStat(stat.ncells)
 
@@ -41,14 +45,22 @@ def vector_average(
 
     vector.ori_vector_angle /= 2
 
-    return {
-        "vector": vector,
-        "preferred_dir_hist": HistogramData(
-            data=vector.dir_vector_angle[anova.index_dir_selective],
-            file_name="preferred_dir_hist",
-        ),
-        "preferred_ori_hist": HistogramData(
-            data=vector.ori_vector_angle[anova.index_ori_selective],
-            file_name="preferred_ori_hist",
-        ),
-    }
+    preferred_dir_hist = HistogramData(
+        data=vector.dir_vector_angle[anova.index_dir_selective],
+        file_name="preferred_dir_hist",
+    )
+    preferred_ori_hist = HistogramData(
+        data=vector.ori_vector_angle[anova.index_ori_selective],
+        file_name="preferred_ori_hist",
+    )
+
+    if export_plot:
+        preferred_dir_hist.save_plot(output_dir)
+        preferred_ori_hist.save_plot(output_dir)
+        return vector
+    else:
+        return {
+            "vector": vector,
+            "preferred_dir_hist": preferred_dir_hist,
+            "preferred_ori_hist": preferred_ori_hist,
+        }
