@@ -5,7 +5,7 @@ import {
   getExperimentsPublicDatabase,
   getCellsPublicDatabase,
   getListUserShare,
-  postListUserShare,
+  postListUserShare, postPublish,
 } from './DatabaseActions'
 import { DATABASE_SLICE_NAME, DatabaseDTO, ListShare } from './DatabaseType'
 
@@ -80,9 +80,24 @@ export const databaseSlice = createSlice({
         state.listShare = undefined
         state.loading = true
       })
-      .addCase(postListUserShare.pending, (state) => {
-        state.loading = true
-      })
+      .addMatcher(
+        isAnyOf(
+          postListUserShare.pending,
+            postPublish.pending
+        ),
+        (state, action) => {
+          state.loading = true
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          postPublish.fulfilled,
+          postPublish.rejected
+        ),
+        (state, _action) => {
+          state.loading = false
+        },
+      )
       .addMatcher(
         isAnyOf(
           getCellsDatabase.fulfilled,
