@@ -1,4 +1,9 @@
-import type { ExperimentDTO, ExperimentsDTO } from 'api/experiments/Experiments'
+import type {
+  ExperimentDTO,
+  ExperimentsDTO,
+  FunctionsDTO,
+} from 'api/experiments/Experiments'
+import { RunResultDTO } from 'api/run/Run'
 import type {
   ExperimentListType,
   ExperimentType,
@@ -47,6 +52,21 @@ function convertToExperimentStatus(dto: string): EXPERIMENTS_STATUS {
     default:
       throw new Error('failed to convert to EXPERIMENTS_STATUS')
   }
+}
+
+export function convertFunctionsToRunResultDTO(
+  dto: FunctionsDTO,
+): RunResultDTO {
+  const result: RunResultDTO = {}
+  Object.entries(dto).forEach(([nodeId, value]) => {
+    result[nodeId] = {
+      status: value.success,
+      message: value.message ?? '',
+      name: value.name,
+      outputPaths: value.outputPaths,
+    }
+  })
+  return result
 }
 
 export function convertToFlowChartList(
