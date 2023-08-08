@@ -9,7 +9,7 @@ from studio.app.common.core.utils.filepath_creater import (
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.optinist.dataclass import TcData, TsData
-from studio.app.optinist.wrappers.stat import stat_file_convert
+from studio.app.optinist.wrappers.stat import anova, stat_file_convert
 
 router = APIRouter(prefix="/expdb/batch", tags=["Experiment Database"])
 
@@ -30,7 +30,15 @@ def expdb_batch(dirpath: str, tc: TcData, ts: TsData):
         params=get_default_params("stat_file_convert"),
         export_plot=True,
     )
-    print(stat)
+
+    anova_stat = anova(
+        stat=stat,
+        output_dir=plot_dir,
+        params=get_default_params("anova"),
+        export_plot=True,
+    )
+
+    print(anova_stat)
 
 
 @router.post("")

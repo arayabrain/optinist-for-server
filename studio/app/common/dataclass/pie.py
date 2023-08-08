@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.io as pio
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.json_writer import JsonWriter
@@ -18,12 +20,18 @@ class PieData(BaseData):
         assert data.shape[0] == len(
             labels
         ), f"labels length is not same as data shape {data.shape}"
-        self.data = pd.DataFrame(data=data.reshape(1, -1), columns=labels)
+        self.data = data.reshape(1, -1)
+        self.columns = labels
 
     def save_json(self, json_dir):
         self.json_path = join_filepath([json_dir, f"{self.file_name}.json"])
-        JsonWriter.write_as_split(self.json_path, self.data)
+        df = pd.DataFrame(self.data, columns=self.columns)
+        JsonWriter.write_as_split(self.json_path, df)
 
     @property
     def output_path(self) -> OutputPath:
         return OutputPath(path=self.json_path, type=OutputType.PIE)
+
+    def save_plot(self, output_dir):
+        fig = px.pie(values=self.data[0], names=self.columns)
+        pio.write_image(fig, join_filepath([output_dir, f"{self.file_name}.png"]))
