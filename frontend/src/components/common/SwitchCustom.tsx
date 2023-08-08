@@ -80,7 +80,7 @@ const SwitchCustom = ({value} : {value: boolean}) => {
     <FormControlLabel
       control={
         <IOSSwitch
-            defaultChecked={value}
+            checked={value}
           sx={{ m: 1 }}
         />
       }
