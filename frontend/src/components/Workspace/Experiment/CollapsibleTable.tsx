@@ -109,7 +109,9 @@ const TableRowOfFunction = React.memo<{
             horizontal: 'left',
           }}
         >
-          <Typography sx={{ p: 2 }}>{message}</Typography>
+          <Typography sx={{ p: 1, color: 'crimson', fontSize: 14 }}>
+            {message}
+          </Typography>
         </Popover>
       </TableCell>
       <TableCell>
