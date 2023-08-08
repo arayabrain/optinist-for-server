@@ -148,7 +148,7 @@ const columns = (
     ),
   },
   {
-    field: 'recors',
+    field: 'records',
     headerName: '',
     minWidth: 130,
     filterable: false, // todo enable when api complete
