@@ -5,7 +5,7 @@ from studio.app.common.dataclass import HistogramData, PieData
 from studio.app.optinist.dataclass import AnovaStat, StatData
 
 
-def anova(
+def oneway_anova(
     stat: StatData, output_dir: str, params: dict = None, export_plot: bool = False
 ) -> dict(anova_stat=AnovaStat):
     anova = AnovaStat(stat.ncells)

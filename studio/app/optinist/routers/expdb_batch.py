@@ -10,8 +10,8 @@ from studio.app.common.core.utils.filepath_creater import (
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.optinist.dataclass import TcData, TsData
 from studio.app.optinist.wrappers.stat import (
-    anova,
     curvefit_tuning,
+    oneway_anova,
     stat_file_convert,
     vector_average,
 )
@@ -36,10 +36,10 @@ def expdb_batch(dirpath: str, tc: TcData, ts: TsData):
         export_plot=True,
     )
 
-    anova_stat = anova(
+    anova_stat = oneway_anova(
         stat=stat,
         output_dir=plot_dir,
-        params=get_default_params("anova"),
+        params=get_default_params("oneway_anova"),
         export_plot=True,
     )
 
