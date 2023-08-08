@@ -358,19 +358,28 @@ const AccountManager = () => {
         break;
     }
     if (id !== undefined) {
-      await dispatch(updateUser(
+      const data = await dispatch(updateUser(
         {
           id: id as number,
           data: {name: newData.name, email: newData.email, role_id: newRole},
-          params: {...filterParams, ...sortParams, ...params
-        }}))
+          params: {...filterParams, ...sortParams, ...params}
+        }))
+        if((data as any).error) {
+          setTimeout(() => {
+            alert('This email already exists!')
+          }, 300)
+        }
+        else {
+          setTimeout(() => {
+            alert('Your account has been edited successfully!')
+          }, 1)
+        }
     } else {
       const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
       if(!(data as any).error) {
         setTimeout(() => {
           alert('Your account has been created successfully!')
         }, 1)
-
       }
         else {
         setTimeout(() => {
