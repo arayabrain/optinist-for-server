@@ -544,12 +544,15 @@ const AccountManager = () => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      <Pagination
-        sx={{ marginTop: 2 }}
-        count={listUser?.total || 0}
-        page={(listUser?.offset || 0) + 1 }
-        onChange={handlePage}
-      />
+      {
+        listUser ?
+          <Pagination
+            sx={{ marginTop: 2 }}
+            count={Math.ceil(listUser.total / listUser.limit)}
+            page={Math.ceil(listUser.offset / listUser.limit) + 1}
+            onChange={handlePage}
+          /> : null
+      }
       {
         openModal ?
           <ModalComponent
