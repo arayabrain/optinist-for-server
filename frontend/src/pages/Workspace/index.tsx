@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogActions,
   Input,
-  Pagination,
 } from '@mui/material'
 import { GridRenderCellParams } from '@mui/x-data-grid'
 import {
@@ -43,6 +42,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isMe } from 'utils/checkRole'
+import PaginationCustom from "../../components/common/PaginationCustom";
 
 type PopupType = {
   open: boolean
@@ -345,7 +345,7 @@ const Workspaces = () => {
 
   const pagi = useCallback(
     (page?: number) => {
-      return `limit=${data.limit}&offset=${page ? page - 1 : data.offset}`
+      return `limit=${data.limit}&offset=${page ? (page-1) * data.limit : data.offset}`
     },
     [data?.limit, data?.offset],
   )
@@ -388,6 +388,12 @@ const Workspaces = () => {
     await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
     await dispatch(getWorkspaceList(dataParams))
     return newRow
+  }
+
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    setParams(
+        `limit=${Number(event.target.value)}&offset=0`,
+    )
   }
 
   return (
@@ -460,11 +466,11 @@ const Workspaces = () => {
             />
           </Box> : null
       }
-      <Pagination
-        sx={{ marginTop: 2 }}
-        count={Math.ceil(data.total / data.limit)}
-        page={Math.ceil(data.offset / data.limit) + 1}
-        onChange={handlePage}
+      <PaginationCustom
+        data={data}
+        handlePage={handlePage}
+        handleLimit={handleLimit}
+        limit={Number(limit)}
       />
       {open.share ? (
         <PopupShare

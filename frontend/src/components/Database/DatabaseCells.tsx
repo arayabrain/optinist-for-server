@@ -1,4 +1,4 @@
-import { Box, Input, Pagination, styled } from '@mui/material'
+import { Box, Input, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -22,6 +22,7 @@ import {
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
+import PaginationCustom from "../common/PaginationCustom";
 
 type CellProps = {
   user?: Object
@@ -118,7 +119,7 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
 const DatabaseCells = ({ user }: CellProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
 
-  const { data: dataExperiments, loading } = useSelector(
+  const { data: dataCells, loading } = useSelector(
     (state: RootState) => ({
       data: state[DATABASE_SLICE_NAME].data[type],
       loading: state[DATABASE_SLICE_NAME].loading,
@@ -138,18 +139,9 @@ const DatabaseCells = ({ user }: CellProps) => {
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
-  const pagiFilter = useCallback(
-    (page?: number) => {
-      return `limit=${dataExperiments.limit}&offset=${
-        page ? page - 1 : dataExperiments.offset
-      }`
-    },
-    [dataExperiments.limit, dataExperiments.offset],
-  )
-
   const id = searchParams.get('id')
   const offset = searchParams.get('offset')
-  const limit = searchParams.get('limit')
+  const limit = searchParams.get('limit') || 50
   const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
@@ -171,6 +163,16 @@ const DatabaseCells = ({ user }: CellProps) => {
       imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
     }),
     [searchParams],
+  )
+
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${limit}&offset=${
+          page ? (Number(limit) * (page - 1)) : offset || dataCells.offset
+      }`
+    },
+    //eslint-disable-next-line
+    [limit, offset, JSON.stringify(dataCells), dataCells.offset],
   )
 
   const fetchApi = () => {
@@ -241,8 +243,21 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }
 
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    let filter = ''
+    filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
+    const { sort } = dataParams
+    setParams(
+        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${Number(event.target.value)}&offset=0`,
+    )
+  }
+
   const getColumns = useMemo(() => {
-    return (dataExperiments.header?.graph_titles || []).map(
+    return (dataCells.header?.graph_titles || []).map(
       (graphTitle, index) => ({
         field: `graph_urls.${index}`,
         headerName: graphTitle,
@@ -270,7 +285,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         width: 160,
       }),
     )
-  }, [dataExperiments.header?.graph_titles])
+  }, [dataCells.header?.graph_titles])
 
   const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
     Boolean,
@@ -280,7 +295,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={[...columnsTable] as any}
-        rows={dataExperiments?.items || []}
+        rows={dataCells?.items || []}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
@@ -328,11 +343,11 @@ const DatabaseCells = ({ user }: CellProps) => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      <Pagination
-        sx={{ marginTop: 2 }}
-        count={Math.ceil(dataExperiments.total / dataExperiments.limit)}
-        page={Math.ceil(dataExperiments.offset / dataExperiments.limit) + 1}
-        onChange={handlePage}
+      <PaginationCustom
+        data={dataCells}
+        handlePage={handlePage}
+        handleLimit={handleLimit}
+        limit={Number(limit)}
       />
       <DialogImage
         open={dataDialog.type === 'image'}
