@@ -261,6 +261,7 @@ const Workspaces = () => {
   const [idDel, setIdDel] = useState<number>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
+  const [preRow, setPreRow] = useState<number>()
   const [initName, setInitName] = useState('')
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
   const [searchParams, setParams] = useSearchParams()
@@ -366,13 +367,14 @@ const Workspaces = () => {
     setInitName(params.row.name)
   }
 
-  const onCellClick: GridEventListener<'cellClick'> | undefined = (event) => {
+  const onCellClick: GridEventListener<'cellClick'> | undefined = (event: any) => {
+    setPreRow(event?.id)
     if (event.field === 'name') return
     setRowModesModel((pre) => {
       const object: GridRowModesModel = {}
       Object.keys(pre).forEach(key => {
         object[key] = {
-          mode: GridRowModes.View, ignoreModifications: true
+          mode: GridRowModes.View, ignoreModifications: event.id === preRow ? false : true
         }
       })
       return object
