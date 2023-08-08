@@ -61,7 +61,7 @@ const columns = (
   handleOpenPopupDel: (id: number) => void,
   handleDownload: (id: number) => void,
   handleNavWorkflow: (id: number) => void,
-  handleNavResult: (id: number) => void,
+  handleNavRecords: (id: number) => void,
   user?: UserDTO,
   onEdit?: (id: number) => void,
 ) => [
@@ -148,14 +148,14 @@ const columns = (
     ),
   },
   {
-    field: 'result',
+    field: 'recors',
     headerName: '',
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<number>) => {
       return (
-      <ButtonCustom onClick={() => handleNavResult(params.row.id)}>Result</ButtonCustom>
+      <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
       )
     }
   },
@@ -328,7 +328,7 @@ const Workspaces = () => {
     navigate(`/console/workspaces/${id}`)
   }
 
-  const handleNavResult = (id: number) => {
+  const handleNavRecords = (id: number) => {
     navigate(`/console/workspaces/${id}`, { state: { tab: 2 } })
   }
 
@@ -461,7 +461,7 @@ const Workspaces = () => {
                   handleOpenPopupDel,
                   handleDownload,
                   handleNavWorkflow,
-                  handleNavResult,
+                  handleNavRecords,
                   user,
                   onEditName,
                 ).filter(Boolean) as any
