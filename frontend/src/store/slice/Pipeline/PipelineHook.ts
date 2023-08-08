@@ -19,7 +19,6 @@ import {
 import { useSnackbar } from 'notistack'
 import { RUN_STATUS } from './PipelineType'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { selectCurrentUser } from '../User/UserSelector'
 import { IS_STANDALONE, STANDALONE_WORKSPACE_ID } from 'const/Mode'
 import {
   clearCurrentWorkspace,
@@ -29,8 +28,7 @@ import {
 import { clearExperiments } from '../Experiments/ExperimentsSlice'
 import { AppDispatch } from 'store/store'
 import { getWorkspace } from '../Workspace/WorkspacesActions'
-import { isMe } from 'utils/checkRole'
-import { selectCurrentWorkspaceOwnerId } from '../Workspace/WorkspaceSelector'
+import { selectIsWorkspaceOwner } from '../Workspace/WorkspaceSelector'
 
 const POLLING_INTERVAL = 5000
 
@@ -44,7 +42,6 @@ export function useRunPipeline() {
 
   const { workspaceId } = useParams<{ workspaceId: string }>()
   const _workspaceId = Number(workspaceId)
-  const currentUser = useSelector(selectCurrentUser)
 
   React.useEffect(() => {
     if (IS_STANDALONE) {
@@ -68,11 +65,10 @@ export function useRunPipeline() {
   }, [dispatch, appDispatch, navigate, _workspaceId, location.state])
 
   const uid = useSelector(selectPipelineLatestUid)
-  const ownerId = useSelector(selectCurrentWorkspaceOwnerId)
   const isCanceled = useSelector(selectPipelineIsCanceled)
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
-  const runDisabled =
-    IS_STANDALONE || isMe(currentUser, ownerId) ? isStartedSuccess : true
+  const isOwner = useSelector(selectIsWorkspaceOwner)
+  const runDisabled = isOwner ? isStartedSuccess : true
 
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)
