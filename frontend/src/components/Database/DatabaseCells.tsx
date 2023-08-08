@@ -118,7 +118,7 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
 const DatabaseCells = ({ user }: CellProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
 
-  const { data: dataExperiments, loading } = useSelector(
+  const { data: dataCells, loading } = useSelector(
     (state: RootState) => ({
       data: state[DATABASE_SLICE_NAME].data[type],
       loading: state[DATABASE_SLICE_NAME].loading,
@@ -140,11 +140,11 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const pagiFilter = useCallback(
     (page?: number) => {
-      return `limit=${dataExperiments.limit}&offset=${
-        page ? page - 1 : dataExperiments.offset
+      return `limit=${dataCells.limit}&offset=${
+        page ? page - 1 : dataCells.offset
       }`
     },
-    [dataExperiments.limit, dataExperiments.offset],
+    [dataCells.limit, dataCells.offset],
   )
 
   const id = searchParams.get('id')
@@ -242,7 +242,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   const getColumns = useMemo(() => {
-    return (dataExperiments.header?.graph_titles || []).map(
+    return (dataCells.header?.graph_titles || []).map(
       (graphTitle, index) => ({
         field: `graph_urls.${index}`,
         headerName: graphTitle,
@@ -270,7 +270,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         width: 160,
       }),
     )
-  }, [dataExperiments.header?.graph_titles])
+  }, [dataCells.header?.graph_titles])
 
   const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
     Boolean,
@@ -280,7 +280,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={[...columnsTable] as any}
-        rows={dataExperiments?.items || []}
+        rows={dataCells?.items || []}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
@@ -329,10 +329,10 @@ const DatabaseCells = ({ user }: CellProps) => {
         onFilterModelChange={handleFilter as any}
       />
       <Pagination
-        sx={{ marginTop: 2 }}
-        count={dataExperiments.total}
-        page={dataParams.offset + 1}
-        onChange={handlePage}
+          sx={{ marginTop: 2 }}
+          count={Math.ceil(dataCells.total / dataCells.limit)}
+          page={Math.ceil(dataCells.offset / dataCells.limit) + 1}
+          onChange={handlePage}
       />
       <DialogImage
         open={dataDialog.type === 'image'}
