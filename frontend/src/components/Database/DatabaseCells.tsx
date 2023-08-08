@@ -330,8 +330,8 @@ const DatabaseCells = ({ user }: CellProps) => {
       />
       <Pagination
         sx={{ marginTop: 2 }}
-        count={dataExperiments.total}
-        page={dataParams.offset + 1}
+        count={Math.ceil(dataExperiments.total / dataExperiments.limit)}
+        page={Math.ceil(dataExperiments.offset / dataExperiments.limit) + 1}
         onChange={handlePage}
       />
       <DialogImage
