@@ -305,7 +305,7 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+        `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -529,7 +529,7 @@ const AccountManager = () => {
           sorting: {
             sortModel: [
               {
-                field: sortParams.sort[0],
+                field: sortParams.sort[0]?.replace('role', 'role_id'),
                 sort: sortParams.sort[1] as GridSortDirection,
               },
             ],
