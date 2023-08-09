@@ -18,7 +18,7 @@ import {
   GridRowModel,
   GridRowModes,
 } from '@mui/x-data-grid-pro'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Loading from '../../components/common/Loading'
 import {
   selectIsLoadingWorkspaceList,
@@ -59,6 +59,8 @@ const columns = (
   handleOpenPopupShare: (id: number) => void,
   handleOpenPopupDel: (id: number) => void,
   handleDownload: (id: number) => void,
+  handleNavWorkflow: (id: number) => void,
+  handleNavRecords: (id: number) => void,
   user?: UserDTO,
   onEdit?: (id: number) => void,
 ) => [
@@ -140,19 +142,21 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (_params: GridRenderCellParams<string>) => (
-      <LinkCustom to={'#'}>Workflow</LinkCustom>
+    renderCell: (params: GridRenderCellParams<number>) => (
+      <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
     ),
   },
   {
-    field: 'result',
+    field: 'records',
     headerName: '',
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (_params: GridRenderCellParams<string>) => (
-      <LinkCustom to={'#'}>Result</LinkCustom>
-    ),
+    renderCell: (params: GridRenderCellParams<number>) => {
+      return (
+      <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
+      )
+    }
   },
   {
     field: 'download',
@@ -247,6 +251,7 @@ const PopupDelete = ({open, handleClose, handleOkDel}: PopupType) => {
 
 const Workspaces = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const loading = useSelector(selectIsLoadingWorkspaceList)
   const listUserShare = useSelector(selectWorkspaceListUserShare)
   const data = useSelector(selectWorkspaceData)
@@ -316,6 +321,14 @@ const Workspaces = () => {
   const handleClosePopupNew = () => {
     setOpen({ ...open, new: false })
     setError('')
+  }
+
+  const handleNavWorkflow = (id: number) => {
+    navigate(`/console/workspaces/${id}`)
+  }
+
+  const handleNavRecords = (id: number) => {
+    navigate(`/console/workspaces/${id}`, { state: { tab: 2 } })
   }
 
   const onEditName = (id: number) => {
@@ -454,6 +467,8 @@ const Workspaces = () => {
                   handleOpenPopupShare,
                   handleOpenPopupDel,
                   handleDownload,
+                  handleNavWorkflow,
+                  handleNavRecords,
                   user,
                   onEditName,
                 ).filter(Boolean) as any
@@ -532,18 +547,6 @@ const ButtonCustom = styled('button')(({ theme }) => ({
   },
 }))
 
-const LinkCustom = styled(Link)(({ theme }) => ({
-  backgroundColor: '#000000c4',
-  color: '#FFF',
-  fontSize: 16,
-  padding: theme.spacing(0.5, 1.5),
-  textTransform: 'unset',
-  textDecoration: 'unset',
-  borderRadius: 5,
-  '&:hover': {
-    backgroundColor: '#000000fc',
-  },
-}))
 
 const ButtonIcon = styled('button')(({ theme }) => ({
   minWidth: '32px',

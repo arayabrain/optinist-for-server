@@ -98,17 +98,23 @@ def get_workspace(
 ):
     data = (
         db.query(common_model.Workspace, shared_count_subquery.label("shared_count"))
+        .outerjoin(
+            common_model.WorkspacesShareUser,
+            common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
+        )
         .filter(
             common_model.Workspace.id == id,
-            common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
+            or_(
+                common_model.WorkspacesShareUser.user_id == current_user.id,
+                common_model.Workspace.user_id == current_user.id,
+            ),
         )
         .first()
     )
     if not data:
         raise HTTPException(status_code=404)
     workspace, shared_count = data
-    workspace.__dict__["user"] = current_user
     workspace.__dict__["shared_count"] = shared_count
     return Workspace.from_orm(workspace)
 

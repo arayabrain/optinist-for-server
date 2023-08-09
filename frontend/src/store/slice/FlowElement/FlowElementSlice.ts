@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, isAnyOf } from '@reduxjs/toolkit'
 import {
   Node,
   NodeChange,
@@ -23,7 +23,10 @@ import {
   INITIAL_IMAGE_ELEMENT_NAME,
   REACT_FLOW_NODE_TYPE_KEY,
 } from 'const/flowchart'
-import { importExperimentByUid } from '../Experiments/ExperimentsActions'
+import {
+  fetchExperiment,
+  importExperimentByUid,
+} from '../Experiments/ExperimentsActions'
 import { setInputNodeFilePath } from 'store/slice/InputNode/InputNodeActions'
 import { isInputNodePostData } from 'api/run/RunUtils'
 import { addAlgorithmNode, addInputNode } from './FlowElementActions'
@@ -99,6 +102,18 @@ export const flowElementSlice = createSlice({
         state.flowNodes = applyNodeChanges(
           [{ id: element.id, type: 'remove' }],
           state.flowNodes,
+        )
+        state.flowEdges = applyEdgeChanges(
+          state.flowEdges
+            .filter((edge) => {
+              return (
+                edge.source === action.payload || edge.target === action.payload
+              )
+            })
+            .map((edge) => {
+              return { id: edge.id, type: 'remove' }
+            }),
+          state.flowEdges,
         )
       }
     },
@@ -181,30 +196,36 @@ export const flowElementSlice = createSlice({
           }
         }
       })
-      .addCase(importExperimentByUid.fulfilled, (state, action) => {
-        state.flowPosition = initialFlowPosition
-        state.elementCoord = initialElementCoord
-        state.flowNodes = Object.values(action.payload.nodeDict).map((node) => {
-          if (isInputNodePostData(node)) {
-            return {
-              ...node,
-              data: {
-                label: node.data?.label ?? '',
-                type: node.data?.type ?? 'input',
-              },
-            }
-          } else {
-            return {
-              ...node,
-              data: {
-                label: node.data?.label ?? '',
-                type: node.data?.type ?? 'algorithm',
-              },
-            }
-          }
-        })
-        state.flowEdges = Object.values(action.payload.edgeDict)
-      }),
+      .addCase(fetchExperiment.rejected, () => initialState)
+      .addMatcher(
+        isAnyOf(importExperimentByUid.fulfilled, fetchExperiment.fulfilled),
+        (state, action) => {
+          state.flowPosition = initialFlowPosition
+          state.elementCoord = initialElementCoord
+          state.flowNodes = Object.values(action.payload.nodeDict).map(
+            (node) => {
+              if (isInputNodePostData(node)) {
+                return {
+                  ...node,
+                  data: {
+                    label: node.data?.label ?? '',
+                    type: node.data?.type ?? 'input',
+                  },
+                }
+              } else {
+                return {
+                  ...node,
+                  data: {
+                    label: node.data?.label ?? '',
+                    type: node.data?.type ?? 'algorithm',
+                  },
+                }
+              }
+            },
+          )
+          state.flowEdges = Object.values(action.payload.edgeDict)
+        },
+      ),
 })
 
 function getRandomArbitrary(min: number, max: number) {
