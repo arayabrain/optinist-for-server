@@ -2,6 +2,8 @@ import { ROLE } from '@types'
 import { RootState } from 'store/store'
 
 export const selectCurrentUser = (state: RootState) => state.user.currentUser
+export const selectCurrentUserId = (state: RootState) =>
+  selectCurrentUser(state)?.id
 export const selectCurrentUserUid = (state: RootState) =>
   selectCurrentUser(state)?.uid
 export const selectCurrentUserEmail = (state: RootState) =>
