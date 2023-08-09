@@ -26,7 +26,7 @@ export const getCellsApi = async (params: DatabaseParams): Promise<DatabaseDTO> 
   return response.data
 }
 
-export const postPublistApi = async (id: number, status: 'on' | 'off'): Promise<boolean> => {
+export const postPublishApi = async (id: number, status: 'on' | 'off'): Promise<boolean> => {
   const response = await axios.post(`/expdb/experiment/publish/${id}/${status}`)
   return response.data
 }
