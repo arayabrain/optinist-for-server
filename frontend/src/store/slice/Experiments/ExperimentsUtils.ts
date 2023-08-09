@@ -24,12 +24,16 @@ export function convertToExperimentListType(
 export function convertToExperimentType(dto: ExperimentDTO): ExperimentType {
   const functions: { [nodeId: string]: ExperimentFunction } = {}
   Object.entries(dto.function).forEach(([_, value]) => {
+    const status = convertToExperimentStatus(value.success)
     functions[value.unique_id] = {
       name: value.name,
       nodeId: value.unique_id,
-      status: convertToExperimentStatus(value.success),
+      status: status,
       hasNWB: value.hasNWB,
     }
+    status === 'error' &&
+      value.message &&
+      (functions[value.unique_id].message = value.message)
   })
   return {
     uid: dto.unique_id,
