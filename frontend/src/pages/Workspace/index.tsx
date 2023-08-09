@@ -53,12 +53,13 @@ type PopupType = {
   handleOkNew?: () => void
   handleOkSave?: () => void
   error?: string
+  nameWorkspace?: string
 }
 
 
 const columns = (
   handleOpenPopupShare: (id: number) => void,
-  handleOpenPopupDel: (id: number) => void,
+  handleOpenPopupDel: (id: number, nameWorkspace: string) => void,
   handleDownload: (id: number) => void,
   user?: UserDTO,
   onEdit?: (id: number) => void,
@@ -188,7 +189,7 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<string>) =>
       isMe(user, params.row?.user?.id) ? (
-      <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id)}>
+      <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
         Del
       </ButtonCustom>
       ) : null
@@ -231,12 +232,12 @@ const PopupNew = ({
   )
 }
 
-const PopupDelete = ({open, handleClose, handleOkDel}: PopupType) => {
+const PopupDelete = ({open, handleClose, handleOkDel, nameWorkspace}: PopupType) => {
   if(!open) return null
   return (
     <Box>
       <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-        <DialogTitle>Do you want delete?</DialogTitle>
+        <DialogTitle>Do you want delete Workspace "{nameWorkspace}"?</DialogTitle>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleOkDel}>Ok</Button>
@@ -258,10 +259,9 @@ const Workspaces = () => {
     new: false,
     shareId: 0,
   })
-  const [idDel, setIdDel] = useState<number>()
+  const [workspaceDel, setWorkspaceDel] = useState<{id: number, name: string}>()
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
-  const [preRow, setPreRow] = useState<number>()
   const [initName, setInitName] = useState('')
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
   const [searchParams, setParams] = useSearchParams()
@@ -296,14 +296,14 @@ const Workspaces = () => {
     setOpen({ ...open, share: false })
   }
 
-  const handleOpenPopupDel = (id: number) => {
-    setIdDel(id)
+  const handleOpenPopupDel = (id: number, name: string) => {
+    setWorkspaceDel({id, name})
     setOpen({ ...open, del: true })
   }
 
   const handleOkDel = async () => {
-    if (!idDel) return
-    await dispatch(delWorkspace({ id: idDel, params: dataParams }))
+    if (!workspaceDel) return
+    await dispatch(delWorkspace({ id: workspaceDel.id, params: dataParams }))
     setOpen({ ...open, del: false })
   }
 
@@ -368,13 +368,12 @@ const Workspaces = () => {
   }
 
   const onCellClick: GridEventListener<'cellClick'> | undefined = (event: any) => {
-    setPreRow(event?.id)
     if (event.field === 'name') return
     setRowModesModel((pre) => {
       const object: GridRowModesModel = {}
       Object.keys(pre).forEach(key => {
         object[key] = {
-          mode: GridRowModes.View, ignoreModifications: event.id === preRow ? false : true
+          mode: GridRowModes.View, ignoreModifications: false
         }
       })
       return object
@@ -488,6 +487,7 @@ const Workspaces = () => {
         open={open.del}
         handleClose={handleClosePopupDel}
         handleOkDel={handleOkDel}
+        nameWorkspace={workspaceDel?.name}
       />
       <PopupNew
         open={open.new}
