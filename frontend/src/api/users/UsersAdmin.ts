@@ -33,8 +33,8 @@ export const updateUserApi = async (
   return response.data
 }
 
-export const deleteUserApi = async (uid: string): Promise<string> => {
-  const response = await axios.delete(`/admin/users/${uid}`)
+export const deleteUserApi = async (id: number): Promise<string> => {
+  const response = await axios.delete(`/admin/users/${id}`)
   return response.data
 }
 

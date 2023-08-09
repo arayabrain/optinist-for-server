@@ -54,7 +54,6 @@ type PopupType = {
   error?: string
 }
 
-
 const columns = (
   handleOpenPopupShare: (id: number) => void,
   handleOpenPopupDel: (id: number) => void,
