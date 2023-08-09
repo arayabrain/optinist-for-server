@@ -237,7 +237,7 @@ const AccountManager = () => {
           sorting: {
             sortModel: [
               {
-                field: sortParams.sort[0],
+                field: sortParams.sort[0].replace('role', 'role_id'),
                 sort: sortParams.sort[1] as GridSortDirection,
               },
             ],
