@@ -17,6 +17,7 @@ import {
 } from '@mui/x-data-grid'
 import { DataGridPro } from '@mui/x-data-grid-pro'
 import GroupsIcon from '@mui/icons-material/Groups'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
@@ -76,6 +77,7 @@ const columns = (
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
+  user: boolean
 ) => [
   {
     field: 'experiment_id',
@@ -97,6 +99,14 @@ const columns = (
     ],
     type: "string",
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+  },
+  user && {
+    field: 'published',
+    headerName: 'Published',
+    renderCell: (params: { row: DatabaseType }) => (
+        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+    ),
+    width: 160,
   },
   {
     field: 'brain_area',
@@ -463,7 +473,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }, [])
 
   const columnsTable = [
-    ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate),
+    ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate, !!user),
     ...getColumns,
   ].filter(Boolean) as GridEnrichedColDef[]
 
