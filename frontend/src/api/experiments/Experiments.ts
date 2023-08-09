@@ -27,7 +27,7 @@ export type ExperimentDTO = {
   success?: EXPERIMENTS_STATUS
   started_at: string
   finished_at?: string
-  workspace_id: string
+  workspace_id: number
   unique_id: string
   hasNWB: boolean
   edgeDict: EdgeDict
@@ -35,14 +35,14 @@ export type ExperimentDTO = {
 }
 
 export async function getExperimentsApi(
-  workspaceId: string,
+  workspaceId: number,
 ): Promise<ExperimentsDTO> {
   const response = await axios.get(`${BASE_URL}/experiments/${workspaceId}`)
   return response.data
 }
 
 export async function deleteExperimentByUidApi(
-  workspaceId: string,
+  workspaceId: number,
   uid: string,
 ): Promise<boolean> {
   const response = await axios.delete(
@@ -52,7 +52,7 @@ export async function deleteExperimentByUidApi(
 }
 
 export async function deleteExperimentByListApi(
-  workspaceId: string,
+  workspaceId: number,
   uidList: Array<string>,
 ): Promise<boolean> {
   const response = await axios.post(
@@ -65,7 +65,7 @@ export async function deleteExperimentByListApi(
 }
 
 export async function importExperimentByUidApi(
-  workspaceId: string,
+  workspaceId: number,
   uid: string,
 ): Promise<RunPostData> {
   const response = await axios.get(
@@ -75,7 +75,7 @@ export async function importExperimentByUidApi(
 }
 
 export async function downloadExperimentNwbApi(
-  workspaceId: string,
+  workspaceId: number,
   uid: string,
   nodeId?: string,
 ) {
@@ -90,7 +90,7 @@ export async function downloadExperimentNwbApi(
 }
 
 export async function downloadExperimentConfigApi(
-  workspaceId: string,
+  workspaceId: number,
   uid: string,
 ) {
   const response = await axios.get(
@@ -102,8 +102,17 @@ export async function downloadExperimentConfigApi(
   return response.data
 }
 
+export async function fetchExperimentApi(
+  workspace_id: number,
+): Promise<ExperimentDTO> {
+  const response = await axios.get(
+    `${BASE_URL}/experiments/fetch/${workspace_id}`,
+  )
+  return response.data
+}
+
 export async function renameExperiment(
-  workspaceId: string,
+  workspaceId: number,
   uid: string,
   new_name: string,
 ) {

@@ -3,6 +3,7 @@ import {
   WorkspacePostDataDTO,
   delWorkspaceApi,
   exportWorkspaceApi,
+  getWorkspaceApi,
   getWorkspacesApi,
   importWorkspaceApi,
   postWorkspaceApi,
@@ -17,6 +18,19 @@ import {
   WorkspaceParams,
   WORKSPACE_SLICE_NAME,
 } from './WorkspaceType'
+
+export const getWorkspace = createAsyncThunk<ItemsWorkspace, { id: number }>(
+  `${WORKSPACE_SLICE_NAME}/getWorkspace`,
+  async (data, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getWorkspaceApi(data.id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
 export const getWorkspaceList = createAsyncThunk<
   WorkspaceDataDTO,
@@ -99,30 +113,39 @@ export const exportWorkspace = createAsyncThunk<void, number>(
 )
 
 export const getListUserShareWorkSpaces = createAsyncThunk<
-    ListShareDTO,
-    {id: number}
->(`${WORKSPACE_SLICE_NAME}/getListUserShareWorkSpaces`, async (params, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await getListUserShareWorkspaceApi(params.id)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
+  ListShareDTO,
+  { id: number }
+>(
+  `${WORKSPACE_SLICE_NAME}/getListUserShareWorkSpaces`,
+  async (params, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getListUserShareWorkspaceApi(params.id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
 export const postListUserShareWorkspaces = createAsyncThunk<
-    boolean,
-    {
-      id: number
-      data: {user_ids: number[]}
-    }
->(`${WORKSPACE_SLICE_NAME}/postListUserShareWorkspaces`, async (params, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await postListUserShareWorkspaceApi(params.id, params.data)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
+  boolean,
+  {
+    id: number
+    data: { user_ids: number[] }
   }
-})
+>(
+  `${WORKSPACE_SLICE_NAME}/postListUserShareWorkspaces`,
+  async (params, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await postListUserShareWorkspaceApi(
+        params.id,
+        params.data,
+      )
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
