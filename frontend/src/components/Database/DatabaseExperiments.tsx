@@ -471,7 +471,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          adminOrManager
+          adminOrManager && user
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)}
         rows={dataExperiments?.items || []}
