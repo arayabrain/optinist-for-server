@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d, make_interp_spline
 from scipy.optimize import curve_fit
 
 from studio.app.common.dataclass.histogram import HistogramData
-from studio.app.optinist.dataclass.stat import AnovaStat, StatData, TuningStat
+from studio.app.optinist.dataclass.stat import StatData
 
 
 def base_von_mises(x, a, k, phi, deg):
@@ -85,23 +85,23 @@ class TempTuning:
     def xdata(self):
         return self.xdata_interp if self.do_interp else self.raw_xdata
 
-    @property
-    def tuning_width(self):
+    def get_curvefit_results(self):
         params = {}
         for i in range(self.CURVEFIT_MAX_RETRIES):
             if i > 0:
                 params["maxfev"] = i * self.CURVEFIT_RETRY_FEVS
 
             try:
-                k = self.curve_fit_result(params)
-                break
+                return self.curve_fit_result(params)
             except RuntimeError:
                 continue
 
-        if k > math.log(2) / 2:
-            return math.acos(math.log(0.5) / k + 1) * self.DEGREE / math.pi
-        else:
-            return self.DEGREE
+    def tuning_width(self, k):
+        return (
+            math.acos(math.log(0.5) / k + 1) * self.DEGREE / math.pi
+            if k > math.log(2) / 2
+            else self.DEGREE
+        )
 
 
 class DirTempTuning(TempTuning):
@@ -126,6 +126,26 @@ class DirTempTuning(TempTuning):
             ]
         )
 
+    @property
+    def r_best_dir_interp(self):
+        return np.max(self.ydata_interp, axis=0)
+
+    @property
+    def best_dir_interp(self):
+        return np.argmax(self.ydata_interp, axis=0)
+
+    @property
+    def null_dir_interp(self):
+        return np.mod(self.best_dir_interp + self.DEGREE, self.DEGREE * 2)
+
+    @property
+    def r_null_dir_interp(self):
+        return self.ydata_interp[self.null_dir_interp]
+
+    @property
+    def di_interp(self):
+        return 1 - self.r_null_dir_interp / self.r_best_dir_interp
+
     def curve_fit_result(self, params):
         res = curve_fit(
             dir_von_mises,
@@ -135,7 +155,37 @@ class DirTempTuning(TempTuning):
             method="lm",
             **params,
         )[0]
-        return res[2] if res[0] >= res[1] else res[3]
+
+        if res[0] >= res[1]:
+            a1, a2, k1, k2, best_dir_fit, phi2 = res
+        else:
+            a2, a1, k2, k1, phi2, best_dir_fit = res
+        best_dir_fit = np.mod(best_dir_fit, self.DEGREE * 2)
+        phi2 = np.mod(phi2, self.DEGREE * 2)
+        null_dir_fit = np.mod(best_dir_fit + self.DEGREE, self.DEGREE * 2)
+        r_best_dir_fit = (
+            dir_von_mises(best_dir_fit, a1, a2, k1, k2, best_dir_fit, phi2) + self.ymin
+        )
+        r_null_dir_fit = (
+            dir_von_mises(null_dir_fit, a1, a2, k1, k2, best_dir_fit, phi2) + self.ymin
+        )
+        di_fit = 1 - r_null_dir_fit / r_best_dir_fit
+        ds = (a1 - a2) / (a1 + a2)
+        dir_tuning_width = self.tuning_width(k1)
+
+        return (
+            a1,
+            a2,
+            k1,
+            k2,
+            best_dir_fit,
+            null_dir_fit,
+            r_best_dir_fit,
+            r_null_dir_fit,
+            di_fit,
+            ds,
+            dir_tuning_width,
+        )
 
 
 class OriTempTuning(TempTuning):
@@ -160,47 +210,71 @@ class OriTempTuning(TempTuning):
             method="lm",
             **params,
         )[0]
-        return res[1]
+
+        a1, k1, best_ori_fit = res
+        best_ori_fit = np.mod(best_ori_fit, self.DEGREE * 2)
+        ori_tuning_width = self.tuning_width(k1)
+        return (a1, k1, best_ori_fit, ori_tuning_width)
 
 
 def curvefit_tuning(
     stat: StatData,
-    anova: AnovaStat,
     output_dir: str,
     params: dict = None,
     export_plot: bool = False,
-) -> dict(tuning=TuningStat):
-    tuning = TuningStat(stat.ncells)
-
+) -> dict(stat=StatData):
     interp_method = params["interp_method"]
     do_interp = params["do_interpolation"]
     p_threshold = params["p_threshold"]
 
     for i in range(stat.ncells):
-        if anova.p_value_selective[i] > p_threshold:
+        if stat.p_value_sel[i] > p_threshold:
             continue
 
-        dir_temp = DirTempTuning(stat.dirstat.ratio_change[i], interp_method, do_interp)
-        tuning.dir_tuning_width[i] = dir_temp.tuning_width
-        ori_temp = OriTempTuning(stat.oristat.ratio_change[i], interp_method, do_interp)
-        tuning.ori_tuning_width[i] = ori_temp.tuning_width
+        dir_temp = DirTempTuning(stat.dir_ratio_change[i], interp_method, do_interp)
+        stat.best_dir_interp[i] = dir_temp.best_dir_interp
+        stat.null_dir_interp[i] = dir_temp.null_dir_interp
+        stat.r_best_dir_interp[i] = dir_temp.r_best_dir_interp
+        stat.r_null_dir_interp[i] = dir_temp.r_null_dir_interp
+        stat.di_interp[i] = dir_temp.di_interp
+        (
+            stat.dir_a1[i],
+            stat.dir_a2[i],
+            stat.dir_k1[i],
+            stat.dir_k2[i],
+            stat.best_dir_fit[i],
+            stat.null_dir_fit[i],
+            stat.r_best_dir_fit[i],
+            stat.r_null_dir_fit[i],
+            stat.di_fit[i],
+            stat.ds[i],
+            stat.dir_tuning_width[i],
+        ) = dir_temp.get_curvefit_results()
+
+        ori_temp = OriTempTuning(stat.ori_ratio_change[i], interp_method, do_interp)
+        (
+            stat.ori_a1[i],
+            stat.ori_k1[i],
+            stat.best_ori_fit[i],
+            stat.ori_tuning_width[i],
+        ) = ori_temp.get_curvefit_results()
 
     dir_tuning_width_hist = HistogramData(
-        data=tuning.dir_tuning_width[anova.index_dir_selective],
+        data=stat.dir_tuning_width[stat.index_direction_selective_cell],
         file_name="dir_tuning_width_hist",
     )
     ori_tuning_width_hist = HistogramData(
-        data=tuning.ori_tuning_width[anova.index_ori_selective],
+        data=stat.ori_tuning_width[stat.index_orientation_selective_cell],
         file_name="ori_tuning_width_hist",
     )
 
     if export_plot:
         dir_tuning_width_hist.save_plot(output_dir)
         ori_tuning_width_hist.save_plot(output_dir)
-        return tuning
+        return stat
     else:
         return {
-            "tuning": tuning,
+            "stat": stat,
             "dir_tuning_width_hist": dir_tuning_width_hist,
             "ori_tuning_width_hist": ori_tuning_width_hist,
         }

@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from studio.app.common.dataclass.histogram import HistogramData
-from studio.app.optinist.dataclass.stat import AnovaStat, StatData, VectorStat
+from studio.app.optinist.dataclass.stat import StatData
 
 
 def get_1d_vector_average(ratio):
@@ -24,43 +24,40 @@ def get_1d_vector_average(ratio):
 
 def vector_average(
     stat: StatData,
-    anova: AnovaStat,
     output_dir: str,
     params: dict = None,
     export_plot: bool = False,
-) -> dict(vector=VectorStat):
-    vector = VectorStat(stat.ncells)
-
+) -> dict(stat=StatData):
     for i in range(stat.ncells):
         (
-            vector.dir_vector_angle[i],
-            vector.dir_vector_mag[i],
-            vector.dir_vector_tune[i],
-        ) = get_1d_vector_average(stat.dirstat.ratio_change[i])
+            stat.dir_vector_angle[i],
+            stat.dir_vector_mag[i],
+            stat.dir_vector_tune[i],
+        ) = get_1d_vector_average(stat.dir_ratio_change[i])
         (
-            vector.ori_vector_angle[i],
-            vector.ori_vector_mag[i],
-            vector.ori_vector_tune[i],
-        ) = get_1d_vector_average(stat.oristat.ratio_change[i])
+            stat.ori_vector_angle[i],
+            stat.ori_vector_mag[i],
+            stat.ori_vector_tune[i],
+        ) = get_1d_vector_average(stat.ori_ratio_change[i])
 
-    vector.ori_vector_angle /= 2
+    stat.ori_vector_angle /= 2
 
     preferred_dir_hist = HistogramData(
-        data=vector.dir_vector_angle[anova.index_dir_selective],
+        data=stat.dir_vector_angle[stat.index_direction_selective_cell],
         file_name="preferred_dir_hist",
     )
     preferred_ori_hist = HistogramData(
-        data=vector.ori_vector_angle[anova.index_ori_selective],
+        data=stat.ori_vector_angle[stat.index_orientation_selective_cell],
         file_name="preferred_ori_hist",
     )
 
     if export_plot:
         preferred_dir_hist.save_plot(output_dir)
         preferred_ori_hist.save_plot(output_dir)
-        return vector
+        return stat
     else:
         return {
-            "vector": vector,
+            "stat": stat,
             "preferred_dir_hist": preferred_dir_hist,
             "preferred_ori_hist": preferred_ori_hist,
         }
