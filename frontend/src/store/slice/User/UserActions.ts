@@ -99,14 +99,14 @@ export const createUser = createAsyncThunk<
 
 export const updateUser = createAsyncThunk<
     UserDTO,
-    {id: number, data: UpdateUserDTO, params: WorkspaceParams}
+    {id: number, data: UpdateUserDTO, params: ListUsersQueryDTO}
 >(
     `${USER_SLICE_NAME}/updateUser`,
     async (props, thunkAPI) => {
       const { dispatch } = thunkAPI
       try {
         const responseData = await updateUserApi(props.id, props.data)
-        await dispatch(getListUser(props.params as { [key: string]: number }))
+        await dispatch(getListUser(props.params))
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
