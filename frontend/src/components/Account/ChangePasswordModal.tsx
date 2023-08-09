@@ -110,10 +110,10 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
               Old Password <span style={{ color: 'red' }}>*</span>
             </Label>
             <InputPassword
-              onChange={(e) => onChangeValue(e)}
+              onChange={(e) => onChangeValue(e, validatePassword)}
               name="password"
               error={errors.password}
-              onBlur={(e) => onChangeValue(e)}
+              onBlur={(e) => onChangeValue(e, validatePassword)}
               placeholder="Old Password"
             />
           </FormInline>
