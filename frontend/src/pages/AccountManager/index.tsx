@@ -94,7 +94,7 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+        `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
