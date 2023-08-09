@@ -28,7 +28,7 @@ import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
   getListUserShare,
-  postPublist,
+  postPublish,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
@@ -350,7 +350,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handlePublish = (id: number, status: 'on' | 'off') => {
-    dispatch(postPublist({ id, status }))
+    dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
   }
 
   const handleSort = useCallback(
