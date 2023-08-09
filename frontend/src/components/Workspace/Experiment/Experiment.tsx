@@ -9,7 +9,6 @@ const Experiment = React.memo(() => {
           display: 'flex',
           flexDirection: 'column',
           flexGrow: 1,
-          height: '100vh',
           padding: 16,
         }}
       >
