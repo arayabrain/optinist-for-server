@@ -2,9 +2,10 @@ import {Box, FormControl, NativeSelect, Pagination, styled} from "@mui/material"
 import {DatabaseDTO} from "../../store/slice/Database/DatabaseType";
 import {WorkspaceDataDTO} from "../../store/slice/Workspace/WorkspaceType";
 import {ChangeEvent} from "react";
+import {UserListDTO} from "../../api/users/UsersApiDTO";
 
 type PagiProps = {
-  data: DatabaseDTO | WorkspaceDataDTO
+  data: DatabaseDTO | WorkspaceDataDTO | UserListDTO
   handlePage: (e: ChangeEvent<unknown>, page: number) => void
   handleLimit: (e: ChangeEvent<HTMLSelectElement>) => void
   limit: number | null

@@ -1,7 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo} from "react";
-import {Box, Button, Input, Pagination, styled} from "@mui/material";
+import {Box, Button, Input, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -11,6 +11,7 @@ import Loading from "../../components/common/Loading";
 import {UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
 import {GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
+import PaginationCustom from "../../components/common/PaginationCustom";
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -66,7 +67,14 @@ const AccountManager = () => {
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
     if(!listUser) return
-    setParams(`limit=${listUser.limit}&offset=${page - 1}`)
+    let filter = ''
+    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&')
+    const { sort } = sortParams
+    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
   }
 
   const getParamsData = () => {
@@ -94,7 +102,7 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+        `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -114,6 +122,19 @@ const AccountManager = () => {
     const { sort } = sortParams
     setParams(
         `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
+    )
+  }
+
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    let filter = ''
+    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
+    const { sort } = sortParams
+    setParams(
+        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
@@ -237,7 +258,7 @@ const AccountManager = () => {
           sorting: {
             sortModel: [
               {
-                field: sortParams.sort[0],
+                field: sortParams.sort[0]?.replace('role', 'role_id'),
                 sort: sortParams.sort[1] as GridSortDirection,
               },
             ],
@@ -263,11 +284,11 @@ const AccountManager = () => {
       />
       {
         listUser ?
-          <Pagination
-            sx={{ marginTop: 2 }}
-            count={Math.ceil(listUser.total / listUser.limit)}
-            page={Math.ceil(listUser.offset / listUser.limit) + 1}
-            onChange={handlePage}
+          <PaginationCustom
+            data={listUser}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
           /> : null
       }
       {
