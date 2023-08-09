@@ -5,14 +5,14 @@ from studio.app.common.dataclass import MatlabData
 
 class TsData(MatlabData):
     def __init__(self, data, params, file_name="ts"):
-        params = {"fieldName": "TS", "index": [0, 0], **params}
+        params = {"fieldName": "TS", **params}
 
         super().__init__(data, params, file_name=file_name)
 
         self.nframes_stim = int(self.data["Nframes_stim"].item())
         self.nstim_per_trial = int(self.data["Nstim_per_trial"].item())
         self.ntrials = int(self.data["Ntrials"].item())
-        self.stim_log = self.data["stim_log"]
+        self.stim_log = self.data["stim_log"].item()
         self.framarate = self.data["frameRate"].item()
 
         if "Nframes_base" in [descr[0] for descr in self.data.dtype.descr]:

@@ -97,7 +97,7 @@ def sort_tc(
         base_stim_duration = tc_data.shape[0] / n_trials / n_directions_of_motion
 
     tc_len, ncells = tc_data.shape
-    stim_log = stim_log[: n_directions_of_motion * n_trials + 1, 0]
+    stim_log = stim_log[: n_directions_of_motion * n_trials + 1]
     stim_log = np.reshape(stim_log, (n_directions_of_motion, n_trials), order="F") + 1
 
     sorted_indices = np.argsort(stim_log, axis=0).astype(np.float64)

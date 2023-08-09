@@ -9,12 +9,7 @@ class MatlabData(BaseData):
         self.json_path = None
 
         if isinstance(data, str):
-            self.data = sio.loadmat(data)
+            self.data = sio.loadmat(data, squeeze_me=True)
 
             if params.get("fieldName"):
                 self.data = self.data[params["fieldName"]]
-
-            if params.get("index"):
-                fieldIndex = params["index"]
-                assert isinstance(fieldIndex, list), "index must be list"
-                self.data = self.data[tuple(fieldIndex)]
