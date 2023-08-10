@@ -7,10 +7,11 @@ import {ChangeEvent, useEffect, useState} from 'react'
 import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
 import {deleteMe, updateMe} from 'store/slice/User/UserActions'
-import {isAdmin, selectCurrentUser, selectListSearchLoading} from 'store/slice/User/UserSelector'
+import {isAdmin, selectCurrentUser, selectLoading} from 'store/slice/User/UserSelector'
+import {ROLE} from "../../@types";
 const Account = () => {
   const user = useSelector(selectCurrentUser)
-  const loading = useSelector(selectListSearchLoading)
+  const loading = useSelector(selectLoading)
   const admin = useSelector(isAdmin)
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -34,12 +35,12 @@ const Account = () => {
 
   const onConfirmDelete = async () => {
     if(!user) return
-    try {
-      dispatch(deleteMe())
-      navigate('/login')
+    const data = await dispatch(deleteMe())
+    if((data as any).error) {
+      alert('Failed to Delete Account!')
     }
-    catch {}
-    finally {
+    else {
+      navigate('/login')
     }
     handleCloseDeleteComfirmModal()
   }
@@ -91,6 +92,25 @@ const Account = () => {
     setIsEditName(false)
   }
 
+  const getRole = (role?: number) => {
+    if(!role) return
+    let newRole = ''
+    switch (role) {
+      case ROLE.ADMIN:
+        newRole = 'Admin'
+        break
+      case ROLE.DATA_MANAGER:
+        newRole = 'Data Manager'
+        break
+      case ROLE.OPERATOR:
+        newRole = 'Operator'
+        break
+      case ROLE.GUEST_OPERATOR:
+        newRole = 'Guest Operator'
+    }
+    return newRole
+  }
+
   return (
     <AccountWrapper>
       <DeleteConfirmModal
@@ -139,7 +159,7 @@ const Account = () => {
       </BoxFlex>
       <BoxFlex>
         <TitleData>Role</TitleData>
-        <BoxData>{user?.role_id}</BoxData>
+        <BoxData>{getRole(user?.role_id)}</BoxData>
       </BoxFlex>
       <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>

@@ -44,9 +44,6 @@ export const userSlice = createSlice({
         state.listUser = action.payload
         state.loading = false
       })
-      .addCase(updateMe.fulfilled, (state, action) => {
-        state.currentUser = action.payload
-      })
       .addCase(getListSearch.fulfilled, (state, action) => {
         state.loading = false
         state.listUserSearch = action.payload
@@ -66,7 +63,9 @@ export const userSlice = createSlice({
           deleteUser.rejected,
           updateUser.rejected,
           updateMe.rejected,
-          updateMe.fulfilled),
+          updateMe.fulfilled,
+          deleteMe.rejected,
+          deleteMe.fulfilled),
         (state) => {
           state.loading = false
         },
@@ -79,7 +78,8 @@ export const userSlice = createSlice({
           deleteUser.pending,
           createUser.pending,
           updateUser.pending,
-          updateMe.pending),
+          updateMe.pending,
+          deleteMe.pending),
         (state) => {
           state.loading = true
         },

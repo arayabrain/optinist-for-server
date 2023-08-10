@@ -35,7 +35,6 @@ export type UpdateUserDTO = {
   role_id?: number,
   name: string,
   email: string
-  name: string
 }
 
 export type UpdateUserPasswordDTO = {
