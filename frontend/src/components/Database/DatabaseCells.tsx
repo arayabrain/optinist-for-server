@@ -343,12 +343,15 @@ const DatabaseCells = ({ user }: CellProps) => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      <PaginationCustom
-        data={dataCells}
-        handlePage={handlePage}
-        handleLimit={handleLimit}
-        limit={Number(limit)}
-      />
+      {
+        dataCells?.items.length > 0 ?
+          <PaginationCustom
+            data={dataCells}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
+          /> : null
+      }
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}

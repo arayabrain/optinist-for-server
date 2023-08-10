@@ -489,12 +489,15 @@ const Workspaces = () => {
             />
           </Box> : null
       }
-      <PaginationCustom
-        data={data}
-        handlePage={handlePage}
-        handleLimit={handleLimit}
-        limit={Number(limit)}
-      />
+      {
+        data?.items.length > 0 ?
+          <PaginationCustom
+            data={data}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
+          /> : null
+      }
       {open.share ? (
         <PopupShare
           isWorkspace
@@ -554,7 +557,6 @@ const ButtonCustom = styled('button')(({ theme }) => ({
     backgroundColor: '#000000fc',
   },
 }))
-
 
 const ButtonIcon = styled('button')(({ theme }) => ({
   minWidth: '32px',

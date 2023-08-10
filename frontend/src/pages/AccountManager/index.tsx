@@ -575,7 +575,7 @@ const AccountManager = () => {
         onFilterModelChange={handleFilter as any}
       />
       {
-        listUser ?
+        listUser && listUser.items.length > 0 ?
           <PaginationCustom
             data={listUser}
             handlePage={handlePage}
