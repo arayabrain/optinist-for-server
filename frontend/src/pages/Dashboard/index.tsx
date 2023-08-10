@@ -30,7 +30,7 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account">
+          <LinkWrapper to="/account">
             <BoxMenu>
               <Box>
                 <AccountCircleIcon fontSize="large" />
