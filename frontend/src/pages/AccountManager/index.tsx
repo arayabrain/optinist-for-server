@@ -160,7 +160,7 @@ const AccountManager = () => {
       alert('Delete user failed!')
     }
     else {
-      alert('delete user successfully!')
+      alert('Account deleted successfully!')
     }
     setOpenDel({...openDel, open: false})
   }
