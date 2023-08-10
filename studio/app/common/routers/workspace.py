@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import LimitOffsetPage
 from fastapi_pagination.ext.sqlmodel import paginate
+from sqlalchemy import func
 from sqlmodel import Session, or_, select
 
 from studio.app.common import models as common_model
@@ -15,9 +16,25 @@ from studio.app.common.schemas.workspace import (
     WorkspacesSetting,
     WorkspaceUpdate,
 )
-from studio.app.optinist.schemas.base import SortDirection, SortOptions
+from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(tags=["Workspace"])
+
+
+shared_count_subquery = (
+    select(func.count())
+    .select_from(common_model.WorkspacesShareUser)
+    .join(
+        common_model.User,
+        common_model.WorkspacesShareUser.user_id == common_model.User.id,
+    )
+    .where(
+        common_model.WorkspacesShareUser.workspace_id == common_model.Workspace.id,
+        common_model.User.active.is_(True),
+    )
+    .correlate(common_model.Workspace)
+    .as_scalar()
+)
 
 
 @router.get(
@@ -32,12 +49,21 @@ def search_workspaces(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    sort_column = getattr(common_model.Workspace, sortOptions.sort[0] or "id")
+    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=common_model.Workspace)
+
+    def workspace_transformer(items):
+        list_ws = []
+        for item in items:
+            item[0].__dict__["shared_count"] = item.shared_count
+            list_ws.append(item[0])
+        return list_ws
+
     query = (
-        select(common_model.Workspace)
-        .outerjoin(
+        select(common_model.Workspace, shared_count_subquery.label("shared_count"))
+        .join(
             common_model.WorkspacesShareUser,
             common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
+            isouter=True,
         )
         .filter(
             common_model.Workspace.deleted.is_(False),
@@ -47,15 +73,14 @@ def search_workspaces(
             ),
         )
         .group_by(common_model.Workspace.id)
-        .order_by(
-            sort_column.desc()
-            if sortOptions.sort[1] == SortDirection.desc
-            else sort_column.asc()
-        )
+        .order_by(*sa_sort_list)
     )
-    data = paginate(db, query)
-    for ws in data.items:
-        ws.__dict__["user"] = db.query(common_model.User).get(ws.user_id)
+
+    data = paginate(
+        db,
+        query,
+        transformer=workspace_transformer,
+    )
     return data
 
 
@@ -71,18 +96,26 @@ def get_workspace(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    workspace = (
-        db.query(common_model.Workspace)
+    data = (
+        db.query(common_model.Workspace, shared_count_subquery.label("shared_count"))
+        .outerjoin(
+            common_model.WorkspacesShareUser,
+            common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
+        )
         .filter(
             common_model.Workspace.id == id,
-            common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
+            or_(
+                common_model.WorkspacesShareUser.user_id == current_user.id,
+                common_model.Workspace.user_id == current_user.id,
+            ),
         )
         .first()
     )
-    if not workspace:
+    if not data:
         raise HTTPException(status_code=404)
-    workspace.__dict__["user"] = current_user
+    workspace, shared_count = data
+    workspace.__dict__["shared_count"] = shared_count
     return Workspace.from_orm(workspace)
 
 
@@ -105,6 +138,7 @@ def create_workspace(
     db.commit()
     db.refresh(workspace)
     workspace.__dict__["user"] = current_user
+    workspace.__dict__["shared_count"] = 0
     return Workspace.from_orm(workspace)
 
 
@@ -121,8 +155,8 @@ def update_workspace(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    ws = (
-        db.query(common_model.Workspace)
+    data = (
+        db.query(common_model.Workspace, shared_count_subquery)
         .filter(
             common_model.Workspace.id == id,
             common_model.Workspace.user_id == current_user.id,
@@ -130,14 +164,16 @@ def update_workspace(
         )
         .first()
     )
-    if not ws:
+    if not data:
         raise HTTPException(status_code=404)
+    ws, shared_count = data
     data = workspace.dict(exclude_unset=True)
     for key, value in data.items():
         setattr(ws, key, value)
     db.commit()
     db.refresh(ws)
     ws.__dict__["user"] = current_user
+    ws.__dict__["shared_count"] = shared_count
     return Workspace.from_orm(ws)
 
 

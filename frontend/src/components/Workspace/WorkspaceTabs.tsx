@@ -22,7 +22,7 @@ const WorkspaceTabs: FC = () => {
     >
       <Tab label="Workflow" {...a11yProps(0)} />
       <Tab label="Visualize" {...a11yProps(1)} />
-      <Tab label="Record" {...a11yProps(2)} />
+      <Tab label="Records" {...a11yProps(2)} />
     </Tabs>
   )
 }

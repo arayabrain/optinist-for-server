@@ -3,7 +3,10 @@ import { WORKSPACE_SLICE_NAME, Workspace } from './WorkspaceType'
 import { importExperimentByUid } from '../Experiments/ExperimentsActions'
 import {
   delWorkspace,
+  getListUserShareWorkSpaces,
+  getWorkspace,
   getWorkspaceList,
+  postListUserShareWorkspaces,
   postWorkspace,
   putWorkspace,
 } from './WorkspacesActions'
@@ -19,6 +22,7 @@ const initialState: Workspace = {
     offset: 0,
   },
   loading: false,
+  listUserShare: undefined,
 }
 
 export const workspaceSlice = createSlice({
@@ -28,7 +32,7 @@ export const workspaceSlice = createSlice({
     setActiveTab: (state, action: PayloadAction<number>) => {
       state.currentWorkspace.selectedTab = action.payload
     },
-    setCurrentWorkspace: (state, action: PayloadAction<string>) => {
+    setCurrentWorkspace: (state, action: PayloadAction<number>) => {
       state.currentWorkspace.workspaceId = action.payload
     },
     clearCurrentWorkspace: (state) => {
@@ -42,12 +46,22 @@ export const workspaceSlice = createSlice({
       .addCase(importExperimentByUid.fulfilled, (state, action) => {
         state.currentWorkspace.workspaceId = action.meta.arg.workspaceId
       })
+      .addCase(getWorkspace.fulfilled, (state, action) => {
+        state.currentWorkspace.workspaceId = action.payload.id
+        state.currentWorkspace.ownerId = action.payload.user.id
+        state.loading = false
+      })
       .addCase(getWorkspaceList.fulfilled, (state, action) => {
         state.workspace = action.payload
         state.loading = false
       })
+      .addCase(getListUserShareWorkSpaces.fulfilled, (state, action) => {
+        state.listUserShare = action.payload
+        state.loading = false
+      })
       .addMatcher(
         isAnyOf(
+          getWorkspace.rejected,
           getWorkspaceList.rejected,
           postWorkspace.fulfilled,
           postWorkspace.rejected,
@@ -55,6 +69,8 @@ export const workspaceSlice = createSlice({
           putWorkspace.rejected,
           delWorkspace.fulfilled,
           delWorkspace.rejected,
+          getListUserShareWorkSpaces.rejected,
+          postListUserShareWorkspaces.rejected,
         ),
         (state) => {
           state.loading = false
@@ -62,10 +78,13 @@ export const workspaceSlice = createSlice({
       )
       .addMatcher(
         isAnyOf(
+          getWorkspace.pending,
           getWorkspaceList.pending,
           postWorkspace.pending,
           putWorkspace.pending,
           delWorkspace.pending,
+          getListUserShareWorkSpaces.pending,
+          postListUserShareWorkspaces.pending,
         ),
         (state) => {
           state.loading = true

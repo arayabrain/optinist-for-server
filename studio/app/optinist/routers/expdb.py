@@ -6,7 +6,7 @@ from sqlmodel import Session, and_, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
-    get_admin_user,
+    get_admin_data_user,
     get_current_user,
 )
 from studio.app.common.db.database import get_db
@@ -107,7 +107,7 @@ DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
 DUMMY_EXPERIMENTS_GRAPH_URLS = [
     ImageInfo(
         url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
     )
     for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
 ]
@@ -116,7 +116,7 @@ DUMMY_EXPERIMENTS_GRAPH_URLS = [
 DUMMY_CELLS_GRAPH_URLS = [
     ImageInfo(
         url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
+        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
         params={"param1": 10, "param2": 20},
     )
     for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
@@ -143,7 +143,7 @@ async def search_public_experiments(
     data = paginate(
         session=db,
         query=select(optinist_model.Experiment)
-        .filter_by(publish_status=PublishStatus.on)
+        .filter_by(publish_status=PublishStatus.on.value)
         .filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
@@ -179,7 +179,7 @@ async def search_public_cells(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
-        .filter(optinist_model.Experiment.publish_status == PublishStatus.on)
+        .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
         .filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
@@ -227,15 +227,17 @@ async def search_db_experiments(
             optinist_model.ExperimentShareUser,
             optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
+            isouter=True,
         ).filter(
             or_(
                 and_(
-                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.for_org.value,
                     common_model.Organization.id == current_user.organization_id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user,
+                    == ExperimentShareType.per_user.value,
                     optinist_model.ExperimentShareUser.user_id == current_user.id,
                 ),
             )
@@ -299,15 +301,17 @@ async def search_db_cells(
             optinist_model.ExperimentShareUser,
             optinist_model.ExperimentShareUser.experiment_uid
             == optinist_model.Experiment.id,
+            isouter=True,
         ).filter(
             or_(
                 and_(
-                    optinist_model.Experiment.share_type == ExperimentShareType.for_org,
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.for_org.value,
                     common_model.Organization.id == current_user.organization_id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user,
+                    == ExperimentShareType.per_user.value,
                     optinist_model.ExperimentShareUser.user_id == current_user.id,
                 ),
             )
@@ -345,7 +349,7 @@ async def publish_db_experiment(
     id: int,
     flag: PublishFlags,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -382,7 +386,7 @@ async def publish_db_experiment(
 def get_experiment_database_share_status(
     id: int,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -405,15 +409,19 @@ def get_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
-    users = (
-        db.query(common_model.User)
-        .join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_uid == id,
+    if exp.share_type == ExperimentShareType.per_user:
+        users = (
+            db.query(common_model.User)
+            .filter(common_model.User.active.is_(True))
+            .join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.user_id == common_model.User.id,
+            )
+            .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
+            .all()
         )
-        .all()
-    )
-
+    else:
+        users = []
     return ExpDbExperimentShareStatus(share_type=exp.share_type, users=users)
 
 
@@ -428,7 +436,7 @@ def update_experiment_database_share_status(
     id: int,
     data: ExpDbExperimentSharePostStatus,
     db: Session = Depends(get_db),
-    current_admin_user: User = Depends(get_admin_user),
+    current_admin_user: User = Depends(get_admin_data_user),
 ):
     exp = (
         db.query(optinist_model.Experiment)
@@ -455,10 +463,11 @@ def update_experiment_database_share_status(
         .delete(synchronize_session=False)
     )
 
-    [
-        db.add(optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id))
-        for user_id in data.user_ids
-    ]
+    if data.share_type == ExperimentShareType.per_user:
+        db.bulk_save_objects(
+            optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id)
+            for user_id in data.user_ids
+        )
 
     exp.share_type = data.share_type
 

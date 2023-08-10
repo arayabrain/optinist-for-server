@@ -9,8 +9,8 @@ from studio.app.common.schemas.users import UserInfo
 class Workspace(BaseModel):
     id: Optional[int]
     name: str
-    user_id: Optional[int]
     user: Optional[UserInfo]
+    shared_count: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
