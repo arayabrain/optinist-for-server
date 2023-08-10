@@ -1,16 +1,14 @@
 import { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppBar, Button, Container, Toolbar, Typography } from '@mui/material'
+import { SxProps, Theme } from '@mui/material/styles'
 
 const PublicHeader: FC = () => {
   return (
     <AppBar position="fixed">
       <Container>
         <Toolbar>
-          <Typography sx={{ fontWeight: 600, fontSize: 22, mr: 2 }}>
-            PUB STUDIO
-          </Typography>
-          <PublicNavMenu displayName="Home" navLink="/" />
+          <PublicNavMenu displayName="PUB STUDIO" navLink="/" sx={{ fontWeight: 600, fontSize: 22, mr: 2 }} />
           <PublicNavMenu displayName="Console" navLink="/console" />
         </Toolbar>
       </Container>
@@ -21,7 +19,8 @@ const PublicHeader: FC = () => {
 const PublicNavMenu: FC<{
   displayName: string
   navLink: string
-}> = ({ displayName, navLink }) => {
+  sx?: SxProps<Theme>
+}> = ({ displayName, navLink, sx }) => {
   const navigate = useNavigate()
   const handleMenuClick = () => {
     navigate(navLink)
@@ -29,7 +28,7 @@ const PublicNavMenu: FC<{
 
   return (
     <Button key={displayName} onClick={handleMenuClick}>
-      <Typography color="white">{displayName}</Typography>
+      <Typography color="white" sx={sx}>{displayName}</Typography>
     </Button>
   )
 }
