@@ -32,8 +32,9 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
                     display: "flex",
                     flexDirection: "column",
                   }}>
-                    <p>Expriment ID: {expId}</p>
-                    <p>{nameCol}</p>
+                    <DialogImageTitle>{nameCol}</DialogImageTitle>
+                    <DialogImageLabel>Expriment ID: {expId}</DialogImageLabel>
+                    <DialogImageLabel>{data}</DialogImageLabel>
 
                     <img
                       src={data}
@@ -41,7 +42,6 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
                       width={"100%"}
                       height={"100%"}
                     />
-                    <span>{data}</span>
                   </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
@@ -93,6 +93,19 @@ const DialogImageContentWrapper = styled(Box)(({theme}) => ({
   width: "80%",
   height: "80%",
   border: "1px solid #000",
+  color: "#333333",
+}))
+
+const DialogImageTitle = styled(Box)(({theme}) => ({
+  margin: "0 0 0.5em 0",
+  textAlign: "center",
+  fontSize: "1.75em",
+}))
+
+const DialogImageLabel = styled(Box)(({theme}) => ({
+  margin: "0.5em 0 0.5em 0",
+  textAlign: "center",
+  fontSize: "1.1em",
 }))
 
 const DialogImageContent = styled(Box)(({theme}) => ({
