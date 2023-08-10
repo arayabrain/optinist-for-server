@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
 import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
-import { selectListSearch, selectListSearchLoading } from "../store/slice/User/UserSelector";
+import { selectListSearch, selectLoading } from "../store/slice/User/UserSelector";
 import { getListSearch } from "../store/slice/User/UserActions";
 import Loading from "./common/Loading";
 import { UserDTO } from "../api/users/UsersApiDTO";
@@ -78,7 +78,7 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
 const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title}: PopupType) => {
   const [shareType, setShareType] = useState(data?.shareType || 0)
   const usersSuggest = useSelector(selectListSearch)
-  const loading = useSelector(selectListSearchLoading)
+  const loading = useSelector(selectLoading)
   const [textSearch, setTextSearch] = useState('')
   const [stateUserShare, setStateUserShare] = useState(usersShare || undefined)
   const dispatch = useDispatch()

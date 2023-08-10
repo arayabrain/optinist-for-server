@@ -433,7 +433,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               sx={{ cursor: 'pointer' }}
               onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
             >
-              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "bredlack" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
+              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "black" : value === SHARE.ORGANIZATION ? "red" : "blue" }`}}/>
             </Box>
           )
         }
@@ -471,7 +471,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          adminOrManager
+          adminOrManager && user
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)}
         rows={dataExperiments?.items || []}
@@ -524,8 +524,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       />
       <Pagination
         sx={{ marginTop: 2 }}
-        count={dataExperiments.total}
-        page={dataParams.offset + 1}
+        count={Math.ceil(dataExperiments.total / dataExperiments.limit)}
+        page={Math.ceil(dataExperiments.offset / dataExperiments.limit) + 1}
         onChange={handlePage}
       />
       <DialogImage
