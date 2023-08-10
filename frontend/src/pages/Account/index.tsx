@@ -8,11 +8,11 @@ import { useState } from 'react'
 import {
   // deleteMe
   updateMePassword } from 'store/slice/User/UserActions'
-import {isAdmin, selectCurrentUser, selectListSearchLoading} from 'store/slice/User/UserSelector'
+import {isAdmin, selectCurrentUser, selectLoading} from 'store/slice/User/UserSelector'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const admin = useSelector(isAdmin)
-  const loading = useSelector(selectListSearchLoading)
+  const loading = useSelector(selectLoading)
   const dispatch = useDispatch()
   // const navigate = useNavigate()
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
