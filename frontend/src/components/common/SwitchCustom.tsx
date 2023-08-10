@@ -53,7 +53,7 @@ const IOSSwitch = styled((props: SwitchProps) => (
   },
   '& .MuiSwitch-track': {
     borderRadius: 26 / 2,
-    backgroundColor: theme.palette.mode === 'light' ? 'red' : '#39393D',
+    backgroundColor: theme.palette.mode === 'light' ? 'silver' : '#39393D',
     opacity: 1,
     transition: theme.transitions.create(['background-color'], {
       duration: 500,
@@ -80,7 +80,7 @@ const SwitchCustom = ({value} : {value: boolean}) => {
     <FormControlLabel
       control={
         <IOSSwitch
-            defaultChecked={value}
+            checked={value}
           sx={{ m: 1 }}
         />
       }
