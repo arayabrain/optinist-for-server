@@ -26,6 +26,7 @@ export type UserListDTO = {
 
 export type UpdateUserDTO = {
   email: string
+  name: string
 }
 
 export type UpdateUserPasswordDTO = {
