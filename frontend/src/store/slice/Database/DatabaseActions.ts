@@ -3,13 +3,16 @@ import {
   DATABASE_SLICE_NAME,
   DatabaseDTO,
   DatabaseParams,
+  ListShareDTO,
 } from './DatabaseType'
 import {
   getCellsApi,
   getCellsPublicApi,
   getExperimentsApi,
   getExperimentsPublicApi,
-  postPublistApi,
+  getListUserShareApi,
+  postListUserShareApi,
+  postPublishApi,
 } from 'api/database'
 
 export const getExperimentsDatabase = createAsyncThunk<
@@ -67,16 +70,45 @@ export const getCellsPublicDatabase = createAsyncThunk<
   }
 })
 
-export const postPublist = createAsyncThunk<
-    DatabaseDTO,
-    {id: number, status: "on" | "off"}
->(`${DATABASE_SLICE_NAME}/postPublist`, async (params, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
+export const postPublish = createAsyncThunk<
+  boolean,
+  { id: number; status: 'on' | 'off' , params: DatabaseParams}
+>(`${DATABASE_SLICE_NAME}/postPublish`, async (params, thunkAPI) => {
+  const { rejectWithValue, dispatch } = thunkAPI
   try {
-    const response = await postPublistApi(params.id, params.status)
+    const response = await postPublishApi(params.id, params.status)
+    await dispatch(getExperimentsDatabase(params.params))
     return response
   } catch (e) {
     return rejectWithValue(e)
   }
 })
 
+export const getListUserShare = createAsyncThunk<ListShareDTO, { id: number }>(
+  `${DATABASE_SLICE_NAME}/getListUserShare`,
+  async (params, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getListUserShareApi(params.id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
+
+export const postListUserShare = createAsyncThunk<
+  boolean,
+  {
+    id: number
+    data: { share_type: number; user_ids: number[] }
+  }
+>(`${DATABASE_SLICE_NAME}/postListUserShare`, async (params, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await postListUserShareApi(params.id, params.data)
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})

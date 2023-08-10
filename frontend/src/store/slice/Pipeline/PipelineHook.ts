@@ -12,9 +12,23 @@ import { run, pollRunResult, runByCurrentUid } from './PipelineActions'
 import { cancelPipeline } from './PipelineSlice'
 import { selectFilePathIsUndefined } from '../InputNode/InputNodeSelectors'
 import { selectAlgorithmNodeNotExist } from '../AlgorithmNode/AlgorithmNodeSelectors'
-import { getExperiments } from '../Experiments/ExperimentsActions'
+import {
+  fetchExperiment,
+  getExperiments,
+} from '../Experiments/ExperimentsActions'
 import { useSnackbar } from 'notistack'
 import { RUN_STATUS } from './PipelineType'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { IS_STANDALONE, STANDALONE_WORKSPACE_ID } from 'const/Mode'
+import {
+  clearCurrentWorkspace,
+  setActiveTab,
+  setCurrentWorkspace,
+} from '../Workspace/WorkspaceSlice'
+import { clearExperiments } from '../Experiments/ExperimentsSlice'
+import { AppDispatch } from 'store/store'
+import { getWorkspace } from '../Workspace/WorkspacesActions'
+import { selectIsWorkspaceOwner } from '../Workspace/WorkspaceSelector'
 
 const POLLING_INTERVAL = 5000
 
@@ -22,9 +36,40 @@ export type UseRunPipelineReturnType = ReturnType<typeof useRunPipeline>
 
 export function useRunPipeline() {
   const dispatch = useDispatch()
+  const appDispatch: AppDispatch = useDispatch()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const { workspaceId } = useParams<{ workspaceId: string }>()
+  const _workspaceId = Number(workspaceId)
+
+  React.useEffect(() => {
+    if (IS_STANDALONE) {
+      dispatch(setCurrentWorkspace(STANDALONE_WORKSPACE_ID))
+    } else {
+      appDispatch(getWorkspace({ id: _workspaceId }))
+        .unwrap()
+        .then((_) => {
+          dispatch(fetchExperiment(_workspaceId))
+          const selectedTab = location.state?.tab
+          selectedTab && dispatch(setActiveTab(selectedTab))
+        })
+        .catch((_) => {
+          navigate('/console/workspaces')
+        })
+    }
+    return () => {
+      dispatch(clearExperiments())
+      dispatch(clearCurrentWorkspace())
+    }
+  }, [dispatch, appDispatch, navigate, _workspaceId, location.state])
+
   const uid = useSelector(selectPipelineLatestUid)
   const isCanceled = useSelector(selectPipelineIsCanceled)
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
+  const isOwner = useSelector(selectIsWorkspaceOwner)
+  const runDisabled = isOwner ? isStartedSuccess : true
+
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)
   const runPostData = useSelector(selectRunPostData)
@@ -78,7 +123,7 @@ export function useRunPipeline() {
     algorithmNodeNotExist,
     uid,
     status,
-    isStartedSuccess,
+    runDisabled,
     handleRunPipeline,
     handleRunPipelineByUid,
     handleCancelPipeline,
