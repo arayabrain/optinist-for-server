@@ -42,5 +42,5 @@ async def delete_me(
     db: Session = Depends(get_db),
 ):
     return await crud_users.delete_user(
-        db, current_user.uid, organization_id=current_user.organization_id
+        db, current_user.id, organization_id=current_user.organization_id
     )
