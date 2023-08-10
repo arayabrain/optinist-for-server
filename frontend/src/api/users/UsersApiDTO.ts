@@ -12,6 +12,8 @@ export type UserDTO = {
 export type AddUserDTO = {
   email: string
   password: string
+  name: string
+  role_id: number
 }
 
 export type ListUsersQueryDTO = {
