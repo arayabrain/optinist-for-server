@@ -23,6 +23,7 @@ const Account = () => {
   useEffect(() => {
     if(!user) return
     setIsName(user.name)
+    //eslint-disable-next-line
   }, [])
 
   const handleCloseDeleteComfirmModal = () => {
