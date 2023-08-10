@@ -5,6 +5,7 @@ from firebase_admin.auth import UserRecord
 from sqlmodel import Session, select
 
 from studio.app.common.core.auth.auth import authenticate_user
+from studio.app.common.models import Role as RoleModel
 from studio.app.common.models import User as UserModel
 from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.auth import UserAuth
@@ -12,8 +13,10 @@ from studio.app.common.schemas.users import (
     User,
     UserCreate,
     UserPasswordUpdate,
+    UserSearchOptions,
     UserUpdate,
 )
+from studio.app.optinist.schemas.base import SortOptions
 
 
 async def set_role(db: Session, user_id: int, role_id: int, auto_commit=True):
@@ -52,20 +55,33 @@ async def get_user(db: Session, user_id: int, organization_id: int) -> User:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def list_user(db: Session, organization_id: int):
+async def list_user(
+    db: Session,
+    organization_id: int,
+    options: UserSearchOptions,
+    sortOptions: SortOptions,
+):
     try:
-        query = (
-            select(
-                UserRoleModel.role_id,
-                *UserModel.__table__.columns,
-            )
-            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
-            .filter(
-                UserModel.active.is_(True), UserModel.organization_id == organization_id
-            )
-            .order_by(UserModel.name)
+        sa_sort_list = sortOptions.get_sa_sort_list(
+            sa_table=UserModel,
+            mapping={"role_id": UserRoleModel.role_id, "role": RoleModel.role},
         )
-        users = paginate(db, query=query, unique=False)
+        users = paginate(
+            db,
+            query=select(UserRoleModel.role_id, *UserModel.__table__.columns)
+            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
+            .join(RoleModel, RoleModel.id == UserRoleModel.role_id)
+            .filter(
+                UserModel.active.is_(True),
+                UserModel.organization_id == organization_id,
+            )
+            .filter(
+                UserModel.name.like("%{0}%".format(options.name)),
+                UserModel.email.like("%{0}%".format(options.email)),
+            )
+            .order_by(*sa_sort_list),
+            unique=False,
+        )
         return users
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
