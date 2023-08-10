@@ -3,7 +3,7 @@ import { USER_SLICE_NAME } from './UserType'
 import { deleteMeApi, getMeApi, updateMeApi } from 'api/users/UsersMe'
 import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
 import { LoginDTO, loginApi } from 'api/auth/Auth'
-import {deleteUserApi, createUserApi, listUsersApi} from "../../../api/users/UsersAdmin";
+import {deleteUserApi, createUserApi, listUsersApi, updateUserApi} from "../../../api/users/UsersAdmin";
 import {getListSearchApi} from "../../../api/users/UsersAdmin";
 
 export const login = createAsyncThunk(
@@ -89,6 +89,23 @@ export const createUser = createAsyncThunk<
     async (params, thunkAPI) => {
       try {
         const responseData = await createUserApi(params)
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
+)
+
+export const updateUser = createAsyncThunk<
+    UserDTO,
+    {id: number, data: UpdateUserDTO, params: ListUsersQueryDTO}
+>(
+    `${USER_SLICE_NAME}/updateUser`,
+    async (props, thunkAPI) => {
+      const { dispatch } = thunkAPI
+      try {
+        const responseData = await updateUserApi(props.id, props.data)
+        await dispatch(getListUser(props.params))
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
