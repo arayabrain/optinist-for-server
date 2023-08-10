@@ -5,6 +5,7 @@ from firebase_admin.auth import UserRecord
 from sqlmodel import Session, select
 
 from studio.app.common.core.auth.auth import authenticate_user
+from studio.app.common.models import Role as RoleModel
 from studio.app.common.models import User as UserModel
 from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.auth import UserAuth
@@ -62,12 +63,14 @@ async def list_user(
 ):
     try:
         sa_sort_list = sortOptions.get_sa_sort_list(
-            sa_table=UserModel, mapping={"role_id": UserRoleModel.role_id}
+            sa_table=UserModel,
+            mapping={"role_id": UserRoleModel.role_id, "role": RoleModel.role},
         )
         users = paginate(
             db,
             query=select(UserRoleModel.role_id, *UserModel.__table__.columns)
             .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
+            .join(RoleModel, RoleModel.id == UserRoleModel.role_id)
             .filter(
                 UserModel.active.is_(True),
                 UserModel.organization_id == organization_id,

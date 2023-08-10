@@ -1,4 +1,4 @@
-export const enum ROLE {
+export enum ROLE {
   ADMIN = 1,
   DATA_MANAGER = 10,
   OPERATOR = 20,

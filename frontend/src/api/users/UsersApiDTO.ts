@@ -12,6 +12,8 @@ export type UserDTO = {
 export type AddUserDTO = {
   email: string
   password: string
+  name: string
+  role_id: number
 }
 
 export type ListUsersQueryDTO = {
@@ -30,6 +32,8 @@ export type UserListDTO = {
 }
 
 export type UpdateUserDTO = {
+  role_id?: number,
+  name: string,
   email: string
 }
 

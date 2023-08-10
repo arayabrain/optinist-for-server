@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import { ExperimentUidContext } from './ExperimentTable'
 import {
   selectExperimentFunctionHasNWB,
+  selectExperimentFunctionMessage,
   selectExperimentFunctionName,
   selectExperimentFunctionNodeIdList,
   selectExperimentFunctionStatus,
@@ -19,6 +20,7 @@ import {
 import { ExperimentStatusIcon } from './ExperimentStatusIcon'
 import { arrayEqualityFn } from 'utils/EqualityUtils'
 import { NWBDownloadButton } from './Button/DownloadButton'
+import { IconButton, Popover } from '@mui/material'
 
 export const CollapsibleTable = React.memo<{
   open: boolean
@@ -77,6 +79,15 @@ const TableRowOfFunction = React.memo<{
   const name = useSelector(selectExperimentFunctionName(uid, nodeId))
   const status = useSelector(selectExperimentFunctionStatus(uid, nodeId))
   const hasNWB = useSelector(selectExperimentFunctionHasNWB(uid, nodeId))
+  const message = useSelector(selectExperimentFunctionMessage(uid, nodeId))
+  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+  const open = Boolean(anchorEl)
 
   return (
     <TableRow key={nodeId}>
@@ -85,7 +96,23 @@ const TableRowOfFunction = React.memo<{
       </TableCell>
       <TableCell>{nodeId}</TableCell>
       <TableCell>
-        <ExperimentStatusIcon status={status} />
+        <IconButton onClick={handleClick} disabled={!message}>
+          <ExperimentStatusIcon status={status} />
+        </IconButton>
+        <Popover
+          id="function-error-message"
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+        >
+          <Typography sx={{ p: 1, color: 'crimson', fontSize: 14 }}>
+            {message}
+          </Typography>
+        </Popover>
       </TableCell>
       <TableCell>
         <NWBDownloadButton name={name} nodeId={nodeId} hasNWB={hasNWB} />
