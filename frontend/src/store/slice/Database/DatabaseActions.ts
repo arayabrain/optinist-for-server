@@ -12,7 +12,7 @@ import {
   getExperimentsPublicApi,
   getListUserShareApi,
   postListUserShareApi,
-  postPublistApi,
+  postPublishApi,
 } from 'api/database'
 
 export const getExperimentsDatabase = createAsyncThunk<
@@ -70,13 +70,14 @@ export const getCellsPublicDatabase = createAsyncThunk<
   }
 })
 
-export const postPublist = createAsyncThunk<
+export const postPublish = createAsyncThunk<
   boolean,
-  { id: number; status: 'on' | 'off' }
->(`${DATABASE_SLICE_NAME}/postPublist`, async (params, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
+  { id: number; status: 'on' | 'off' , params: DatabaseParams}
+>(`${DATABASE_SLICE_NAME}/postPublish`, async (params, thunkAPI) => {
+  const { rejectWithValue, dispatch } = thunkAPI
   try {
-    const response = await postPublistApi(params.id, params.status)
+    const response = await postPublishApi(params.id, params.status)
+    await dispatch(getExperimentsDatabase(params.params))
     return response
   } catch (e) {
     return rejectWithValue(e)
