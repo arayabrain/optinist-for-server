@@ -5,26 +5,35 @@ export type UserDTO = {
   name?: string
   organization_id?: number
   role_id?: number
-  create_at?: string
-  update_at?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export type AddUserDTO = {
   email: string
   password: string
+  name: string
+  role_id: number
 }
 
 export type ListUsersQueryDTO = {
+  name?: string
+  email?: string
+  sort?: string[]
   offset?: number
   limit?: number
 }
 
 export type UserListDTO = {
-  data: UserDTO[]
-  total_page: number
+  items: UserDTO[]
+  total: number
+  limit: number
+  offset: number
 }
 
 export type UpdateUserDTO = {
+  role_id?: number,
+  name: string,
   email: string
   name: string
 }
