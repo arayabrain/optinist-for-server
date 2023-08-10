@@ -30,7 +30,7 @@ const Dashboard = () => {
           </LinkWrapper>
           {
             admin ?
-              <LinkWrapper to="/console/account-manager">
+              <LinkWrapper to="/console/account">
                 <BoxMenu>
                   <Box>
                     <AccountCircleIcon fontSize="large" />
