@@ -30,6 +30,14 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
+          <LinkWrapper to="/console/account">
+            <BoxMenu>
+              <Box>
+                <AccountCircleIcon fontSize="large" />
+                <TitleMenu>Account</TitleMenu>
+              </Box>
+            </BoxMenu>
+          </LinkWrapper>
           {
             admin ?
               <LinkWrapper to="/console/account-manager?sort=&sort=&limit=50&offset=0">
