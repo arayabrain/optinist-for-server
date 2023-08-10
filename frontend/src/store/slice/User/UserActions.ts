@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { deleteMeApi, getMeApi, updateMeApi } from 'api/users/UsersMe'
-import {ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
+import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
 import { LoginDTO, loginApi } from 'api/auth/Auth'
-import {listUsersApi} from "../../../api/users/UsersAdmin";
+import {createUserApi, listUsersApi} from "../../../api/users/UsersAdmin";
 import {getListSearchApi} from "../../../api/users/UsersAdmin";
 
 export const login = createAsyncThunk(
@@ -74,6 +74,21 @@ export const getListSearch = createAsyncThunk<
     async (params, thunkAPI) => {
       try {
         const responseData = await getListSearchApi(params)
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
+)
+
+export const createUser = createAsyncThunk<
+    UserDTO,
+    AddUserDTO
+>(
+    `${USER_SLICE_NAME}/createUser`,
+    async (params, thunkAPI) => {
+      try {
+        const responseData = await createUserApi(params)
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
