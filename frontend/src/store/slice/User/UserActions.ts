@@ -5,7 +5,6 @@ import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/U
 import { LoginDTO, loginApi } from 'api/auth/Auth'
 import {createUserApi, listUsersApi, updateUserApi} from "../../../api/users/UsersAdmin";
 import {getListSearchApi} from "../../../api/users/UsersAdmin";
-import {WorkspaceParams} from "../Workspace/WorkspaceType";
 
 export const login = createAsyncThunk(
   `${USER_SLICE_NAME}/login`,
