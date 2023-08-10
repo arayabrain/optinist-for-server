@@ -39,9 +39,6 @@ export const userSlice = createSlice({
       .addCase(getMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
       })
-      .addCase(updateMe.fulfilled, (state, action) => {
-        state.loading = false
-      })
       .addCase(getListSearch.fulfilled, (state, action) => {
         state.loading = false
         state.listUserSearch = action.payload
@@ -53,7 +50,7 @@ export const userSlice = createSlice({
         },
       )
       .addMatcher(
-        isAnyOf(getListSearch.rejected, updateMe.rejected),
+        isAnyOf(getListSearch.rejected, updateMe.rejected, updateMe.fulfilled),
         (state) => {
           state.loading = false
         },
