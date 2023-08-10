@@ -26,10 +26,10 @@ export const listUsersApi = async (
 }
 
 export const updateUserApi = async (
-  uid: string,
+  id: number,
   data: UpdateUserDTO,
 ): Promise<UserDTO> => {
-  const response = await axios.put(`/admin/users/${uid}`, data)
+  const response = await axios.put(`/admin/users/${id}`, data)
   return response.data
 }
 
