@@ -15,6 +15,7 @@ import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
 import {SelectChangeEvent} from "@mui/material/Select";
 import SelectError from "../../components/common/SelectError";
+import {useSnackbar, VariantType} from "notistack";
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -244,6 +245,12 @@ const AccountManager = () => {
   const email = searchParams.get('email') || undefined
   const sort = searchParams.getAll('sort') || []
 
+  const { enqueueSnackbar } = useSnackbar();
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant });
+  };
+
   useEffect(() => {
     if(!admin) navigate('/console')
     //eslint-disable-next-line
@@ -365,26 +372,18 @@ const AccountManager = () => {
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
-          setTimeout(() => {
-            alert('This email already exists!')
-          }, 300)
+          handleClickVariant('error', 'This email already exists!')
         }
         else {
-          setTimeout(() => {
-            alert('Your account has been edited successfully!')
-          }, 1)
+          handleClickVariant('success', 'Your account has been edited successfully!')
         }
     } else {
       const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
       if(!(data as any).error) {
-        setTimeout(() => {
-          alert('Your account has been created successfully!')
-        }, 1)
+        handleClickVariant('success', 'Your account has been created successfully!')
       }
         else {
-        setTimeout(() => {
-          alert('This email already exists!')
-        }, 300)
+        handleClickVariant('error', 'This email already exists!')
       }
     }
     return undefined
