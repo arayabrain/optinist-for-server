@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { User } from './UserType'
-import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, updateMePassword, createUser, updateUser} from './UserActions'
+import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, updateMePassword, deleteUser, createUser, updateUser} from './UserActions'
 import {
   removeExToken,
   removeToken,
@@ -63,7 +63,10 @@ export const userSlice = createSlice({
           getListUser.rejected,
           updateUser.rejected,
           updateMePassword.rejected,
-          updateMePassword.fulfilled),
+          updateMePassword.fulfilled,
+          createUser.rejected,
+          deleteUser.fulfilled,
+          deleteUser.rejected),
         (state) => {
           state.loading = false
         },
@@ -72,6 +75,8 @@ export const userSlice = createSlice({
         isAnyOf(
           getListUser.pending,
           getListSearch.pending,
+          createUser.pending,
+          deleteUser.pending,
           createUser.pending,
           updateUser.pending,
           updateMePassword.pending),
