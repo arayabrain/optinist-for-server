@@ -1,5 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
+import {useEffect} from "react";
 
 type DialogImageProps = {
   open: boolean
@@ -10,6 +11,20 @@ type DialogImageProps = {
 }
 
 const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
+  useEffect(() => {
+    const handleClosePopup = (event: any) => {
+      if(event.key === 'Escape') {
+        handleCloseDialog()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleClosePopup);
+    return () => {
+      document.removeEventListener('keydown', handleClosePopup);
+    };
+    //eslint-disable-next-line
+  }, []);
   if(!data) return null
   return (
     <>

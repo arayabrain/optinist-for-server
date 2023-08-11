@@ -179,7 +179,7 @@ const columns = (
     renderCell: (params: GridRenderCellParams<string>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
-          <GroupsIcon />
+          <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
         </ButtonCustom>
       ): null
   },

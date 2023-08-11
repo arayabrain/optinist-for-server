@@ -1,5 +1,5 @@
 import { Box, Input, Pagination, styled } from '@mui/material'
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 import Button from '@mui/material/Button'
@@ -211,6 +211,22 @@ const PopupAttributes = ({
   handleChangeAttributes,
   exp_id
 }: PopupAttributesProps) => {
+
+  useEffect(() => {
+    const handleClosePopup = (event: any) => {
+      if(event.key === 'Escape') {
+        handleClose()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleClosePopup);
+    return () => {
+      document.removeEventListener('keydown', handleClosePopup);
+    };
+    //eslint-disable-next-line
+  }, []);
+
   return (
     <Box>
       <Dialog
@@ -286,7 +302,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: [sort[0].replace('published', 'publish_status'), sort[1]] || [],
+      sort: [sort[0]?.replace('published', 'publish_status'), sort[1]] || [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
@@ -374,7 +390,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace(
+        `${filter}&sort=${rowSelectionModel[0].field?.replace(
           'fields.',
           '',
         )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
@@ -496,7 +512,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0].replace('publish_status', 'published'),
+                field: dataParams.sort[0]?.replace('publish_status', 'published'),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
