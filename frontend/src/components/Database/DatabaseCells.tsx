@@ -232,6 +232,9 @@ const DatabaseCells = ({ user }: CellProps) => {
         })
         .join('&')
     }
+    else {
+      return
+    }
     const { sort } = dataParams
     setParams(
       `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
