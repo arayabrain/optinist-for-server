@@ -18,7 +18,7 @@ from studio.app.common.schemas.workspace import (
 )
 from studio.app.optinist.schemas.base import SortOptions
 
-router = APIRouter(tags=["Workspace"])
+router = APIRouter(tags=["Workspace"], dependencies=[Depends(get_current_user)])
 
 
 shared_count_subquery = (

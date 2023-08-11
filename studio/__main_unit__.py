@@ -44,6 +44,7 @@ app.include_router(workspace.router)
 app.include_router(hdf5.router)
 app.include_router(nwb.router)
 app.include_router(roi.router)
+app.include_router(expdb.public_router)
 app.include_router(expdb.router)
 
 app.add_middleware(
