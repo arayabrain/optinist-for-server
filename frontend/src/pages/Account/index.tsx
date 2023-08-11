@@ -3,7 +3,7 @@ import {Box, Button, Input, styled, Typography} from '@mui/material'
 import Loading from "components/common/Loading"
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
-import {ChangeEvent, useEffect, useState} from 'react'
+import {ChangeEvent, useEffect, useRef, useState} from 'react'
 import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
 import {deleteMe, updateMe} from 'store/slice/User/UserActions'
@@ -19,6 +19,8 @@ const Account = () => {
   const [isChangePwModalOpen, setIsChangePwModalOpen] = useState(false)
   const [isEditName, setIsEditName] = useState(false)
   const [isName, setIsName] = useState<string>()
+
+  const ref = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if(!user) return
@@ -88,6 +90,7 @@ const Account = () => {
       }))
       if((data as any).error) {
         alert('name edit failed!')
+        setIsName(user?.name)
       }
     }
     setIsEditName(false)
@@ -112,6 +115,18 @@ const Account = () => {
     return newRole
   }
 
+  const handleName = (event: any) => {
+    if(event.key === 'Escape') {
+      setIsName(user?.name)
+      setIsEditName(false)
+      return
+    }
+    if(event.key === 'Enter') {
+      if(ref.current) ref.current?.querySelector('input')?.blur?.()
+      return
+    }
+  }
+
   return (
     <AccountWrapper>
       <DeleteConfirmModal
@@ -129,11 +144,11 @@ const Account = () => {
       <Title>Account Profile</Title>
       <BoxFlex>
         <TitleData>Account ID</TitleData>
-        <BoxData>{user?.id}</BoxData>
+        <BoxData>{user?.uid}</BoxData>
       </BoxFlex>
       <BoxFlex>
         <TitleData>Organization</TitleData>
-        <BoxData>{user?.organization_id}</BoxData>
+        <BoxData>{user?.organization?.name}</BoxData>
       </BoxFlex>
       <BoxFlex>
         <TitleData>Full name:</TitleData>
@@ -144,6 +159,8 @@ const Account = () => {
             placeholder="Full name"
             value={isName}
             onChange={onEditName}
+            onKeyDown={handleName}
+            ref={ref}
           />
         ) : (
           <>
