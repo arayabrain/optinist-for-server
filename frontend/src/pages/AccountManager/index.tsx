@@ -298,7 +298,7 @@ const AccountManager = () => {
   useEffect(() => {
     dispatch(getListUser({...filterParams, ...sortParams, ...params}))
     //eslint-disable-next-line
-  }, [searchParams])
+  }, [limit, offset, email, name, JSON.stringify(sort)])
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
     if(!listUser) return
@@ -325,10 +325,7 @@ const AccountManager = () => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${paramsManager()}`)
-        return
-      }
+      if (!rowSelectionModel[0]) return
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
       )
