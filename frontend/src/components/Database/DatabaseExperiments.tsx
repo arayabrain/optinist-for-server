@@ -106,7 +106,7 @@ const columns = (
     renderCell: (params: { row: DatabaseType }) => (
         params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
     ),
-    valueOptions: [0, 1],
+    valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
     width: 160,
   },
@@ -321,7 +321,13 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
-    dispatch(api({ ...dataParamsFilter, ...dataParams }))
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
   }
 
   useEffect(() => {
@@ -365,7 +371,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
       .join('&')
-      .replaceAll('fields.', '')
+      .replaceAll('publish_status', 'published')
     return dataFilter
   }
 
@@ -412,7 +418,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter?.replace('publish_status', 'published')}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
