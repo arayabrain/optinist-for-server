@@ -36,6 +36,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
     for item in items:
         expdbcell = ExpDbCell.from_orm(item[0])
         expdbcell.experiment_id = item[1]
+        expdbcell.publish_status = item[2]
         expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
         # TODO: set dummy data.
         expdbcell.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
@@ -174,7 +175,11 @@ async def search_public_cells(
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
     )
     query = (
-        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
+        select(
+            optinist_model.Cell,
+            optinist_model.Experiment.experiment_id,
+            optinist_model.Experiment.publish_status,
+        )
         .join(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
@@ -282,7 +287,11 @@ async def search_db_cells(
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
     )
     query = (
-        select(optinist_model.Cell, optinist_model.Experiment.experiment_id)
+        select(
+            optinist_model.Cell,
+            optinist_model.Experiment.experiment_id,
+            optinist_model.Experiment.publish_status,
+        )
         .join(
             optinist_model.Experiment,
             optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
