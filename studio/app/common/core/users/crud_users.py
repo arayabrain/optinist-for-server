@@ -20,17 +20,12 @@ from studio.app.optinist.schemas.base import SortOptions
 
 
 async def set_role(db: Session, user_id: int, role_id: int, auto_commit=True):
-    try:
-        db.query(UserRoleModel).filter_by(user_id=user_id).delete(
-            synchronize_session=False
-        )
-        role_user = UserRoleModel(user_id=user_id, role_id=role_id)
-        db.add(role_user)
-        db.flush()
-        if auto_commit:
-            db.commit()
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    db.query(UserRoleModel).filter_by(user_id=user_id).delete(synchronize_session=False)
+    role_user = UserRoleModel(user_id=user_id, role_id=role_id)
+    db.add(role_user)
+    db.flush()
+    if auto_commit:
+        db.commit()
 
 
 async def get_user(db: Session, user_id: int, organization_id: int) -> User:
@@ -61,6 +56,14 @@ async def list_user(
     options: UserSearchOptions,
     sortOptions: SortOptions,
 ):
+    def user_transformer(items):
+        users = []
+        for item in items:
+            user, role_id = item
+            user.__dict__["role_id"] = role_id
+            users.append(user)
+        return users
+
     try:
         sa_sort_list = sortOptions.get_sa_sort_list(
             sa_table=UserModel,
@@ -68,9 +71,9 @@ async def list_user(
         )
         users = paginate(
             db,
-            query=select(UserRoleModel.role_id, *UserModel.__table__.columns)
-            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id)
-            .join(RoleModel, RoleModel.id == UserRoleModel.role_id)
+            query=select(UserModel, UserRoleModel.role_id)
+            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id, isouter=True)
+            .join(RoleModel, RoleModel.id == UserRoleModel.role_id, isouter=True)
             .filter(
                 UserModel.active.is_(True),
                 UserModel.organization_id == organization_id,
@@ -80,6 +83,7 @@ async def list_user(
                 UserModel.email.like("%{0}%".format(options.email)),
             )
             .order_by(*sa_sort_list),
+            transformer=user_transformer,
             unique=False,
         )
         return users

@@ -8,6 +8,11 @@ from pydantic import BaseModel, EmailStr, Field
 password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
 
 
+class Organization(BaseModel):
+    id: int
+    name: str
+
+
 class UserSearchOptions(BaseModel):
     email: Optional[str] = Field(Query(default=""))
     name: Optional[str] = Field(Query(default=""))
@@ -25,7 +30,7 @@ class User(BaseModel):
     uid: str
     name: Optional[str]
     email: EmailStr
-    organization_id: int
+    organization: Organization
     role_id: Optional[int]
 
     @property
