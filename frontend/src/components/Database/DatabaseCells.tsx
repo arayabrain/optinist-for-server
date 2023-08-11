@@ -213,10 +213,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
-        return
-      }
+      if (!rowSelectionModel[0]) return
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
