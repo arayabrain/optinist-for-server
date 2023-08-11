@@ -22,6 +22,7 @@ import {
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 type CellProps = {
   user?: Object
@@ -29,7 +30,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
+const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void, user?: boolean) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -50,6 +51,14 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
     type: "string",
     width: 160,
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+  },
+  user && {
+    field: 'published',
+    headerName: 'Published',
+    renderCell: (params: { row: DatabaseType }) => (
+        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+    ),
+    width: 160,
   },
   {
     field: 'id',
@@ -272,7 +281,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataExperiments.header?.graph_titles])
 
-  const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
+  const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
     Boolean,
   ) as GridEnrichedColDef[]
 
