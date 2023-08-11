@@ -58,6 +58,8 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     renderCell: (params: { row: DatabaseType }) => (
         params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
     ),
+    valueOptions: ['Published', 'No_Published'],
+    type: 'singleSelect',
     width: 160,
   },
   {
@@ -174,6 +176,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const dataParamsFilter = useMemo(
     () => ({
       experiment_id: searchParams.get('experiment_id') || undefined,
+      publish_status: searchParams.get('published') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -184,7 +187,13 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api({ ...dataParamsFilter, ...dataParams }))
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
   }
 
   useEffect(() => {
@@ -209,6 +218,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
       .join('&')
+      .replaceAll('publish_status', 'published')
     return dataFilter
   }
 
@@ -246,7 +256,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter?.replaceAll('publish_status', 'published')}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
@@ -310,6 +320,11 @@ const DatabaseCells = ({ user }: CellProps) => {
                   field: 'experiment_id',
                   operator: 'contains',
                   value: dataParamsFilter.experiment_id,
+                },
+                {
+                  field: 'published',
+                  operator: 'is',
+                  value: dataParamsFilter.publish_status,
                 },
                 {
                   field: 'brain_area',

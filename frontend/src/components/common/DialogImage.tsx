@@ -25,12 +25,21 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
     };
     //eslint-disable-next-line
   }, []);
+
+  const handleClose = (event: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.target === event.currentTarget) handleCloseDialog()
+    return
+  }
+
   if(!data) return null
   return (
-    <>
+    <Box>
     {
-      open ? <DialogImageWrapper>
-        <DialogImageContentWrapper>
+      open ?
+      <DialogImageWrapper sx={{position: 'absolute', zIndex: 1}} onClick={handleClose} >
+        <DialogImageContentWrapper sx={{position: 'absolute', zIndex: 10000}}>
           <DialogImageContent>
             <Box
               sx={{
@@ -83,7 +92,7 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
         </DialogImageContentWrapper>
       </DialogImageWrapper> : null
     }
-    </>
+    </Box>
   )
 }
 
