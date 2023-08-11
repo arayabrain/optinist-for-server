@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { User } from './UserType'
-import {deleteMe, getListSearch, getMe, login, updateMe} from './UserActions'
+import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, deleteUser, createUser, updateUser} from './UserActions'
 import {
   removeExToken,
   removeToken,
@@ -13,6 +13,7 @@ import {
 const initialState: User = {
   currentUser: undefined,
   listUserSearch: undefined,
+  listUser: undefined,
   loading: false
 }
 
@@ -39,19 +40,47 @@ export const userSlice = createSlice({
       .addCase(getMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
       })
+      .addCase(getListUser.fulfilled, (state, action) => {
+        state.listUser = action.payload
+        state.loading = false
+      })
       .addCase(updateMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
-      })
-      .addCase(getListSearch.pending, (state, action) => {
-        state.loading = true
       })
       .addCase(getListSearch.fulfilled, (state, action) => {
         state.loading = false
         state.listUserSearch = action.payload
       })
-      .addCase(getListSearch.rejected, (state) => {
+      .addCase(createUser.fulfilled, (state, action) => {
+        if(!state.listUser) return
+        state.listUser.items.push(action.payload)
         state.loading = false
       })
+      .addMatcher(
+        isAnyOf(
+          getListSearch.rejected,
+          createUser.rejected,
+          getListUser.rejected,
+          createUser.rejected,
+          deleteUser.fulfilled,
+          deleteUser.rejected,
+          updateUser.rejected),
+        (state) => {
+          state.loading = false
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          getListUser.pending,
+          getListSearch.pending,
+          createUser.pending,
+          deleteUser.pending,
+          createUser.pending,
+          updateUser.pending),
+        (state) => {
+          state.loading = true
+        },
+      )
       .addMatcher(
         isAnyOf(login.rejected, getMe.rejected, deleteMe.fulfilled),
         (state) => {

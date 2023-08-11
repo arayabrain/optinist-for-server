@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
 import { isAdmin } from 'store/slice/User/UserSelector'
+
 const Dashboard = () => {
   const admin = useSelector(isAdmin)
   return (
@@ -30,11 +32,11 @@ const Dashboard = () => {
           </LinkWrapper>
           {
             admin ?
-              <LinkWrapper to="/console/account-manager">
+              <LinkWrapper to="/console/account-manager?sort=&sort=&limit=50&offset=0">
                 <BoxMenu>
                   <Box>
-                    <AccountCircleIcon fontSize="large" />
-                    <TitleMenu>Account</TitleMenu>
+                    <ManageAccountsIcon fontSize="large" />
+                    <TitleMenu>Account Manager</TitleMenu>
                   </Box>
                 </BoxMenu>
               </LinkWrapper>: null

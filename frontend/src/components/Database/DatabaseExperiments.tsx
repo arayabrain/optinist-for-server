@@ -29,7 +29,7 @@ import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
   getListUserShare,
-  postPublist,
+  postPublish,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
@@ -360,7 +360,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handlePublish = (id: number, status: 'on' | 'off') => {
-    dispatch(postPublist({ id, status }))
+    dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
   }
 
   const handleSort = useCallback(
@@ -443,7 +443,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
               sx={{ cursor: 'pointer' }}
               onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
             >
-              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "bredlack" : value === SHARE.ORGANIZATION ? "blue" : "red" }`}}/>
+              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "black" : value === SHARE.ORGANIZATION ? "red" : "blue" }`}}/>
             </Box>
           )
         }
@@ -481,7 +481,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     <DatabaseExperimentsWrapper>
       <DataGridPro
         columns={
-          adminOrManager
+          adminOrManager && user
             ? ([...columnsTable, ...ColumnPrivate] as any)
             : (columnsTable as any)}
         rows={dataExperiments?.items || []}
@@ -534,8 +534,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       />
       <Pagination
         sx={{ marginTop: 2 }}
-        count={dataExperiments.total}
-        page={dataParams.offset + 1}
+        count={Math.ceil(dataExperiments.total / dataExperiments.limit)}
+        page={Math.ceil(dataExperiments.offset / dataExperiments.limit) + 1}
         onChange={handlePage}
       />
       <DialogImage
