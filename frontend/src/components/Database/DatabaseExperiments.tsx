@@ -106,6 +106,8 @@ const columns = (
     renderCell: (params: { row: DatabaseType }) => (
         params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
     ),
+    valueOptions: [0, 1],
+    type: 'singleSelect',
     width: 160,
   },
   {
@@ -284,7 +286,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: sort || [],
+      sort: [sort[0].replace('published', 'publish_status'), sort[1]] || [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
@@ -292,6 +294,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const dataParamsFilter = useMemo(
     () => ({
       experiment_id: searchParams.get('experiment_id') || undefined,
+      publish_status: searchParams.get('published') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -359,8 +362,8 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     )
   }
 
-  const handlePublish = (id: number, status: 'on' | 'off') => {
-    dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
+  const handlePublish = async (id: number, status: 'on' | 'off') => {
+    await dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
   }
 
   const handleSort = useCallback(
@@ -493,7 +496,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0],
+                field: dataParams.sort[0].replace('publish_status', 'published'),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
@@ -505,6 +508,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
                   field: 'experiment_id',
                   operator: 'contains',
                   value: dataParamsFilter.experiment_id,
+                },
+                {
+                  field: 'published',
+                  operator: 'is',
+                  value: dataParamsFilter.publish_status,
                 },
                 {
                   field: 'brain_area',
