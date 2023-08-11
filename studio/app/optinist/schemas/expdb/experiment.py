@@ -59,9 +59,6 @@ class ExpDbExperiment(BaseModel):
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):
-    publish_status: Optional[bool] = Field(
-        Query(default=None, description="0: private, 1: public")
-    )
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")
     )
