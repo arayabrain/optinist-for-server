@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination.ext.sqlmodel import paginate
@@ -214,6 +214,7 @@ async def search_public_cells(
 )
 async def search_db_experiments(
     db: Session = Depends(get_db),
+    publish_status: Optional[bool] = None,
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
@@ -251,7 +252,10 @@ async def search_db_experiments(
         query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            )
+            ),
+            optinist_model.Experiment.publish_status == publish_status
+            if publish_status is not None
+            else True,
         )
         .group_by(optinist_model.Experiment.id)
         .order_by(*sa_sort_list)
@@ -278,13 +282,17 @@ async def search_db_experiments(
 )
 async def search_db_cells(
     db: Session = Depends(get_db),
+    publish_status: Optional[bool] = None,
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Cell,
-        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+        mapping={
+            "experiment_id": optinist_model.Experiment.experiment_id,
+            "publish_status": optinist_model.Experiment.publish_status,
+        },
     )
     query = (
         select(
@@ -329,7 +337,10 @@ async def search_db_cells(
         query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            )
+            ),
+            optinist_model.Experiment.publish_status == publish_status
+            if publish_status is not None
+            else True,
         )
         .group_by(optinist_model.Cell.id)
         .order_by(*sa_sort_list)
