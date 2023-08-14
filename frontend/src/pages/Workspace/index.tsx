@@ -9,7 +9,7 @@ import {
   DialogActions,
   Input,
 } from '@mui/material'
-import { GridRenderCellParams } from '@mui/x-data-grid'
+import {GridRenderCellParams, GridValidRowModel} from '@mui/x-data-grid'
 import {
   DataGridPro,
   GridEventListener,
@@ -70,7 +70,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{params.value}</span>
     ),
   },
@@ -81,7 +81,7 @@ const columns = (
     editable: true,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       const { row, value } = params
       return (
         <Box
@@ -132,7 +132,7 @@ const columns = (
     minWidth: 200,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
     ),
   },
@@ -142,7 +142,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
     ),
   },
@@ -152,7 +152,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
       <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
       )
@@ -164,7 +164,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
       </ButtonCustom>
@@ -176,7 +176,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
           <GroupsIcon />
@@ -189,7 +189,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
       <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
         Del
