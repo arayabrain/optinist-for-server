@@ -5,8 +5,7 @@ import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from "react-router-dom";
-import { updateMePasswordApi } from 'api/users/UsersMe'
-import { deleteMe, updateMe } from 'store/slice/User/UserActions'
+import { deleteMe, updateMe, updateMePassword} from 'store/slice/User/UserActions'
 import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
 import { ROLE } from "../../@types";
 const Account = () => {
@@ -56,16 +55,13 @@ const Account = () => {
   }
 
   const onConfirmChangePw = async (oldPass: string, newPass: string) => {
-    try {
-      await updateMePasswordApi({old_password: oldPass, new_password: newPass})
-      alert('Your password has been successfully changed.')
-      handleCloseChangePw()
-    }
-    catch {
+    const data = await dispatch(updateMePassword({old_password: oldPass, new_password: newPass}))
+    if ((data as any).error) {
       alert('Failed to Change Password!')
+      return
     }
-    finally {
-    }
+    alert('Your password has been successfully changed.')
+    handleCloseChangePw()
   }
 
   const onEditName = (e: ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +180,7 @@ const Account = () => {
         <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
       </BoxFlex>
       {
-        loading && <Loading />
+        loading ? <Loading /> : null
       }
     </AccountWrapper>
   )
