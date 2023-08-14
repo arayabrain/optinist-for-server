@@ -1,18 +1,17 @@
 import { useSelector, useDispatch } from 'react-redux'
-import {Box, Button, Input, styled, Typography} from '@mui/material'
+import { Box, Button, Input, styled, Typography } from '@mui/material'
 import Loading from "components/common/Loading"
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
-import {ChangeEvent, useEffect, useRef, useState} from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { updateMePasswordApi } from 'api/users/UsersMe'
-import {deleteMe, updateMe} from 'store/slice/User/UserActions'
-import {isAdmin, selectCurrentUser, selectLoading} from 'store/slice/User/UserSelector'
-import {ROLE} from "../../@types";
+import { deleteMe, updateMe } from 'store/slice/User/UserActions'
+import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
+import { ROLE } from "../../@types";
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const loading = useSelector(selectLoading)
-  const admin = useSelector(isAdmin)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
@@ -179,12 +178,9 @@ const Account = () => {
         <TitleData>Role</TitleData>
         <BoxData>{getRole(user?.role_id)}</BoxData>
       </BoxFlex>
-      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
+      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10, maxWidth: 600}}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
-        {
-          admin ?
-            <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit> : null
-        }
+        <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
       </BoxFlex>
       {
         loading && <Loading />
