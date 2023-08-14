@@ -10,7 +10,7 @@ import {
   Input,
   Pagination,
 } from '@mui/material'
-import { GridRenderCellParams } from '@mui/x-data-grid'
+import {GridRenderCellParams, GridValidRowModel} from '@mui/x-data-grid'
 import {
   DataGridPro,
   GridEventListener,
@@ -70,7 +70,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{params.value}</span>
     ),
   },
@@ -81,7 +81,7 @@ const columns = (
     editable: true,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       const { row, value } = params
       return (
         <Box
@@ -121,8 +121,13 @@ const columns = (
       params: GridRenderCellParams<{ name: string; id: number }>,
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <span>{params.value?.name}</span>
-        {!isMine(user, params.value.id) ? <GroupsIcon /> : ''}
+        {
+          params.value ?
+            <>
+              <span>{params.value?.name}</span>
+              {!isMine(user, params?.value.id) ? <GroupsIcon /> : ''}
+            </> : null
+        }
       </Box>
     ),
   },
@@ -132,7 +137,7 @@ const columns = (
     minWidth: 200,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
     ),
   },
@@ -142,7 +147,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
     ),
   },
@@ -152,7 +157,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
       <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
       )
@@ -164,7 +169,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
       </ButtonCustom>
@@ -176,7 +181,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
           <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
@@ -189,7 +194,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
       <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
         Del
