@@ -3,10 +3,11 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridEnrichedColDef,
+  // GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
+  DataGrid
 } from '@mui/x-data-grid'
 import { DataGridPro } from '@mui/x-data-grid-pro'
 import {
@@ -274,58 +275,58 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
     Boolean,
-  ) as GridEnrichedColDef[]
+  ) as any
 
   return (
     <DatabaseExperimentsWrapper>
-      <DataGridPro
+      <DataGrid
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
         onSortModelChange={handleSort}
-        initialState={{
-          sorting: {
-            sortModel: [
-              {
-                field: dataParams.sort[0],
-                sort: dataParams.sort[1] as GridSortDirection,
-              },
-            ],
-          },
-          filter: {
-            filterModel: {
-              items: [
-                {
-                  field: 'experiment_id',
-                  operator: 'contains',
-                  value: dataParamsFilter.experiment_id,
-                },
-                {
-                  field: 'brain_area',
-                  operator: 'contains',
-                  value: dataParamsFilter.brain_area,
-                },
-                {
-                  field: 'cre_driver',
-                  operator: 'contains',
-                  value: dataParamsFilter.cre_driver,
-                },
-                {
-                  field: 'reporter_line',
-                  operator: 'contains',
-                  value: dataParamsFilter.reporter_line,
-                },
-                {
-                  field: 'imaging_depth',
-                  operator: 'contains',
-                  value: dataParamsFilter.imaging_depth,
-                },
-              ],
-            },
-          },
-        }}
+        // initialState={{
+        //   sorting: {
+        //     sortModel: [
+        //       {
+        //         field: dataParams.sort[0],
+        //         sort: dataParams.sort[1] as GridSortDirection,
+        //       },
+        //     ],
+        //   },
+        //   filter: {
+        //     filterModel: {
+        //       items: [
+        //         {
+        //           field: 'experiment_id',
+        //           operator: 'contains',
+        //           value: dataParamsFilter.experiment_id,
+        //         },
+        //         {
+        //           field: 'brain_area',
+        //           operator: 'contains',
+        //           value: dataParamsFilter.brain_area,
+        //         },
+        //         {
+        //           field: 'cre_driver',
+        //           operator: 'contains',
+        //           value: dataParamsFilter.cre_driver,
+        //         },
+        //         {
+        //           field: 'reporter_line',
+        //           operator: 'contains',
+        //           value: dataParamsFilter.reporter_line,
+        //         },
+        //         {
+        //           field: 'imaging_depth',
+        //           operator: 'contains',
+        //           value: dataParamsFilter.imaging_depth,
+        //         },
+        //       ],
+        //     },
+        //   },
+        // }}
         onFilterModelChange={handleFilter as any}
       />
       <Pagination
