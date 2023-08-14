@@ -3,7 +3,6 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
@@ -293,7 +292,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
     Boolean,
-  ) as GridEnrichedColDef[]
+  ) as any
 
   return (
     <DatabaseExperimentsWrapper>
