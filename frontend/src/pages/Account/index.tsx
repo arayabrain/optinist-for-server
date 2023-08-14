@@ -153,6 +153,7 @@ const Account = () => {
         <TitleData>Full name:</TitleData>
         {isEditName ? (
           <Input
+            sx={{ width: 400 }}
             autoFocus
             onBlur={onSubmit}
             placeholder="Full name"
@@ -163,7 +164,7 @@ const Account = () => {
           />
         ) : (
           <>
-            {isName ? isName : user?.name}
+            <Box>{isName ? isName : user?.name}</Box>
             <Button sx={{ ml: 1 }} onClick={() => setIsEditName(true)}>
               Edit
             </Button>
@@ -211,6 +212,7 @@ const BoxData = styled(Typography)({
 
 const TitleData = styled(Typography)({
   width: 250,
+  minWidth: 250
 })
 
 const ButtonSubmit = styled('button')({
