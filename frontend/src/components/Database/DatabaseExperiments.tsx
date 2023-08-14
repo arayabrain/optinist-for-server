@@ -385,7 +385,13 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   const handlePublish = async (id: number, status: 'on' | 'off') => {
-    await dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    await dispatch(postPublish({ id, status, params: { ...dataParamsFilter, publish_status: newPublish, ...dataParams } }))
   }
 
   const handleSort = useCallback(
@@ -495,7 +501,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       },
     ]
     //eslint-disable-next-line
-  }, [])
+  }, [handlePublish])
 
   const columnsTable = [
     ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate, !!user),
