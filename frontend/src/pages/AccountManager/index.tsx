@@ -1,12 +1,12 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
-import {Box, Button, Input, styled} from "@mui/material";
+import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
-import {createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
-import {DataGridPro} from "@mui/x-data-grid-pro";
+import {deleteUser, createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
+import { DataGridPro } from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
@@ -28,6 +28,13 @@ type ModalComponentProps = {
   dataEdit?: {
     [key: string]: string
   }
+}
+
+type PopupType = {
+  open: boolean
+  handleClose: () => void
+  handleOkDel: () => void
+  name?: string
 }
 
 const initState = {
@@ -223,6 +230,22 @@ const ModalComponent =
     </Modal>
   )
 }
+
+const PopupDelete = ({open, handleClose, handleOkDel, name}: PopupType) => {
+  if(!open) return null
+  return (
+      <Box>
+        <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
+          <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={handleOkDel}>Ok</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+  )
+}
+
 const AccountManager = () => {
 
   const dispatch = useDispatch()
@@ -244,6 +267,8 @@ const AccountManager = () => {
   const name = searchParams.get('name') || undefined
   const email = searchParams.get('email') || undefined
   const sort = searchParams.getAll('sort') || []
+
+  const [openDel, setOpenDel] = useState<{id?: number, name?: string, open: boolean}>()
 
   useEffect(() => {
     if(!admin) navigate('/console')
@@ -398,6 +423,30 @@ const AccountManager = () => {
     return undefined
   }
 
+  const handleOpenPopupDel = (id?: number, name?: string) => {
+    if(!id) return
+    setOpenDel({id: id, name: name, open: true})
+  }
+
+  const handleClosePopupDel = () => {
+    setOpenDel({...openDel, open: false})
+  }
+
+  const handleOkDel = async () => {
+    if(!openDel?.id || !openDel) return
+    const data = await dispatch(deleteUser({
+      id: openDel.id,
+      params: {...filterParams, ...sortParams, ...params}
+    }))
+    if((data as any).error) {
+      alert('Delete user failed!')
+    }
+    else {
+      alert('Account deleted successfully!')
+    }
+    setOpenDel({...openDel, open: false})
+  }
+
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
@@ -522,6 +571,7 @@ const AccountManager = () => {
                 !(params.row?.id === user?.id) ?
                 <ALink
                   sx={{ ml: 1.25 }}
+                  onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
                 >
                   <DeleteIcon sx={{ color: 'red' }} />
                 </ALink> : null
@@ -583,6 +633,12 @@ const AccountManager = () => {
             limit={Number(limit)}
           /> : null
       }
+      <PopupDelete
+        open={openDel?.open || false}
+        handleClose={handleClosePopupDel}
+        handleOkDel={handleOkDel}
+        name={openDel?.name}
+      />
       {
         openModal ?
           <ModalComponent
