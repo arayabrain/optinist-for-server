@@ -55,7 +55,6 @@ type PopupType = {
   nameWorkspace?: string
 }
 
-
 const columns = (
   handleOpenPopupShare: (id: number) => void,
   handleOpenPopupDel: (id: number, nameWorkspace: string) => void,
