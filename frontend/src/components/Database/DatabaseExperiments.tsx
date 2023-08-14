@@ -10,7 +10,7 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
 import {
-  GridEnrichedColDef,
+  // GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
@@ -462,7 +462,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const columnsTable = [
     ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate),
     ...getColumns,
-  ].filter(Boolean) as GridEnrichedColDef[]
+  ].filter(Boolean) as any
 
   return (
     <DatabaseExperimentsWrapper>
