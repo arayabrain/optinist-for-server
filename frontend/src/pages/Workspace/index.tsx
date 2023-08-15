@@ -367,17 +367,14 @@ const Workspaces = () => {
   }
 
   const handleRowModesModelChange = (newRowModesModel: any) => {
-    console.log("handleRowModesModelChange")
     setRowModesModel(newRowModesModel)
   }
 
   const onRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-    console.log("onRowEditStop")
     setInitName(params.row.name)
   }
 
   const onCellClick: GridEventListener<'cellClick'> | undefined = (event: any) => {
-    console.log("onCellClick")
     if (event.field === 'name') return
     setRowModesModel((pre: any) => {
       const object: any = {}
@@ -391,7 +388,6 @@ const Workspaces = () => {
   }
 
   const processRowUpdate = async (newRow: any) => {
-    console.log("processRowUpdate")
     if (!newRow.name) {
       alert("Workspace Name cann't empty")
       return { ...newRow, name: initName }
