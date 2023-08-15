@@ -6,11 +6,10 @@ import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {deleteUser, createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
-import { DataGridPro } from "@mui/x-data-grid-pro";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
 import {ROLE} from "../../@types";
-import {GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
+import {DataGrid, GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
 import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
 import {SelectChangeEvent} from "@mui/material/Select";
@@ -338,6 +337,7 @@ const AccountManager = () => {
   )
 
   const handleFilter = (model: GridFilterModel) => {
+    setFilterModel(model)
     let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
@@ -438,6 +438,16 @@ const AccountManager = () => {
     }
     setOpenDel({...openDel, open: false})
   }
+
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({
+    items: [
+      {
+        field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || 'experiment_id',
+        operator: Object.keys(filterParams).find(key => (filterParams as any)[key]) === 'brain_area' ? 'is' : 'contains',
+        value: Object.values(filterParams).find(value => value),
+      },
+    ],
+  });
 
   const columns = useMemo(() =>
     [
@@ -567,7 +577,7 @@ const AccountManager = () => {
       <Box sx={{display: 'flex', justifyContent: 'flex-end'}}>
         <Button onClick={handleOpenModal}>Add</Button>
       </Box>
-      <DataGridPro
+      <DataGrid
         sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
         columns={columns as any}
         rows={listUser?.items || []}
@@ -575,6 +585,7 @@ const AccountManager = () => {
         sortingMode={'server'}
         hideFooter
         onSortModelChange={handleSort}
+        filterModel={filterModel}
         initialState={{
           sorting: {
             sortModel: [
@@ -583,22 +594,6 @@ const AccountManager = () => {
                 sort: sortParams.sort[1] as GridSortDirection,
               },
             ],
-          },
-          filter: {
-            filterModel: {
-              items: [
-                {
-                  field: 'name',
-                  operator: 'contains',
-                  value: filterParams.name,
-                },
-                {
-                  field: 'email',
-                  operator: 'contains',
-                  value: filterParams.email,
-                }
-              ],
-            },
           },
         }}
         onFilterModelChange={handleFilter as any}

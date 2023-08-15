@@ -10,7 +10,6 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
 import {
-  // GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
@@ -294,7 +293,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     items: [
       {
         field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || 'experiment_id',
-        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'brain_area' ? 'is' : 'contains',
+        operator: Object.keys(dataParamsFilter).find(key => ['brain_area', 'publish_status'].includes(key)) ? 'is' : 'contains',
         value: Object.values(dataParamsFilter).find(value => value),
       },
     ],
