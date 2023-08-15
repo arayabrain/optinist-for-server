@@ -2,7 +2,7 @@ import {
   Box, Button,
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
 } from "@mui/material";
-import { DataGrid, GridRenderCellParams } from "@mui/x-data-grid";
+import {DataGrid, GridRenderCellParams} from "@mui/x-data-grid";
 import { SHARE } from "../@types";
 import { ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
