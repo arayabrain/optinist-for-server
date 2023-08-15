@@ -397,10 +397,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
-        return
-      }
+      if (!rowSelectionModel[0]) return
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field?.replace(
           'fields.',

@@ -29,7 +29,7 @@ def search_share_users(
         db.query(UserModel)
         .filter(
             UserModel.active.is_(True),
-            UserModel.organization_id == current_user.organization_id,
+            UserModel.organization_id == current_user.organization.id,
         )
         .filter(
             or_(
