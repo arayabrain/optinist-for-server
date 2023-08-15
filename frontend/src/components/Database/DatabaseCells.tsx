@@ -3,7 +3,6 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
@@ -213,10 +212,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
-        return
-      }
+      if (!rowSelectionModel[0]) return
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
@@ -234,6 +230,9 @@ const DatabaseCells = ({ user }: CellProps) => {
           return `${item.field}=${item?.value}`
         })
         .join('&')
+    }
+    else {
+      return
     }
     const { sort } = dataParams
     setParams(
@@ -274,7 +273,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
     Boolean,
-  ) as GridEnrichedColDef[]
+  ) as any
 
   return (
     <DatabaseExperimentsWrapper>

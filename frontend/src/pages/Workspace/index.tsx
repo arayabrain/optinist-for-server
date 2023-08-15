@@ -10,7 +10,7 @@ import {
   Input,
   Pagination,
 } from '@mui/material'
-import { GridRenderCellParams } from '@mui/x-data-grid'
+import {GridRenderCellParams} from '@mui/x-data-grid'
 import {
   DataGridPro,
   GridEventListener,
@@ -121,8 +121,13 @@ const columns = (
       params: GridRenderCellParams<{ name: string; id: number }>,
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <span>{params.value?.name}</span>
-        {!isMine(user, params.value.id) ? <GroupsIcon /> : ''}
+        {
+          params.value ?
+            <>
+              <span>{params.value?.name}</span>
+              {!isMine(user, params?.value.id) ? <GroupsIcon /> : ''}
+            </> : null
+        }
       </Box>
     ),
   },
@@ -152,7 +157,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => {
+    renderCell: (params: GridRenderCellParams<string>) => {
       return (
       <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
       )
