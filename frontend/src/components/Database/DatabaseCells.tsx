@@ -5,11 +5,9 @@ import DialogImage from '../common/DialogImage'
 import {
   // GridEnrichedColDef,
   GridFilterModel,
-  GridSortDirection,
   GridSortModel,
   DataGrid
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
