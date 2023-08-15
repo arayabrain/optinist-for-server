@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
@@ -14,7 +13,7 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/console/experiments?sort=&sort=&limit=50&offset=0">
+          <LinkWrapper to="/console/experiments">
             <BoxMenu>
               <Box>
                 <StorageIcon fontSize="large" />
@@ -30,17 +29,9 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          <LinkWrapper to="/console/account">
-            <BoxMenu>
-              <Box>
-                <AccountCircleIcon fontSize="large" />
-                <TitleMenu>Account</TitleMenu>
-              </Box>
-            </BoxMenu>
-          </LinkWrapper>
           {
             admin ?
-              <LinkWrapper to="/console/account-manager?sort=&sort=&limit=50&offset=0">
+              <LinkWrapper to="/console/account-manager">
                 <BoxMenu>
                   <Box>
                     <ManageAccountsIcon fontSize="large" />

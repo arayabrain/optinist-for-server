@@ -226,7 +226,7 @@ async def search_db_experiments(
     )
     if current_user.is_admin_data:
         query = query.filter(
-            common_model.Organization.id == current_user.organization_id
+            common_model.Organization.id == current_user.organization.id
         )
     else:
         query = query.join(
@@ -239,7 +239,7 @@ async def search_db_experiments(
                 and_(
                     optinist_model.Experiment.share_type
                     == ExperimentShareType.for_org.value,
-                    common_model.Organization.id == current_user.organization_id,
+                    common_model.Organization.id == current_user.organization.id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
@@ -311,7 +311,7 @@ async def search_db_cells(
     )
     if current_user.is_admin_data:
         query = query.filter(
-            common_model.Organization.id == current_user.organization_id
+            common_model.Organization.id == current_user.organization.id
         )
     else:
         query = query.join(
@@ -324,7 +324,7 @@ async def search_db_cells(
                 and_(
                     optinist_model.Experiment.share_type
                     == ExperimentShareType.for_org.value,
-                    common_model.Organization.id == current_user.organization_id,
+                    common_model.Organization.id == current_user.organization.id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
