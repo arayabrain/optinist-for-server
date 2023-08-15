@@ -3,10 +3,10 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
-  // GridEnrichedColDef,
   GridFilterModel,
   GridSortModel,
-  DataGrid
+  DataGrid,
+  GridSortDirection
 } from '@mui/x-data-grid'
 import {
   DatabaseType,
@@ -225,6 +225,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (model: GridFilterModel) => {
+    setFilterModel(model)
     let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
@@ -239,6 +240,16 @@ const DatabaseCells = ({ user }: CellProps) => {
       `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
+
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({
+    items: [
+      {
+        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+        operator: Object.keys(dataParamsFilter).find(key => ['publish_status'].includes(key)) ? 'is' : 'contains',
+        value: Object.values(dataParamsFilter).find(value => value),
+      },
+    ],
+  });
 
   const getColumns = useMemo(() => {
     return (dataCells.header?.graph_titles || []).map(
@@ -284,47 +295,17 @@ const DatabaseCells = ({ user }: CellProps) => {
         filterMode={'server'}
         sortingMode={'server'}
         onSortModelChange={handleSort}
-        // initialState={{
-        //   sorting: {
-        //     sortModel: [
-        //       {
-        //         field: dataParams.sort[0],
-        //         sort: dataParams.sort[1] as GridSortDirection,
-        //       },
-        //     ],
-        //   },
-        //   filter: {
-        //     filterModel: {
-        //       items: [
-        //         {
-        //           field: 'experiment_id',
-        //           operator: 'contains',
-        //           value: dataParamsFilter.experiment_id,
-        //         },
-        //         {
-        //           field: 'brain_area',
-        //           operator: 'contains',
-        //           value: dataParamsFilter.brain_area,
-        //         },
-        //         {
-        //           field: 'cre_driver',
-        //           operator: 'contains',
-        //           value: dataParamsFilter.cre_driver,
-        //         },
-        //         {
-        //           field: 'reporter_line',
-        //           operator: 'contains',
-        //           value: dataParamsFilter.reporter_line,
-        //         },
-        //         {
-        //           field: 'imaging_depth',
-        //           operator: 'contains',
-        //           value: dataParamsFilter.imaging_depth,
-        //         },
-        //       ],
-        //     },
-        //   },
-        // }}
+        filterModel={filterModel}
+        initialState={{
+          sorting: {
+            sortModel: [
+              {
+                field: dataParams.sort[0],
+                sort: dataParams.sort[1] as GridSortDirection,
+              },
+            ],
+          },
+        }}
         onFilterModelChange={handleFilter as any}
       />
       <Pagination
