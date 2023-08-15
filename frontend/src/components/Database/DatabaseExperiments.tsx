@@ -343,11 +343,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(
-      `${filter}&sort=${dataParams.sort[0] || ''}&sort=${
-        dataParams.sort[1] || ''
-      }&${pagiFilter(page)}`,
-    )
+    setParams(`${filter}&${dataParams.sort[0] ? `${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`)
   }
 
   const handlePublish = (id: number, status: 'on' | 'off') => {
@@ -394,7 +390,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       .map((item: any) => {
         return `${item.field}=${item?.value}`
       })
-      .join('&')
+      .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     setParams(
         `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${Number(event.target.value)}&offset=0`,

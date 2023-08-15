@@ -2,7 +2,7 @@ import {
   Box, Button,
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
 } from "@mui/material";
-import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
+import {DataGrid, GridRenderCellParams} from "@mui/x-data-grid";
 import { SHARE } from "../@types";
 import { ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -107,7 +107,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     //eslint-disable-next-line
   }, [textSearch])
 
-  const handleShareFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
+  const handleShareFalse = (e: any, params: GridRenderCellParams<string>) => {
     e.preventDefault()
     e.stopPropagation()
     if(!stateUserShare) return
@@ -120,12 +120,12 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     setShareType(Number((event.target as HTMLInputElement).value));
   }
 
-  const columnsShare = useCallback((handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, parmas: GridRenderCellParams<GridValidRowModel>) => void) =>  [
+  const columnsShare = useCallback((handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, parmas: GridRenderCellParams<string>) => void) =>  [
     {
       field: "name",
       headerName: "Name",
       minWidth: 140,
-      renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
+      renderCell: (params: GridRenderCellParams<string>) => (
           <span>{params.row.name}</span>
       ),
     },
@@ -133,7 +133,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       field: "email",
       headerName: "Email",
       minWidth: 280,
-      renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
+      renderCell: (params: GridRenderCellParams<string>) => (
         <span>{params.row.email}</span>
       ),
     },
@@ -143,7 +143,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       filterable: false,
       sortable: false,
       minWidth: 130,
-      renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
+      renderCell: (params: GridRenderCellParams<string>) => {
         if(!params.row.share) return ''
         return (
           <Button onClick={(e) => handleShareFalse(e, params)}>
