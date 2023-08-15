@@ -310,7 +310,7 @@ const AccountManager = () => {
       })
       .join('&')
     const { sort } = sortParams
-    setParams(`${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
+    setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
   }
 
   const getParamsData = () => {
@@ -456,7 +456,7 @@ const AccountManager = () => {
         .join('&')
     const { sort } = sortParams
     setParams(
-        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${Number(event.target.value)}&offset=0`,
+        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
