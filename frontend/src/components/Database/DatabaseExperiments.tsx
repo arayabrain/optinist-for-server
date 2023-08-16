@@ -292,12 +292,13 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [
       {
-        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || 'experiment_id',
-        operator: Object.keys(dataParamsFilter).find(key => ['brain_area', 'publish_status'].includes(key)) ? 'is' : 'contains',
+        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
+        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status', 'brain_area'].includes(key)) ? 'is' : 'contains',
         value: Object.values(dataParamsFilter).find(value => value),
       },
     ],
   });
+
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
@@ -387,7 +388,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       filter = model.items
         .filter((item) => item.value)
         .map((item: any) => {
-          return `${item.columnField}=${item?.value}`
+          return `${item.field}=${item?.value}`
         })
         .join('&')
     }

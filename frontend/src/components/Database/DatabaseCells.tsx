@@ -235,6 +235,9 @@ const DatabaseCells = ({ user }: CellProps) => {
         })
         .join('&')
     }
+    else {
+      return
+    }
     const { sort } = dataParams
     setParams(
       `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
@@ -244,8 +247,8 @@ const DatabaseCells = ({ user }: CellProps) => {
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [
       {
-        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
-        operator: Object.keys(dataParamsFilter).find(key => ['publish_status'].includes(key)) ? 'is' : 'contains',
+        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
+        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status'].includes(key)) ? 'is' : 'contains',
         value: Object.values(dataParamsFilter).find(value => value),
       },
     ],

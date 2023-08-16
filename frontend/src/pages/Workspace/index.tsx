@@ -117,8 +117,13 @@ const columns = (
       params: GridRenderCellParams<{ name: string; id: number }>,
     ) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <span>{params.value?.name}</span>
-        {!isMine(user, params.value.id) ? <GroupsIcon /> : ''}
+        {
+          params.value ?
+            <>
+              <span>{params.value?.name}</span>
+              {!isMine(user, params?.value.id) ? <GroupsIcon /> : ''}
+            </> : null
+        }
       </Box>
     ),
   },
