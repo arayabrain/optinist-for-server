@@ -377,9 +377,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0] || ''}&sort=${
-        dataParams.sort[1] || ''
-      }&${pagiFilter(page)}`,
+      `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
     )
   }
 
@@ -402,10 +400,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field?.replace(
-          'fields.',
-          '',
-        )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replace(
+            'publish_status',
+            'published',
+        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -424,7 +422,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0] || ''}&sort=${sort[1] || ''}` : ''}&${pagiFilter()}`,
     )
   }
 
