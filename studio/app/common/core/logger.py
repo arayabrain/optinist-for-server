@@ -61,7 +61,10 @@ class Logger:
             level = msg["level"]
             if "debug" in level and "msg" in msg:
                 if "Traceback" in msg["msg"]:
-                    if "Signals.SIGTERM" in msg["msg"]:
+                    if any(
+                        err in msg["msg"]
+                        for err in ["Signals.SIGTERM", "exit status 15"]
+                    ):
                         pid_filepath = join_filepath(
                             [
                                 DIRPATH.OUTPUT_DIR,
@@ -75,3 +78,6 @@ class Logger:
                             self.logger.error("Workflow cancelled")
                     else:
                         self.logger.error(msg)
+
+    def clean_up(self):
+        self.logger.handlers.clear()

@@ -41,7 +41,6 @@ class WorkflowResult:
             if os.path.exists(self.error_filepath):
                 error_message = Reader.read(self.error_filepath)
                 if error_message != "":
-                    # breakpoint()
                     results[node_id] = Message(
                         status="error",
                         message=error_message,
