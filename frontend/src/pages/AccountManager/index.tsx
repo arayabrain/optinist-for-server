@@ -334,11 +334,11 @@ const AccountManager = () => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${paramsManager()}`)
+        setParams(`${filter}&${paramsManager()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -357,7 +357,7 @@ const AccountManager = () => {
     }
     const { sort } = sortParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}`,
     )
   }
 
