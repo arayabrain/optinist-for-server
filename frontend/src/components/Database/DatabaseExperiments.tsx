@@ -343,7 +343,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(`${filter}&${dataParams.sort[0] ? `${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`)
+    setParams(`${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`)
   }
 
   const handlePublish = (id: number, status: 'on' | 'off') => {
@@ -354,14 +354,14 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${pagiFilter()}`)
+        setParams(`${filter}&${pagiFilter()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace(
-          'fields.',
-          '',
-        )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace(
+            'publish_status',
+            'published',
+        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -376,11 +376,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&')
+        .join('&')?.replace('publish_status', 'published')
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
     )
   }
 
@@ -393,7 +393,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     setParams(
-        `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&limit=${Number(event.target.value)}&offset=0`,
+        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
