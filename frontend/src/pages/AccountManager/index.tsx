@@ -325,11 +325,11 @@ const AccountManager = () => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&sort=&sort=&${paramsManager()}`)
+        setParams(`${filter}&${paramsManager()}`)
         return
       }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}&${paramsManager()}`,
+        `${filter}&${rowSelectionModel[0] ? `&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -349,7 +349,7 @@ const AccountManager = () => {
     }
     const { sort } = sortParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${paramsManager()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}`,
     )
   }
 
@@ -442,8 +442,8 @@ const AccountManager = () => {
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [
       {
-        field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || 'experiment_id',
-        operator: Object.keys(filterParams).find(key => (filterParams as any)[key]) === 'brain_area' ? 'is' : 'contains',
+        field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
+        operator: 'contains',
         value: Object.values(filterParams).find(value => value),
       },
     ],
