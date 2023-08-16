@@ -165,7 +165,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const dataParams = useMemo(() => {
     return {
       exp_id: Number(id) || undefined,
-      sort: sort || [],
+      sort: [sort[0]?.replace('published', 'publish_status'), sort[1]] || [],
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }
@@ -198,7 +198,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user, dataParamsFilter])
+  }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
   const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
     let newData: string | (string[]) = []
@@ -231,9 +231,15 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) return
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&${pagiFilter()}`)
+        return
+      }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
+        `${filter}&sort=${rowSelectionModel[0].field?.replaceAll(
+          'publish_status', 
+          'published'
+        )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -248,14 +254,14 @@ const DatabaseCells = ({ user }: CellProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&')
+        .join('&')?.replaceAll('publish_status', 'published')
     }
     else {
       return
     }
     const { sort } = dataParams
     setParams(
-      `${filter?.replaceAll('publish_status', 'published')}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
@@ -307,7 +313,7 @@ const DatabaseCells = ({ user }: CellProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0],
+                field: dataParams.sort[0]?.replace('publish_status', 'published'),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],

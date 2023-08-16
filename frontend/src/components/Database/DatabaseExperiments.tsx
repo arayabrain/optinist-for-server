@@ -332,7 +332,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user, dataParamsFilter])
+  }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
   useEffect(() => {
     if(!openShare.open || !openShare.id) return
@@ -397,7 +397,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) return
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&${pagiFilter()}`)
+        return
+      }
       setParams(
         `${filter}&sort=${rowSelectionModel[0].field?.replace(
           'fields.',
@@ -417,11 +420,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&')
+        .join('&')?.replace('publish_status', 'published')
     }
     const { sort } = dataParams
     setParams(
-      `${filter?.replace('publish_status', 'published')}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
     )
   }
 
