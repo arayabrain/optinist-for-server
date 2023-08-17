@@ -1,5 +1,5 @@
 import { Box, Input, Pagination, styled } from '@mui/material'
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 import Button from '@mui/material/Button'
@@ -10,13 +10,13 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogImage from '../common/DialogImage'
 import SwitchCustom from '../common/SwitchCustom'
 import {
-  // GridEnrichedColDef,
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
 } from '@mui/x-data-grid'
 import { DataGridPro } from '@mui/x-data-grid-pro'
 import GroupsIcon from '@mui/icons-material/Groups'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
@@ -76,6 +76,7 @@ const columns = (
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
+  user: boolean
 ) => [
   {
     field: 'experiment_id',
@@ -97,6 +98,16 @@ const columns = (
     ],
     type: "string",
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+  },
+  user && {
+    field: 'published',
+    headerName: 'Published',
+    renderCell: (params: { row: DatabaseType }) => (
+        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+    ),
+    valueOptions: ['Published', 'No_Published'],
+    type: 'singleSelect',
+    width: 160,
   },
   {
     field: 'brain_area',
@@ -199,6 +210,22 @@ const PopupAttributes = ({
   handleChangeAttributes,
   exp_id
 }: PopupAttributesProps) => {
+
+  useEffect(() => {
+    const handleClosePopup = (event: any) => {
+      if(event.key === 'Escape') {
+        handleClose()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleClosePopup);
+    return () => {
+      document.removeEventListener('keydown', handleClosePopup);
+    };
+    //eslint-disable-next-line
+  }, []);
+
   return (
     <Box>
       <Dialog
@@ -274,7 +301,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: sort || [],
+      sort: [sort[0]?.replace('published', 'publish_status'), sort[1]] || [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
@@ -282,6 +309,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const dataParamsFilter = useMemo(
     () => ({
       experiment_id: searchParams.get('experiment_id') || undefined,
+      publish_status: searchParams.get('published') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -292,13 +320,19 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
-    dispatch(api({ ...dataParamsFilter, ...dataParams }))
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
   }
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user, dataParamsFilter])
+  }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
   useEffect(() => {
     if(!openShare.open || !openShare.id) return
@@ -336,32 +370,40 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
       .join('&')
-      .replaceAll('fields.', '')
+      .replaceAll('publish_status', 'published')
     return dataFilter
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&sort=${dataParams.sort[0] || ''}&sort=${
-        dataParams.sort[1] || ''
-      }&${pagiFilter(page)}`,
+      `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
     )
   }
 
-  const handlePublish = (id: number, status: 'on' | 'off') => {
-    dispatch(postPublish({ id, status, params: { ...dataParamsFilter, ...dataParams } }))
+  //eslint-disable-next-line
+  const handlePublish = async (id: number, status: 'on' | 'off') => {
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    await dispatch(postPublish({ id, status, params: { ...dataParamsFilter, publish_status: newPublish, ...dataParams } }))
   }
 
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
-      if (!rowSelectionModel[0]) return
+      if (!rowSelectionModel[0]) {
+        setParams(`${filter}&${pagiFilter()}`)
+        return
+      }
       setParams(
-        `${filter}&sort=${rowSelectionModel[0].field.replace(
-          'fields.',
-          '',
-        )}&sort=${rowSelectionModel[0].sort}&${pagiFilter()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replace(
+            'publish_status',
+            'published',
+        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -376,11 +418,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&')
+        .join('&')?.replace('publish_status', 'published')
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&sort=${sort[0] || ''}&sort=${sort[1] || ''}&${pagiFilter()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0] || ''}&sort=${sort[1] || ''}` : ''}&${pagiFilter()}`,
     )
   }
 
@@ -457,10 +499,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       },
     ]
     //eslint-disable-next-line
-  }, [])
+  }, [handlePublish])
 
   const columnsTable = [
-    ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate),
+    ...columns(handleOpenAttributes, handleOpenDialog, cellPath, navigate, !!user),
     ...getColumns,
   ].filter(Boolean) as any
 
@@ -480,7 +522,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0],
+                field: dataParams.sort[0]?.replace('publish_status', 'published'),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
@@ -492,6 +534,11 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
                   field: 'experiment_id',
                   operator: 'contains',
                   value: dataParamsFilter.experiment_id,
+                },
+                {
+                  field: 'published',
+                  operator: 'is',
+                  value: dataParamsFilter.publish_status,
                 },
                 {
                   field: 'brain_area',
