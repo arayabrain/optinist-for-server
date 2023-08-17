@@ -1,4 +1,4 @@
-import { Box, Input, Pagination, styled } from '@mui/material'
+import { Box, Input, styled } from '@mui/material'
 import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
@@ -36,6 +36,7 @@ import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
 import { SHARE } from '@types'
 import PopupShare from '../PopupShare'
+import PaginationCustom from "../common/PaginationCustom";
 
 export type Data = {
   id: number
@@ -278,6 +279,10 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  const offset = searchParams.get('offset')
+  const limit = searchParams.get('limit') || 50
+  const sort = searchParams.getAll('sort')
+
   const { dataShare } = useSelector(
       (state: RootState) => ({
         dataShare: state[DATABASE_SLICE_NAME].listShare,
@@ -286,16 +291,13 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   const pagiFilter = useCallback(
     (page?: number) => {
-      return `limit=${dataExperiments.limit}&offset=${
-        page ? page - 1 : dataExperiments.offset
+      return `limit=${limit}&offset=${
+        page ? (Number(limit) * (page - 1)) : offset || dataExperiments.offset
       }`
     },
-    [dataExperiments.limit, dataExperiments.offset],
+    //eslint-disable-next-line
+    [limit, offset, JSON.stringify(dataExperiments), dataExperiments.offset],
   )
-
-  const offset = searchParams.get('offset')
-  const limit = searchParams.get('limit')
-  const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
     return {
@@ -422,7 +424,20 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0] || ''}&sort=${sort[1] || ''}` : ''}&${pagiFilter()}`,
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
+    )
+  }
+
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    let filter = ''
+    filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&').replace('publish_status', 'published')
+    const { sort } = dataParams
+    setParams(
+        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
@@ -566,12 +581,15 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      <Pagination
-        sx={{ marginTop: 2 }}
-        count={Math.ceil(dataExperiments.total / dataExperiments.limit)}
-        page={Math.ceil(dataExperiments.offset / dataExperiments.limit) + 1}
-        onChange={handlePage}
-      />
+      {
+        dataExperiments?.items.length > 0 ?
+          <PaginationCustom
+            data={dataExperiments}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
+          /> : null
+      }
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}
