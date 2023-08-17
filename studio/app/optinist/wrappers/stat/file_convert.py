@@ -146,9 +146,9 @@ def get_data_tables(
     tc2_stim = np.mean(tc2[stim_period - 1, :, :, :], axis=0)
     tc2 = np.concatenate((tc2_stim, tc2_base), axis=0).transpose((1, 0, 2))
 
-    data_tables = np.empty((ncells, 1), order="F", dtype=np.object_)
+    data_tables = np.empty((ncells, tc2.shape[0], tc2.shape[1]), order="F")
     for n in range(ncells):
-        data_tables[n, 0] = tc2[:, :, n]
+        data_tables[n] = tc2[:, :, n]
 
     return data_tables
 
@@ -169,7 +169,7 @@ def get_stat_data(data_tables) -> StatData:
     stat = StatData(data_table=data_tables)
 
     for i in range(stat.ncells):
-        this_data = data_tables[i][0]
+        this_data = data_tables[i]
         temp = np.sum(this_data, axis=0)
         stat.dir_ratio_change[i] = temp[: stat.nstim] / temp[stat.nstim] - 1
         stat.ori_ratio_change[i] = (
@@ -225,6 +225,8 @@ def stat_file_convert(
     tc_detrended_sorted = sort_tc(
         tc_detrended, ts.stim_log, ts.nframes_epoch, ts.nstim_per_trial, ts.ntrials
     )
+    _nstim_per_trial = ts.nstim_per_trial
+
     if not ts.has_base:
         tc_detrended_sorted = np.reshape(
             tc_detrended_sorted,
@@ -236,10 +238,11 @@ def stat_file_convert(
             (ts.nframes_epoch * ts.nstim_per_trial_planar * ts.ntrials, tc.n_cells),
             order="F",
         )
+        _nstim_per_trial = ts.nstim_per_trial_planar
 
     data_tables = get_data_tables(
         tc_detrended_sorted,
-        ts.nstim_per_trial,
+        _nstim_per_trial,
         ts.ntrials,
         ts.base_index,
         ts.stim_index,
@@ -249,7 +252,7 @@ def stat_file_convert(
 
     line = LineData(
         data=stat.dir_ratio_change,
-        columns=np.arange(0, 360, 360 / ts.nstim_per_trial),
+        columns=np.arange(0, 360, 360 / _nstim_per_trial),
         file_name="dir_ratio_change_line",
     )
 
@@ -259,6 +262,7 @@ def stat_file_convert(
         file_name="dir_ratio_change_polar",
     )
 
+    stat.save_as_hdf5(output_dir, "file_convert")
     if export_plot:
         line.save_plot(output_dir)
         polar.save_plot(output_dir)

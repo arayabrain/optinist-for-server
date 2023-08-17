@@ -232,11 +232,12 @@ def curvefit_tuning(
             continue
 
         dir_temp = DirTempTuning(stat.dir_ratio_change[i], interp_method, do_interp)
-        stat.best_dir_interp[i] = dir_temp.best_dir_interp
-        stat.null_dir_interp[i] = dir_temp.null_dir_interp
-        stat.r_best_dir_interp[i] = dir_temp.r_best_dir_interp
-        stat.r_null_dir_interp[i] = dir_temp.r_null_dir_interp
-        stat.di_interp[i] = dir_temp.di_interp
+        # TODO: use fft to get these values
+        # stat.best_dir_interp[i] = dir_temp.best_dir_interp
+        # stat.null_dir_interp[i] = dir_temp.null_dir_interp
+        # stat.r_best_dir_interp[i] = dir_temp.r_best_dir_interp
+        # stat.r_null_dir_interp[i] = dir_temp.r_null_dir_interp
+        # stat.di_interp[i] = dir_temp.di_interp
         (
             stat.dir_a1[i],
             stat.dir_a2[i],
@@ -268,6 +269,7 @@ def curvefit_tuning(
         file_name="ori_tuning_width_hist",
     )
 
+    stat.save_as_hdf5(output_dir, "curvefit_tuning")
     if export_plot:
         dir_tuning_width_hist.save_plot(output_dir)
         ori_tuning_width_hist.save_plot(output_dir)

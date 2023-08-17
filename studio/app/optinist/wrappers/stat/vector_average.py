@@ -51,6 +51,7 @@ def vector_average(
         file_name="preferred_ori_hist",
     )
 
+    stat.save_as_hdf5(output_dir, "vector_average")
     if export_plot:
         preferred_dir_hist.save_plot(output_dir)
         preferred_ori_hist.save_plot(output_dir)

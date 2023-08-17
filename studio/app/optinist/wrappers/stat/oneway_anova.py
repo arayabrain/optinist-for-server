@@ -13,7 +13,7 @@ def oneway_anova(
     stat.si_threshold = params["si_threshold"]
 
     for i in range(stat.ncells):
-        this_data = stat.data_table[i][0]
+        this_data = stat.data_table[i]
         _, stat.p_value_resp[i] = f_oneway(*this_data.T)
         _, stat.p_value_sel[i] = f_oneway(*this_data[:, : stat.nstim].T)
 
@@ -69,6 +69,7 @@ def oneway_anova(
         file_name="dir_response_strength_hist",
     )
 
+    stat.save_as_hdf5(output_dir, "oneway_anova")
     if export_plot:
         dir_selective_pie.save_plot(output_dir)
         ori_selective_pie.save_plot(output_dir)
