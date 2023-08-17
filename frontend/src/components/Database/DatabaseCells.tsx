@@ -1,4 +1,4 @@
-import { Box, Input, Pagination, styled } from '@mui/material'
+import { Box, Input, styled } from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -21,6 +21,7 @@ import {
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
+import PaginationCustom from "../common/PaginationCustom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 type CellProps = {
@@ -148,18 +149,9 @@ const DatabaseCells = ({ user }: CellProps) => {
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch()
 
-  const pagiFilter = useCallback(
-    (page?: number) => {
-      return `limit=${dataCells.limit}&offset=${
-        page ? page - 1 : dataCells.offset
-      }`
-    },
-    [dataCells.limit, dataCells.offset],
-  )
-
   const id = searchParams.get('id')
   const offset = searchParams.get('offset')
-  const limit = searchParams.get('limit')
+  const limit = searchParams.get('limit') || 50
   const sort = searchParams.getAll('sort')
 
   const dataParams = useMemo(() => {
@@ -182,6 +174,16 @@ const DatabaseCells = ({ user }: CellProps) => {
       imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
     }),
     [searchParams],
+  )
+
+  const pagiFilter = useCallback(
+    (page?: number) => {
+      return `limit=${limit}&offset=${
+          page ? (Number(limit) * (page - 1)) : offset || dataCells.offset
+      }`
+    },
+    //eslint-disable-next-line
+    [limit, offset, JSON.stringify(dataCells), dataCells.offset],
   )
 
   const fetchApi = () => {
@@ -255,10 +257,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&')?.replaceAll('publish_status', 'published')
-    }
-    else {
-      return
+        .join('&').replace('publish_status', 'published')
     }
     const { sort } = dataParams
     setParams(
@@ -275,6 +274,19 @@ const DatabaseCells = ({ user }: CellProps) => {
       },
     ],
   });
+
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    let filter = ''
+    filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&').replace('publish_status', 'published')
+    const { sort } = dataParams
+    setParams(
+        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
+    )
+  }
 
   const getColumns = useMemo(() => {
     return (dataCells.header?.graph_titles || []).map(
@@ -333,12 +345,15 @@ const DatabaseCells = ({ user }: CellProps) => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      <Pagination
-          sx={{ marginTop: 2 }}
-          count={Math.ceil(dataCells.total / dataCells.limit)}
-          page={Math.ceil(dataCells.offset / dataCells.limit) + 1}
-          onChange={handlePage}
-      />
+      {
+        dataCells?.items.length > 0 ?
+          <PaginationCustom
+            data={dataCells}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
+          /> : null
+      }
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}

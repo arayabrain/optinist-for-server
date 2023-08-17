@@ -19,7 +19,9 @@ const Layout = ({ children }: { children?: ReactNode }) => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const [loading, setLoadingAuth] = useState(!IS_STANDALONE && authRequiredPathRegex.test(location.pathname))
+  const [loading, setLoadingAuth] = useState(
+    !IS_STANDALONE && authRequiredPathRegex.test(location.pathname),
+  )
 
   useEffect(() => {
     !IS_STANDALONE &&
@@ -30,12 +32,11 @@ const Layout = ({ children }: { children?: ReactNode }) => {
 
   const checkAuth = async () => {
     if (user) {
-      if(loading) setLoadingAuth(false)
+      if (loading) setLoadingAuth(false)
       return
     }
     const token = getToken()
     const isLogin = location.pathname === '/login'
-
 
     try {
       if (token) {
@@ -46,13 +47,13 @@ const Layout = ({ children }: { children?: ReactNode }) => {
     } catch {
       navigate('/login', { replace: true })
     } finally {
-      if(loading) setLoadingAuth(false)
+      if (loading) setLoadingAuth(false)
     }
   }
 
-  if(loading) return <Loading />
+  if (loading) return <Loading />
 
-  return authRequiredPathRegex.test(location.pathname) ? (
+  return IS_STANDALONE || authRequiredPathRegex.test(location.pathname) ? (
     <AuthedLayout>{children}</AuthedLayout>
   ) : (
     <UnauthedLayout>{children}</UnauthedLayout>
@@ -69,13 +70,13 @@ const AuthedLayout: FC = ({ children }) => {
     setOpen(false)
   }
   return (
-      <LayoutWrapper>
-        <Header handleDrawerOpen={handleDrawerOpen} />
-        <ContentBodyWrapper>
-          <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
-          <ChildrenWrapper>{children}</ChildrenWrapper>
-        </ContentBodyWrapper>
-      </LayoutWrapper>
+    <LayoutWrapper>
+      <Header handleDrawerOpen={handleDrawerOpen} />
+      <ContentBodyWrapper>
+        <LeftMenu open={open} handleDrawerClose={handleDrawerClose} />
+        <ChildrenWrapper>{children}</ChildrenWrapper>
+      </ContentBodyWrapper>
+    </LayoutWrapper>
   )
 }
 
