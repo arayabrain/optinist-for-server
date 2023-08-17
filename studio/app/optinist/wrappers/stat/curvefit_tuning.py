@@ -107,6 +107,10 @@ class TempTuning:
 class DirTempTuning(TempTuning):
     DEGREE = 180
 
+    def __init__(self, ydata, interp_method, do_interp, use_fourier) -> None:
+        super().__init__(ydata, interp_method, do_interp)
+        self.use_fourier = use_fourier
+
     @property
     def null_index(self):
         return int(
@@ -127,12 +131,43 @@ class DirTempTuning(TempTuning):
         )
 
     @property
+    def ydata_fourier_interp(self):
+        if self.use_fourier:
+            res = np.zeros(360, dtype=np.complex128)
+            f = np.fft.fft(self.ydata)
+            n = self.ydata.shape[0]
+            half_n = int(n / 2)
+            if n % 2 == 0:
+                res[:half_n] = f[:half_n]
+                res[half_n] = f[half_n] / 2
+                res[360 - half_n + 1 :] = f[half_n + 1 :]
+                res[360 - half_n + 1] = f[half_n + 1] / 2
+            else:
+                res[:half_n] = f[:half_n]
+                res[360 - half_n :] = f[half_n:]
+            return np.fft.ifft(res).real * 360 / n
+        else:
+            _ydata_interp = np.hstack(
+                (self.raw_ydata[-1], self.raw_ydata, self.raw_ydata[:2])
+            )
+            _ydata_interp = interp1d(self.x, _ydata_interp, kind=self.interp_method)(
+                np.arange(
+                    -1,
+                    self.nstim_per_run + 1 + self.nstim_per_run / 360,
+                    step=self.nstim_per_run / 360,
+                )
+            )
+            return _ydata_interp[
+                360 / self.nstim_per_run : 360 / self.nstim_per_run + 360
+            ]
+
+    @property
     def r_best_dir_interp(self):
-        return np.max(self.ydata_interp, axis=0)
+        return np.max(self.ydata_fourier_interp, axis=0)
 
     @property
     def best_dir_interp(self):
-        return np.argmax(self.ydata_interp, axis=0)
+        return np.argmax(self.ydata_fourier_interp, axis=0)
 
     @property
     def null_dir_interp(self):
@@ -140,7 +175,7 @@ class DirTempTuning(TempTuning):
 
     @property
     def r_null_dir_interp(self):
-        return self.ydata_interp[self.null_dir_interp]
+        return self.ydata_fourier_interp[self.null_dir_interp]
 
     @property
     def di_interp(self):
@@ -226,18 +261,20 @@ def curvefit_tuning(
     interp_method = params["interp_method"]
     do_interp = params["do_interpolation"]
     p_threshold = params["p_threshold"]
+    use_fourier = params["use_fourier"]
 
     for i in range(stat.ncells):
+        dir_temp = DirTempTuning(
+            stat.dir_ratio_change[i], interp_method, do_interp, use_fourier
+        )
+        stat.best_dir_interp[i] = dir_temp.best_dir_interp
+        stat.null_dir_interp[i] = dir_temp.null_dir_interp
+        stat.r_best_dir_interp[i] = dir_temp.r_best_dir_interp
+        stat.r_null_dir_interp[i] = dir_temp.r_null_dir_interp
+        stat.di_interp[i] = dir_temp.di_interp
+
         if stat.p_value_sel[i] > p_threshold:
             continue
-
-        dir_temp = DirTempTuning(stat.dir_ratio_change[i], interp_method, do_interp)
-        # TODO: use fft to get these values
-        # stat.best_dir_interp[i] = dir_temp.best_dir_interp
-        # stat.null_dir_interp[i] = dir_temp.null_dir_interp
-        # stat.r_best_dir_interp[i] = dir_temp.r_best_dir_interp
-        # stat.r_null_dir_interp[i] = dir_temp.r_null_dir_interp
-        # stat.di_interp[i] = dir_temp.di_interp
         (
             stat.dir_a1[i],
             stat.dir_a2[i],
