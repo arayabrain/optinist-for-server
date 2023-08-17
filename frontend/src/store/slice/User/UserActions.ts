@@ -35,6 +35,7 @@ export const updateMe = createAsyncThunk(
   async (data: UpdateUserDTO, thunkAPI) => {
     try {
       const responseData = await updateMeApi(data)
+      await thunkAPI.dispatch(getMe())
       return responseData
     } catch (e) {
       return thunkAPI.rejectWithValue(e)

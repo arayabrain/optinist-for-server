@@ -299,7 +299,7 @@ const AccountManager = () => {
   useEffect(() => {
     dispatch(getListUser({...filterParams, ...sortParams, ...params}))
     //eslint-disable-next-line
-  }, [searchParams])
+  }, [limit, offset, email, name, JSON.stringify(sort)])
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
     if(!listUser) return

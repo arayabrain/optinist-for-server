@@ -22,6 +22,7 @@ import {
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import PaginationCustom from "../common/PaginationCustom";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 type CellProps = {
   user?: Object
@@ -29,7 +30,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void) => [
+const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void, user?: boolean) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -50,6 +51,16 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void)
     type: "string",
     width: 160,
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+  },
+  user && {
+    field: 'published',
+    headerName: 'Published',
+    renderCell: (params: { row: DatabaseType }) => (
+        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+    ),
+    valueOptions: ['Published', 'No_Published'],
+    type: 'singleSelect',
+    width: 160,
   },
   {
     field: 'id',
@@ -146,7 +157,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const dataParams = useMemo(() => {
     return {
       exp_id: Number(id) || undefined,
-      sort: sort || [],
+      sort: [sort[0]?.replace('published', 'publish_status'), sort[1]] || [],
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }
@@ -156,6 +167,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const dataParamsFilter = useMemo(
     () => ({
       experiment_id: searchParams.get('experiment_id') || undefined,
+      publish_status: searchParams.get('published') || undefined,
       brain_area: searchParams.get('brain_area') || undefined,
       cre_driver: searchParams.get('cre_driver') || undefined,
       reporter_line: searchParams.get('reporter_line') || undefined,
@@ -176,13 +188,19 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
-    dispatch(api({ ...dataParamsFilter, ...dataParams }))
+    let newPublish: number | undefined
+    if(!dataParamsFilter.publish_status) newPublish = undefined
+    else {
+      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      else newPublish = 0
+    }
+    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
   }
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
-  }, [dataParams, user, dataParamsFilter])
+  }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
   const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
     let newData: string | (string[]) = []
@@ -201,12 +219,15 @@ const DatabaseCells = ({ user }: CellProps) => {
       .filter((key) => (dataParamsFilter as any)[key])
       .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
       .join('&')
+      .replaceAll('publish_status', 'published')
     return dataFilter
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(`${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`)
+    setParams(
+      `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
+    )
   }
 
   const handleSort = useCallback(
@@ -217,7 +238,10 @@ const DatabaseCells = ({ user }: CellProps) => {
         return
       }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replaceAll(
+            'publish_status',
+            'published'
+        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -284,7 +308,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(handleOpenDialog), ...getColumns].filter(
+  const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
     Boolean,
   ) as any
 
@@ -301,7 +325,7 @@ const DatabaseCells = ({ user }: CellProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0],
+                field: dataParams.sort[0]?.replace('publish_status', 'published'),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
@@ -313,6 +337,11 @@ const DatabaseCells = ({ user }: CellProps) => {
                   field: 'experiment_id',
                   operator: 'contains',
                   value: dataParamsFilter.experiment_id,
+                },
+                {
+                  field: 'published',
+                  operator: 'is',
+                  value: dataParamsFilter.publish_status,
                 },
                 {
                   field: 'brain_area',

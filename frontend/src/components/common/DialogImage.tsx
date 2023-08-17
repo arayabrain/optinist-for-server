@@ -1,5 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
+import {useEffect} from "react";
 
 type DialogImageProps = {
   open: boolean
@@ -10,12 +11,35 @@ type DialogImageProps = {
 }
 
 const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
+  useEffect(() => {
+    const handleClosePopup = (event: any) => {
+      if(event.key === 'Escape') {
+        handleCloseDialog()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleClosePopup);
+    return () => {
+      document.removeEventListener('keydown', handleClosePopup);
+    };
+    //eslint-disable-next-line
+  }, []);
+
+  const handleClose = (event: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.target === event.currentTarget) handleCloseDialog()
+    return
+  }
+
   if(!data) return null
   return (
-    <>
+    <Box>
     {
-      open ? <DialogImageWrapper>
-        <DialogImageContentWrapper>
+      open ?
+      <DialogImageWrapper sx={{position: 'absolute', zIndex: 1}} onClick={handleClose} >
+        <DialogImageContentWrapper sx={{position: 'absolute', zIndex: 10000}}>
           <DialogImageContent>
             <Box
               sx={{
@@ -68,7 +92,7 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
         </DialogImageContentWrapper>
       </DialogImageWrapper> : null
     }
-    </>
+    </Box>
   )
 }
 

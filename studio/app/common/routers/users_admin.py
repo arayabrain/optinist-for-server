@@ -27,7 +27,7 @@ async def list_user(
 ):
     return await crud_users.list_user(
         db,
-        organization_id=current_admin.organization_id,
+        organization_id=current_admin.organization.id,
         options=options,
         sortOptions=sortOptions,
     )
@@ -40,7 +40,7 @@ async def create_user(
     current_admin: User = Depends(get_admin_user),
 ):
     return await crud_users.create_user(
-        db, data, organization_id=current_admin.organization_id
+        db, data, organization_id=current_admin.organization.id
     )
 
 
@@ -51,7 +51,7 @@ async def get_user(
     current_admin: User = Depends(get_admin_user),
 ):
     return await crud_users.get_user(
-        db, user_id, organization_id=current_admin.organization_id
+        db, user_id, organization_id=current_admin.organization.id
     )
 
 
@@ -63,7 +63,7 @@ async def update_user(
     current_admin: User = Depends(get_admin_user),
 ):
     return await crud_users.update_user(
-        db, user_id, data, organization_id=current_admin.organization_id
+        db, user_id, data, organization_id=current_admin.organization.id
     )
 
 
@@ -74,5 +74,5 @@ async def delete_user(
     current_admin: User = Depends(get_admin_user),
 ):
     return await crud_users.delete_user(
-        db, user_id, organization_id=current_admin.organization_id
+        db, user_id, organization_id=current_admin.organization.id
     )

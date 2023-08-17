@@ -13,7 +13,7 @@ const Dashboard = () => {
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
       <DashboardWrapper>
         <DashboardContent>
-          <LinkWrapper to="/console/experiments?sort=&sort=&limit=50&offset=0">
+          <LinkWrapper to="/console/experiments">
             <BoxMenu>
               <Box>
                 <StorageIcon fontSize="large" />
@@ -31,7 +31,7 @@ const Dashboard = () => {
           </LinkWrapper>
           {
             admin ?
-              <LinkWrapper to="/console/account-manager?sort=&sort=&limit=50&offset=0">
+              <LinkWrapper to="/console/account-manager">
                 <BoxMenu>
                   <Box>
                     <ManageAccountsIcon fontSize="large" />
