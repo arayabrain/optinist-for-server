@@ -147,7 +147,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<number>) => (
+    renderCell: (params: GridRenderCellParams<string>) => (
       <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
     ),
   },
@@ -184,7 +184,7 @@ const columns = (
     renderCell: (params: GridRenderCellParams<string>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
-          <GroupsIcon />
+          <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
         </ButtonCustom>
       ): null
   },
