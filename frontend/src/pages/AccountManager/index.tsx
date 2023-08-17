@@ -1,7 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
-import {Box, Button, Dialog, DialogActions, DialogTitle, Input, Pagination, styled} from "@mui/material";
+import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -15,6 +15,7 @@ import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
 import {SelectChangeEvent} from "@mui/material/Select";
 import SelectError from "../../components/common/SelectError";
+import PaginationCustom from "../../components/common/PaginationCustom";
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -302,7 +303,14 @@ const AccountManager = () => {
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
     if(!listUser) return
-    setParams(`limit=${listUser.limit}&offset=${page - 1}`)
+    let filter = ''
+    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&')
+    const { sort } = sortParams
+    setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
   }
 
   const getParamsData = () => {
@@ -330,7 +338,7 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}`: ''}&${paramsManager()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -437,6 +445,19 @@ const AccountManager = () => {
       alert('Account deleted successfully!')
     }
     setOpenDel({...openDel, open: false})
+  }
+
+  const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    let filter = ''
+    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+        .map((item: any) => {
+          return `${item.field}=${item?.value}`
+        })
+        .join('&')
+    const { sort } = sortParams
+    setParams(
+        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
+    )
   }
 
   const columns = useMemo(() =>
@@ -604,12 +625,12 @@ const AccountManager = () => {
         onFilterModelChange={handleFilter as any}
       />
       {
-        listUser ?
-          <Pagination
-            sx={{ marginTop: 2 }}
-            count={Math.ceil(listUser.total / listUser.limit)}
-            page={Math.ceil(listUser.offset / listUser.limit) + 1}
-            onChange={handlePage}
+        listUser && listUser.items.length > 0 ?
+          <PaginationCustom
+            data={listUser}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
           /> : null
       }
       <PopupDelete
