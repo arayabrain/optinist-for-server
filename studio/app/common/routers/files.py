@@ -28,6 +28,9 @@ class DirTreeGetter:
         else:
             absolute_dirpath = join_filepath([DIRPATH.INPUT_DIR, workspace_id, dirname])
 
+        if not os.path.exists(absolute_dirpath):
+            return nodes
+
         sorted_listdir = sorted(
             os.listdir(absolute_dirpath),
             key=lambda x: (not os.path.isdir(join_filepath([absolute_dirpath, x])), x),
