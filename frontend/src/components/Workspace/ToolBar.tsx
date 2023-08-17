@@ -8,6 +8,7 @@ import { RunButtons } from './RunButtons'
 import { Button } from '@mui/material'
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos'
 import { useNavigate } from 'react-router-dom'
+import { IS_STANDALONE } from 'const/Mode'
 
 export const ToolBar = React.memo<UseRunPipelineReturnType>((props) => {
   const navigate = useNavigate()
@@ -24,10 +25,14 @@ export const ToolBar = React.memo<UseRunPipelineReturnType>((props) => {
         fontSize: '1rem',
       }}
     >
-      <Button onClick={() => navigate('/console/workspaces')}>
-        <ArrowBackIosIcon />
-        Workspaces
-      </Button>
+      { !IS_STANDALONE &&
+        (
+          <Button onClick={() => navigate('/console/workspaces')}>
+            <ArrowBackIosIcon />
+            Workspaces
+          </Button>
+        )
+      }
       <SnakemakeButton />
       <NWBSettingButton />
       <RunButtons {...props} />

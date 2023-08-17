@@ -45,7 +45,6 @@ export const userSlice = createSlice({
         state.loading = false
       })
       .addCase(getListSearch.fulfilled, (state, action) => {
-        state.loading = false
         state.listUserSearch = action.payload
       })
       .addCase(createUser.fulfilled, (state, action) => {
