@@ -3,7 +3,10 @@ export type UserDTO = {
   email: string
   id?: number
   name?: string
-  organization_id?: number
+  organization?: {
+    id: number
+    name: string
+  }
   role_id?: number
   created_at?: string
   updated_at?: string
