@@ -250,7 +250,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                 </Box>
                 <p>Permitted users</p>
                 {
-                    stateUserShare &&
+                  stateUserShare &&
                   <DataGrid
                     sx={{minHeight: 400}}
                     // onRowClick={handleShareTrue}

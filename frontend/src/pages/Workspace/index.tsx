@@ -10,8 +10,11 @@ import {
   Input,
   Pagination,
 } from '@mui/material'
-import {GridEventListener, GridRenderCellParams, GridRowModes, GridValidRowModel} from '@mui/x-data-grid'
 import {
+  GridEventListener,
+  GridRenderCellParams,
+  GridRowModes,
+  GridValidRowModel,
   DataGrid
 } from '@mui/x-data-grid'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -180,7 +183,7 @@ const columns = (
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
-          <GroupsIcon />
+          <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
         </ButtonCustom>
       ): null
   },

@@ -329,7 +329,7 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `&sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}`: ''}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
