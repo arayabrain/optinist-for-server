@@ -1,5 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {Box, styled} from "@mui/material";
+import {useEffect} from "react";
 
 type DialogImageProps = {
   open: boolean
@@ -10,12 +11,35 @@ type DialogImageProps = {
 }
 
 const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
+  useEffect(() => {
+    const handleClosePopup = (event: any) => {
+      if(event.key === 'Escape') {
+        handleCloseDialog()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleClosePopup);
+    return () => {
+      document.removeEventListener('keydown', handleClosePopup);
+    };
+    //eslint-disable-next-line
+  }, []);
+
+  const handleClose = (event: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if(event.target === event.currentTarget) handleCloseDialog()
+    return
+  }
+
   if(!data) return null
   return (
-    <>
+    <Box>
     {
-      open ? <DialogImageWrapper>
-        <DialogImageContentWrapper>
+      open ?
+      <DialogImageWrapper sx={{position: 'absolute', zIndex: 1}} onClick={handleClose} >
+        <DialogImageContentWrapper sx={{position: 'absolute', zIndex: 10000}}>
           <DialogImageContent>
             <Box
               sx={{
@@ -32,8 +56,9 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
                     display: "flex",
                     flexDirection: "column",
                   }}>
-                    <p>Expriment ID: {expId}</p>
-                    <p>{nameCol}</p>
+                    <DialogImageTitle>{nameCol}</DialogImageTitle>
+                    <DialogImageLabel>Expriment ID: {expId}</DialogImageLabel>
+                    <DialogImageLabel>{data}</DialogImageLabel>
 
                     <img
                       src={data}
@@ -41,7 +66,6 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
                       width={"100%"}
                       height={"100%"}
                     />
-                    <span>{data}</span>
                   </Box> :
                 Array.isArray(data) ?
                 data.filter(Boolean).map((item, index) => (
@@ -68,7 +92,7 @@ const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImag
         </DialogImageContentWrapper>
       </DialogImageWrapper> : null
     }
-    </>
+    </Box>
   )
 }
 
@@ -93,6 +117,19 @@ const DialogImageContentWrapper = styled(Box)(({theme}) => ({
   width: "80%",
   height: "80%",
   border: "1px solid #000",
+  color: "#333333",
+}))
+
+const DialogImageTitle = styled(Box)(({theme}) => ({
+  margin: "0 0 0.5em 0",
+  textAlign: "center",
+  fontSize: "1.75em",
+}))
+
+const DialogImageLabel = styled(Box)(({theme}) => ({
+  margin: "0.5em 0 0.5em 0",
+  textAlign: "center",
+  fontSize: "1.1em",
 }))
 
 const DialogImageContent = styled(Box)(({theme}) => ({

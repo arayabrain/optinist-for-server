@@ -1,21 +1,30 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { Box, styled, Typography } from '@mui/material'
+import { Box, Button, Input, styled, Typography } from '@mui/material'
 import Loading from "components/common/Loading"
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
-import { useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from "react-router-dom";
-import { updateMePasswordApi } from 'api/users/UsersMe'
-import { deleteMe } from 'store/slice/User/UserActions'
-import {isAdmin, selectCurrentUser} from 'store/slice/User/UserSelector'
+import { deleteMe, updateMe, updateMePassword} from 'store/slice/User/UserActions'
+import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
+import { ROLE } from "../../@types";
 const Account = () => {
   const user = useSelector(selectCurrentUser)
-  const admin = useSelector(isAdmin)
+  const loading = useSelector(selectLoading)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
   const [isChangePwModalOpen, setIsChangePwModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isEditName, setIsEditName] = useState(false)
+  const [isName, setIsName] = useState<string>()
+
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if(!user) return
+    setIsName(user.name)
+    //eslint-disable-next-line
+  }, [])
 
   const handleCloseDeleteComfirmModal = () => {
     setIsDeleteConfirmModalOpen(false)
@@ -27,14 +36,12 @@ const Account = () => {
 
   const onConfirmDelete = async () => {
     if(!user) return
-    setIsLoading(true)
-    try {
-      dispatch(deleteMe())
-      navigate('/login')
+    const data = await dispatch(deleteMe())
+    if((data as any).error) {
+      alert('Failed to Delete Account!')
     }
-    catch {}
-    finally {
-      setIsLoading(false)
+    else {
+      navigate('/login')
     }
     handleCloseDeleteComfirmModal()
   }
@@ -48,17 +55,70 @@ const Account = () => {
   }
 
   const onConfirmChangePw = async (oldPass: string, newPass: string) => {
-    setIsLoading(true)
-    try {
-      await updateMePasswordApi({old_password: oldPass, new_password: newPass})
-      alert('Your password has been successfully changed.')
-      handleCloseChangePw()
-    }
-    catch {
+    const data = await dispatch(updateMePassword({old_password: oldPass, new_password: newPass}))
+    if ((data as any).error) {
       alert('Failed to Change Password!')
+      return
     }
-    finally {
-      setIsLoading(false)
+    alert('Your password has been successfully changed.')
+    handleCloseChangePw()
+  }
+
+  const onEditName = (e: ChangeEvent<HTMLInputElement>) => {
+    setIsName(e.target.value)
+  }
+
+  const onSubmit = async (e: any) => {
+    if(!user || !user.name || !user.email) return
+    if(isName === user.name) {
+      setIsEditName(false)
+      return
+    }
+    if(!e.target.value) {
+      alert('is not empty!')
+      setIsName(user?.name)
+    }
+    else {
+      const data = await dispatch(updateMe({
+        name: e.target.value,
+        email: user.email,
+      }))
+      if((data as any).error) {
+        alert('name edit failed!')
+        setIsName(user?.name)
+      }
+    }
+    setIsEditName(false)
+  }
+
+  const getRole = (role?: number) => {
+    if(!role) return
+    let newRole = ''
+    switch (role) {
+      case ROLE.ADMIN:
+        newRole = 'Admin'
+        break
+      case ROLE.DATA_MANAGER:
+        newRole = 'Data Manager'
+        break
+      case ROLE.OPERATOR:
+        newRole = 'Operator'
+        break
+      case ROLE.GUEST_OPERATOR:
+        newRole = 'Guest Operator'
+    }
+    return newRole
+  }
+
+  const handleName = (event: any) => {
+    if(event.key === 'Escape') {
+      setIsName(user?.name)
+      setIsEditName(false)
+      return
+    }
+    if(event.key === 'Enter') {
+      if(ref.current) ref.current?.querySelector('input')?.blur?.()
+      return
     }
   }
 
@@ -82,18 +142,45 @@ const Account = () => {
         <BoxData>{user?.uid}</BoxData>
       </BoxFlex>
       <BoxFlex>
+        <TitleData>Organization</TitleData>
+        <BoxData>{user?.organization?.name}</BoxData>
+      </BoxFlex>
+      <BoxFlex>
+        <TitleData>Full name:</TitleData>
+        {isEditName ? (
+          <Input
+            sx={{ width: 400 }}
+            autoFocus
+            onBlur={onSubmit}
+            placeholder="Full name"
+            value={isName}
+            onChange={onEditName}
+            onKeyDown={handleName}
+            ref={ref}
+          />
+        ) : (
+          <>
+            <Box>{isName ? isName : user?.name}</Box>
+            <Button sx={{ ml: 1 }} onClick={() => setIsEditName(true)}>
+              Edit
+            </Button>
+          </>
+        )}
+      </BoxFlex>
+      <BoxFlex>
         <TitleData>Email</TitleData>
         <BoxData>{user?.email}</BoxData>
       </BoxFlex>
-      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10 }}>
+      <BoxFlex>
+        <TitleData>Role</TitleData>
+        <BoxData>{getRole(user?.role_id)}</BoxData>
+      </BoxFlex>
+      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10, maxWidth: 600}}>
         <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
-        {
-          admin ?
-            <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit> : null
-        }
+        <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
       </BoxFlex>
       {
-        isLoading && <Loading />
+        loading ? <Loading /> : null
       }
     </AccountWrapper>
   )
@@ -121,6 +208,7 @@ const BoxData = styled(Typography)({
 
 const TitleData = styled(Typography)({
   width: 250,
+  minWidth: 250
 })
 
 const ButtonSubmit = styled('button')({
