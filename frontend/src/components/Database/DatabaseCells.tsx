@@ -4,10 +4,10 @@ import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
   GridFilterModel,
-  GridSortDirection,
   GridSortModel,
+  DataGrid,
+  GridSortDirection
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
 import {
   DatabaseType,
   DATABASE_SLICE_NAME,
@@ -249,6 +249,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (model: GridFilterModel) => {
+    setFilterModel(model)
     let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
@@ -263,6 +264,16 @@ const DatabaseCells = ({ user }: CellProps) => {
       `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
     )
   }
+
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({
+    items: [
+      {
+        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
+        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status'].includes(key)) ? 'is' : 'contains',
+        value: Object.values(dataParamsFilter).find(value => value),
+      },
+    ],
+  });
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
@@ -314,13 +325,14 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   return (
     <DatabaseExperimentsWrapper>
-      <DataGridPro
+      <DataGrid
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
         onSortModelChange={handleSort}
+        filterModel={filterModel}
         initialState={{
           sorting: {
             sortModel: [
@@ -329,42 +341,6 @@ const DatabaseCells = ({ user }: CellProps) => {
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
-          },
-          filter: {
-            filterModel: {
-              items: [
-                {
-                  field: 'experiment_id',
-                  operator: 'contains',
-                  value: dataParamsFilter.experiment_id,
-                },
-                {
-                  field: 'published',
-                  operator: 'is',
-                  value: dataParamsFilter.publish_status,
-                },
-                {
-                  field: 'brain_area',
-                  operator: 'contains',
-                  value: dataParamsFilter.brain_area,
-                },
-                {
-                  field: 'cre_driver',
-                  operator: 'contains',
-                  value: dataParamsFilter.cre_driver,
-                },
-                {
-                  field: 'reporter_line',
-                  operator: 'contains',
-                  value: dataParamsFilter.reporter_line,
-                },
-                {
-                  field: 'imaging_depth',
-                  operator: 'contains',
-                  value: dataParamsFilter.imaging_depth,
-                },
-              ],
-            },
           },
         }}
         onFilterModelChange={handleFilter as any}
