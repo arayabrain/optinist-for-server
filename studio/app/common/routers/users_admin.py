@@ -13,9 +13,7 @@ from studio.app.common.schemas.users import (
 )
 from studio.app.optinist.schemas.base import SortOptions
 
-router = APIRouter(
-    prefix="/admin/users", tags=["users/admin"], dependencies=[Depends(get_admin_user)]
-)
+router = APIRouter(prefix="/admin/users", tags=["users/admin"])
 
 
 @router.get("", response_model=LimitOffsetPage[User])
