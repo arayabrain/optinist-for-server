@@ -9,14 +9,13 @@ import {
   DialogActions,
   Input,
 } from '@mui/material'
-import {GridRenderCellParams} from '@mui/x-data-grid'
 import {
-  DataGridPro,
   GridEventListener,
-  GridRowModesModel,
-  GridRowModel,
+  GridRenderCellParams,
   GridRowModes,
-} from '@mui/x-data-grid-pro'
+  GridValidRowModel,
+  DataGrid
+} from '@mui/x-data-grid'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Loading from '../../components/common/Loading'
 import {
@@ -70,7 +69,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{params.value}</span>
     ),
   },
@@ -81,7 +80,7 @@ const columns = (
     editable: true,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       const { row, value } = params
       return (
         <Box
@@ -137,7 +136,7 @@ const columns = (
     minWidth: 200,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
     ),
   },
@@ -147,7 +146,7 @@ const columns = (
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
     ),
   },
@@ -157,7 +156,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => {
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
       <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
       )
@@ -169,7 +168,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) => (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
       </ButtonCustom>
@@ -181,7 +180,7 @@ const columns = (
     minWidth: 90,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
         <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
           <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
@@ -194,7 +193,7 @@ const columns = (
     minWidth: 130,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<string>) =>
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
       <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
         Del
@@ -271,7 +270,7 @@ const Workspaces = () => {
   const [newWorkspace, setNewWorkSpace] = useState<string>()
   const [error, setError] = useState('')
   const [initName, setInitName] = useState('')
-  const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({})
+  const [rowModesModel, setRowModesModel] = useState<any>({})
   const [searchParams, setParams] = useSearchParams()
 
   const offset = searchParams.get('offset')
@@ -337,7 +336,7 @@ const Workspaces = () => {
   }
 
   const onEditName = (id: number) => {
-    setRowModesModel((pre) => ({ ...pre, [id]: { mode: GridRowModes.Edit } }))
+    setRowModesModel((pre: any) => ({ ...pre, [id]: { mode: GridRowModes.Edit } }))
   }
 
   const handleOkNew = async () => {
@@ -375,7 +374,7 @@ const Workspaces = () => {
     dispatch(exportWorkspace(id))
   }
 
-  const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+  const handleRowModesModelChange = (newRowModesModel: any) => {
     setRowModesModel(newRowModesModel)
   }
 
@@ -385,8 +384,8 @@ const Workspaces = () => {
 
   const onCellClick: GridEventListener<'cellClick'> | undefined = (event: any) => {
     if (event.field === 'name') return
-    setRowModesModel((pre) => {
-      const object: GridRowModesModel = {}
+    setRowModesModel((pre: any) => {
+      const object: any = {}
       Object.keys(pre).forEach(key => {
         object[key] = {
           mode: GridRowModes.View, ignoreModifications: false
@@ -396,7 +395,7 @@ const Workspaces = () => {
     })
   }
 
-  const processRowUpdate = async (newRow: GridRowModel) => {
+  const processRowUpdate = async (newRow: any) => {
     if (!newRow.name) {
       alert("Workspace Name cann't empty")
       return { ...newRow, name: initName }
@@ -463,7 +462,7 @@ const Workspaces = () => {
               height: 'calc(100vh - 350px)',
             }}
           >
-            <DataGridPro
+            <DataGrid
               // todo enable when api complete
               // filterMode={'server'}
               // sortingMode={'server'}
