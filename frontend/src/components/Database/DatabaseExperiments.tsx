@@ -13,8 +13,8 @@ import {
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
+  DataGrid
 } from '@mui/x-data-grid'
-import { DataGridPro } from '@mui/x-data-grid-pro'
 import GroupsIcon from '@mui/icons-material/Groups'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
@@ -320,6 +320,17 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     [searchParams],
   )
 
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({
+    items: [
+      {
+        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
+        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status', 'brain_area'].includes(key)) ? 'is' : 'contains',
+        value: Object.values(dataParamsFilter).find(value => value),
+      },
+    ],
+  });
+
+
   const fetchApi = () => {
     const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
     let newPublish: number | undefined
@@ -413,6 +424,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   )
 
   const handleFilter = (model: GridFilterModel) => {
+    setFilterModel(model)
     let filter = ''
     if (!!model.items[0]?.value) {
       filter = model.items
@@ -523,7 +535,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
 
   return (
     <DatabaseExperimentsWrapper>
-      <DataGridPro
+      <DataGrid
         columns={
           adminOrManager && user
             ? ([...columnsTable, ...ColumnPrivate] as any)
@@ -533,6 +545,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
         filterMode={'server'}
         sortingMode={'server'}
         onSortModelChange={handleSort}
+        filterModel={filterModel}
         initialState={{
           sorting: {
             sortModel: [
@@ -541,42 +554,6 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
-          },
-          filter: {
-            filterModel: {
-              items: [
-                {
-                  field: 'experiment_id',
-                  operator: 'contains',
-                  value: dataParamsFilter.experiment_id,
-                },
-                {
-                  field: 'published',
-                  operator: 'is',
-                  value: dataParamsFilter.publish_status,
-                },
-                {
-                  field: 'brain_area',
-                  operator: 'is',
-                  value: dataParamsFilter.brain_area,
-                },
-                {
-                  field: 'cre_driver',
-                  operator: 'contains',
-                  value: dataParamsFilter.cre_driver,
-                },
-                {
-                  field: 'reporter_line',
-                  operator: 'contains',
-                  value: dataParamsFilter.reporter_line,
-                },
-                {
-                  field: 'imaging_depth',
-                  operator: 'contains',
-                  value: dataParamsFilter.imaging_depth,
-                },
-              ],
-            },
           },
         }}
         onFilterModelChange={handleFilter as any}
