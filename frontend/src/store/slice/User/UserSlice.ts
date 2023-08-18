@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { User } from './UserType'
-import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, createUser, updateUser} from './UserActions'
+import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, updateMePassword, deleteUser, createUser, updateUser} from './UserActions'
 import {
   removeExToken,
   removeToken,
@@ -44,11 +44,7 @@ export const userSlice = createSlice({
         state.listUser = action.payload
         state.loading = false
       })
-      .addCase(updateMe.fulfilled, (state, action) => {
-        state.currentUser = action.payload
-      })
       .addCase(getListSearch.fulfilled, (state, action) => {
-        state.loading = false
         state.listUserSearch = action.payload
       })
       .addCase(createUser.fulfilled, (state, action) => {
@@ -61,7 +57,15 @@ export const userSlice = createSlice({
           getListSearch.rejected,
           createUser.rejected,
           getListUser.rejected,
-          updateUser.rejected),
+          updateUser.rejected,
+          updateMePassword.rejected,
+          updateMePassword.fulfilled,
+          deleteUser.fulfilled,
+          deleteUser.rejected,
+          deleteMe.rejected,
+          deleteMe.fulfilled,
+          updateMe.rejected,
+          updateMe.fulfilled),
         (state) => {
           state.loading = false
         },
@@ -70,8 +74,12 @@ export const userSlice = createSlice({
         isAnyOf(
           getListUser.pending,
           getListSearch.pending,
+          deleteUser.pending,
           createUser.pending,
-          updateUser.pending),
+          updateMe.pending,
+          deleteMe.pending,
+          updateUser.pending,
+          updateMePassword.pending),
         (state) => {
           state.loading = true
         },

@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
-import { deleteMeApi, getMeApi, updateMeApi } from 'api/users/UsersMe'
-import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UserDTO} from 'api/users/UsersApiDTO'
+import {deleteMeApi, getMeApi, updateMeApi, updateMePasswordApi} from 'api/users/UsersMe'
+import {AddUserDTO, ListUsersQueryDTO, UpdateUserDTO, UpdateUserPasswordDTO, UserDTO} from 'api/users/UsersApiDTO'
 import { LoginDTO, loginApi } from 'api/auth/Auth'
-import {createUserApi, listUsersApi, updateUserApi} from "../../../api/users/UsersAdmin";
+import {deleteUserApi, createUserApi, listUsersApi, updateUserApi} from "../../../api/users/UsersAdmin";
 import {getListSearchApi} from "../../../api/users/UsersAdmin";
 
 export const login = createAsyncThunk(
@@ -35,6 +35,7 @@ export const updateMe = createAsyncThunk(
   async (data: UpdateUserDTO, thunkAPI) => {
     try {
       const responseData = await updateMeApi(data)
+      await thunkAPI.dispatch(getMe())
       return responseData
     } catch (e) {
       return thunkAPI.rejectWithValue(e)
@@ -52,6 +53,18 @@ export const deleteMe = createAsyncThunk(
       return thunkAPI.rejectWithValue(e)
     }
   },
+)
+
+export const updateMePassword = createAsyncThunk(
+    `${USER_SLICE_NAME}/updateMePassword`,
+    async (data: UpdateUserPasswordDTO, thunkAPI) => {
+      try {
+        const responseData = await updateMePasswordApi(data)
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
 )
 
 export const getListUser = createAsyncThunk(
@@ -106,6 +119,23 @@ export const updateUser = createAsyncThunk<
       try {
         const responseData = await updateUserApi(props.id, props.data)
         await dispatch(getListUser(props.params))
+        return responseData
+      } catch (e) {
+        return thunkAPI.rejectWithValue(e)
+      }
+    },
+)
+
+export const deleteUser = createAsyncThunk<
+    string,
+    {id: number, params: ListUsersQueryDTO}
+>(
+    `${USER_SLICE_NAME}/deleteUser`,
+    async (data, thunkAPI) => {
+      const { dispatch } = thunkAPI
+      try {
+        const responseData = await deleteUserApi(data.id)
+        await dispatch(getListUser(data.params))
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)

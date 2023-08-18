@@ -6,10 +6,10 @@ const DatabaseWrapper: FC = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const handleClickExperiments = () => {
-    navigate('/console/experiments?sort=&sort=&limit=50&offset=0')
+    navigate('/console/experiments')
   }
   const handleClickCells = () => {
-    navigate('/console/cells?sort=&sort=&limit=50&offset=0')
+    navigate('/console/cells')
   }
 
   return (

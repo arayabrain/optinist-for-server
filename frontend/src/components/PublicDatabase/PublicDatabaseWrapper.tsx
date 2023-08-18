@@ -7,10 +7,10 @@ const PublicDatabaseWrapper: FC = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const handleClickExperiments = () => {
-    navigate('/experiments?sort=&sort=&limit=50&offset=0')
+    navigate('/experiments')
   }
   const handleClickCells = () => {
-    navigate('/cells?sort=&sort=&limit=50&offset=0')
+    navigate('/cells')
   }
 
   return (
