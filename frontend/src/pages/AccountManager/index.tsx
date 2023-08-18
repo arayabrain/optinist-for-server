@@ -438,10 +438,10 @@ const AccountManager = () => {
       params: {...filterParams, ...sortParams, ...params}
     }))
     if((data as any).error) {
-      alert('Delete user failed!')
+      handleClickVariant('error', 'Delete user failed!')
     }
     else {
-      alert('Account deleted successfully!')
+      handleClickVariant('success', 'Account deleted successfully!')
     }
     setOpenDel({...openDel, open: false})
   }

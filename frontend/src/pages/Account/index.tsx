@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { deleteMe, updateMe, updateMePassword} from 'store/slice/User/UserActions'
 import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
 import { ROLE } from "../../@types";
+import {useSnackbar, VariantType} from "notistack";
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const loading = useSelector(selectLoading)
@@ -19,6 +20,12 @@ const Account = () => {
   const [isName, setIsName] = useState<string>()
 
   const ref = useRef<HTMLInputElement>(null)
+
+  const { enqueueSnackbar } = useSnackbar();
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant });
+  };
 
   useEffect(() => {
     if(!user) return
@@ -38,7 +45,7 @@ const Account = () => {
     if(!user) return
     const data = await dispatch(deleteMe())
     if((data as any).error) {
-      alert('Failed to Delete Account!')
+      handleClickVariant('error', 'Account deleted failed!')
     }
     else {
       navigate('/login')
@@ -56,11 +63,12 @@ const Account = () => {
 
   const onConfirmChangePw = async (oldPass: string, newPass: string) => {
     const data = await dispatch(updateMePassword({old_password: oldPass, new_password: newPass}))
-    if ((data as any).error) {
-      alert('Failed to Change Password!')
-      return
+    if((data as any).error) {
+      handleClickVariant('error', 'Failed to Change Password!')
     }
-    alert('Your password has been successfully changed.')
+    else {
+      handleClickVariant('success', 'Your password has been successfully changed!')
+    }
     handleCloseChangePw()
   }
 
@@ -75,7 +83,7 @@ const Account = () => {
       return
     }
     if(!e.target.value) {
-      alert('is not empty!')
+      handleClickVariant('error', "Full name cann't empty!")
       setIsName(user?.name)
     }
     else {
@@ -84,8 +92,10 @@ const Account = () => {
         email: user.email,
       }))
       if((data as any).error) {
-        alert('name edit failed!')
-        setIsName(user?.name)
+        handleClickVariant('error', 'Full name edited failed!')
+      }
+      else {
+        handleClickVariant('success', 'Full name edited successfully!')
       }
     }
     setIsEditName(false)
