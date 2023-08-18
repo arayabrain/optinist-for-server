@@ -8,11 +8,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.models import User as UserModel
 from studio.app.common.schemas.users import User, UserInfo
 
-router = APIRouter(
-    prefix="/users/search",
-    tags=["users/search"],
-    dependencies=[Depends(get_current_user)],
-)
+router = APIRouter(prefix="/users/search", tags=["users/search"])
 
 
 @router.get(
