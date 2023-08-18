@@ -26,7 +26,10 @@ axios.interceptors.response.use(
       error.config.headers.Authorization = `Bearer ${access_token}`
       return axiosLibrary(error.config)
     }
-    return Promise.reject(error)
+    if (error?.response?.status === 400) {
+      return window.location.href = '/login';
+    }
+      return Promise.reject(error)
   },
 )
 
