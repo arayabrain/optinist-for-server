@@ -75,7 +75,7 @@ const Account = () => {
       return
     }
     if(!e.target.value) {
-      alert('is not empty!')
+      alert("This field can't empty")
       setIsName(user?.name)
     }
     else {
@@ -146,13 +146,13 @@ const Account = () => {
         <BoxData>{user?.organization?.name}</BoxData>
       </BoxFlex>
       <BoxFlex>
-        <TitleData>Full name:</TitleData>
+        <TitleData>Name</TitleData>
         {isEditName ? (
           <Input
             sx={{ width: 400 }}
             autoFocus
             onBlur={onSubmit}
-            placeholder="Full name"
+            placeholder="Name"
             value={isName}
             onChange={onEditName}
             onKeyDown={handleName}

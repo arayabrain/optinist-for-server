@@ -218,7 +218,7 @@ const PopupNew = ({
   return (
     <Box>
       <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-        <DialogTitle>Create New Workspace</DialogTitle>
+        <DialogTitle>New Workspace</DialogTitle>
         <DialogContent sx={{ minWidth: 300 }}>
           <Input
             sx={{ width: '80%' }}
@@ -341,7 +341,7 @@ const Workspaces = () => {
 
   const handleOkNew = async () => {
     if (!newWorkspace) {
-      setError('is not empty')
+      setError("This field is required")
       return
     }
     await dispatch(postWorkspace({ name: newWorkspace }))
@@ -397,7 +397,7 @@ const Workspaces = () => {
 
   const processRowUpdate = async (newRow: any) => {
     if (!newRow.name) {
-      alert("Workspace Name cann't empty")
+      alert("Workspace Name can't empty")
       return { ...newRow, name: initName }
     }
     if (newRow.name === initName) return newRow
