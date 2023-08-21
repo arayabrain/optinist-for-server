@@ -310,7 +310,6 @@ def curvefit_tuning(
     if export_plot:
         dir_tuning_width_hist.save_plot(output_dir)
         ori_tuning_width_hist.save_plot(output_dir)
-        return stat
     else:
         return {
             "stat": stat,

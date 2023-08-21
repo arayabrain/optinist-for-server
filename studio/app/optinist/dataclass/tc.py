@@ -1,9 +1,10 @@
 from studio.app.common.dataclass import MatlabData
+from studio.app.const import TC_FIELDNAME
 
 
 class TcData(MatlabData):
-    def __init__(self, data, params, file_name="tc"):
-        params = {"fieldName": "AY", **params}
+    def __init__(self, data, params={}, file_name="tc"):
+        params = {"fieldName": TC_FIELDNAME, **params}
 
         super().__init__(data, params, file_name=file_name)
 

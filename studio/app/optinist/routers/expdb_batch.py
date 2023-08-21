@@ -8,7 +8,8 @@ from studio.app.common.core.utils.filepath_creater import (
     join_filepath,
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
-from studio.app.optinist.dataclass import TcData, TsData
+from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.wrappers.stat import (
     curvefit_tuning,
     oneway_anova,
@@ -24,19 +25,18 @@ def get_default_params(name: str):
     return ConfigReader.read(filepath)
 
 
-def expdb_batch(dirpath: str, tc: TcData, ts: TsData):
+def expdb_batch(dirpath: str, expdb: ExpDbData):
     plot_dir = join_filepath([dirpath, "plots"])
     create_directory(plot_dir, delete_dir=True)
 
     stat = stat_file_convert(
-        tc=tc,
-        ts=ts,
+        expdb=expdb,
         output_dir=plot_dir,
         params=get_default_params("stat_file_convert"),
         export_plot=True,
     )
 
-    anova_stat = oneway_anova(
+    oneway_anova(
         stat=stat,
         output_dir=plot_dir,
         params=get_default_params("oneway_anova"),
@@ -45,7 +45,6 @@ def expdb_batch(dirpath: str, tc: TcData, ts: TsData):
 
     curvefit_tuning(
         stat=stat,
-        anova=anova_stat,
         output_dir=plot_dir,
         params=get_default_params("curvefit_tuning"),
         export_plot=True,
@@ -53,7 +52,6 @@ def expdb_batch(dirpath: str, tc: TcData, ts: TsData):
 
     vector_average(
         stat=stat,
-        anova=anova_stat,
         output_dir=plot_dir,
         params=get_default_params("vector_average"),
         export_plot=True,
@@ -67,15 +65,11 @@ async def run_expdb_batch(expdb_dirpath: str, background_tasks: BackgroundTasks)
     ), f"Directory {expdb_dirpath} does not exist"
 
     exp_id = os.path.basename(expdb_dirpath)
+    paths = [
+        os.path.join(expdb_dirpath, f"{exp_id}_{TC_SUFFIX}.mat"),
+        os.path.join(expdb_dirpath, f"{exp_id}_{TS_SUFFIX}.mat"),
+    ]
+    expdb = ExpDbData(paths, None)
 
-    tc = TcData(
-        os.path.join(expdb_dirpath, f"{exp_id}_timecourse.mat"),
-        params=get_default_params("tc"),
-    )
-    ts = TsData(
-        os.path.join(expdb_dirpath, f"{exp_id}_timeseries.mat"),
-        params=get_default_params("ts"),
-    )
-
-    background_tasks.add_task(expdb_batch, expdb_dirpath, tc, ts)
+    background_tasks.add_task(expdb_batch, expdb_dirpath, expdb)
     return True

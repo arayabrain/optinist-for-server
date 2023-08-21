@@ -7,6 +7,7 @@ import { BehaviorFileNode } from 'components/Workspace/FlowChart/FlowChartNode/B
 import { MatlabFileNode } from 'components/Workspace/FlowChart/FlowChartNode/MatlabFileNode'
 import { TcFileNode } from 'components/Workspace/FlowChart/FlowChartNode/TcFileNode'
 import { TsFileNode } from 'components/Workspace/FlowChart/FlowChartNode/TsFileNode'
+import { ExpDbNode } from 'components/Workspace/FlowChart/FlowChartNode/ExpDbNode'
 import { CustomEdge } from 'components/Workspace/FlowChart/CustomEdge'
 
 export const reactFlowNodeTypes = {
@@ -19,6 +20,7 @@ export const reactFlowNodeTypes = {
   MatlabFileNode,
   TcFileNode,
   TsFileNode,
+  ExpDbNode,
 } as const
 
 export const reactFlowEdgeTypes = {

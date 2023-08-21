@@ -11,6 +11,7 @@ export const FILE_TREE_TYPE_SET = {
   MATLAB: 'matlab',
   TC: 'tc',
   TS: 'ts',
+  EXPDB: 'expdb',
   ALL: 'all',
 } as const
 

@@ -181,6 +181,7 @@ function toDataTypeFromFileType(fileType: FILE_TYPE) {
     case FILE_TYPE_SET.MATLAB:
     case FILE_TYPE_SET.TC:
     case FILE_TYPE_SET.TS:
+    case FILE_TYPE_SET.EXPDB:
       return DATA_TYPE_SET.MATLAB
   }
 }

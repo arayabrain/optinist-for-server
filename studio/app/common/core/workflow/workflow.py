@@ -17,6 +17,7 @@ class NodeType:
     MATLAB: str = "MatlabFileNode"
     TC: str = "TcFileNode"
     TS: str = "TsFileNode"
+    EXPDB: str = "ExpDbNode"
 
 
 @dataclass

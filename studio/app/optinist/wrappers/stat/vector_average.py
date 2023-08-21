@@ -55,7 +55,6 @@ def vector_average(
     if export_plot:
         preferred_dir_hist.save_plot(output_dir)
         preferred_ori_hist.save_plot(output_dir)
-        return stat
     else:
         return {
             "stat": stat,

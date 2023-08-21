@@ -76,7 +76,6 @@ def oneway_anova(
         dir_selective_hist.save_plot(output_dir)
         ori_selective_hist.save_plot(output_dir)
         dir_response_strength_hist.save_plot(output_dir)
-        return stat
     else:
         return {
             "stat": stat,

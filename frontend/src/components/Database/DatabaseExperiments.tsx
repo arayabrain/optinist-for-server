@@ -13,7 +13,8 @@ import {
   GridFilterModel,
   GridSortDirection,
   GridSortModel,
-  DataGrid
+  DataGrid,
+  GridEventListener
 } from '@mui/x-data-grid'
 import GroupsIcon from '@mui/icons-material/Groups'
 import DomainIcon from '@mui/icons-material/Domain';
@@ -69,6 +70,7 @@ type PopupAttributesProps = {
 type DatabaseProps = {
   user?: UserDTO
   cellPath: string
+  handleRowClick?: GridEventListener<'rowClick'>
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -254,7 +256,7 @@ const PopupAttributes = ({
     </Box>
   )
 }
-const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
+const DatabaseExperiments = ({ user, cellPath, handleRowClick }: DatabaseProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
   const adminOrManager = useSelector(isAdminOrManager)
   const { data: dataExperiments, loading } = useSelector(
@@ -561,6 +563,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           },
         }}
         onFilterModelChange={handleFilter as any}
+        onRowClick={handleRowClick}
       />
       {
         dataExperiments?.items.length > 0 ?

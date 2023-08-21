@@ -2,7 +2,7 @@ import os
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.filepath_finder import find_condaenv_filepath
-from studio.app.const import FILETYPE
+from studio.app.const import FILETYPE, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
 from studio.app.wrappers import wrapper_dict
 
@@ -21,6 +21,15 @@ class SmkUtils:
             FILETYPE.TS,
         ]:
             return join_filepath([DIRPATH.INPUT_DIR, details["input"]])
+        elif details["type"] in [FILETYPE.EXPDB]:
+            exp_id = details["input"]
+            subject_id = exp_id.split("_")[0]
+            return [
+                join_filepath(
+                    [DIRPATH.EXPDB_DIR, subject_id, exp_id, f"{exp_id}_{k}.mat"]
+                )
+                for k in [TC_SUFFIX, TS_SUFFIX]
+            ]
         else:
             return [join_filepath([DIRPATH.OUTPUT_DIR, x]) for x in details["input"]]
 
@@ -38,6 +47,7 @@ class SmkUtils:
             FILETYPE.MATLAB,
             FILETYPE.TC,
             FILETYPE.TS,
+            FILETYPE.EXPDB,
         ]:
             return None
 

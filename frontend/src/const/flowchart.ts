@@ -23,6 +23,7 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
   MatlabFileNode: 'MatlabFileNode',
   TcFileNode: 'TcFileNode',
   TsFileNode: 'TsFileNode',
+  ExpDbNode: 'ExpDbNode',
 } as const
 
 export type REACT_FLOW_NODE_TYPE =

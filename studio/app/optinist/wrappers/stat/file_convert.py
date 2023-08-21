@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import lfilter
 
 from studio.app.common.dataclass import LineData, PolarData
-from studio.app.optinist.dataclass import StatData, TcData, TsData
+from studio.app.optinist.dataclass import ExpDbData, StatData
 
 
 def percentile_tc(tc_data: np.ndarray, window, n_percentile):
@@ -208,12 +208,13 @@ def get_stat_data(data_tables) -> StatData:
 
 
 def stat_file_convert(
-    tc: TcData,
-    ts: TsData,
+    expdb: ExpDbData,
     output_dir: str,
     params: dict = None,
     export_plot: bool = False,
 ) -> dict(stat=StatData):
+    tc = expdb.tc
+    ts = expdb.ts
     tc_detrended = detrend_tc(
         tc.data,
         params["percentile_window"],

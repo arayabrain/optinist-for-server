@@ -107,6 +107,11 @@ export const AlgorithmTreeView = React.memo(() => {
           nodeName={'behaviorData'}
           fileType={FILE_TYPE_SET.BEHAVIOR}
         />
+        <InputNodeComponent
+          fileName={'expdb'}
+          nodeName={'expdbData'}
+          fileType={FILE_TYPE_SET.EXPDB}
+        />
         <TreeItem nodeId="Matlabs" label="matlab">
           <InputNodeComponent
             fileName={'matlab'}
@@ -185,6 +190,10 @@ const InputNodeComponent = React.memo<{
         case FILE_TYPE_SET.TS:
           reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.TsFileNode
           fileType = FILE_TYPE_SET.TS
+          break
+        case FILE_TYPE_SET.EXPDB:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.ExpDbNode
+          fileType = FILE_TYPE_SET.EXPDB
           break
       }
       const newNode = {

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     last_output = snakemake.config["last_output"]
 
     rule_config = RuleConfigReader.read(snakemake.params.name)
-    if rule_config.type in [FILETYPE.IMAGE]:
+    if rule_config.type in [FILETYPE.IMAGE, FILETYPE.EXPDB]:
         rule_config.input = snakemake.input
     elif rule_config.type in [
         FILETYPE.CSV,
@@ -49,4 +49,7 @@ if __name__ == "__main__":
         PickleWriter.write(rule_config.output, outputfile)
     elif rule_config.type == FILETYPE.TS:
         outputfile = FileWriter.ts(rule_config)
+        PickleWriter.write(rule_config.output, outputfile)
+    elif rule_config.type == FILETYPE.EXPDB:
+        outputfile = FileWriter.exp_db(rule_config)
         PickleWriter.write(rule_config.output, outputfile)

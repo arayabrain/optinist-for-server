@@ -10,6 +10,7 @@ class FILETYPE:
     MATLAB: str = "matlab"
     TC: str = "tc"
     TS: str = "ts"
+    EXPDB: str = "expdb"
 
 
 ACCEPT_TIFF_EXT = [".tif", ".tiff", ".TIF", ".TIFF"]
@@ -20,3 +21,7 @@ ACCEPT_MATLAB_EXT = [".mat"]
 NOT_DISPLAY_ARGS_LIST = ["params", "output_dir", "nwbfile", "export_plot"]
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+TC_SUFFIX = "timecourse"
+TC_FIELDNAME = "AY"
+TS_SUFFIX = "timestract"
+TS_FIELDNAME = "TS"

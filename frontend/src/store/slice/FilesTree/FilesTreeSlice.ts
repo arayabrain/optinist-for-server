@@ -90,6 +90,16 @@ export const filesTreeSlice = createSlice({
               tree: [],
             }
           }
+        } else if (fileType === FILE_TYPE_SET.EXPDB) {
+          if (state[FILE_TREE_TYPE_SET.EXPDB] != null) {
+            state[FILE_TREE_TYPE_SET.EXPDB].isLatest = false
+          } else {
+            state[FILE_TREE_TYPE_SET.EXPDB] = {
+              isLoading: false,
+              isLatest: false,
+              tree: [],
+            }
+          }
         } else {
           if (state[FILE_TREE_TYPE_SET.ALL] != null) {
             state[FILE_TREE_TYPE_SET.ALL].isLatest = false
@@ -116,6 +126,8 @@ export const filesTreeSlice = createSlice({
           state[FILE_TREE_TYPE_SET.TC].isLatest = false
         } else if (fileType === FILE_TYPE_SET.TS) {
           state[FILE_TREE_TYPE_SET.TS].isLatest = false
+        } else if (fileType === FILE_TYPE_SET.EXPDB) {
+          state[FILE_TREE_TYPE_SET.EXPDB].isLatest = false
         } else {
           state[FILE_TREE_TYPE_SET.ALL].isLatest = false
         }

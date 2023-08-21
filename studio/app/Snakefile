@@ -26,6 +26,7 @@ else:
             FILETYPE.MATLAB,
             FILETYPE.TC,
             FILETYPE.TS,
+            FILETYPE.EXPDB,
         ]:
             rule:
                 input:

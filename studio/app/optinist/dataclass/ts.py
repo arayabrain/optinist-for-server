@@ -1,11 +1,12 @@
 import numpy as np
 
 from studio.app.common.dataclass import MatlabData
+from studio.app.const import TS_FIELDNAME
 
 
 class TsData(MatlabData):
-    def __init__(self, data, params, file_name="ts"):
-        params = {"fieldName": "TS", **params}
+    def __init__(self, data, params={}, file_name="ts"):
+        params = {"fieldName": TS_FIELDNAME, **params}
 
         super().__init__(data, params, file_name=file_name)
 

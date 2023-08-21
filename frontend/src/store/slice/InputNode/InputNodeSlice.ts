@@ -159,6 +159,12 @@ export const inputNodeSlice = createSlice({
                 },
               }
               break
+            case FILE_TYPE_SET.EXPDB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
           }
         }
       })
@@ -231,6 +237,12 @@ export const inputNodeSlice = createSlice({
                     fileType: FILE_TYPE_SET.TS,
                     selectedFilePath: node.data.path as string,
                     param: node.data.param as MatlabInputParamType,
+                  }
+                } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.EXPDB,
+                    selectedFilePath: node.data.path as string,
+                    param: {},
                   }
                 }
               }
