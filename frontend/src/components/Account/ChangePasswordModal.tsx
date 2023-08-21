@@ -142,7 +142,7 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
             />
           </FormInline>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant='contained' color='primary' onClick={() => onChangePass()}>UPDATE</Button>
+            <Button variant='contained' color='success' onClick={() => onChangePass()}>UPDATE</Button>
           </Box>
         </BoxConfirm>
         <Button onClick={onCloseModal}>
