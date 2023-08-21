@@ -476,12 +476,14 @@ const AccountManager = () => {
         headerName: 'UID',
         field: 'uid',
         filterable: false,
-        minWidth: 350
+        minWidth: 100,
+        flex: 2
       },
       {
         headerName: 'Name',
         field: 'name',
-        minWidth: 200,
+        minWidth: 100,
+        flex: 2,
         filterOperators: [
           {
             label: 'Contains', value: 'contains',
@@ -502,7 +504,8 @@ const AccountManager = () => {
         headerName: 'Role',
         field: 'role_id',
         filterable: false,
-        minWidth: 200,
+        minWidth: 100,
+        flex: 1,
         renderCell: (params: {value: number}) => {
           let role
           switch (params.value) {
@@ -527,7 +530,8 @@ const AccountManager = () => {
       {
         headerName: 'Mail',
         field: 'email',
-        minWidth: 350,
+        minWidth: 100,
+        flex: 2,
         filterOperators: [
           {
             label: 'Contains', value: 'contains',
@@ -549,7 +553,8 @@ const AccountManager = () => {
         field: 'action',
         sortable: false,
         filterable: false,
-        width: 200,
+        minWidth: 100,
+        flex: 1,
         renderCell: (params: {row: UserDTO}) => {
           const { id, role_id, name, email} = params.row
           if(!id || !role_id || !name || !email) return null
