@@ -219,10 +219,10 @@ const ModalComponent =
           ) : null}
         </BoxData>
         <ButtonModal>
+          <Button onClick={() => onCancel()}>Cancel</Button>
           <Button disabled={isDisabled} onClick={(e) => onSubmit(e)}>
             Ok
           </Button>
-          <Button onClick={() => onCancel()}>Cancel</Button>
         </ButtonModal>
       </ModalBox>
       {isDisabled ? <Loading /> : null}
@@ -595,8 +595,24 @@ const AccountManager = () => {
   )
   return (
     <AccountManagerWrapper>
-      <Box sx={{display: 'flex', justifyContent: 'flex-end'}}>
-        <Button onClick={handleOpenModal}>Add</Button>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 2,
+          marginBottom: 2,
+        }}
+      >
+        <Button 
+          sx={{
+            background: '#000000c4',
+            '&:hover': { backgroundColor: '#00000090' },
+          }}
+          variant="contained"
+          onClick={handleOpenModal}
+        >
+          Add
+        </Button>
       </Box>
       <DataGrid
         sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
@@ -680,7 +696,6 @@ const Modal = styled(Box)(({ theme }) => ({
 
 const ModalBox = styled(Box)(({ theme }) => ({
   width: 800,
-  height: 550,
   backgroundColor: 'white',
   border: '1px solid black',
 }))

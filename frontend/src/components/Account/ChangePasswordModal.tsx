@@ -201,9 +201,9 @@ const ButtonConfirm = styled(Button)({
   color: '#ffffff',
   marginTop: -1,
   width: 90,
-  backgroundColor: '#283237 !important',
+  backgroundColor: '#30be30 !important',
   "&:hover": {
-    backgroundColor: '#283237',
+    opacity: 0.75
   }
 })
 

@@ -37,6 +37,7 @@ import moment from 'moment'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from "@mui/icons-material/Delete";
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isMine } from 'utils/checkRole'
@@ -147,7 +148,12 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
+      <ButtonCustom
+        sx={{ backgroundColor: '#1976D2' }}
+        onClick={() => handleNavWorkflow(params.row.id)}
+      >
+        Workflow
+      </ButtonCustom>
     ),
   },
   {
@@ -158,7 +164,12 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
-      <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
+        <ButtonCustom
+          sx={{ backgroundColor: '#1976D2' }}
+          onClick={() => handleNavRecords(params.row.id)}
+        >
+          Records
+        </ButtonCustom>
       )
     }
   },
@@ -169,9 +180,9 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
+      <ButtonIcon onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
-      </ButtonCustom>
+      </ButtonIcon>
     ),
   },
   {
@@ -182,9 +193,9 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
-        <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
+        <ButtonIcon onClick={() => handleOpenPopupShare(params.row.id)}>
           <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
-        </ButtonCustom>
+        </ButtonIcon>
       ): null
   },
   {
@@ -195,9 +206,9 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
-      <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
-        Del
-      </ButtonCustom>
+      <ButtonIcon onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
+        <DeleteIcon sx={{ color: 'red' }} />
+      </ButtonIcon>
       ) : null
   },
 ]
@@ -427,9 +438,7 @@ const Workspaces = () => {
           <Button
             sx={{
               background: '#000000c4',
-              '&:hover': {
-                backgroundColor: '#000000fc',
-              },
+              '&:hover': { backgroundColor: '#00000090' },
             }}
             variant="contained"
             component="span"
@@ -447,9 +456,7 @@ const Workspaces = () => {
         <Button
           sx={{
             background: '#000000c4',
-            '&:hover': {
-              backgroundColor: '#000000fc',
-            },
+            '&:hover': { backgroundColor: '#00000090' },
           }}
           variant="contained"
           onClick={handleOpenPopupNew}>New</Button>
@@ -549,15 +556,17 @@ const ButtonCustom = styled('button')(({ theme }) => ({
   backgroundColor: '#000000c4',
   color: '#FFF',
   fontSize: 16,
-  padding: theme.spacing(0.5, 1.25),
+  padding: theme.spacing(0.5, 1.5),
   textTransform: 'unset',
   borderRadius: 4,
+  border: 'none',
   height: 30,
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
+  background: 'transparent',
   '&:hover': {
-    backgroundColor: '#000000fc',
+    opacity: 0.75,
   },
 }))
 
@@ -566,6 +575,7 @@ const ButtonIcon = styled('button')(({ theme }) => ({
   minHeight: '32px',
   width: '32px',
   height: '32px',
+  color: '#444',
   border: 'none',
   borderRadius: '50%',
   display: 'flex',
