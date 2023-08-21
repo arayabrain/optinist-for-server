@@ -47,7 +47,7 @@ const DeleteConfirmModal: FC<DeleteConfirmModalProps> = ({
                 value={textDelete}
                 onChange={(e) => setTextDelete(e.target.value)}
             />
-            <ButtonConfirm onClick={onConfirm} sx={{ backgroundColor: 'red !important' }}>{titleSubmit}</ButtonConfirm>
+            <Button onClick={onConfirm} variant='contained' color='error' sx={{ml: 1}}>{titleSubmit}</Button>
           </BoxConfirm>
           <Button onClick={onClose}>
             <Typography
@@ -82,14 +82,6 @@ const ContentDelete = styled(Box)`
   border-radius: 4px;
   outline: none;
 `
-
-const ButtonConfirm = styled(Button)({
-  backgroundColor: '#283237 !important',
-  height: 36,
-  marginLeft: 10,
-  color: '#ffffff',
-  marginTop: -1,
-})
 
 const BoxConfirm = styled(Box)({
   margin: '20px 0 0',
