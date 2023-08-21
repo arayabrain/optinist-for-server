@@ -148,12 +148,14 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonCustom
-        sx={{ backgroundColor: '#1976D2' }}
+      <Button
+        variant='contained'
+        color='primary'
+        size='small'
         onClick={() => handleNavWorkflow(params.row.id)}
       >
         Workflow
-      </ButtonCustom>
+      </Button>
     ),
   },
   {
@@ -164,12 +166,14 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
-        <ButtonCustom
-          sx={{ backgroundColor: '#1976D2' }}
+        <Button
+          variant='contained'
+          color='primary'
+          size='small'
           onClick={() => handleNavRecords(params.row.id)}
         >
           Records
-        </ButtonCustom>
+        </Button>
       )
     }
   },
@@ -207,7 +211,7 @@ const columns = (
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
       <ButtonIcon onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
-        <DeleteIcon sx={{ color: 'red' }} />
+        <DeleteIcon color='error' />
       </ButtonIcon>
       ) : null
   },
@@ -551,24 +555,6 @@ const WorkspacesWrapper = styled(Box)(({ theme }) => ({
 }))
 
 const WorkspacesTitle = styled('h1')(({ theme }) => ({}))
-
-const ButtonCustom = styled('button')(({ theme }) => ({
-  backgroundColor: '#000000c4',
-  color: '#FFF',
-  fontSize: 16,
-  padding: theme.spacing(0.5, 1.5),
-  textTransform: 'unset',
-  borderRadius: 4,
-  border: 'none',
-  height: 30,
-  display: 'flex',
-  alignItems: 'center',
-  cursor: 'pointer',
-  background: 'transparent',
-  '&:hover': {
-    opacity: 0.75,
-  },
-}))
 
 const ButtonIcon = styled('button')(({ theme }) => ({
   minWidth: '32px',

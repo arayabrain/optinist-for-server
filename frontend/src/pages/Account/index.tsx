@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { Box, Button, Input, styled, Typography } from '@mui/material'
+import { Box, Button, IconButton, Input, styled, Typography } from '@mui/material'
 import Loading from "components/common/Loading"
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { deleteMe, updateMe, updateMePassword} from 'store/slice/User/UserActions'
 import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
 import { ROLE } from "../../@types";
+import Edit from '@mui/icons-material/Edit'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const loading = useSelector(selectLoading)
@@ -161,9 +162,9 @@ const Account = () => {
         ) : (
           <>
             <Box>{isName ? isName : user?.name}</Box>
-            <Button sx={{ ml: 1 }} onClick={() => setIsEditName(true)}>
-              Edit
-            </Button>
+            <IconButton sx={{ml: 1}} onClick={() => setIsEditName(true)}>
+              <Edit />
+            </IconButton>
           </>
         )}
       </BoxFlex>
@@ -176,8 +177,8 @@ const Account = () => {
         <BoxData>{getRole(user?.role_id)}</BoxData>
       </BoxFlex>
       <BoxFlex sx={{ justifyContent: 'space-between', mt: 10, maxWidth: 600}}>
-        <ButtonSubmit onClick={onChangePwClick}>Change Password</ButtonSubmit>
-        <ButtonSubmit onClick={onDeleteAccountClick}>Delete Account</ButtonSubmit>
+        <Button variant='contained' color='primary' onClick={onChangePwClick}>Change Password</Button>
+        <Button variant='contained' color='error' onClick={onDeleteAccountClick}>Delete Account</Button>
       </BoxFlex>
       {
         loading ? <Loading /> : null
@@ -209,16 +210,6 @@ const BoxData = styled(Typography)({
 const TitleData = styled(Typography)({
   width: 250,
   minWidth: 250
-})
-
-const ButtonSubmit = styled('button')({
-  backgroundColor: '#283237',
-  color: '#ffffff',
-  borderRadius: 4,
-  border: 'none',
-  outline: 'none',
-  padding: '10px 20px',
-  cursor: 'pointer',
 })
 
 export default Account
