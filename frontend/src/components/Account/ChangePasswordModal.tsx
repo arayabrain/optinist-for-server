@@ -142,7 +142,7 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
             />
           </FormInline>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <ButtonConfirm onClick={() => onChangePass()}>UPDATE</ButtonConfirm>
+            <Button variant='contained' color='success' onClick={() => onChangePass()}>UPDATE</Button>
           </Box>
         </BoxConfirm>
         <Button onClick={onCloseModal}>
@@ -194,17 +194,6 @@ const Label = styled(Typography)({
   fontSize: 14,
   marginTop: 7,
   width: '100%',
-})
-
-const ButtonConfirm = styled(Button)({
-  height: 36,
-  color: '#ffffff',
-  marginTop: -1,
-  width: 90,
-  backgroundColor: '#283237 !important',
-  "&:hover": {
-    backgroundColor: '#283237',
-  }
 })
 
 export default ChangePasswordModal

@@ -37,6 +37,7 @@ import moment from 'moment'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from "@mui/icons-material/Delete";
 import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isMine } from 'utils/checkRole'
@@ -147,7 +148,14 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonCustom onClick={() => handleNavWorkflow(params.row.id)}>Workflow</ButtonCustom>
+      <Button
+        variant='contained'
+        color='primary'
+        size='small'
+        onClick={() => handleNavWorkflow(params.row.id)}
+      >
+        Workflow
+      </Button>
     ),
   },
   {
@@ -158,7 +166,14 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
       return (
-      <ButtonCustom onClick={() => handleNavRecords(params.row.id)}>Records</ButtonCustom>
+        <Button
+          variant='contained'
+          color='primary'
+          size='small'
+          onClick={() => handleNavRecords(params.row.id)}
+        >
+          Records
+        </Button>
       )
     }
   },
@@ -169,9 +184,9 @@ const columns = (
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonCustom onClick={() => handleDownload(params?.row?.id)}>
+      <ButtonIcon onClick={() => handleDownload(params?.row?.id)}>
         <SystemUpdateAltIcon />
-      </ButtonCustom>
+      </ButtonIcon>
     ),
   },
   {
@@ -182,9 +197,9 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
-        <ButtonCustom onClick={() => handleOpenPopupShare(params.row.id)}>
+        <ButtonIcon onClick={() => handleOpenPopupShare(params.row.id)}>
           <GroupsIcon color={params.row.shared_count ? 'primary' : 'inherit'}/>
-        </ButtonCustom>
+        </ButtonIcon>
       ): null
   },
   {
@@ -195,9 +210,9 @@ const columns = (
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       isMine(user, params.row?.user?.id) ? (
-      <ButtonCustom onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
-        Del
-      </ButtonCustom>
+      <ButtonIcon onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
+        <DeleteIcon color='error' />
+      </ButtonIcon>
       ) : null
   },
 ]
@@ -218,7 +233,7 @@ const PopupNew = ({
   return (
     <Box>
       <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-        <DialogTitle>Create New Workspace</DialogTitle>
+        <DialogTitle>New Workspace</DialogTitle>
         <DialogContent sx={{ minWidth: 300 }}>
           <Input
             sx={{ width: '80%' }}
@@ -341,7 +356,7 @@ const Workspaces = () => {
 
   const handleOkNew = async () => {
     if (!newWorkspace) {
-      setError('is not empty')
+      setError("This field is required")
       return
     }
     await dispatch(postWorkspace({ name: newWorkspace }))
@@ -397,7 +412,7 @@ const Workspaces = () => {
 
   const processRowUpdate = async (newRow: any) => {
     if (!newRow.name) {
-      alert("Workspace Name cann't empty")
+      alert("Workspace Name can't empty")
       return { ...newRow, name: initName }
     }
     if (newRow.name === initName) return newRow
@@ -427,9 +442,7 @@ const Workspaces = () => {
           <Button
             sx={{
               background: '#000000c4',
-              '&:hover': {
-                backgroundColor: '#000000fc',
-              },
+              '&:hover': { backgroundColor: '#00000090' },
             }}
             variant="contained"
             component="span"
@@ -447,9 +460,7 @@ const Workspaces = () => {
         <Button
           sx={{
             background: '#000000c4',
-            '&:hover': {
-              backgroundColor: '#000000fc',
-            },
+            '&:hover': { backgroundColor: '#00000090' },
           }}
           variant="contained"
           onClick={handleOpenPopupNew}>New</Button>
@@ -545,27 +556,12 @@ const WorkspacesWrapper = styled(Box)(({ theme }) => ({
 
 const WorkspacesTitle = styled('h1')(({ theme }) => ({}))
 
-const ButtonCustom = styled('button')(({ theme }) => ({
-  backgroundColor: '#000000c4',
-  color: '#FFF',
-  fontSize: 16,
-  padding: theme.spacing(0.5, 1.25),
-  textTransform: 'unset',
-  borderRadius: 4,
-  height: 30,
-  display: 'flex',
-  alignItems: 'center',
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: '#000000fc',
-  },
-}))
-
 const ButtonIcon = styled('button')(({ theme }) => ({
   minWidth: '32px',
   minHeight: '32px',
   width: '32px',
   height: '32px',
+  color: '#444',
   border: 'none',
   borderRadius: '50%',
   display: 'flex',
