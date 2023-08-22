@@ -42,6 +42,7 @@ import { selectCurrentUser } from 'store/slice/User/UserSelector'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isMine } from 'utils/checkRole'
 import PaginationCustom from "../../components/common/PaginationCustom";
+import {useSnackbar, VariantType} from "notistack";
 
 type PopupType = {
   open: boolean
@@ -304,6 +305,12 @@ const Workspaces = () => {
   const [rowModesModel, setRowModesModel] = useState<any>({})
   const [searchParams, setParams] = useSearchParams()
 
+  const { enqueueSnackbar } = useSnackbar();
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant });
+  };
+
   const offset = searchParams.get('offset')
   const limit = searchParams.get('limit')
 
@@ -341,7 +348,13 @@ const Workspaces = () => {
 
   const handleOkDel = async () => {
     if (!workspaceDel) return
-    await dispatch(delWorkspace({ id: workspaceDel.id, params: dataParams }))
+    const data = await dispatch(delWorkspace({ id: workspaceDel.id, params: dataParams }))
+    if((data as any).error) {
+      handleClickVariant('error', 'Workspace deletion failed!')
+    }
+    else {
+      handleClickVariant('success', 'The workspace has been deleted successfully!')
+    }
     setOpen({ ...open, del: false })
   }
 
@@ -372,10 +385,16 @@ const Workspaces = () => {
 
   const handleOkNew = async () => {
     if (!newWorkspace) {
-      setError("This field is required")
+      setError("Workspace Name cann't empty")
       return
     }
-    await dispatch(postWorkspace({ name: newWorkspace }))
+    const data = await dispatch(postWorkspace({ name: newWorkspace }))
+    if((data as any).error) {
+      handleClickVariant('error', 'Workspace creation failed!')
+    }
+    else {
+      handleClickVariant('success', 'The workspace has been created successfully!')
+    }
     await dispatch(getWorkspaceList(dataParams))
     setOpen({ ...open, new: false })
     setError('')
@@ -428,11 +447,17 @@ const Workspaces = () => {
 
   const processRowUpdate = async (newRow: any) => {
     if (!newRow.name) {
-      alert("Workspace Name can't empty")
+      handleClickVariant('error', "Workspace Name cann't empty")
       return { ...newRow, name: initName }
     }
     if (newRow.name === initName) return newRow
-    await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
+    const data = await dispatch(putWorkspace({ name: newRow.name, id: newRow.id }))
+    if((data as any).error) {
+      handleClickVariant('error', 'Workspace name edit failed!')
+    }
+    else {
+      handleClickVariant('success', 'Workspace name edited successfully!')
+    }
     await dispatch(getWorkspaceList(dataParams))
     return newRow
   }
