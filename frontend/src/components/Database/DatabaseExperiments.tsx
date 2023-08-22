@@ -16,6 +16,7 @@ import {
   DataGrid
 } from '@mui/x-data-grid'
 import GroupsIcon from '@mui/icons-material/Groups'
+import DomainIcon from '@mui/icons-material/Domain';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   DatabaseType,
@@ -496,10 +497,13 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
           const { value, row } = params
           return (
             <Box
-              sx={{ cursor: 'pointer' }}
+              sx={{ cursor: 'pointer', color: 'darkgray' }}
               onClick={() => handleOpenShare(row.experiment_id, value, row.id)}
             >
-              <GroupsIcon sx={{ color: `${value === SHARE.NOSHARE ? "black" : value === SHARE.ORGANIZATION ? "red" : "blue" }`}}/>
+              { (value === SHARE.ORGANIZATION) ?
+                 <DomainIcon color="primary" /> :
+                 <GroupsIcon color={`${value === SHARE.NOSHARE ? "inherit" : "primary" }`} />
+              }
             </Box>
           )
         }
