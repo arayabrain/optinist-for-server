@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Input,
+  Input, Tooltip,
 } from '@mui/material'
 import {
   GridEventListener,
@@ -92,17 +92,21 @@ const columns = (
             alignItems: 'center',
             gap: 2,
             justifyContent: 'space-between',
+            width: '100%'
           }}
         >
-          <span
-            style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <Tooltip title="Add" placement="top">
+            <span
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%'
+              }}
+            >
             {value}
           </span>
+          </Tooltip>
           {isMine(user, row?.user?.id) ? (
             <ButtonIcon onClick={() => onEdit?.(row.id)}>
               <EditIcon style={{ fontSize: 16 }} />
@@ -152,7 +156,7 @@ const columns = (
     field: 'workflow',
     headerName: '',
     flex: 1,
-    minWidth: 100,
+    minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
