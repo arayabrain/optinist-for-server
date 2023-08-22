@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Input,
+  Input, Tooltip,
 } from '@mui/material'
 import {
   GridEventListener,
@@ -67,9 +67,10 @@ const columns = (
   {
     field: 'id',
     headerName: 'ID',
-    minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
+    flex: 1,
+    minWidth: 70,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>{params.value}</span>
     ),
@@ -77,7 +78,8 @@ const columns = (
   {
     field: 'name',
     headerName: 'Workspace Name',
-    minWidth: 200,
+    flex: 2,
+    minWidth: 100,
     editable: true,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
@@ -86,22 +88,25 @@ const columns = (
       return (
         <Box
           sx={{
-            width: 180,
             display: 'flex',
             alignItems: 'center',
             gap: 2,
             justifyContent: 'space-between',
+            width: '100%'
           }}
         >
-          <span
-            style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <Tooltip title={value} placement="top">
+            <span
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%'
+              }}
+            >
             {value}
           </span>
+          </Tooltip>
           {isMine(user, row?.user?.id) ? (
             <ButtonIcon onClick={() => onEdit?.(row.id)}>
               <EditIcon style={{ fontSize: 16 }} />
@@ -116,7 +121,8 @@ const columns = (
     headerName: 'Owner',
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    minWidth: 200,
+    flex: 2,
+    minWidth: 100,
     renderCell: (
       params: GridRenderCellParams<{ name: string; id: number }>,
     ) => (
@@ -134,16 +140,22 @@ const columns = (
   {
     field: 'created_at',
     headerName: 'Created',
-    minWidth: 200,
+    flex: 2,
+    minWidth: 100,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <span>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
+      <span style={{
+        whiteSpace: 'normal',
+        wordBreak: 'break-all',
+        overflowWrap: 'break-word',
+      }}>{moment(params.value).format('YYYY/MM/DD hh:mm')}</span>
     ),
   },
   {
     field: 'workflow',
     headerName: '',
+    flex: 1,
     minWidth: 160,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
@@ -161,7 +173,8 @@ const columns = (
   {
     field: 'records',
     headerName: '',
-    minWidth: 130,
+    flex: 1,
+    minWidth: 100,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
@@ -180,7 +193,8 @@ const columns = (
   {
     field: 'download',
     headerName: '',
-    minWidth: 90,
+    flex: 1,
+    minWidth: 70,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
@@ -192,7 +206,8 @@ const columns = (
   {
     field: 'share',
     headerName: '',
-    minWidth: 90,
+    flex: 1,
+    minWidth: 70,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
@@ -205,7 +220,8 @@ const columns = (
   {
     field: 'delete',
     headerName: '',
-    minWidth: 130,
+    flex: 1,
+    minWidth: 70,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
