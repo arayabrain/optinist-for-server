@@ -95,7 +95,7 @@ const columns = (
             width: '100%'
           }}
         >
-          <Tooltip title="Add" placement="top">
+          <Tooltip title={value} placement="top">
             <span
               style={{
                 whiteSpace: 'nowrap',
