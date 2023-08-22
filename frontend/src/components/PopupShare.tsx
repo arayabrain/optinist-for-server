@@ -219,14 +219,14 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                   name="row-radio-buttons-group"
                   onChange={handleValue}
                 >
-                  <FormControlLabel value={SHARE.ORGANIZATION} control={<Radio/>} label={"Share for Organization"}/>
+                  <FormControlLabel value={SHARE.ORGANIZATION} control={<Radio/>} label={"Share within Organization"}/>
                   <FormControlLabel value={SHARE.USERS} control={<Radio/>} label={"Share for Users"}/>
                 </RadioGroup>
               </FormControl>
             </DialogContentText>
           </DialogContent>
         )}
-        <DialogContent sx={{minHeight: 400}}>
+        <DialogContent>
           {
             (shareType !== SHARE.ORGANIZATION || isWorkspace) ?
               <>
