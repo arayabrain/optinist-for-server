@@ -142,9 +142,9 @@ const ExpDbSelectDialog = React.memo<{
       <DialogContent dividers>
         <DatabaseExperiments
           user={user}
-          // TODO: handle cell icon click in dialog database is required
           cellPath="/console/cells"
           handleRowClick={handleRowClick}
+          readonly
         />
       </DialogContent>
       <DialogActions>
