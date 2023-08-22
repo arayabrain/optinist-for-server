@@ -408,6 +408,10 @@ const AccountManager = () => {
           handleClickVariant('error', 'This email already exists!')
         }
         else {
+          if (!navigator.onLine) {
+            handleClickVariant('error', 'Account update failed!')
+            return
+          }
           handleClickVariant('success', 'Your account has been edited successfully!')
         }
     } else {
@@ -416,6 +420,10 @@ const AccountManager = () => {
         handleClickVariant('success', 'Your account has been created successfully!')
       }
         else {
+        if (!navigator.onLine) {
+          handleClickVariant('error', 'Account creation failed!')
+          return
+        }
         handleClickVariant('error', 'This email already exists!')
       }
     }
