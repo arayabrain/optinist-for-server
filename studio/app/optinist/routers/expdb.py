@@ -29,6 +29,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
 )
 
 router = APIRouter(tags=["Experiment Database"])
+public_router = APIRouter(tags=["Experiment Database"])
 
 
 def expdbcell_transformer(items: Sequence) -> Sequence:
@@ -124,7 +125,7 @@ DUMMY_CELLS_GRAPH_URLS = [
 ]
 
 
-@router.get(
+@public_router.get(
     "/public/experiments",
     response_model=PageWithHeader[ExpDbExperiment],
     description="""
@@ -158,7 +159,7 @@ async def search_public_experiments(
     return data
 
 
-@router.get(
+@public_router.get(
     "/public/cells",
     response_model=PageWithHeader[ExpDbCell],
     description="""
