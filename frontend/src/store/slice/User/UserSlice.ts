@@ -73,7 +73,6 @@ export const userSlice = createSlice({
       .addMatcher(
         isAnyOf(
           getListUser.pending,
-          getListSearch.pending,
           deleteUser.pending,
           createUser.pending,
           updateMe.pending,

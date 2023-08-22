@@ -10,6 +10,7 @@ import Header from './Header'
 import LeftMenu from './LeftMenu'
 import { IS_STANDALONE } from 'const/Mode'
 import Loading from 'components/common/Loading'
+import { APP_BAR_HEIGHT } from 'const/Layout'
 
 const authRequiredPathRegex = /^\/console\/?.*/
 
@@ -98,10 +99,10 @@ const LayoutWrapper = styled(Box)({
 const ContentBodyWrapper = styled(Box)(() => ({
   backgroundColor: '#ffffff',
   display: 'flex',
-  paddingTop: 48,
-  height: 'calc(100% - 48px)',
+  paddingTop: APP_BAR_HEIGHT,
+  height: `calc(100% - ${APP_BAR_HEIGHT}px)`,
   paddingRight: 10,
-  overflow: 'hidden',
+  overflow: 'auto',
 }))
 
 const ChildrenWrapper = styled('main', {
