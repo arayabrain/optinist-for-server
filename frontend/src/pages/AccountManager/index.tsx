@@ -405,13 +405,13 @@ const AccountManager = () => {
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
-          handleClickVariant('error', 'This email already exists!')
-        }
-        else {
           if (!navigator.onLine) {
             handleClickVariant('error', 'Account update failed!')
             return
           }
+          handleClickVariant('error', 'This email already exists!')
+        }
+        else {
           handleClickVariant('success', 'Your account has been edited successfully!')
         }
     } else {
