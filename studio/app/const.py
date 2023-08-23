@@ -1,4 +1,9 @@
+import os
 from dataclasses import dataclass
+
+from dotenv import load_dotenv
+
+from studio.app.dir_path import DIRPATH
 
 
 @dataclass
@@ -21,7 +26,13 @@ ACCEPT_MATLAB_EXT = [".mat"]
 NOT_DISPLAY_ARGS_LIST = ["params", "output_dir", "nwbfile", "export_plot"]
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-TC_SUFFIX = "timecourse"
-TC_FIELDNAME = "AY"
-TS_SUFFIX = "timestract"
-TS_FIELDNAME = "TS"
+
+load_dotenv(f"{DIRPATH.CONFIG_DIR}/.env")
+TC_SUFFIX = os.environ.get("TC_SUFFIX")
+assert TC_SUFFIX is not None, "TC_SUFFIX is not set in .env file"
+TC_FIELDNAME = os.environ.get("TC_FIELDNAME")
+assert TC_FIELDNAME is not None, "TC_FIELDNAME is not set in .env file"
+TS_SUFFIX = os.environ.get("TS_SUFFIX")
+assert TS_SUFFIX is not None, "TS_SUFFIX is not set in .env file"
+TS_FIELDNAME = os.environ.get("TS_FIELDNAME")
+assert TS_FIELDNAME is not None, "TS_FIELDNAME is not set in .env file"
