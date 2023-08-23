@@ -38,3 +38,11 @@ TS_FIELDNAME = os.environ.get("TS_FIELDNAME")
 assert TS_FIELDNAME is not None, "TS_FIELDNAME is not set in .env file"
 STATDATA_PREFIX = os.environ.get("STATDATA_PREFIX")
 assert STATDATA_PREFIX is not None, "STATDATA_PREFIX is not set in .env file"
+CELLMASK_SUFFIX = os.environ.get("CELLMASK_SUFFIX")
+assert CELLMASK_SUFFIX is not None, "CELLMASK_SUFFIX is not set in .env file"
+CELLMASK_FIELDNAME = os.environ.get("CELLMASK_FIELDNAME")
+assert CELLMASK_FIELDNAME is not None, "CELLMASK_FIELDNAME is not set in .env file"
+FOV_SUFFIX = os.environ.get("FOV_SUFFIX")
+assert FOV_SUFFIX is not None, "FOV_SUFFIX is not set in .env file"
+FOV_CONTRAST = float(os.environ.get("FOV_CONTRAST"))
+assert FOV_CONTRAST is not None, "FOV_CONTRAST is not set in .env file"

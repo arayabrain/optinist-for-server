@@ -1,6 +1,10 @@
+import math
 import os
 
+import numpy as np
+import tifffile
 from fastapi import APIRouter, HTTPException, Response
+from scipy.io import loadmat
 
 from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import (
@@ -8,7 +12,14 @@ from studio.app.common.core.utils.filepath_creater import (
     join_filepath,
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
-from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.const import (
+    CELLMASK_FIELDNAME,
+    CELLMASK_SUFFIX,
+    FOV_CONTRAST,
+    FOV_SUFFIX,
+    TC_SUFFIX,
+    TS_SUFFIX,
+)
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.wrappers.stat import (
@@ -26,6 +37,32 @@ def get_default_params(name: str):
     return ConfigReader.read(filepath)
 
 
+def generate_fov_cell_merge_img(exp_dir, exp_id):
+    cellmask_file = join_filepath([exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"])
+    fov_file = join_filepath([exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+
+    # csr_matrix to numpy array
+    cellmask = loadmat(cellmask_file).get(CELLMASK_FIELDNAME).toarray()
+    fov = tifffile.imread(fov_file).astype(np.double)
+    fov_n = fov / np.max(fov)
+
+    imxx, ncells = cellmask.shape
+    imx = imy = int(math.sqrt(imxx))
+
+    cellmask = np.reshape(cellmask, (imx, imy, ncells), order="F")
+
+    for i in range(ncells):
+        cell_mask = np.where(cellmask[:, :, i] == 0, 0.0, 1.0)
+        fov_highcontrast = np.minimum(fov_n / FOV_CONTRAST, 1)
+        fov_cell_merge = np.repeat(fov_highcontrast[:, :, np.newaxis], 3, axis=2)
+        fov_cell_merge[:, :, 1] = fov_cell_merge[:, :, 2] * (1 - cell_mask / 2)
+        fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
+        tifffile.imwrite(
+            join_filepath([exp_dir, "pixelmaps", f"fov_cell_merge_{i}.tif"]),
+            fov_cell_merge,
+        )
+
+
 async def expdb_batch(exp_id: str):
     try:
         subject_id = exp_id.split("_")[0]
@@ -41,8 +78,10 @@ async def expdb_batch(exp_id: str):
             ]
         )
 
-        for dirname in ["plots", "stats"]:
+        for dirname in ["plots", "stats", "pixelmaps"]:
             create_directory(join_filepath([exp_dir, dirname]), delete_dir=True)
+
+        generate_fov_cell_merge_img(exp_dir, exp_id)
 
         stat = stat_file_convert(
             expdb=expdb,
