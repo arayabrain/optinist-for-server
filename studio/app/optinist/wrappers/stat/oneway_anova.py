@@ -38,7 +38,7 @@ def oneway_anova(
             )
         ),
         labels=["DS", "non-DS", "non-responsive"],
-        file_name="dir_selective_pie",
+        file_name="direction_responsivity_ratio",
     )
 
     ori_selective_pie = PieData(
@@ -51,22 +51,22 @@ def oneway_anova(
             )
         ),
         labels=["OS", "non-OS", "non-responsive"],
-        file_name="ori_selective_pie",
+        file_name="orientation_responsivity_ratio",
     )
 
     dir_selective_hist = HistogramData(
         data=stat.dsi[stat.index_direction_selective_cell],
-        file_name="dir_selective_hist",
+        file_name="direction_selectivity",
     )
 
     ori_selective_hist = HistogramData(
         data=stat.osi[stat.index_orientation_selective_cell],
-        file_name="ori_selective_hist",
+        file_name="orientation_selectivity",
     )
 
     dir_response_strength_hist = HistogramData(
         data=stat.r_best_dir[stat.index_visually_responsive_cell] * 100,
-        file_name="dir_response_strength_hist",
+        file_name="best_responsivity",
     )
 
     stat.save_as_hdf5(output_dir, "oneway_anova")

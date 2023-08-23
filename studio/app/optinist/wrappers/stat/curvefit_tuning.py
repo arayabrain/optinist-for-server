@@ -299,11 +299,11 @@ def curvefit_tuning(
 
     dir_tuning_width_hist = HistogramData(
         data=stat.dir_tuning_width[stat.index_direction_selective_cell],
-        file_name="dir_tuning_width_hist",
+        file_name="direction_tuning_width",
     )
     ori_tuning_width_hist = HistogramData(
         data=stat.ori_tuning_width[stat.index_orientation_selective_cell],
-        file_name="ori_tuning_width_hist",
+        file_name="orientation_tuning_width",
     )
 
     stat.save_as_hdf5(output_dir, "curvefit_tuning")

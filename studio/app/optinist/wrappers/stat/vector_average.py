@@ -44,11 +44,11 @@ def vector_average(
 
     preferred_dir_hist = HistogramData(
         data=stat.dir_vector_angle[stat.index_direction_selective_cell],
-        file_name="preferred_dir_hist",
+        file_name="preferred_direction",
     )
     preferred_ori_hist = HistogramData(
         data=stat.ori_vector_angle[stat.index_orientation_selective_cell],
-        file_name="preferred_ori_hist",
+        file_name="preferred_orientation",
     )
 
     stat.save_as_hdf5(output_dir, "vector_average")

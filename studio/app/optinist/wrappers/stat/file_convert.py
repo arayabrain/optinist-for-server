@@ -254,13 +254,13 @@ def stat_file_convert(
     line = LineData(
         data=stat.dir_ratio_change,
         columns=np.arange(0, 360, 360 / _nstim_per_trial),
-        file_name="dir_ratio_change_line",
+        file_name="tuning_curve",
     )
 
     polar = PolarData(
         data=stat.dir_ratio_change,
         thetas=np.linspace(0, 360, stat.dir_ratio_change[0].shape[0], endpoint=False),
-        file_name="dir_ratio_change_polar",
+        file_name="tuning_curve_polar",
     )
 
     stat.save_as_hdf5(output_dir, "stat_file_convert")
