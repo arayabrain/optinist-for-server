@@ -41,33 +41,33 @@ async def expdb_batch(exp_id: str):
             ]
         )
 
-        plot_dir = join_filepath([exp_dir, "plots"])
-        create_directory(plot_dir, delete_dir=True)
+        for dirname in ["plots", "stats"]:
+            create_directory(join_filepath([exp_dir, dirname]), delete_dir=True)
 
         stat = stat_file_convert(
             expdb=expdb,
-            output_dir=plot_dir,
+            output_dir=exp_dir,
             params=get_default_params("stat_file_convert"),
             export_plot=True,
         )
 
         oneway_anova(
             stat=stat,
-            output_dir=plot_dir,
+            output_dir=exp_dir,
             params=get_default_params("oneway_anova"),
             export_plot=True,
         )
 
         curvefit_tuning(
             stat=stat,
-            output_dir=plot_dir,
+            output_dir=exp_dir,
             params=get_default_params("curvefit_tuning"),
             export_plot=True,
         )
 
         vector_average(
             stat=stat,
-            output_dir=plot_dir,
+            output_dir=exp_dir,
             params=get_default_params("vector_average"),
             export_plot=True,
         )

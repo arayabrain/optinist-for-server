@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d, make_interp_spline
 from scipy.optimize import curve_fit
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.optinist.dataclass.stat import StatData
 
@@ -306,11 +307,13 @@ def curvefit_tuning(
         file_name="orientation_tuning_width",
     )
 
-    stat.save_as_hdf5(output_dir, "curvefit_tuning")
     if export_plot:
-        dir_tuning_width_hist.save_plot(output_dir)
-        ori_tuning_width_hist.save_plot(output_dir)
+        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "curvefit_tuning")
+        plots_dir = join_filepath([output_dir, "plots"])
+        dir_tuning_width_hist.save_plot(plots_dir)
+        ori_tuning_width_hist.save_plot(plots_dir)
     else:
+        stat.save_as_hdf5(output_dir, "curvefit_tuning")
         return {
             "stat": stat,
             "dir_tuning_width_hist": dir_tuning_width_hist,

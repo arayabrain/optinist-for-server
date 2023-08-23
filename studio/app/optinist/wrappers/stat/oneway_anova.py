@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import f_oneway
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import HistogramData, PieData
 from studio.app.optinist.dataclass import StatData
 
@@ -69,14 +70,16 @@ def oneway_anova(
         file_name="best_responsivity",
     )
 
-    stat.save_as_hdf5(output_dir, "oneway_anova")
     if export_plot:
-        dir_selective_pie.save_plot(output_dir)
-        ori_selective_pie.save_plot(output_dir)
-        dir_selective_hist.save_plot(output_dir)
-        ori_selective_hist.save_plot(output_dir)
-        dir_response_strength_hist.save_plot(output_dir)
+        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "oneway_anova")
+        plots_dir = join_filepath([output_dir, "plots"])
+        dir_selective_pie.save_plot(plots_dir)
+        ori_selective_pie.save_plot(plots_dir)
+        dir_selective_hist.save_plot(plots_dir)
+        ori_selective_hist.save_plot(plots_dir)
+        dir_response_strength_hist.save_plot(plots_dir)
     else:
+        stat.save_as_hdf5(output_dir, "oneway_anova")
         return {
             "stat": stat,
             "dir_selective_pie": dir_selective_pie,

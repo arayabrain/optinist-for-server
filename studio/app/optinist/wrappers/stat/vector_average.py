@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.optinist.dataclass.stat import StatData
 
@@ -51,11 +52,13 @@ def vector_average(
         file_name="preferred_orientation",
     )
 
-    stat.save_as_hdf5(output_dir, "vector_average")
     if export_plot:
-        preferred_dir_hist.save_plot(output_dir)
-        preferred_ori_hist.save_plot(output_dir)
+        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "vector_average")
+        plots_dir = join_filepath([output_dir, "plots"])
+        preferred_dir_hist.save_plot(plots_dir)
+        preferred_ori_hist.save_plot(plots_dir)
     else:
+        stat.save_as_hdf5(output_dir, "vector_average")
         return {
             "stat": stat,
             "preferred_dir_hist": preferred_dir_hist,

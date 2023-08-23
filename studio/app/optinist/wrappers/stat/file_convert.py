@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import lfilter
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import LineData, PolarData
 from studio.app.optinist.dataclass import ExpDbData, StatData
 
@@ -263,12 +264,14 @@ def stat_file_convert(
         file_name="tuning_curve_polar",
     )
 
-    stat.save_as_hdf5(output_dir, "stat_file_convert")
     if export_plot:
-        line.save_plot(output_dir)
-        polar.save_plot(output_dir)
+        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "stat_file_convert")
+        plots_dir = join_filepath([output_dir, "plots"])
+        line.save_plot(plots_dir)
+        polar.save_plot(plots_dir)
         return stat
     else:
+        stat.save_as_hdf5(output_dir, "stat_file_convert")
         return {
             "stat": stat,
             "dir_ratio_change_line": line,
