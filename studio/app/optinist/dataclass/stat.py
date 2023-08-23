@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 
 from studio.app.common.dataclass.base import BaseData
+from studio.app.const import STATDATA_PREFIX
 
 
 class StatData(BaseData):
@@ -116,6 +117,6 @@ class StatData(BaseData):
         return np.sum(self.index_orientation_selective_cell)
 
     def save_as_hdf5(self, output_dir, file_name):
-        with h5py.File(f"{output_dir}/{file_name}.hdf5", "w") as f:
+        with h5py.File(f"{output_dir}/{STATDATA_PREFIX}_{file_name}.hdf5", "w") as f:
             for k, v in self.__dict__.items():
                 f.create_dataset(k, data=v)

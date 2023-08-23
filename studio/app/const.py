@@ -36,3 +36,5 @@ TS_SUFFIX = os.environ.get("TS_SUFFIX")
 assert TS_SUFFIX is not None, "TS_SUFFIX is not set in .env file"
 TS_FIELDNAME = os.environ.get("TS_FIELDNAME")
 assert TS_FIELDNAME is not None, "TS_FIELDNAME is not set in .env file"
+STATDATA_PREFIX = os.environ.get("STATDATA_PREFIX")
+assert STATDATA_PREFIX is not None, "STATDATA_PREFIX is not set in .env file"
