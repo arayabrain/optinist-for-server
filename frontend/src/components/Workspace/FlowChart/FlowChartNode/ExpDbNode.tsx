@@ -151,7 +151,7 @@ const ExpDbSelectDialog = React.memo<{
         <Button onClick={onClickCancel} variant="outlined">
           Cancel
         </Button>
-        <Button onClick={onClickOk} variant="contained">
+        <Button onClick={onClickOk} variant="contained" disabled={!experimentId}>
           OK
         </Button>
       </DialogActions>
