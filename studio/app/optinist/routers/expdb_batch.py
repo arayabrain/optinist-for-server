@@ -23,12 +23,7 @@ from studio.app.const import (
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.dataclass.stat import StatData
-from studio.app.optinist.wrappers.stat import (
-    curvefit_tuning,
-    oneway_anova,
-    stat_file_convert,
-    vector_average,
-)
+from studio.app.optinist.wrappers.stat import stats
 
 router = APIRouter(prefix="/expdb/batch", tags=["Experiment Database"])
 
@@ -111,34 +106,10 @@ async def expdb_batch(exp_id: str):
             ]
         )
 
+        stat = stats(expdb, exp_dir, get_default_params("stats")).get("stat")
+        stat.save_as_hdf5(exp_dir, f"{exp_id}_oristats")
+
         generate_fov_cell_merge_img(exp_id)
-
-        info = stat_file_convert(
-            expdb=expdb,
-            output_dir=exp_dir,
-            params=get_default_params("stat_file_convert"),
-        )
-
-        info = oneway_anova(
-            stat=info["stat"],
-            output_dir=exp_dir,
-            params=get_default_params("oneway_anova"),
-        )
-
-        info = curvefit_tuning(
-            stat=info["stat"],
-            output_dir=exp_dir,
-            params=get_default_params("curvefit_tuning"),
-        )
-
-        info = vector_average(
-            stat=info["stat"],
-            output_dir=exp_dir,
-            params=get_default_params("vector_average"),
-        )
-
-        info["stat"].save_as_hdf5(exp_dir, f"{exp_id}_oristats")
-
         generate_plots(exp_id)
 
         return {"status": "success"}
