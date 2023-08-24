@@ -1,13 +1,11 @@
 import numpy as np
 from scipy.stats import f_oneway
 
-from studio.app.common.core.utils.filepath_creater import join_filepath
-from studio.app.common.dataclass import HistogramData, PieData
 from studio.app.optinist.dataclass import StatData
 
 
 def oneway_anova(
-    stat: StatData, output_dir: str, params: dict = None, export_plot: bool = False
+    stat: StatData, output_dir: str, params: dict = None
 ) -> dict(stat=StatData):
     stat.p_value_threshold = params["p_value_threshold"]
     stat.r_best_threshold = params["r_best_threshold"]
@@ -29,62 +27,13 @@ def oneway_anova(
         _, stat.p_value_ori_resp[i] = f_oneway(*temp.T)
         _, stat.p_value_ori_sel[i] = f_oneway(*temp[:, :half_nstim].T)
 
-    direction_responsivity_ratio = PieData(
-        data=np.array(
-            (
-                stat.ncells_direction_selective_cell,
-                stat.ncells_visually_responsive_cell
-                - stat.ncells_direction_selective_cell,
-                stat.ncells - stat.ncells_visually_responsive_cell,
-            )
-        ),
-        labels=["DS", "non-DS", "non-responsive"],
-        file_name="direction_responsivity_ratio",
-    )
+    stat.set_responsivity_and_selectivity()
 
-    orientation_responsivity_ratio = PieData(
-        data=np.array(
-            (
-                stat.ncells_orientation_selective_cell,
-                stat.ncells_visually_responsive_cell
-                - stat.ncells_orientation_selective_cell,
-                stat.ncells - stat.ncells_visually_responsive_cell,
-            )
-        ),
-        labels=["OS", "non-OS", "non-responsive"],
-        file_name="orientation_responsivity_ratio",
-    )
-
-    direction_selectivity = HistogramData(
-        data=stat.dsi[stat.index_direction_selective_cell],
-        file_name="direction_selectivity",
-    )
-
-    orientation_selectivity = HistogramData(
-        data=stat.osi[stat.index_orientation_selective_cell],
-        file_name="orientation_selectivity",
-    )
-
-    best_responsivity = HistogramData(
-        data=stat.r_best_dir[stat.index_visually_responsive_cell] * 100,
-        file_name="best_responsivity",
-    )
-
-    if export_plot:
-        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "oneway_anova")
-        plots_dir = join_filepath([output_dir, "plots"])
-        direction_responsivity_ratio.save_plot(plots_dir)
-        orientation_responsivity_ratio.save_plot(plots_dir)
-        direction_selectivity.save_plot(plots_dir)
-        orientation_selectivity.save_plot(plots_dir)
-        best_responsivity.save_plot(plots_dir)
-    else:
-        stat.save_as_hdf5(output_dir, "oneway_anova")
-        return {
-            "stat": stat,
-            "direction_responsivity_ratio": direction_responsivity_ratio,
-            "orientation_responsivity_ratio": orientation_responsivity_ratio,
-            "direction_selectivity": direction_selectivity,
-            "orientation_selectivity": orientation_selectivity,
-            "best_responsivity": best_responsivity,
-        }
+    return {
+        "stat": stat,
+        "direction_responsivity_ratio": stat.direction_responsivity_ratio,
+        "orientation_responsivity_ratio": stat.orientation_responsivity_ratio,
+        "direction_selectivity": stat.direction_selectivity,
+        "orientation_selectivity": stat.orientation_selectivity,
+        "best_responsivity": stat.best_responsivity,
+    }

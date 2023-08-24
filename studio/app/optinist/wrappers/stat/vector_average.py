@@ -2,8 +2,6 @@ import math
 
 import numpy as np
 
-from studio.app.common.core.utils.filepath_creater import join_filepath
-from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.optinist.dataclass.stat import StatData
 
 
@@ -24,10 +22,7 @@ def get_1d_vector_average(ratio):
 
 
 def vector_average(
-    stat: StatData,
-    output_dir: str,
-    params: dict = None,
-    export_plot: bool = False,
+    stat: StatData, output_dir: str, params: dict = None
 ) -> dict(stat=StatData):
     for i in range(stat.ncells):
         (
@@ -43,24 +38,8 @@ def vector_average(
 
     stat.ori_vector_angle /= 2
 
-    preferred_direction = HistogramData(
-        data=stat.dir_vector_angle[stat.index_direction_selective_cell],
-        file_name="preferred_direction",
-    )
-    preferred_orientation = HistogramData(
-        data=stat.ori_vector_angle[stat.index_orientation_selective_cell],
-        file_name="preferred_orientation",
-    )
-
-    if export_plot:
-        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "vector_average")
-        plots_dir = join_filepath([output_dir, "plots"])
-        preferred_direction.save_plot(plots_dir)
-        preferred_orientation.save_plot(plots_dir)
-    else:
-        stat.save_as_hdf5(output_dir, "vector_average")
-        return {
-            "stat": stat,
-            "preferred_direction": preferred_direction,
-            "preferred_orientation": preferred_orientation,
-        }
+    return {
+        "stat": stat,
+        "preferred_direction": stat.preferred_direction,
+        "preferred_orientation": stat.preferred_orientation,
+    }

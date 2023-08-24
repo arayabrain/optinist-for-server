@@ -4,8 +4,6 @@ import numpy as np
 from scipy.interpolate import interp1d, make_interp_spline
 from scipy.optimize import curve_fit
 
-from studio.app.common.core.utils.filepath_creater import join_filepath
-from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.optinist.dataclass.stat import StatData
 
 
@@ -254,10 +252,7 @@ class OriTempTuning(TempTuning):
 
 
 def curvefit_tuning(
-    stat: StatData,
-    output_dir: str,
-    params: dict = None,
-    export_plot: bool = False,
+    stat: StatData, output_dir: str, params: dict = None
 ) -> dict(stat=StatData):
     interp_method = params["interp_method"]
     do_interp = params["do_interpolation"]
@@ -298,24 +293,8 @@ def curvefit_tuning(
             stat.ori_tuning_width[i],
         ) = ori_temp.get_curvefit_results()
 
-    direction_tuning_width = HistogramData(
-        data=stat.dir_tuning_width[stat.index_direction_selective_cell],
-        file_name="direction_tuning_width",
-    )
-    orientation_tuning_width = HistogramData(
-        data=stat.ori_tuning_width[stat.index_orientation_selective_cell],
-        file_name="orientation_tuning_width",
-    )
-
-    if export_plot:
-        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "curvefit_tuning")
-        plots_dir = join_filepath([output_dir, "plots"])
-        direction_tuning_width.save_plot(plots_dir)
-        orientation_tuning_width.save_plot(plots_dir)
-    else:
-        stat.save_as_hdf5(output_dir, "curvefit_tuning")
-        return {
-            "stat": stat,
-            "direction_tuning_width": direction_tuning_width,
-            "orientation_tuning_width": orientation_tuning_width,
-        }
+    return {
+        "stat": stat,
+        "direction_tuning_width": stat.direction_tuning_width,
+        "orientation_tuning_width": stat.orientation_tuning_width,
+    }

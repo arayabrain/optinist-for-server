@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.signal import lfilter
 
-from studio.app.common.core.utils.filepath_creater import join_filepath
-from studio.app.common.dataclass import LineData, PolarData
 from studio.app.optinist.dataclass import ExpDbData, StatData
 
 
@@ -209,10 +207,7 @@ def get_stat_data(data_tables) -> StatData:
 
 
 def stat_file_convert(
-    expdb: ExpDbData,
-    output_dir: str,
-    params: dict = None,
-    export_plot: bool = False,
+    expdb: ExpDbData, output_dir: str, params: dict = None
 ) -> dict(stat=StatData):
     tc = expdb.tc
     ts = expdb.ts
@@ -251,29 +246,11 @@ def stat_file_convert(
     )
 
     stat = get_stat_data(data_tables)
+    stat.nstim_per_trial = _nstim_per_trial
+    stat.set_si()
 
-    tuning_curve = LineData(
-        data=stat.dir_ratio_change,
-        columns=np.arange(0, 360, 360 / _nstim_per_trial),
-        file_name="tuning_curve",
-    )
-
-    tuning_curve_polar = PolarData(
-        data=stat.dir_ratio_change,
-        thetas=np.linspace(0, 360, stat.dir_ratio_change[0].shape[0], endpoint=False),
-        file_name="tuning_curve_polar",
-    )
-
-    if export_plot:
-        stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "stat_file_convert")
-        plots_dir = join_filepath([output_dir, "plots"])
-        tuning_curve.save_plot(plots_dir)
-        tuning_curve_polar.save_plot(plots_dir)
-        return stat
-    else:
-        stat.save_as_hdf5(output_dir, "stat_file_convert")
-        return {
-            "stat": stat,
-            "tuning_curve": tuning_curve,
-            "tuning_curve_polar": tuning_curve_polar,
-        }
+    return {
+        "stat": stat,
+        "tuning_curve": stat.tuning_curve,
+        "tuning_curve_polar": stat.tuning_curve_polar,
+    }

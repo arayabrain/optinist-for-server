@@ -22,6 +22,7 @@ from studio.app.const import (
 )
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.dataclass.expdb import ExpDbData
+from studio.app.optinist.dataclass.stat import StatData
 from studio.app.optinist.wrappers.stat import (
     curvefit_tuning,
     oneway_anova,
@@ -37,7 +38,21 @@ def get_default_params(name: str):
     return ConfigReader.read(filepath)
 
 
-def generate_fov_cell_merge_img(exp_dir, exp_id):
+def get_exp_dir(exp_id: str):
+    subject_id = exp_id.split("_")[0]
+    exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
+
+    if not (os.path.exists(exp_dir) and os.path.isdir(exp_dir)):
+        raise Exception(f"Data for experiment_id: {exp_id} does not exist")
+
+    return exp_dir
+
+
+def generate_fov_cell_merge_img(exp_id):
+    exp_dir = get_exp_dir(exp_id)
+    pixelmaps_dir = join_filepath([exp_dir, "pixelmaps"])
+    create_directory(pixelmaps_dir, delete_dir=True)
+
     cellmask_file = join_filepath([exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"])
     fov_file = join_filepath([exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
 
@@ -58,19 +73,37 @@ def generate_fov_cell_merge_img(exp_dir, exp_id):
         fov_cell_merge[:, :, 1] = fov_cell_merge[:, :, 2] * (1 - cell_mask / 2)
         fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
         tifffile.imwrite(
-            join_filepath([exp_dir, "pixelmaps", f"fov_cell_merge_{i}.tif"]),
+            join_filepath([pixelmaps_dir, f"fov_cell_merge_{i}.tif"]),
             fov_cell_merge,
         )
 
 
+def generate_plots(exp_id: str):
+    exp_dir = get_exp_dir(exp_id)
+    plots_dir = join_filepath([exp_dir, "plots"])
+    create_directory(plots_dir, delete_dir=True)
+
+    stat = StatData.load_from_hdf5(join_filepath([exp_dir, f"{exp_id}_oristats.hdf5"]))
+
+    stat.tuning_curve.save_plot(plots_dir)
+    stat.tuning_curve_polar.save_plot(plots_dir)
+
+    stat.direction_responsivity_ratio.save_plot(plots_dir)
+    stat.orientation_responsivity_ratio.save_plot(plots_dir)
+    stat.direction_selectivity.save_plot(plots_dir)
+    stat.orientation_selectivity.save_plot(plots_dir)
+    stat.best_responsivity.save_plot(plots_dir)
+
+    stat.preferred_direction.save_plot(plots_dir)
+    stat.preferred_orientation.save_plot(plots_dir)
+
+    stat.direction_tuning_width.save_plot(plots_dir)
+    stat.orientation_tuning_width.save_plot(plots_dir)
+
+
 async def expdb_batch(exp_id: str):
     try:
-        subject_id = exp_id.split("_")[0]
-        exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
-
-        if not (os.path.exists(exp_dir) and os.path.isdir(exp_dir)):
-            raise Exception(f"Data for experiment_id: {exp_id} does not exist")
-
+        exp_dir = get_exp_dir(exp_id)
         expdb = ExpDbData(
             paths=[
                 join_filepath([exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"]),
@@ -78,38 +111,36 @@ async def expdb_batch(exp_id: str):
             ]
         )
 
-        for dirname in ["plots", "stats", "pixelmaps"]:
-            create_directory(join_filepath([exp_dir, dirname]), delete_dir=True)
+        generate_fov_cell_merge_img(exp_id)
 
-        generate_fov_cell_merge_img(exp_dir, exp_id)
-
-        stat = stat_file_convert(
+        info = stat_file_convert(
             expdb=expdb,
             output_dir=exp_dir,
             params=get_default_params("stat_file_convert"),
-            export_plot=True,
         )
 
-        oneway_anova(
-            stat=stat,
+        info = oneway_anova(
+            stat=info["stat"],
             output_dir=exp_dir,
             params=get_default_params("oneway_anova"),
-            export_plot=True,
         )
 
-        curvefit_tuning(
-            stat=stat,
+        info = curvefit_tuning(
+            stat=info["stat"],
             output_dir=exp_dir,
             params=get_default_params("curvefit_tuning"),
-            export_plot=True,
         )
 
-        vector_average(
-            stat=stat,
+        info = vector_average(
+            stat=info["stat"],
             output_dir=exp_dir,
             params=get_default_params("vector_average"),
-            export_plot=True,
         )
+
+        info["stat"].save_as_hdf5(exp_dir, f"{exp_id}_oristats")
+
+        generate_plots(exp_id)
+
         return {"status": "success"}
     except Exception as e:
         return {"status": "failed", "message": str(e)}
