@@ -24,6 +24,7 @@ import DatabaseExperiments from 'components/Database/DatabaseExperiments'
 import { GridEventListener, GridRowParams } from '@mui/x-data-grid'
 import { useSnackbar } from 'notistack'
 import { DatabaseType } from 'store/slice/Database/DatabaseType'
+import { useHandleColor } from './HandleColorHook'
 
 const sourceHandleStyle: CSSProperties = {
   width: 8,
@@ -47,6 +48,8 @@ const ExpDbFileNodeImple = React.memo<NodeProps>(({ id: nodeId, selected }) => {
   const dispatch = useDispatch()
 
   const theme = useTheme()
+  const returnType = 'ExpDbData'
+  const expdbColor = useHandleColor(returnType)
 
   const onClickDeleteIcon = () => {
     dispatch(deleteFlowNodeById(nodeId))
@@ -73,8 +76,8 @@ const ExpDbFileNodeImple = React.memo<NodeProps>(({ id: nodeId, selected }) => {
       <Handle
         type="source"
         position={Position.Right}
-        id={toHandleId(nodeId, 'expdb', 'ExpDbData')}
-        style={sourceHandleStyle}
+        id={toHandleId(nodeId, 'expdb', returnType)}
+        style={{ ...sourceHandleStyle, background: expdbColor }}
       />
     </div>
   )
@@ -151,7 +154,11 @@ const ExpDbSelectDialog = React.memo<{
         <Button onClick={onClickCancel} variant="outlined">
           Cancel
         </Button>
-        <Button onClick={onClickOk} variant="contained" disabled={!experimentId}>
+        <Button
+          onClick={onClickOk}
+          variant="contained"
+          disabled={!experimentId}
+        >
           OK
         </Button>
       </DialogActions>
