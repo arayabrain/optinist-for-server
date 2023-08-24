@@ -115,7 +115,7 @@ async def expdb_batch(exp_id: str):
         return {"status": "failed", "message": str(e)}
 
 
-@router.post("")
+@router.post("/{exp_id}")
 async def run_expdb_batch(exp_id: str):
     res = await expdb_batch(exp_id)
     if res["status"] == "failed":
