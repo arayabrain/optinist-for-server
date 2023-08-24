@@ -29,7 +29,7 @@ def oneway_anova(
         _, stat.p_value_ori_resp[i] = f_oneway(*temp.T)
         _, stat.p_value_ori_sel[i] = f_oneway(*temp[:, :half_nstim].T)
 
-    dir_selective_pie = PieData(
+    direction_responsivity_ratio = PieData(
         data=np.array(
             (
                 stat.ncells_direction_selective_cell,
@@ -42,7 +42,7 @@ def oneway_anova(
         file_name="direction_responsivity_ratio",
     )
 
-    ori_selective_pie = PieData(
+    orientation_responsivity_ratio = PieData(
         data=np.array(
             (
                 stat.ncells_orientation_selective_cell,
@@ -55,17 +55,17 @@ def oneway_anova(
         file_name="orientation_responsivity_ratio",
     )
 
-    dir_selective_hist = HistogramData(
+    direction_selectivity = HistogramData(
         data=stat.dsi[stat.index_direction_selective_cell],
         file_name="direction_selectivity",
     )
 
-    ori_selective_hist = HistogramData(
+    orientation_selectivity = HistogramData(
         data=stat.osi[stat.index_orientation_selective_cell],
         file_name="orientation_selectivity",
     )
 
-    dir_response_strength_hist = HistogramData(
+    best_responsivity = HistogramData(
         data=stat.r_best_dir[stat.index_visually_responsive_cell] * 100,
         file_name="best_responsivity",
     )
@@ -73,18 +73,18 @@ def oneway_anova(
     if export_plot:
         stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "oneway_anova")
         plots_dir = join_filepath([output_dir, "plots"])
-        dir_selective_pie.save_plot(plots_dir)
-        ori_selective_pie.save_plot(plots_dir)
-        dir_selective_hist.save_plot(plots_dir)
-        ori_selective_hist.save_plot(plots_dir)
-        dir_response_strength_hist.save_plot(plots_dir)
+        direction_responsivity_ratio.save_plot(plots_dir)
+        orientation_responsivity_ratio.save_plot(plots_dir)
+        direction_selectivity.save_plot(plots_dir)
+        orientation_selectivity.save_plot(plots_dir)
+        best_responsivity.save_plot(plots_dir)
     else:
         stat.save_as_hdf5(output_dir, "oneway_anova")
         return {
             "stat": stat,
-            "dir_selective_pie": dir_selective_pie,
-            "ori_selective_pie": ori_selective_pie,
-            "dir_selective_hist": dir_selective_hist,
-            "ori_selective_hist": ori_selective_hist,
-            "dir_response_strength_hist": dir_response_strength_hist,
+            "direction_responsivity_ratio": direction_responsivity_ratio,
+            "orientation_responsivity_ratio": orientation_responsivity_ratio,
+            "direction_selectivity": direction_selectivity,
+            "orientation_selectivity": orientation_selectivity,
+            "best_responsivity": best_responsivity,
         }

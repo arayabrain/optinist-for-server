@@ -298,11 +298,11 @@ def curvefit_tuning(
             stat.ori_tuning_width[i],
         ) = ori_temp.get_curvefit_results()
 
-    dir_tuning_width_hist = HistogramData(
+    direction_tuning_width = HistogramData(
         data=stat.dir_tuning_width[stat.index_direction_selective_cell],
         file_name="direction_tuning_width",
     )
-    ori_tuning_width_hist = HistogramData(
+    orientation_tuning_width = HistogramData(
         data=stat.ori_tuning_width[stat.index_orientation_selective_cell],
         file_name="orientation_tuning_width",
     )
@@ -310,12 +310,12 @@ def curvefit_tuning(
     if export_plot:
         stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "curvefit_tuning")
         plots_dir = join_filepath([output_dir, "plots"])
-        dir_tuning_width_hist.save_plot(plots_dir)
-        ori_tuning_width_hist.save_plot(plots_dir)
+        direction_tuning_width.save_plot(plots_dir)
+        orientation_tuning_width.save_plot(plots_dir)
     else:
         stat.save_as_hdf5(output_dir, "curvefit_tuning")
         return {
             "stat": stat,
-            "dir_tuning_width_hist": dir_tuning_width_hist,
-            "ori_tuning_width_hist": ori_tuning_width_hist,
+            "direction_tuning_width": direction_tuning_width,
+            "orientation_tuning_width": orientation_tuning_width,
         }

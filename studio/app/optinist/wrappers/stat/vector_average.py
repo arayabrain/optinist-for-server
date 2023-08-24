@@ -43,11 +43,11 @@ def vector_average(
 
     stat.ori_vector_angle /= 2
 
-    preferred_dir_hist = HistogramData(
+    preferred_direction = HistogramData(
         data=stat.dir_vector_angle[stat.index_direction_selective_cell],
         file_name="preferred_direction",
     )
-    preferred_ori_hist = HistogramData(
+    preferred_orientation = HistogramData(
         data=stat.ori_vector_angle[stat.index_orientation_selective_cell],
         file_name="preferred_orientation",
     )
@@ -55,12 +55,12 @@ def vector_average(
     if export_plot:
         stat.save_as_hdf5(join_filepath([output_dir, "stats"]), "vector_average")
         plots_dir = join_filepath([output_dir, "plots"])
-        preferred_dir_hist.save_plot(plots_dir)
-        preferred_ori_hist.save_plot(plots_dir)
+        preferred_direction.save_plot(plots_dir)
+        preferred_orientation.save_plot(plots_dir)
     else:
         stat.save_as_hdf5(output_dir, "vector_average")
         return {
             "stat": stat,
-            "preferred_dir_hist": preferred_dir_hist,
-            "preferred_ori_hist": preferred_ori_hist,
+            "preferred_direction": preferred_direction,
+            "preferred_orientation": preferred_orientation,
         }
