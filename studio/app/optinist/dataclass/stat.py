@@ -15,6 +15,7 @@ class StatData(BaseData):
         self.ncells, self.ntrials, self.nstimplus = data_table.shape
         self.data_table = data_table
         self.nstim = self.nstimplus - 1
+        half_nstim = int(self.nstim / 2)
         self.p_value_threshold = 0.05
         self.r_best_threshold = 0.05
         self.si_threshold = 0.3
@@ -29,7 +30,7 @@ class StatData(BaseData):
         self.r_min_dir = np.full(self.ncells, np.NaN)
         self.di = np.full(self.ncells, np.NaN)
         self.dsi = None
-        self.ori_ratio_change = np.full((self.ncells, int(self.nstim / 2)), np.NaN)
+        self.ori_ratio_change = np.full((self.ncells, half_nstim), np.NaN)
         self.best_ori = np.full(self.ncells, np.NaN)
         self.null_ori = np.full(self.ncells, np.NaN)
         self.r_best_ori = np.full(self.ncells, np.NaN)
@@ -38,11 +39,20 @@ class StatData(BaseData):
         self.oi = np.full(self.ncells, np.NaN)
         self.osi = None
 
-        # --- oneway_anova ---
+        # --- anova1_mult ---
         self.p_value_resp = np.full(self.ncells, np.NaN)
+        self.sig_epochs_resp = np.full(
+            (self.ncells, self.nstimplus, self.nstimplus), np.NaN
+        )
         self.p_value_sel = np.full(self.ncells, np.NaN)
+        self.sig_epochs_sel = np.full((self.ncells, self.nstim, self.nstim), np.NaN)
+        self.dir_sig = np.full(self.ncells, np.NaN)
         self.p_value_ori_resp = np.full(self.ncells, np.NaN)
+        self.sig_epochs_ori_resp = np.full(
+            (self.ncells, half_nstim + 1, half_nstim + 1), np.NaN
+        )
         self.p_value_ori_sel = np.full(self.ncells, np.NaN)
+        self.sig_epochs_ori_sel = np.full((self.ncells, half_nstim, half_nstim), np.NaN)
         self.index_visually_responsive_cell = None
         self.ncells_visually_responsive_cell = None
         self.index_direction_selective_cell = None

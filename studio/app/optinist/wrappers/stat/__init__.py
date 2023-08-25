@@ -1,8 +1,8 @@
 from studio.app.optinist.wrappers.stat.stats import stats
 
+# from studio.app.optinist.wrappers.stat.anova1_mult import anova1_mult
 # from studio.app.optinist.wrappers.stat.curvefit_tuning import curvefit_tuning
 # from studio.app.optinist.wrappers.stat.file_convert import stat_file_convert
-# from studio.app.optinist.wrappers.stat.oneway_anova import oneway_anova
 # from studio.app.optinist.wrappers.stat.vector_average import vector_average
 
 stat_wrapper_dict = {
@@ -15,8 +15,8 @@ stat_wrapper_dict = {
         #     "function": stat_file_convert,
         #     "conda_name": "stat",
         # },
-        # "oneway_anova": {
-        #     "function": oneway_anova,
+        # "anova1_mult": {
+        #     "function": anova1_mult,
         #     "conda_name": "stat",
         # },
         # "vector_average": {

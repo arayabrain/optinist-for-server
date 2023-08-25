@@ -1,7 +1,7 @@
 from studio.app.optinist.dataclass import ExpDbData, StatData
+from studio.app.optinist.wrappers.stat.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.stat.curvefit_tuning import curvefit_tuning
 from studio.app.optinist.wrappers.stat.file_convert import stat_file_convert
-from studio.app.optinist.wrappers.stat.oneway_anova import oneway_anova
 from studio.app.optinist.wrappers.stat.vector_average import vector_average
 
 
@@ -9,7 +9,7 @@ def stats(
     expdb: ExpDbData, output_dir: str, params: dict = None
 ) -> dict(stat=StatData):
     stat = stat_file_convert(expdb, output_dir, params).get("stat")
-    stat = oneway_anova(stat, output_dir, params).get("stat")
+    stat = anova1_mult(stat, output_dir, params).get("stat")
     stat = vector_average(stat, output_dir, params).get("stat")
     stat = curvefit_tuning(stat, output_dir, params).get("stat")
 
