@@ -28,8 +28,8 @@ if __name__ == "__main__":
     rule_config.input = snakemake.input
     rule_config.output = snakemake.output[0]
 
+    # save snakemake script file path and PID of current running algo function
     pid_data = {"last_pid": os.getpid(), "last_script_file": sys.argv[0]}
-
     with open(Path(rule_config.output).parent.parent / "pid.json", "w") as f:
         json.dump(pid_data, f)
 

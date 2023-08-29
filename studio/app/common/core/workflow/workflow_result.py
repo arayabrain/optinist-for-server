@@ -85,6 +85,11 @@ class WorkflowResult:
                 )
 
     def cancel(self):
+        """cancel this workflow by killing process via PID
+
+        Raises:
+            HTTPException: if pid_filepath or last_script_file does not exist
+        """
         if not os.path.exists(self.pid_filepath):
             raise HTTPException(status_code=404)
 

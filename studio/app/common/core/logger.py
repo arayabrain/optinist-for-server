@@ -61,6 +61,7 @@ class Logger:
             level = msg["level"]
             if "debug" in level and "msg" in msg:
                 if "Traceback" in msg["msg"]:
+                    # check if the message is thrown by killing process action
                     if any(
                         err in msg["msg"]
                         for err in ["Signals.SIGTERM", "exit status 15"]
@@ -74,10 +75,15 @@ class Logger:
                             ]
                         )
                         pid_data = JsonReader.read(pid_filepath)
+                        # since multiple running workflow share log data,
+                        # check if message really belongs to the current workflow
                         if pid_data["last_script_file"] in msg["msg"]:
                             self.logger.error("Workflow cancelled")
                     else:
                         self.logger.error(msg)
 
     def clean_up(self):
+        """
+        remove all handlers from this logger
+        """
         self.logger.handlers.clear()
