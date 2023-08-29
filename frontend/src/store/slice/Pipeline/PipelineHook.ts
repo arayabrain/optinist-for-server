@@ -88,7 +88,7 @@ export function useRunPipeline() {
     if (uid != null) {
       const data = await dispatch(cancelResult({uid}))
       if((data as any).error) {
-        handleClickVariant('error', 'Failed to stop workflow. Please try again.')
+        handleClickVariant('error', 'Failed to cancel workflow. Please try again.')
       }
     }
     //eslint-disable-next-line
@@ -118,7 +118,7 @@ export function useRunPipeline() {
         enqueueSnackbar('Aborted', { variant: 'error' })
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.CANCELED) {
-        enqueueSnackbar('Workflow stopped.', { variant: 'success' })
+        enqueueSnackbar('Workflow canceled.', { variant: 'success' })
         dispatch(getExperiments())
       }
       setPrevStatus(status)
