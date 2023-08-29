@@ -147,13 +147,14 @@ export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
         )}
       </Popper>
       <Button
-        variant="outlined"
-        endIcon={<CloseIcon />}
-        onClick={onClickCancel}
-        sx={{
-          margin: 1,
-          marginRight: 4,
-        }}
+          disabled={!runDisabled}
+          variant="outlined"
+          endIcon={<CloseIcon />}
+          onClick={onClickCancel}
+          sx={{
+            margin: 1,
+            marginRight: 4,
+          }}
       >
         Cancel
       </Button>
