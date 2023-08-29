@@ -40,6 +40,9 @@ def get_logger(workspace_id: str, unique_id: str) -> logging.Logger:
 
 
 class Logger:
+    # TODO: Since the Snakemake library automatically creates thread for workflows and
+    # shares the same loggers in the library, all workflows running at the same time
+    # will use same log data.
     def __init__(self, workspace_id, unique_id):
         self.workspace_id = workspace_id
         self.unique_id = unique_id
