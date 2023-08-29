@@ -25,7 +25,7 @@ import {
   RUN_BTN_OPTIONS,
   RUN_BTN_TYPE,
 } from 'store/slice/Pipeline/PipelineType'
-import { selectPipelineRunBtn } from 'store/slice/Pipeline/PipelineSelectors'
+import {selectPipelineIsStartedSuccess, selectPipelineRunBtn} from 'store/slice/Pipeline/PipelineSelectors'
 import { setRunBtnOption } from 'store/slice/Pipeline/PipelineSlice'
 
 export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
@@ -42,6 +42,7 @@ export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
   const dispatch = useDispatch()
 
   const runBtnOption = useSelector(selectPipelineRunBtn)
+  const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
 
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const { enqueueSnackbar } = useSnackbar()
@@ -147,7 +148,7 @@ export const RunButtons = React.memo<UseRunPipelineReturnType>((props) => {
         )}
       </Popper>
       <Button
-          disabled={!runDisabled}
+          disabled={!isStartedSuccess}
           variant="outlined"
           endIcon={<CloseIcon />}
           onClick={onClickCancel}
