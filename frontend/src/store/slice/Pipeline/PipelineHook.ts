@@ -15,7 +15,7 @@ import {
   fetchExperiment,
   getExperiments,
 } from '../Experiments/ExperimentsActions'
-import { useSnackbar } from 'notistack'
+import {useSnackbar, VariantType} from 'notistack'
 import { RUN_STATUS } from './PipelineType'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { IS_STANDALONE, STANDALONE_WORKSPACE_ID } from 'const/Mode'
@@ -78,13 +78,20 @@ export function useRunPipeline() {
     },
     [dispatch, runPostData],
   )
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant });
+  };
   const handleRunPipelineByUid = React.useCallback(() => {
     dispatch(runByCurrentUid({ runPostData }))
   }, [dispatch, runPostData])
-  const handleCancelPipeline = React.useCallback(() => {
+  const handleCancelPipeline = React.useCallback(async () => {
     if (uid != null) {
-      dispatch(cancelResult({uid}))
+      const data = await dispatch(cancelResult({uid}))
+      if((data as any).error) {
+        handleClickVariant('error', 'Failed to stop workflow. Please try again.')
+      }
     }
+    //eslint-disable-next-line
   }, [dispatch, uid])
   React.useEffect(() => {
     const intervalId = setInterval(() => {
@@ -111,7 +118,7 @@ export function useRunPipeline() {
         enqueueSnackbar('Aborted', { variant: 'error' })
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.CANCELED) {
-        enqueueSnackbar('Canceled', { variant: 'info' })
+        enqueueSnackbar('Workflow stopped.', { variant: 'success' })
         dispatch(getExperiments())
       }
       setPrevStatus(status)
