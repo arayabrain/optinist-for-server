@@ -42,7 +42,7 @@ export const RUN_STATUS = {
   CANCELED: 'Canceled',
 } as const
 
-export type RUN_STATUS_TYPE = typeof RUN_STATUS[keyof typeof RUN_STATUS]
+export type RUN_STATUS_TYPE = (typeof RUN_STATUS)[keyof typeof RUN_STATUS]
 
 export type PipelineType =
   | StartedPipeline
@@ -77,7 +77,7 @@ export const NODE_RESULT_STATUS = {
 } as const
 
 export type NODE_RESULT_STATUS_TYPE =
-  typeof NODE_RESULT_STATUS[keyof typeof NODE_RESULT_STATUS]
+  (typeof NODE_RESULT_STATUS)[keyof typeof NODE_RESULT_STATUS]
 
 export interface NodeResultBaseType<T extends NODE_RESULT_STATUS_TYPE> {
   status: T
@@ -110,7 +110,8 @@ export const RUN_BTN_OPTIONS = {
   RUN_ALREADY: 2,
 } as const
 
-export type RUN_BTN_TYPE = typeof RUN_BTN_OPTIONS[keyof typeof RUN_BTN_OPTIONS]
+export type RUN_BTN_TYPE =
+  (typeof RUN_BTN_OPTIONS)[keyof typeof RUN_BTN_OPTIONS]
 
 export const RUN_BTN_LABELS = {
   [RUN_BTN_OPTIONS.RUN_NEW]: 'RUN ALL',

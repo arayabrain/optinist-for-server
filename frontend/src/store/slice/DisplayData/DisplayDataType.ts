@@ -55,7 +55,7 @@ export const DATA_TYPE_SET = {
   BEHAVIOR: 'behavior',
 } as const
 
-export type DATA_TYPE = typeof DATA_TYPE_SET[keyof typeof DATA_TYPE_SET]
+export type DATA_TYPE = (typeof DATA_TYPE_SET)[keyof typeof DATA_TYPE_SET]
 
 interface BaseDisplay<T extends DATA_TYPE, Data> {
   type: T

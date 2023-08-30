@@ -20,11 +20,11 @@ export type DatabaseType = {
   attributes?: object
   cell_image_urls: ImageUrls[]
   cell_image_url?: {
-    url: string,
-    thumb_url: string,
+    url: string
+    thumb_url: string
     params: {}
   }
-  graph_urls: {url: string, params: {}, thumb_url: string}[]
+  graph_urls: { url: string; params: {}; thumb_url: string }[]
   share_type?: number
   publish_status?: number
   created_at: string
@@ -47,11 +47,13 @@ export type ListShareDTO = {
 }
 
 export type ListShare = {
-  id: number,
+  id: number
   name: string
   email: string
   created_at: string
   updated_at: string
 }
 
-export type DatabaseParams = { [key: string]: number | string | string[] | undefined }
+export type DatabaseParams = {
+  [key: string]: number | string | string[] | undefined
+}

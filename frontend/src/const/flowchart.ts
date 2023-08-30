@@ -23,4 +23,4 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
 } as const
 
 export type REACT_FLOW_NODE_TYPE =
-  typeof REACT_FLOW_NODE_TYPE_KEY[keyof typeof REACT_FLOW_NODE_TYPE_KEY]
+  (typeof REACT_FLOW_NODE_TYPE_KEY)[keyof typeof REACT_FLOW_NODE_TYPE_KEY]

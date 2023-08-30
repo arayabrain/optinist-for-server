@@ -1,17 +1,17 @@
-import * as React from 'react';
-import { styled } from '@mui/material/styles';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch, { SwitchProps } from '@mui/material/Switch';
+import * as React from 'react'
+import { styled } from '@mui/material/styles'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Switch, { SwitchProps } from '@mui/material/Switch'
 
 const IOSSwitch = styled((props: SwitchProps) => (
-    <Switch
-      focusVisibleClassName=".Mui-focusVisible"
-      disableRipple
-      {...props}
-      sx={{
-        width: "50px !important"
-      }}
-    />
+  <Switch
+    focusVisibleClassName=".Mui-focusVisible"
+    disableRipple
+    {...props}
+    sx={{
+      width: '50px !important',
+    }}
+  />
 ))(({ theme }) => ({
   width: 42,
   height: 26,
@@ -38,9 +38,9 @@ const IOSSwitch = styled((props: SwitchProps) => (
     },
     '&.Mui-disabled .MuiSwitch-thumb': {
       color:
-          theme.palette.mode === 'light'
-              ? theme.palette.grey[100]
-              : theme.palette.grey[600],
+        theme.palette.mode === 'light'
+          ? theme.palette.grey[100]
+          : theme.palette.grey[600],
     },
     '&.Mui-disabled + .MuiSwitch-track': {
       opacity: theme.palette.mode === 'light' ? 0.7 : 0.3,
@@ -60,33 +60,28 @@ const IOSSwitch = styled((props: SwitchProps) => (
     }),
     '&:before': {
       content: '"ON"',
-      position: "relative",
+      position: 'relative',
       left: 10,
       top: 2,
-      fontSize: 9
+      fontSize: 9,
     },
     '&:after': {
       content: '"OFF"',
-      position: "relative",
+      position: 'relative',
       right: -15,
       top: 2,
-      fontSize: 9
+      fontSize: 9,
     },
   },
-}));
+}))
 
-const SwitchCustom = ({value} : {value: boolean}) => {
+const SwitchCustom = ({ value }: { value: boolean }) => {
   return (
     <FormControlLabel
-      control={
-        <IOSSwitch
-            checked={value}
-          sx={{ m: 1 }}
-        />
-      }
+      control={<IOSSwitch checked={value} sx={{ m: 1 }} />}
       label=""
     />
-  );
+  )
 }
 
-export default SwitchCustom;
+export default SwitchCustom

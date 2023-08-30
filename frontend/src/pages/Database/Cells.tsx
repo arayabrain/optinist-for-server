@@ -8,7 +8,7 @@ const Cells = () => {
 
   return (
     <DatabaseWrapper>
-      <DatabaseCells user={user}/>
+      <DatabaseCells user={user} />
     </DatabaseWrapper>
   )
 }

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { useSelector } from 'react-redux'
 import { isAdmin } from 'store/slice/User/UserSelector'
@@ -29,17 +29,16 @@ const Dashboard = () => {
               </Box>
             </BoxMenu>
           </LinkWrapper>
-          {
-            admin ?
-              <LinkWrapper to="/console/account-manager">
-                <BoxMenu>
-                  <Box>
-                    <ManageAccountsIcon fontSize="large" />
-                    <TitleMenu>Account Manager</TitleMenu>
-                  </Box>
-                </BoxMenu>
-              </LinkWrapper>: null
-          }
+          {admin ? (
+            <LinkWrapper to="/console/account-manager">
+              <BoxMenu>
+                <Box>
+                  <ManageAccountsIcon fontSize="large" />
+                  <TitleMenu>Account Manager</TitleMenu>
+                </Box>
+              </BoxMenu>
+            </LinkWrapper>
+          ) : null}
         </DashboardContent>
       </DashboardWrapper>
     </BoxWrapper>

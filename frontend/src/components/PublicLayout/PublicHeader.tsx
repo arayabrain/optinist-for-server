@@ -8,7 +8,11 @@ const PublicHeader: FC = () => {
     <AppBar position="fixed">
       <Container>
         <Toolbar>
-          <PublicNavMenu displayName="PUB STUDIO" navLink="/" sx={{ fontWeight: 600, fontSize: 22, mr: 2 }} />
+          <PublicNavMenu
+            displayName="PUB STUDIO"
+            navLink="/"
+            sx={{ fontWeight: 600, fontSize: 22, mr: 2 }}
+          />
           <PublicNavMenu displayName="Console" navLink="/console" />
         </Toolbar>
       </Container>
@@ -28,7 +32,9 @@ const PublicNavMenu: FC<{
 
   return (
     <Button key={displayName} onClick={handleMenuClick}>
-      <Typography color="white" sx={sx}>{displayName}</Typography>
+      <Typography color="white" sx={sx}>
+        {displayName}
+      </Typography>
     </Button>
   )
 }

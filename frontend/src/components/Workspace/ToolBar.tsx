@@ -25,14 +25,12 @@ export const ToolBar = React.memo<UseRunPipelineReturnType>((props) => {
         fontSize: '1rem',
       }}
     >
-      { !IS_STANDALONE &&
-        (
-          <Button onClick={() => navigate('/console/workspaces')}>
-            <ArrowBackIosIcon />
-            Workspaces
-          </Button>
-        )
-      }
+      {!IS_STANDALONE && (
+        <Button onClick={() => navigate('/console/workspaces')}>
+          <ArrowBackIosIcon />
+          Workspaces
+        </Button>
+      )}
       <SnakemakeButton />
       <NWBSettingButton />
       <RunButtons {...props} />

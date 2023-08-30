@@ -6,7 +6,7 @@ import {
   GridFilterModel,
   GridSortModel,
   DataGrid,
-  GridSortDirection
+  GridSortDirection,
 } from '@mui/x-data-grid'
 import {
   DatabaseType,
@@ -21,8 +21,8 @@ import {
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
-import PaginationCustom from "../common/PaginationCustom";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PaginationCustom from '../common/PaginationCustom'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 type CellProps = {
   user?: Object
@@ -30,34 +30,42 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void, user?: boolean) => [
+const columns = (
+  handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
+  user?: boolean,
+) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
     filterOperators: [
       {
-        label: 'Contains', value: 'contains',
-        InputComponent: ({applyValue, item}: any) => {
-          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-            if(timeout) clearTimeout(timeout)
-            timeout = setTimeout(() => {
-              applyValue({...item, value: e.target.value})
-            }, 300)
-          }
-          } />
-        }
+        label: 'Contains',
+        value: 'contains',
+        InputComponent: ({ applyValue, item }: any) => {
+          return (
+            <Input
+              sx={{ paddingTop: '16px' }}
+              defaultValue={item.value || ''}
+              onChange={(e) => {
+                if (timeout) clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                  applyValue({ ...item, value: e.target.value })
+                }, 300)
+              }}
+            />
+          )
+        },
       },
     ],
-    type: "string",
+    type: 'string',
     width: 160,
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   user && {
     field: 'published',
     headerName: 'Published',
-    renderCell: (params: { row: DatabaseType }) => (
-        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
-    ),
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.publish_status ? <CheckCircleIcon color={'success'} /> : null,
     valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
     width: 160,
@@ -121,20 +129,19 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
             width={'100%'}
             height={'100%'}
           />
-      </Box>
-    )}
+        </Box>
+      )
+    },
   },
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
   const type: keyof TypeData = user ? 'private' : 'public'
 
-  const { data: dataCells, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
-  )
+  const { data: dataCells, loading } = useSelector((state: RootState) => ({
+    data: state[DATABASE_SLICE_NAME].data[type],
+    loading: state[DATABASE_SLICE_NAME].loading,
+  }))
 
   const [dataDialog, setDataDialog] = useState<{
     type: string
@@ -179,7 +186,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const pagiFilter = useCallback(
     (page?: number) => {
       return `limit=${limit}&offset=${
-          page ? (Number(limit) * (page - 1)) : offset || dataCells.offset
+        page ? Number(limit) * (page - 1) : offset || dataCells.offset
       }`
     },
     //eslint-disable-next-line
@@ -189,12 +196,14 @@ const DatabaseCells = ({ user }: CellProps) => {
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
     let newPublish: number | undefined
-    if(!dataParamsFilter.publish_status) newPublish = undefined
+    if (!dataParamsFilter.publish_status) newPublish = undefined
     else {
-      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      if (dataParamsFilter.publish_status === 'Published') newPublish = 1
       else newPublish = 0
     }
-    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
+    dispatch(
+      api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }),
+    )
   }
 
   useEffect(() => {
@@ -202,12 +211,21 @@ const DatabaseCells = ({ user }: CellProps) => {
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
-  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
-    let newData: string | (string[]) = []
-    if(Array.isArray(data)) {
-      newData = data.map(d => d.url);
+  const handleOpenDialog = (
+    data: ImageUrls[] | ImageUrls,
+    expId?: string,
+    graphTitle?: string,
+  ) => {
+    let newData: string | string[] = []
+    if (Array.isArray(data)) {
+      newData = data.map((d) => d.url)
     } else newData = data.url
-    setDataDialog({ type: 'image', data: newData, expId: expId, nameCol: graphTitle })
+    setDataDialog({
+      type: 'image',
+      data: newData,
+      expId: expId,
+      nameCol: graphTitle,
+    })
   }
 
   const handleCloseDialog = () => {
@@ -226,7 +244,11 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
     setParams(
-      `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
+      `${filter}&${
+        dataParams.sort[0]
+          ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}`
+          : ''
+      }&${pagiFilter(page)}`,
     )
   }
 
@@ -238,10 +260,14 @@ const DatabaseCells = ({ user }: CellProps) => {
         return
       }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replaceAll(
-            'publish_status',
-            'published'
-        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
+        `${filter}&${
+          rowSelectionModel[0]
+            ? `sort=${rowSelectionModel[0].field?.replaceAll(
+                'publish_status',
+                'published',
+              )}&sort=${rowSelectionModel[0].sort}`
+            : ''
+        }&${pagiFilter()}`,
       )
     },
     //eslint-disable-next-line
@@ -257,71 +283,87 @@ const DatabaseCells = ({ user }: CellProps) => {
         .map((item: any) => {
           return `${item.field}=${item?.value}`
         })
-        .join('&').replace('publish_status', 'published')
+        .join('&')
+        .replace('publish_status', 'published')
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
+      `${filter}&${
+        sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
+      }&${pagiFilter()}`,
     )
   }
 
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [
       {
-        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
-        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status'].includes(key)) ? 'is' : 'contains',
-        value: Object.values(dataParamsFilter).find(value => value),
+        field:
+          Object.keys(dataParamsFilter)
+            .find((key) => (dataParamsFilter as any)[key])
+            ?.replace('publish_status', 'published') || '',
+        operator: Object.keys(dataParamsFilter).find(
+          (key) =>
+            (dataParamsFilter as any)[key] && ['publish_status'].includes(key),
+        )
+          ? 'is'
+          : 'contains',
+        value: Object.values(dataParamsFilter).find((value) => value),
       },
     ],
-  });
+  })
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
-    filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&').replace('publish_status', 'published')
+    filter = Object.keys(dataParamsFilter)
+      .filter((key) => (dataParamsFilter as any)[key])
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&')
+      .replace('publish_status', 'published')
     const { sort } = dataParams
     setParams(
-        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
+      `${filter}&${
+        sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
+      }&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
   const getColumns = useMemo(() => {
-    return (dataCells.header?.graph_titles || []).map(
-      (graphTitle, index) => ({
-        field: `graph_urls.${index}`,
-        headerName: graphTitle,
-        filterable: false,
-        sortable: false,
-        renderCell: (params: { row: DatabaseType }) => {
-          const {row} = params
-          const {graph_urls} = row
-          const graph_url = graph_urls[index]
-          if(!graph_url) return null
-          return (
-            <Box
-              sx={{ display: 'flex', cursor: "pointer" }}
-              onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
-            >
-              <img
-                src={graph_url.thumb_url}
-                alt={''}
-                width={'100%'}
-                height={'100%'}
-              />
-            </Box>
-          )
-        },
-        width: 160,
-      }),
-    )
+    return (dataCells.header?.graph_titles || []).map((graphTitle, index) => ({
+      field: `graph_urls.${index}`,
+      headerName: graphTitle,
+      filterable: false,
+      sortable: false,
+      renderCell: (params: { row: DatabaseType }) => {
+        const { row } = params
+        const { graph_urls } = row
+        const graph_url = graph_urls[index]
+        if (!graph_url) return null
+        return (
+          <Box
+            sx={{ display: 'flex', cursor: 'pointer' }}
+            onClick={() =>
+              handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)
+            }
+          >
+            <img
+              src={graph_url.thumb_url}
+              alt={''}
+              width={'100%'}
+              height={'100%'}
+            />
+          </Box>
+        )
+      },
+      width: 160,
+    }))
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
-    Boolean,
-  ) as any
+  const columnsTable = [
+    ...columns(handleOpenDialog, !!user),
+    ...getColumns,
+  ].filter(Boolean) as any
 
   return (
     <DatabaseExperimentsWrapper>
@@ -337,7 +379,10 @@ const DatabaseCells = ({ user }: CellProps) => {
           sorting: {
             sortModel: [
               {
-                field: dataParams.sort[0]?.replace('publish_status', 'published'),
+                field: dataParams.sort[0]?.replace(
+                  'publish_status',
+                  'published',
+                ),
                 sort: dataParams.sort[1] as GridSortDirection,
               },
             ],
@@ -345,15 +390,14 @@ const DatabaseCells = ({ user }: CellProps) => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      {
-        dataCells?.items.length > 0 ?
-          <PaginationCustom
-            data={dataCells}
-            handlePage={handlePage}
-            handleLimit={handleLimit}
-            limit={Number(limit)}
-          /> : null
-      }
+      {dataCells?.items.length > 0 ? (
+        <PaginationCustom
+          data={dataCells}
+          handlePage={handlePage}
+          handleLimit={handleLimit}
+          limit={Number(limit)}
+        />
+      ) : null}
       <DialogImage
         open={dataDialog.type === 'image'}
         data={dataDialog.data}

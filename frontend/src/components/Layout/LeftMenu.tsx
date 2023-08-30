@@ -6,15 +6,15 @@ import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
-import WebIcon from '@mui/icons-material/Web';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import WebIcon from '@mui/icons-material/Web'
+import DashboardIcon from '@mui/icons-material/Dashboard'
 import StorageIcon from '@mui/icons-material/Storage'
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { DRAWER_WIDTH } from 'const/Layout'
 import { Box } from '@mui/material'
-import {useSelector} from "react-redux";
-import {isAdmin} from "../../store/slice/User/UserSelector";
+import { useSelector } from 'react-redux'
+import { isAdmin } from '../../store/slice/User/UserSelector'
 
 const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
   open,
@@ -77,17 +77,16 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
                 <ListItemText primary="Workspaces" />
               </ListItemButton>
             </ListItem>
-            {
-              admin ?
-                <ListItem key="account-manager" disablePadding>
-                  <ListItemButton onClick={onClickAccountManager}>
-                    <ListItemIcon>
-                      <ManageAccountsIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Account Manager" />
-                  </ListItemButton>
-                </ListItem> : null
-            }
+            {admin ? (
+              <ListItem key="account-manager" disablePadding>
+                <ListItemButton onClick={onClickAccountManager}>
+                  <ListItemIcon>
+                    <ManageAccountsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Account Manager" />
+                </ListItemButton>
+              </ListItem>
+            ) : null}
             <ListItem key="site" disablePadding>
               <ListItemButton onClick={onClickOpenSite}>
                 <ListItemIcon>

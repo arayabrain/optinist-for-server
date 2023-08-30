@@ -302,7 +302,7 @@ function useFileTree(
   const workspaceId = useSelector(selectCurrentWorkspaceId)
   React.useEffect(() => {
     if (workspaceId && !isLatest && !isLoading) {
-      dispatch(getFilesTree({workspaceId, fileType}))
+      dispatch(getFilesTree({ workspaceId, fileType }))
     }
   }, [workspaceId, isLatest, isLoading, fileType, dispatch])
   return [tree, isLoading]

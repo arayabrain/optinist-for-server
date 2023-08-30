@@ -5,15 +5,14 @@ interface InputErrorProps extends InputProps {
   value?: string
 }
 
-const InputError =
-    ({
-      errorMessage,
-      onChange,
-      value,
-      type,
-      onBlur,
-      name,
-    }: InputErrorProps) => {
+const InputError = ({
+  errorMessage,
+  onChange,
+  value,
+  type,
+  onBlur,
+  name,
+}: InputErrorProps) => {
   return (
     <>
       <Input

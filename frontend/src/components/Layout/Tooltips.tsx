@@ -3,7 +3,6 @@ import GitHubIcon from '@mui/icons-material/GitHub'
 import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { Tooltip } from '@mui/material'
 
-
 const Tooltips: React.FC = () => {
   return (
     <>

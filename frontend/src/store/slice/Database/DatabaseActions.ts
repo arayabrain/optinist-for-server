@@ -72,7 +72,7 @@ export const getCellsPublicDatabase = createAsyncThunk<
 
 export const postPublish = createAsyncThunk<
   boolean,
-  { id: number; status: 'on' | 'off' , params: DatabaseParams}
+  { id: number; status: 'on' | 'off'; params: DatabaseParams }
 >(`${DATABASE_SLICE_NAME}/postPublish`, async (params, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   try {

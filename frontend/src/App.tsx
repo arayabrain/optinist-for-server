@@ -16,7 +16,7 @@ import Experiments from 'pages/Database/Experiments'
 import PublicExperiments from 'pages/PublicDatabase/PublicExperiments'
 import PublicCells from 'pages/PublicDatabase/PublicCells'
 import Cells from 'pages/Database/Cells'
-import AccountManager from "./pages/AccountManager";
+import AccountManager from './pages/AccountManager'
 
 const App: React.FC = () => {
   return (
@@ -46,14 +46,20 @@ const App: React.FC = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/console" element={<Dashboard />} />
               <Route path="/console/account" element={<Account />} />
-              <Route path="/console/account-manager" element={<AccountManager />} />
+              <Route
+                path="/console/account-manager"
+                element={<AccountManager />}
+              />
               <Route path="/console/experiments" element={<Experiments />} />
               <Route path="/console/cells" element={<Cells />} />
               <Route path="/console/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />
               </Route>
-              <Route path="/console/*" element={<Navigate replace to="/console" />} />
+              <Route
+                path="/console/*"
+                element={<Navigate replace to="/console" />}
+              />
               <Route path="*" element={<Navigate replace to="/" />} />
             </Routes>
           )}

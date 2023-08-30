@@ -17,12 +17,12 @@ export const ImportButton = React.memo(() => {
 
   const onClick = () => {
     if (workspaceId) {
-      dispatch(importExperimentByUid({workspaceId, uid}))
-      .unwrap()
-      .then(() => {
-        enqueueSnackbar('Successfully imported.', { variant: 'success' })
-        dispatch(reset())
-      })
+      dispatch(importExperimentByUid({ workspaceId, uid }))
+        .unwrap()
+        .then(() => {
+          enqueueSnackbar('Successfully imported.', { variant: 'success' })
+          dispatch(reset())
+        })
     } else {
       throw new Error('Workspace ID is missing.')
     }

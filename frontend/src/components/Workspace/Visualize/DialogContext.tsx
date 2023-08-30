@@ -9,7 +9,10 @@ export const DialogContext = createContext<{
     multiSelect: boolean
     onSelectFile: (v: any) => any
   }) => any
-  onMessageError: (v: { anchorElRef: { current: Element | null }; message: string }) => any
+  onMessageError: (v: {
+    anchorElRef: { current: Element | null }
+    message: string
+  }) => any
 }>({
   onOpen: () => null,
   onOpenDialogFile: () => null,

@@ -1,35 +1,47 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { Box, Button, IconButton, Input, styled, Typography } from '@mui/material'
-import Loading from "components/common/Loading"
+import {
+  Box,
+  Button,
+  IconButton,
+  Input,
+  styled,
+  Typography,
+} from '@mui/material'
+import Loading from 'components/common/Loading'
 import ChangePasswordModal from 'components/Account/ChangePasswordModal'
 import DeleteConfirmModal from 'components/common/DeleteConfirmModal'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { useNavigate } from "react-router-dom";
-import { deleteMe, updateMe, updateMePassword} from 'store/slice/User/UserActions'
+import { useNavigate } from 'react-router-dom'
+import {
+  deleteMe,
+  updateMe,
+  updateMePassword,
+} from 'store/slice/User/UserActions'
 import { selectCurrentUser, selectLoading } from 'store/slice/User/UserSelector'
-import { ROLE } from "../../@types";
-import {useSnackbar, VariantType} from "notistack";
+import { ROLE } from '../../@types'
+import { useSnackbar, VariantType } from 'notistack'
 import Edit from '@mui/icons-material/Edit'
 const Account = () => {
   const user = useSelector(selectCurrentUser)
   const loading = useSelector(selectLoading)
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false)
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] =
+    useState(false)
   const [isChangePwModalOpen, setIsChangePwModalOpen] = useState(false)
   const [isEditName, setIsEditName] = useState(false)
   const [isName, setIsName] = useState<string>()
 
   const ref = useRef<HTMLInputElement>(null)
 
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar()
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
-    enqueueSnackbar(mess, { variant });
-  };
+    enqueueSnackbar(mess, { variant })
+  }
 
   useEffect(() => {
-    if(!user) return
+    if (!user) return
     setIsName(user.name)
     //eslint-disable-next-line
   }, [])
@@ -43,12 +55,11 @@ const Account = () => {
   }
 
   const onConfirmDelete = async () => {
-    if(!user) return
+    if (!user) return
     const data = await dispatch(deleteMe())
-    if((data as any).error) {
+    if ((data as any).error) {
       handleClickVariant('error', 'Account deleted failed!')
-    }
-    else {
+    } else {
       navigate('/login')
     }
     handleCloseDeleteComfirmModal()
@@ -63,12 +74,16 @@ const Account = () => {
   }
 
   const onConfirmChangePw = async (oldPass: string, newPass: string) => {
-    const data = await dispatch(updateMePassword({old_password: oldPass, new_password: newPass}))
-    if((data as any).error) {
+    const data = await dispatch(
+      updateMePassword({ old_password: oldPass, new_password: newPass }),
+    )
+    if ((data as any).error) {
       handleClickVariant('error', 'Failed to Change Password!')
-    }
-    else {
-      handleClickVariant('success', 'Your password has been successfully changed!')
+    } else {
+      handleClickVariant(
+        'success',
+        'Your password has been successfully changed!',
+      )
     }
     handleCloseChangePw()
   }
@@ -78,24 +93,24 @@ const Account = () => {
   }
 
   const onSubmit = async (e: any) => {
-    if(!user || !user.name || !user.email) return
-    if(isName === user.name) {
+    if (!user || !user.name || !user.email) return
+    if (isName === user.name) {
       setIsEditName(false)
       return
     }
-    if(!e.target.value) {
+    if (!e.target.value) {
       handleClickVariant('error', "Full name cann't empty!")
       setIsName(user?.name)
-    }
-    else {
-      const data = await dispatch(updateMe({
-        name: e.target.value,
-        email: user.email,
-      }))
-      if((data as any).error) {
+    } else {
+      const data = await dispatch(
+        updateMe({
+          name: e.target.value,
+          email: user.email,
+        }),
+      )
+      if ((data as any).error) {
         handleClickVariant('error', 'Full name edited failed!')
-      }
-      else {
+      } else {
         handleClickVariant('success', 'Full name edited successfully!')
       }
     }
@@ -103,7 +118,7 @@ const Account = () => {
   }
 
   const getRole = (role?: number) => {
-    if(!role) return
+    if (!role) return
     let newRole = ''
     switch (role) {
       case ROLE.ADMIN:
@@ -122,13 +137,13 @@ const Account = () => {
   }
 
   const handleName = (event: any) => {
-    if(event.key === 'Escape') {
+    if (event.key === 'Escape') {
       setIsName(user?.name)
       setIsEditName(false)
       return
     }
-    if(event.key === 'Enter') {
-      if(ref.current) ref.current?.querySelector('input')?.blur?.()
+    if (event.key === 'Enter') {
+      if (ref.current) ref.current?.querySelector('input')?.blur?.()
       return
     }
   }
@@ -140,7 +155,7 @@ const Account = () => {
         onClose={handleCloseDeleteComfirmModal}
         open={isDeleteConfirmModalOpen}
         onSubmit={onConfirmDelete}
-        description='Delete account will erase all of your data.'
+        description="Delete account will erase all of your data."
       />
       <ChangePasswordModal
         onSubmit={onConfirmChangePw}
@@ -172,7 +187,7 @@ const Account = () => {
         ) : (
           <>
             <Box>{isName ? isName : user?.name}</Box>
-            <IconButton sx={{ml: 1}} onClick={() => setIsEditName(true)}>
+            <IconButton sx={{ ml: 1 }} onClick={() => setIsEditName(true)}>
               <Edit />
             </IconButton>
           </>
@@ -186,13 +201,19 @@ const Account = () => {
         <TitleData>Role</TitleData>
         <BoxData>{getRole(user?.role_id)}</BoxData>
       </BoxFlex>
-      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10, maxWidth: 600}}>
-        <Button variant='contained' color='primary' onClick={onChangePwClick}>Change Password</Button>
-        <Button variant='contained' color='error' onClick={onDeleteAccountClick}>Delete Account</Button>
+      <BoxFlex sx={{ justifyContent: 'space-between', mt: 10, maxWidth: 600 }}>
+        <Button variant="contained" color="primary" onClick={onChangePwClick}>
+          Change Password
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={onDeleteAccountClick}
+        >
+          Delete Account
+        </Button>
       </BoxFlex>
-      {
-        loading ? <Loading /> : null
-      }
+      {loading ? <Loading /> : null}
     </AccountWrapper>
   )
 }
@@ -219,7 +240,7 @@ const BoxData = styled(Typography)({
 
 const TitleData = styled(Typography)({
   width: 250,
-  minWidth: 250
+  minWidth: 250,
 })
 
 export default Account

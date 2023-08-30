@@ -8,7 +8,7 @@ export const FILE_TYPE_SET = {
   BEHAVIOR: 'behavior',
 } as const
 
-export type FILE_TYPE = typeof FILE_TYPE_SET[keyof typeof FILE_TYPE_SET]
+export type FILE_TYPE = (typeof FILE_TYPE_SET)[keyof typeof FILE_TYPE_SET]
 
 export type InputNode = {
   [nodeId: string]: InputNodeType

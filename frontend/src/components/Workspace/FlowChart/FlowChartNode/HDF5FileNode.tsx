@@ -173,9 +173,7 @@ const FileTreeView = React.memo<{
     <div>
       {isLoading && <LinearProgress />}
       <TreeView>
-        {tree?.map((node) => (
-          <TreeNode node={node} nodeId={nodeId} />
-        ))}
+        {tree?.map((node) => <TreeNode node={node} nodeId={nodeId} />)}
       </TreeView>
     </div>
   )

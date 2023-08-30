@@ -18,7 +18,7 @@ type InputPasswordProps = {
   error?: string
   name?: string
   placeholder?: string
-  onBlur?:  (event: FocusEvent<HTMLInputElement>) => void
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void
 }
 
 const InputPassword: FC<InputPasswordProps> = ({ error, ...p }) => {

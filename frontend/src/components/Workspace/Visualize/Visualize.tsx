@@ -42,7 +42,7 @@ const MainContents = styled('main')({
   display: 'flex',
   flexDirection: 'column',
   flexGrow: 1,
-  minHeight: CONTENT_HEIGHT
+  minHeight: CONTENT_HEIGHT,
 })
 
 export default Visualize

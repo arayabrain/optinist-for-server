@@ -16,15 +16,14 @@ type SelectErrorProps = {
   options: string[]
 }
 
-const SelectError: FC<SelectErrorProps> =
-   ({
-     value,
-     onChange,
-     onBlur,
-     errorMessage,
-     options,
-     name,
-   }) => {
+const SelectError: FC<SelectErrorProps> = ({
+  value,
+  onChange,
+  onBlur,
+  errorMessage,
+  options,
+  name,
+}) => {
   return (
     <>
       <SelectModal

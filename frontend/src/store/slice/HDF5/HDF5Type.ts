@@ -13,4 +13,4 @@ export const HDF5_TYPE_SET = {
   ALL: 'all',
 } as const
 
-export type HDF5_TYPE = typeof HDF5_TYPE_SET[keyof typeof HDF5_TYPE_SET]
+export type HDF5_TYPE = (typeof HDF5_TYPE_SET)[keyof typeof HDF5_TYPE_SET]

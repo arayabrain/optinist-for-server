@@ -21,9 +21,13 @@ export const NWBDownloadButton = React.memo<{
   const [url, setFileUrl] = useState<string>()
 
   const onClick = async () => {
-    if(!workspaceId) return;
+    if (!workspaceId) return
     try {
-      const responseData = await downloadExperimentNwbApi(workspaceId!, uid, nodeId)
+      const responseData = await downloadExperimentNwbApi(
+        workspaceId!,
+        uid,
+        nodeId,
+      )
       const url = URL.createObjectURL(new Blob([responseData]))
       setFileUrl(url)
       ref.current?.click()

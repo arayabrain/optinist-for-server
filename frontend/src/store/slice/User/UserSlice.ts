@@ -1,7 +1,18 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { USER_SLICE_NAME } from './UserType'
 import { User } from './UserType'
-import {deleteMe, getListUser, getListSearch, getMe, login, updateMe, updateMePassword, deleteUser, createUser, updateUser} from './UserActions'
+import {
+  deleteMe,
+  getListUser,
+  getListSearch,
+  getMe,
+  login,
+  updateMe,
+  updateMePassword,
+  deleteUser,
+  createUser,
+  updateUser,
+} from './UserActions'
 import {
   removeExToken,
   removeToken,
@@ -14,7 +25,7 @@ const initialState: User = {
   currentUser: undefined,
   listUserSearch: undefined,
   listUser: undefined,
-  loading: false
+  loading: false,
 }
 
 export const userSlice = createSlice({
@@ -28,7 +39,7 @@ export const userSlice = createSlice({
     },
     resetUserSearch: (state) => {
       state.listUserSearch = []
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -48,7 +59,7 @@ export const userSlice = createSlice({
         state.listUserSearch = action.payload
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        if(!state.listUser) return
+        if (!state.listUser) return
         state.listUser.items.push(action.payload)
         state.loading = false
       })
@@ -65,7 +76,8 @@ export const userSlice = createSlice({
           deleteMe.rejected,
           deleteMe.fulfilled,
           updateMe.rejected,
-          updateMe.fulfilled),
+          updateMe.fulfilled,
+        ),
         (state) => {
           state.loading = false
         },
@@ -78,7 +90,8 @@ export const userSlice = createSlice({
           updateMe.pending,
           deleteMe.pending,
           updateUser.pending,
-          updateMePassword.pending),
+          updateMePassword.pending,
+        ),
         (state) => {
           state.loading = true
         },

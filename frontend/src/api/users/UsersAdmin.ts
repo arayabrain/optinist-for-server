@@ -3,9 +3,10 @@ import {
   AddUserDTO,
   UserDTO,
   ListUsersQueryDTO,
-  UpdateUserDTO, UserListDTO,
+  UpdateUserDTO,
+  UserListDTO,
 } from './UsersApiDTO'
-import qs from "qs";
+import qs from 'qs'
 
 export const createUserApi = async (data: AddUserDTO): Promise<UserDTO> => {
   const response = await axios.post('/admin/users', data)
@@ -38,7 +39,13 @@ export const deleteUserApi = async (id: number): Promise<string> => {
   return response.data
 }
 
-export const getListSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
-  const response = await axios.get(`/users/search/share_users${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+export const getListSearchApi = async (data: {
+  keyword: string | null
+}): Promise<UserDTO[]> => {
+  const response = await axios.get(
+    `/users/search/share_users${
+      data.keyword ? `?keyword=${data.keyword}` : ''
+    }`,
+  )
   return response.data
 }

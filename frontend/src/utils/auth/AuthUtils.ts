@@ -19,9 +19,9 @@ export const removeRefreshToken = () => {
 }
 
 export const logout = () => {
-  removeRefreshToken();
+  removeRefreshToken()
   removeToken()
-  removeExToken();
+  removeExToken()
   window.location.href = '/login'
 }
 

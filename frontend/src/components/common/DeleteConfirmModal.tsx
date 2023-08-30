@@ -1,7 +1,7 @@
 import { FC, useState } from 'react'
 import { Box, Button, Modal, styled, Typography } from '@mui/material'
-import Input  from 'components/common/Input'
-import Loading from "../common/Loading";
+import Input from 'components/common/Input'
+import Loading from '../common/Loading'
 
 type DeleteConfirmModalProps = {
   onClose: () => void
@@ -30,41 +30,46 @@ const DeleteConfirmModal: FC<DeleteConfirmModalProps> = ({
   return (
     <>
       <Modal
-          open={open}
-          onClose={onClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
+        open={open}
+        onClose={onClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
       >
         <ContentDelete>
           <Typography style={{ whiteSpace: 'pre-wrap' }}>
             {description}
-            This operation cannot be undone.
-            To continue, type "<span style={{ fontWeight: 600 }}>DELETE</span>" in the box below:
+            This operation cannot be undone. To continue, type "
+            <span style={{ fontWeight: 600 }}>DELETE</span>" in the box below:
           </Typography>
           <BoxConfirm>
             <Input
-                placeholder="DELETE"
-                value={textDelete}
-                onChange={(e) => setTextDelete(e.target.value)}
+              placeholder="DELETE"
+              value={textDelete}
+              onChange={(e) => setTextDelete(e.target.value)}
             />
-            <Button onClick={onConfirm} variant='contained' color='error' sx={{ml: 1}}>{titleSubmit}</Button>
+            <Button
+              onClick={onConfirm}
+              variant="contained"
+              color="error"
+              sx={{ ml: 1 }}
+            >
+              {titleSubmit}
+            </Button>
           </BoxConfirm>
           <Button onClick={onClose}>
             <Typography
-                sx={{
-                  textDecoration: 'underline',
-                  textTransform: 'none',
-                  lineHeight: '17px',
-                }}
+              sx={{
+                textDecoration: 'underline',
+                textTransform: 'none',
+                lineHeight: '17px',
+              }}
             >
               Close
             </Typography>
           </Button>
         </ContentDelete>
       </Modal>
-      {
-        isLoading ? <Loading /> : null
-      }
+      {isLoading ? <Loading /> : null}
     </>
   )
 }
@@ -76,8 +81,10 @@ const ContentDelete = styled(Box)`
   transform: translate(-50%, -50%);
   width: 500px;
   background-color: rgb(255, 255, 255);
-  box-shadow: rgb(0 0 0 / 20%) 0px 11px 15px -7px,
-    rgb(0 0 0 / 14%) 0px 24px 38px 3px, rgb(0 0 0 / 12%) 0px 9px 46px 8px;
+  box-shadow:
+    rgb(0 0 0 / 20%) 0px 11px 15px -7px,
+    rgb(0 0 0 / 14%) 0px 24px 38px 3px,
+    rgb(0 0 0 / 12%) 0px 9px 46px 8px;
   padding: 16px;
   border-radius: 4px;
   outline: none;

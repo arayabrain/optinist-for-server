@@ -482,7 +482,12 @@ const RowItem = React.memo<{
         <TableCell>
           <NWBDownloadButton name={uid} hasNWB={hasNWB} />
         </TableCell>
-        {isOwner &&<TableCell> <DeleteButton /></TableCell>}
+        {isOwner && (
+          <TableCell>
+            {' '}
+            <DeleteButton />
+          </TableCell>
+        )}
       </TableRow>
       <CollapsibleTable open={open} />
     </React.Fragment>

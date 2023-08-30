@@ -5,7 +5,8 @@ import {
   getExperimentsPublicDatabase,
   getCellsPublicDatabase,
   getListUserShare,
-  postListUserShare, postPublish,
+  postListUserShare,
+  postPublish,
 } from './DatabaseActions'
 import { DATABASE_SLICE_NAME, DatabaseDTO, ListShare } from './DatabaseType'
 
@@ -39,7 +40,7 @@ export const initialState: {
   },
   loading: false,
   type: 'experiment',
-  listShare: undefined
+  listShare: undefined,
 }
 
 export const databaseSlice = createSlice({
@@ -81,28 +82,19 @@ export const databaseSlice = createSlice({
         state.loading = true
       })
       .addMatcher(
-        isAnyOf(
-          postListUserShare.pending,
-            postPublish.pending
-        ),
+        isAnyOf(postListUserShare.pending, postPublish.pending),
         (state, action) => {
           state.loading = true
         },
       )
       .addMatcher(
-        isAnyOf(
-          postPublish.fulfilled,
-          postPublish.rejected
-        ),
+        isAnyOf(postPublish.fulfilled, postPublish.rejected),
         (state, _action) => {
           state.loading = false
         },
       )
       .addMatcher(
-        isAnyOf(
-          getCellsDatabase.fulfilled,
-          getExperimentsDatabase.fulfilled,
-        ),
+        isAnyOf(getCellsDatabase.fulfilled, getExperimentsDatabase.fulfilled),
         (state, action) => {
           state.data.private = action.payload
           state.loading = false
@@ -118,15 +110,10 @@ export const databaseSlice = createSlice({
           state.loading = false
         },
       )
-      .addMatcher(
-        isAnyOf(
-          getListUserShare.fulfilled,
-        ),
-        (state, action) => {
-          state.listShare = action.payload
-          state.loading = false
-        },
-      )
+      .addMatcher(isAnyOf(getListUserShare.fulfilled), (state, action) => {
+        state.listShare = action.payload
+        state.loading = false
+      })
       .addMatcher(
         isAnyOf(
           getExperimentsDatabase.rejected,
@@ -135,7 +122,7 @@ export const databaseSlice = createSlice({
           getCellsPublicDatabase.rejected,
           getListUserShare.rejected,
           postListUserShare.rejected,
-          postListUserShare.fulfilled
+          postListUserShare.fulfilled,
         ),
         (state) => {
           state.loading = false

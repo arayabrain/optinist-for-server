@@ -1,21 +1,51 @@
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
-import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled} from "@mui/material";
-import {useDispatch, useSelector} from "react-redux";
-import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
-import {useNavigate, useSearchParams} from "react-router-dom";
-import {deleteUser, createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
-import Loading from "../../components/common/Loading";
-import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
-import {ROLE} from "../../@types";
-import {DataGrid, GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
-import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
-import InputError from "../../components/common/InputError";
-import {SelectChangeEvent} from "@mui/material/Select";
-import SelectError from "../../components/common/SelectError";
-import PaginationCustom from "../../components/common/PaginationCustom";
-import {useSnackbar, VariantType} from "notistack";
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  MouseEvent,
+} from 'react'
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  Input,
+  styled,
+} from '@mui/material'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  isAdmin,
+  selectCurrentUser,
+  selectListUser,
+  selectLoading,
+} from '../../store/slice/User/UserSelector'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  deleteUser,
+  createUser,
+  getListUser,
+  updateUser,
+} from '../../store/slice/User/UserActions'
+import Loading from '../../components/common/Loading'
+import { AddUserDTO, UserDTO } from '../../api/users/UsersApiDTO'
+import { ROLE } from '../../@types'
+import {
+  DataGrid,
+  GridFilterModel,
+  GridSortDirection,
+  GridSortModel,
+} from '@mui/x-data-grid'
+import { regexEmail, regexIgnoreS, regexPassword } from '../../const/Auth'
+import InputError from '../../components/common/InputError'
+import { SelectChangeEvent } from '@mui/material/Select'
+import SelectError from '../../components/common/SelectError'
+import PaginationCustom from '../../components/common/PaginationCustom'
+import { useSnackbar, VariantType } from 'notistack'
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -45,14 +75,13 @@ const initState = {
   confirmPassword: '',
 }
 
-const ModalComponent =
-  ({
-    onSubmitEdit,
-    setOpenModal,
-    dataEdit,
-  }: ModalComponentProps) => {
+const ModalComponent = ({
+  onSubmitEdit,
+  setOpenModal,
+  dataEdit,
+}: ModalComponentProps) => {
   const [formData, setFormData] = useState<{ [key: string]: string }>(
-      dataEdit || initState,
+    dataEdit || initState,
   )
   const [isDisabled, setIsDisabled] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>(initState)
@@ -67,9 +96,9 @@ const ModalComponent =
   }
 
   const validatePassword = (
-      value: string,
-      isConfirm: boolean = false,
-      values?: { [key: string]: string },
+    value: string,
+    isConfirm: boolean = false,
+    values?: { [key: string]: string },
   ): string => {
     if (!value && !dataEdit?.uid) return 'This field is required'
     const errorLength = validateLength('password', 255, value)
@@ -80,7 +109,7 @@ const ModalComponent =
     if (!regexPassword.test(value) && value) {
       return 'Your password must be at least 6 characters long and must contain at least one letter, number, and special character'
     }
-    if(regexIgnoreS.test(value)){
+    if (regexIgnoreS.test(value)) {
       return 'Allowed special characters (!#$%&()*+,-./@_|)'
     }
     if (isConfirm && datas.password !== value && value) {
@@ -107,11 +136,12 @@ const ModalComponent =
     const errorName = validateField('name', 100, formData.name)
     const errorEmail = validateEmail(formData.email)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password)
-    const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
-      formData.confirmPassword,
-      true,
-    )
+    const errorPassword = dataEdit?.id
+      ? ''
+      : validatePassword(formData.password)
+    const errorConfirmPassword = dataEdit?.id
+      ? ''
+      : validatePassword(formData.confirmPassword, true)
     return {
       email: errorEmail,
       password: errorPassword,
@@ -182,7 +212,7 @@ const ModalComponent =
           <LabelModal>Role: </LabelModal>
           <SelectError
             value={formData?.role_id || ''}
-            options={Object.keys(ROLE).filter(key => !Number(key))}
+            options={Object.keys(ROLE).filter((key) => !Number(key))}
             name="role_id"
             onChange={(e) => onChangeData(e, 50)}
             onBlur={(e) => onChangeData(e, 50)}
@@ -231,23 +261,22 @@ const ModalComponent =
   )
 }
 
-const PopupDelete = ({open, handleClose, handleOkDel, name}: PopupType) => {
-  if(!open) return null
+const PopupDelete = ({ open, handleClose, handleOkDel, name }: PopupType) => {
+  if (!open) return null
   return (
-      <Box>
-        <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-          <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleOkDel}>Ok</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+    <Box>
+      <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
+        <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleOkDel}>Ok</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
 const AccountManager = () => {
-
   const dispatch = useDispatch()
 
   const navigate = useNavigate()
@@ -268,22 +297,26 @@ const AccountManager = () => {
   const email = searchParams.get('email') || undefined
   const sort = searchParams.getAll('sort') || []
 
-  const [openDel, setOpenDel] = useState<{id?: number, name?: string, open: boolean}>()
+  const [openDel, setOpenDel] = useState<{
+    id?: number
+    name?: string
+    open: boolean
+  }>()
 
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar()
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
-    enqueueSnackbar(mess, { variant });
-  };
+    enqueueSnackbar(mess, { variant })
+  }
 
   useEffect(() => {
-    if(!admin) navigate('/console')
+    if (!admin) navigate('/console')
     //eslint-disable-next-line
   }, [JSON.stringify(admin)])
 
   const sortParams = useMemo(() => {
     return {
-      sort: sort
+      sort: sort,
     }
     //eslint-disable-next-line
   }, [JSON.stringify(sort)])
@@ -291,32 +324,37 @@ const AccountManager = () => {
   const filterParams = useMemo(() => {
     return {
       name: name,
-      email: email
+      email: email,
     }
   }, [name, email])
 
   const params = useMemo(() => {
     return {
       limit: Number(limit),
-      offset: Number(offset)
+      offset: Number(offset),
     }
   }, [limit, offset])
 
   useEffect(() => {
-    dispatch(getListUser({...filterParams, ...sortParams, ...params}))
+    dispatch(getListUser({ ...filterParams, ...sortParams, ...params }))
     //eslint-disable-next-line
   }, [limit, offset, email, name, JSON.stringify(sort)])
 
   const handlePage = (event: ChangeEvent<unknown>, page: number) => {
-    if(!listUser) return
+    if (!listUser) return
     let filter = ''
-    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+    filter = Object.keys(filterParams)
+      .filter((key) => (filterParams as any)[key])
       .map((item: any) => {
         return `${item.field}=${item?.value}`
       })
       .join('&')
     const { sort } = sortParams
-    setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
+    setParams(
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${
+        listUser.limit
+      }&offset=${(page - 1) * Number(limit)}`,
+    )
   }
 
   const getParamsData = () => {
@@ -329,9 +367,7 @@ const AccountManager = () => {
 
   const paramsManager = useCallback(
     (page?: number) => {
-      return `limit=${limit}&offset=${
-          page ? page - 1 : offset
-      }`
+      return `limit=${limit}&offset=${page ? page - 1 : offset}`
     },
     [limit, offset],
   )
@@ -344,7 +380,13 @@ const AccountManager = () => {
         return
       }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
+        `${filter}&${
+          rowSelectionModel[0]
+            ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${
+                rowSelectionModel[0].sort
+              }`
+            : ''
+        }&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
@@ -364,7 +406,9 @@ const AccountManager = () => {
     }
     const { sort } = sortParams
     setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}`,
+      `${filter}&${
+        sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
+      }&${paramsManager()}`,
     )
   }
 
@@ -381,45 +425,52 @@ const AccountManager = () => {
     id: number | string | undefined,
     data: { [key: string]: string },
   ) => {
-    const {confirmPassword, role_id, ...newData} = data
+    const { confirmPassword, role_id, ...newData } = data
     let newRole
     switch (role_id) {
-      case "ADMIN":
-        newRole = ROLE.ADMIN;
-        break;
-      case "DATA_MANAGER":
-        newRole = ROLE.DATA_MANAGER;
-        break;
-      case "OPERATOR":
-        newRole = ROLE.OPERATOR;
-        break;
-      case "GUEST_OPERATOR":
-        newRole = ROLE.GUEST_OPERATOR;
-        break;
+      case 'ADMIN':
+        newRole = ROLE.ADMIN
+        break
+      case 'DATA_MANAGER':
+        newRole = ROLE.DATA_MANAGER
+        break
+      case 'OPERATOR':
+        newRole = ROLE.OPERATOR
+        break
+      case 'GUEST_OPERATOR':
+        newRole = ROLE.GUEST_OPERATOR
+        break
     }
     if (id !== undefined) {
-      const data = await dispatch(updateUser(
-        {
+      const data = await dispatch(
+        updateUser({
           id: id as number,
-          data: {name: newData.name, email: newData.email, role_id: newRole},
-          params: {...filterParams, ...sortParams, ...params}
-        }))
-        if((data as any).error) {
-          if (!navigator.onLine) {
-            handleClickVariant('error', 'Account update failed!')
-            return
-          }
-          handleClickVariant('error', 'This email already exists!')
+          data: { name: newData.name, email: newData.email, role_id: newRole },
+          params: { ...filterParams, ...sortParams, ...params },
+        }),
+      )
+      if ((data as any).error) {
+        if (!navigator.onLine) {
+          handleClickVariant('error', 'Account update failed!')
+          return
         }
-        else {
-          handleClickVariant('success', 'Your account has been edited successfully!')
-        }
-    } else {
-      const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
-      if(!(data as any).error) {
-        handleClickVariant('success', 'Your account has been created successfully!')
+        handleClickVariant('error', 'This email already exists!')
+      } else {
+        handleClickVariant(
+          'success',
+          'Your account has been edited successfully!',
+        )
       }
-        else {
+    } else {
+      const data = await dispatch(
+        createUser({ ...newData, role_id: newRole } as AddUserDTO),
+      )
+      if (!(data as any).error) {
+        handleClickVariant(
+          'success',
+          'Your account has been created successfully!',
+        )
+      } else {
         if (!navigator.onLine) {
           handleClickVariant('error', 'Account creation failed!')
           return
@@ -431,60 +482,66 @@ const AccountManager = () => {
   }
 
   const handleOpenPopupDel = (id?: number, name?: string) => {
-    if(!id) return
-    setOpenDel({id: id, name: name, open: true})
+    if (!id) return
+    setOpenDel({ id: id, name: name, open: true })
   }
 
   const handleClosePopupDel = () => {
-    setOpenDel({...openDel, open: false})
+    setOpenDel({ ...openDel, open: false })
   }
 
   const handleOkDel = async () => {
-    if(!openDel?.id || !openDel) return
-    const data = await dispatch(deleteUser({
-      id: openDel.id,
-      params: {...filterParams, ...sortParams, ...params}
-    }))
-    if((data as any).error) {
+    if (!openDel?.id || !openDel) return
+    const data = await dispatch(
+      deleteUser({
+        id: openDel.id,
+        params: { ...filterParams, ...sortParams, ...params },
+      }),
+    )
+    if ((data as any).error) {
       handleClickVariant('error', 'Delete user failed!')
-    }
-    else {
+    } else {
       handleClickVariant('success', 'Account deleted successfully!')
     }
-    setOpenDel({...openDel, open: false})
+    setOpenDel({ ...openDel, open: false })
   }
 
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [
       {
-        field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
+        field:
+          Object.keys(filterParams).find((key) => (filterParams as any)[key]) ||
+          '',
         operator: 'contains',
-        value: Object.values(filterParams).find(value => value),
+        value: Object.values(filterParams).find((value) => value),
       },
     ],
-  });
+  })
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
-    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&')
+    filter = Object.keys(filterParams)
+      .filter((key) => (filterParams as any)[key])
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&')
     const { sort } = sortParams
     setParams(
-        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
+      `${filter}&${
+        sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
+      }&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
-  const columns = useMemo(() =>
-    [
+  const columns = useMemo(
+    () => [
       {
         headerName: 'UID',
         field: 'uid',
         filterable: false,
         minWidth: 100,
-        flex: 2
+        flex: 2,
       },
       {
         headerName: 'Name',
@@ -493,19 +550,25 @@ const AccountManager = () => {
         flex: 2,
         filterOperators: [
           {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
-            }
+            label: 'Contains',
+            value: 'contains',
+            InputComponent: ({ applyValue, item }: any) => {
+              return (
+                <Input
+                  sx={{ paddingTop: '16px' }}
+                  defaultValue={item.value || ''}
+                  onChange={(e) => {
+                    if (timeout) clearTimeout(timeout)
+                    timeout = setTimeout(() => {
+                      applyValue({ ...item, value: e.target.value })
+                    }, 300)
+                  }}
+                />
+              )
+            },
           },
         ],
-        type: "string",
+        type: 'string',
       },
       {
         headerName: 'Role',
@@ -513,26 +576,24 @@ const AccountManager = () => {
         filterable: false,
         minWidth: 100,
         flex: 1,
-        renderCell: (params: {value: number}) => {
+        renderCell: (params: { value: number }) => {
           let role
           switch (params.value) {
             case ROLE.ADMIN:
-              role = "Admin";
-              break;
+              role = 'Admin'
+              break
             case ROLE.DATA_MANAGER:
-              role = "Data Manager";
-              break;
+              role = 'Data Manager'
+              break
             case ROLE.OPERATOR:
-              role = "Operator";
-              break;
+              role = 'Operator'
+              break
             case ROLE.GUEST_OPERATOR:
-              role = "Guest Operator";
-              break;
+              role = 'Guest Operator'
+              break
           }
-          return (
-            <span>{role}</span>
-          )
-        }
+          return <span>{role}</span>
+        },
       },
       {
         headerName: 'Mail',
@@ -541,19 +602,25 @@ const AccountManager = () => {
         flex: 2,
         filterOperators: [
           {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
-            }
+            label: 'Contains',
+            value: 'contains',
+            InputComponent: ({ applyValue, item }: any) => {
+              return (
+                <Input
+                  sx={{ paddingTop: '16px' }}
+                  defaultValue={item.value || ''}
+                  onChange={(e) => {
+                    if (timeout) clearTimeout(timeout)
+                    timeout = setTimeout(() => {
+                      applyValue({ ...item, value: e.target.value })
+                    }, 300)
+                  }}
+                />
+              )
+            },
           },
         ],
-        type: "string",
+        type: 'string',
       },
       {
         headerName: '',
@@ -562,42 +629,45 @@ const AccountManager = () => {
         filterable: false,
         minWidth: 100,
         flex: 1,
-        renderCell: (params: {row: UserDTO}) => {
-          const { id, role_id, name, email} = params.row
-          if(!id || !role_id || !name || !email) return null
+        renderCell: (params: { row: UserDTO }) => {
+          const { id, role_id, name, email } = params.row
+          if (!id || !role_id || !name || !email) return null
           let role: any
           switch (role_id) {
             case ROLE.ADMIN:
-              role = "ADMIN";
-              break;
+              role = 'ADMIN'
+              break
             case ROLE.DATA_MANAGER:
-              role = "DATA_MANAGER";
-              break;
+              role = 'DATA_MANAGER'
+              break
             case ROLE.OPERATOR:
-              role = "OPERATOR";
-              break;
+              role = 'OPERATOR'
+              break
             case ROLE.GUEST_OPERATOR:
-              role = "GUEST_OPERATOR";
-              break;
+              role = 'GUEST_OPERATOR'
+              break
           }
 
           return (
             <>
               <ALink
                 sx={{ color: 'red' }}
-                onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
+                onClick={() =>
+                  handleEdit({ id, role_id: role, name, email } as UserDTO)
+                }
               >
                 <EditIcon sx={{ color: 'black' }} />
               </ALink>
-              {
-                !(params.row?.id === user?.id) ?
+              {!(params.row?.id === user?.id) ? (
                 <ALink
                   sx={{ ml: 1.25 }}
-                  onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
+                  onClick={() =>
+                    handleOpenPopupDel(params.row?.id, params.row?.name)
+                  }
                 >
                   <DeleteIcon sx={{ color: 'red' }} />
-                </ALink> : null
-              }
+                </ALink>
+              ) : null}
             </>
           )
         },
@@ -615,7 +685,7 @@ const AccountManager = () => {
           marginBottom: 2,
         }}
       >
-        <Button 
+        <Button
           sx={{
             background: '#000000c4',
             '&:hover': { backgroundColor: '#00000090' },
@@ -627,7 +697,7 @@ const AccountManager = () => {
         </Button>
       </Box>
       <DataGrid
-        sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
+        sx={{ minHeight: 400, height: 'calc(100vh - 300px)' }}
         columns={columns as any}
         rows={listUser?.items || []}
         filterMode={'server'}
@@ -647,44 +717,40 @@ const AccountManager = () => {
         }}
         onFilterModelChange={handleFilter as any}
       />
-      {
-        listUser && listUser.items.length > 0 ?
-          <PaginationCustom
-            data={listUser}
-            handlePage={handlePage}
-            handleLimit={handleLimit}
-            limit={Number(limit)}
-          /> : null
-      }
+      {listUser && listUser.items.length > 0 ? (
+        <PaginationCustom
+          data={listUser}
+          handlePage={handlePage}
+          handleLimit={handleLimit}
+          limit={Number(limit)}
+        />
+      ) : null}
       <PopupDelete
         open={openDel?.open || false}
         handleClose={handleClosePopupDel}
         handleOkDel={handleOkDel}
         name={openDel?.name}
       />
-      {
-        openModal ?
-          <ModalComponent
-            onSubmitEdit={onSubmitEdit}
-            setOpenModal={(flag) => {
-              setOpenModal(flag)
-              if (!flag) {
-                setDataEdit({})
-              }
-            }}
-            dataEdit={dataEdit}
-          /> : null
-      }
-      {
-        loading ? <Loading /> : null
-      }
+      {openModal ? (
+        <ModalComponent
+          onSubmitEdit={onSubmitEdit}
+          setOpenModal={(flag) => {
+            setOpenModal(flag)
+            if (!flag) {
+              setDataEdit({})
+            }
+          }}
+          dataEdit={dataEdit}
+        />
+      ) : null}
+      {loading ? <Loading /> : null}
     </AccountManagerWrapper>
   )
 }
 
 const AccountManagerWrapper = styled(Box)(({ theme }) => ({
   width: '80%',
-  margin: theme.spacing(6.125, 'auto')
+  margin: theme.spacing(6.125, 'auto'),
 }))
 
 const ALink = styled('a')({

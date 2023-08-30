@@ -30,7 +30,7 @@ export const VISUALIZE_ITEM_TYPE_SET = {
 } as const
 
 export type VISUALIZE_ITEM_TYPE =
-  typeof VISUALIZE_ITEM_TYPE_SET[keyof typeof VISUALIZE_ITEM_TYPE_SET]
+  (typeof VISUALIZE_ITEM_TYPE_SET)[keyof typeof VISUALIZE_ITEM_TYPE_SET]
 
 export type DisplayDataItem =
   | ImageItem

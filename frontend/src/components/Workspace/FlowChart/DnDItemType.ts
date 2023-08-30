@@ -3,7 +3,7 @@ export const DND_ITEM_TYPE_SET = {
 } as const
 
 export type DND_ITEM_TYPE =
-  typeof DND_ITEM_TYPE_SET[keyof typeof DND_ITEM_TYPE_SET]
+  (typeof DND_ITEM_TYPE_SET)[keyof typeof DND_ITEM_TYPE_SET]
 
 export type TreeItemDragObject = {}
 

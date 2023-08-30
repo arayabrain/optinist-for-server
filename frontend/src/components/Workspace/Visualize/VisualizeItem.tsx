@@ -179,15 +179,15 @@ const FilePathSelectItem = React.memo<{
       setNewDisplayDataPath(
         isSingleData && selectedFilePath != null
           ? {
-            ...basePayload,
-            deleteData: true,
-            prevDataType: dataType,
-            prevFilePath: selectedFilePath,
-          }
+              ...basePayload,
+              deleteData: true,
+              prevDataType: dataType,
+              prevFilePath: selectedFilePath,
+            }
           : {
-            ...basePayload,
-            deleteData: false,
-          },
+              ...basePayload,
+              deleteData: false,
+            },
       ),
     )
   }
@@ -323,7 +323,12 @@ const RoiSelect = React.memo<{
   const dispatch = useDispatch()
   const roiItemNodeId = useSelector(selectRoiItemNodeId(itemId))
   const roiItemFilePath = useSelector(selectRoiItemFilePath(itemId))
-  const onSelectRoiFilePath = (nodeId: string, filePath: string, dataType: string, outputKey?: string) => {
+  const onSelectRoiFilePath = (
+    nodeId: string,
+    filePath: string,
+    dataType: string,
+    outputKey?: string,
+  ) => {
     dispatch(setRoiItemFilePath({ itemId, nodeId, filePath, outputKey }))
   }
   return (

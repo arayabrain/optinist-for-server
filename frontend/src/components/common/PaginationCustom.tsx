@@ -1,8 +1,14 @@
-import {Box, FormControl, NativeSelect, Pagination, styled} from "@mui/material";
-import {DatabaseDTO} from "../../store/slice/Database/DatabaseType";
-import {WorkspaceDataDTO} from "../../store/slice/Workspace/WorkspaceType";
-import {ChangeEvent} from "react";
-import {UserListDTO} from "../../api/users/UsersApiDTO";
+import {
+  Box,
+  FormControl,
+  NativeSelect,
+  Pagination,
+  styled,
+} from '@mui/material'
+import { DatabaseDTO } from '../../store/slice/Database/DatabaseType'
+import { WorkspaceDataDTO } from '../../store/slice/Workspace/WorkspaceType'
+import { ChangeEvent } from 'react'
+import { UserListDTO } from '../../api/users/UsersApiDTO'
 
 type PagiProps = {
   data: DatabaseDTO | WorkspaceDataDTO | UserListDTO
@@ -11,7 +17,12 @@ type PagiProps = {
   limit: number | null
 }
 
-const PaginationCustom = ({data, handlePage, handleLimit, limit}: PagiProps) => {
+const PaginationCustom = ({
+  data,
+  handlePage,
+  handleLimit,
+  limit,
+}: PagiProps) => {
   return (
     <PaginationCustomWrapper>
       <span>Rows per page: </span>
@@ -29,7 +40,9 @@ const PaginationCustom = ({data, handlePage, handleLimit, limit}: PagiProps) => 
           <option value={100}>100</option>
         </NativeSelect>
       </FormControl>
-      <span>{`${((data?.offset || 0) + 1)} - ${(data?.offset || 0) + (data?.items?.length || 0)} of ${(data?.total) || 0}`}</span>
+      <span>{`${(data?.offset || 0) + 1} - ${
+        (data?.offset || 0) + (data?.items?.length || 0)
+      } of ${data?.total || 0}`}</span>
       <Pagination
         count={Math.ceil(data.total / data.limit)}
         page={Math.ceil(data.offset / data.limit) + 1}
@@ -44,7 +57,7 @@ const PaginationCustomWrapper = styled(Box)(({ theme }) => ({
   justifyContent: 'end',
   alignItems: 'center',
   marginTop: theme.spacing(2),
-  gap: 2
+  gap: 2,
 }))
 
 export default PaginationCustom
