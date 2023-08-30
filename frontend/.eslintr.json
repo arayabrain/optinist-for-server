@@ -3,7 +3,7 @@
     "browser": true,
     "node": true
   },
-  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "extends": ["react-app","eslint:recommended", "plugin:prettier/recommended"],
   "rules": {
     "indent": ["error", 2],
     "quotes": ["warn", "double"],

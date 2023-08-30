@@ -51,7 +51,6 @@
     "test": "react-scripts test",
     "test:ci": "CI=true react-scripts test",
     "eject": "react-scripts eject",
-    "lint-staged": "lint-staged",
     "format": "prettier --write .",
     "prepare": "cd .. && husky install"
   },
@@ -76,6 +75,7 @@
   "devDependencies": {
     "@types/plotly.js": "^1.54.16",
     "@types/react-redux": "^7.1.25",
+    "eslint-config-react-app": "^7.0.1",
     "lint-staged": "^11.1.2",
     "prettier": "^3.0.3"
   },
