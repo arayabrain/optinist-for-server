@@ -3,11 +3,20 @@ import { Box, styled, Typography } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AnalyticsIcon from '@mui/icons-material/Analytics'
-import { useSelector } from 'react-redux'
-import { isAdmin } from 'store/slice/User/UserSelector'
+import {useDispatch, useSelector} from 'react-redux'
+import {isAdmin, selectCurrentUser} from 'store/slice/User/UserSelector'
+import {useEffect} from "react";
+import {getMe} from "../../store/slice/User/UserActions";
 
 const Dashboard = () => {
+  const dispatch = useDispatch()
   const admin = useSelector(isAdmin)
+  const user = useSelector(selectCurrentUser)
+  useEffect(() => {
+    if(!user) return
+    dispatch(getMe())
+  }, [])
+
   return (
     <BoxWrapper>
       <h1 style={{ paddingLeft: 16 }}>Dashboard</h1>
