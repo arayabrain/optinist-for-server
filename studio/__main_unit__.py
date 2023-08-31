@@ -83,19 +83,13 @@ def main(develop_mode: bool = False):
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
 
-    # set fastapi@uvicorn logging config.
-    log_format = "%(asctime)s  %(levelprefix)s %(message)s"
-    fastapi_logging_config = uvicorn.config.LOGGING_CONFIG
-    fastapi_logging_config["formatters"]["default"]["fmt"] = log_format
-    fastapi_logging_config["formatters"]["access"]["fmt"] = log_format
-
     if develop_mode:
         reload_options = {"reload_dirs": ["studio"]} if args.reload else {}
         uvicorn.run(
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=fastapi_logging_config,
+            log_config=f"{DIRPATH.CONFIG_DIR}/logging.yaml",
             reload=args.reload,
             **reload_options,
         )
@@ -104,6 +98,6 @@ def main(develop_mode: bool = False):
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=fastapi_logging_config,
+            log_config=f"{DIRPATH.CONFIG_DIR}/logging.yaml",
             reload=False,
         )
