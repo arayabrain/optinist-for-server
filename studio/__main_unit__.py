@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 import uvicorn
 from fastapi import Depends, FastAPI, Request
@@ -69,6 +70,11 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
+
+
+@app.on_event("startup")
+async def startup_event():
+    logging.info("Application startup complete!")
 
 
 @app.get("/")

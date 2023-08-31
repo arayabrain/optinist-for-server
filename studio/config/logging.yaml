@@ -23,7 +23,8 @@ handlers:
 loggers:
   uvicorn:
     level: INFO
-    handlers: [console]
+    handlers: [console, rotating_file]
+    propagate: false
 root:
   level: INFO
-  handlers: [rotating_file]
+  handlers: [console, rotating_file]
