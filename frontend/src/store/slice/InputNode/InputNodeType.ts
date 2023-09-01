@@ -7,6 +7,7 @@ export const FILE_TYPE_SET = {
   FLUO: 'fluo',
   BEHAVIOR: 'behavior',
   MATLAB: 'matlab',
+  EXPDB: 'expdb',
 } as const
 
 export type FILE_TYPE = typeof FILE_TYPE_SET[keyof typeof FILE_TYPE_SET]
@@ -20,6 +21,7 @@ export type InputNodeType =
   | ImageInputNode
   | HDF5InputNode
   | MatlabInputNode
+  | ExpDbInputNode
 
 interface InputNodeBaseType<
   T extends FILE_TYPE,
@@ -57,5 +59,9 @@ export type MatlabInputParamType = {
 
 export interface MatlabInputNode
   extends InputNodeBaseType<'matlab', MatlabInputParamType> {
+  selectedFilePath?: string
+}
+
+export interface ExpDbInputNode extends InputNodeBaseType<'expdb', {}> {
   selectedFilePath?: string
 }

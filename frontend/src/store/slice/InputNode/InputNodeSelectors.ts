@@ -4,6 +4,7 @@ import {
   isCsvInputNode,
   isImageInputNode,
   isMatlabInputNode,
+  isExpDbInputNode,
 } from './InputNodeUtils'
 
 export const selectInputNode = (state: RootState) => state.inputNode
@@ -126,3 +127,13 @@ export const selectMatlabInputNodeParamFieldName =
 export const selectMatlabInputNodeParamIndex =
   (nodeId: string) => (state: RootState) =>
     selectMatlabInputNodeParam(nodeId)(state).index
+
+export const selectExpDbInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const inputNode = selectInputNodeById(nodeId)(state)
+    if (isExpDbInputNode(inputNode)) {
+      return inputNode.selectedFilePath
+    } else {
+      throw new Error('invaid input node type')
+    }
+  }
