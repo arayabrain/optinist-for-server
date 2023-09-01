@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     rule_config.output = snakemake.output[0]
 
-    if rule_config.type in [FILETYPE.CSV, FILETYPE.BEHAVIOR]:
+    if rule_config.type in [FILETYPE.CSV, FILETYPE.BEHAVIOR, FILETYPE.MATLAB]:
         outputfile = FileWriter.csv(rule_config, rule_config.type)
         PickleWriter.write(rule_config.output, outputfile)
     elif rule_config.type == FILETYPE.IMAGE:

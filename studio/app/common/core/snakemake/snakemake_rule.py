@@ -53,6 +53,9 @@ class SmkRule:
             self.builder.set_type("hdf5").set_hdf5Path(self._node.data.hdf5Path).build()
         )
 
+    def matlab(self) -> Rule:
+        return self.builder.set_type("matlab").build()
+
     def algo(self, nodeDict: Dict[str, Node]) -> Rule:
         algo_input = []
         return_arg_names = {}

@@ -53,6 +53,7 @@ export const DATA_TYPE_SET = {
   HTML: 'html',
   FLUO: 'fluo',
   BEHAVIOR: 'behavior',
+  MATLAB: 'matlab',
 } as const
 
 export type DATA_TYPE = typeof DATA_TYPE_SET[keyof typeof DATA_TYPE_SET]
