@@ -3,6 +3,7 @@ import {
   ImageInputNode,
   HDF5InputNode,
   MatlabInputNode,
+  ExpDbInputNode,
   InputNodeType,
   FILE_TYPE_SET,
 } from './InputNodeType'
@@ -34,4 +35,10 @@ export function isMatlabInputNode(
     default:
       return false
   }
+}
+
+export function isExpDbInputNode(
+  inputNode: InputNodeType,
+): inputNode is ExpDbInputNode {
+  return inputNode.fileType === FILE_TYPE_SET.EXPDB
 }
