@@ -7,6 +7,10 @@ import {
   ImageData,
   ScatterData,
   HTMLData,
+  HistogramData,
+  LineData,
+  PieData,
+  PolarData,
 } from 'api/outputs/Outputs'
 
 export const DISPLAY_DATA_SLICE_NAME = 'displayData'
@@ -39,6 +43,18 @@ export type DisplayData = {
   html: {
     [filePath: string]: HTMLDisplayData
   }
+  histogram: {
+    [filePath: string]: HistogramDisplayData
+  }
+  line: {
+    [filePath: string]: LineDisplayData
+  }
+  pie: {
+    [filepath: string]: PieDisplayData
+  }
+  polar: {
+    [filePath: string]: PolarDisplayData
+  }
 }
 
 export const DATA_TYPE_SET = {
@@ -54,6 +70,10 @@ export const DATA_TYPE_SET = {
   FLUO: 'fluo',
   BEHAVIOR: 'behavior',
   MATLAB: 'matlab',
+  HISTOGRAM: 'histogram',
+  LINE: 'line',
+  PIE: 'pie',
+  POLAR: 'polar',
 } as const
 
 export type DATA_TYPE = typeof DATA_TYPE_SET[keyof typeof DATA_TYPE_SET]
@@ -97,3 +117,20 @@ export interface BarDisplayData extends BaseDisplay<'bar', BarData> {
 }
 
 export interface HTMLDisplayData extends BaseDisplay<'html', HTMLData> {}
+
+export interface HistogramDisplayData
+  extends BaseDisplay<'histogram', HistogramData> {}
+
+export interface LineDisplayData extends BaseDisplay<'line', LineData> {
+  columns: number[]
+  index: number[]
+}
+
+export interface PieDisplayData extends BaseDisplay<'pie', PieData> {
+  columns: string[]
+}
+
+export interface PolarDisplayData extends BaseDisplay<'polar', PolarData> {
+  columns: number[]
+  index: number[]
+}

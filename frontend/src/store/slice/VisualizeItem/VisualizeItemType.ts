@@ -44,6 +44,10 @@ export type DisplayDataItem =
   | HTMLItem
   | FluoItem
   | BehaviorItem
+  | HistogramItem
+  | LineItem
+  | PieItem
+  | PolarItem
   | MatlabItem
 
 export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
@@ -132,6 +136,25 @@ export interface FluoItem extends DisplayDataItemBaseType {
 
 export interface BehaviorItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.BEHAVIOR
+}
+
+export interface HistogramItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.HISTOGRAM
+  bins: number
+}
+
+export interface LineItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.LINE
+  selectedIndex: number
+}
+
+export interface PieItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.PIE
+}
+
+export interface PolarItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.POLAR
+  selectedIndex: number
 }
 
 export interface MatlabItem extends DisplayDataItemBaseType {
