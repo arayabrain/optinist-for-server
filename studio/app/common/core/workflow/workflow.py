@@ -15,6 +15,7 @@ class NodeType:
     HDF5: str = "HDF5FileNode"
     ALGO: str = "AlgorithmNode"
     MATLAB: str = "MatlabFileNode"
+    EXPDB: str = "ExpDbNode"
 
 
 @dataclass

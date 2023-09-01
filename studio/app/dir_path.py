@@ -1,6 +1,8 @@
 import os
 from enum import Enum
 
+from dotenv import load_dotenv
+
 _DEFAULT_DIR = "/tmp/studio"
 _ENV_DIR = os.environ.get("OPTINIST_DIR")
 
@@ -23,6 +25,8 @@ class DIRPATH:
     STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
     APP_DIR = os.path.dirname(__file__)
     CONFIG_DIR = f"{STUDIO_DIR}/config"
+    load_dotenv(f"{CONFIG_DIR}/.env")
+    EXPDB_DIR = os.environ.get("EXPDB_DIR", INPUT_DIR)
 
     CONDAENV_DIR = (
         f"{os.path.dirname(os.path.dirname(os.path.dirname(__file__)))}/conda"

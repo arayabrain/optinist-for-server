@@ -118,6 +118,14 @@ class WorkflowRunner:
                     edgeDict=self.edgeDict,
                     nwbfile=nwbfile,
                 ).matlab()
+            elif node.type == NodeType.EXPDB:
+                rule_dict[node.id] = SmkRule(
+                    workspace_id=self.workspace_id,
+                    unique_id=self.unique_id,
+                    node=node,
+                    edgeDict=self.edgeDict,
+                    nwbfile=nwbfile,
+                ).expdb()
             elif node.type == NodeType.ALGO:
                 rule = SmkRule(
                     workspace_id=self.workspace_id,
