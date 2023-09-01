@@ -18,9 +18,14 @@ if __name__ == "__main__":
     last_output = snakemake.config["last_output"]
 
     rule_config = RuleConfigReader.read(snakemake.params.name)
-    if rule_config.type in [FILETYPE.IMAGE]:
+    if rule_config.type in [FILETYPE.IMAGE, FILETYPE.EXPDB]:
         rule_config.input = snakemake.input
-    elif rule_config.type in [FILETYPE.CSV, FILETYPE.BEHAVIOR, FILETYPE.HDF5]:
+    elif rule_config.type in [
+        FILETYPE.CSV,
+        FILETYPE.BEHAVIOR,
+        FILETYPE.HDF5,
+        FILETYPE.MATLAB,
+    ]:
         rule_config.input = snakemake.input[0]
 
     rule_config.output = snakemake.output[0]
@@ -33,4 +38,10 @@ if __name__ == "__main__":
         PickleWriter.write(rule_config.output, outputfile)
     elif rule_config.type == FILETYPE.HDF5:
         outputfile = FileWriter.hdf5(rule_config)
+        PickleWriter.write(rule_config.output, outputfile)
+    elif rule_config.type == FILETYPE.MATLAB:
+        outputfile = FileWriter.matlab(rule_config)
+        PickleWriter.write(rule_config.output, outputfile)
+    elif rule_config.type == FILETYPE.EXPDB:
+        outputfile = FileWriter.exp_db(rule_config)
         PickleWriter.write(rule_config.output, outputfile)

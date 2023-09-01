@@ -4,6 +4,7 @@ from studio.app.common.core.snakemake.smk import Rule
 from studio.app.common.dataclass import CsvData, ImageData, MatlabData, TimeSeriesData
 from studio.app.const import FILETYPE
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.dataclass.expdb import ExpDbData
 
 
 class FileWriter:
@@ -71,6 +72,15 @@ class FileWriter:
     def matlab(cls, rule_config: Rule):
         info = {
             rule_config.return_arg: MatlabData(rule_config.input, rule_config.params)
+        }
+        nwbfile = rule_config.nwbfile
+        info["nwbfile"] = {"input": nwbfile}
+        return info
+
+    @classmethod
+    def exp_db(cls, rule_config: Rule):
+        info = {
+            rule_config.return_arg: ExpDbData(rule_config.input, rule_config.params)
         }
         nwbfile = rule_config.nwbfile
         info["nwbfile"] = {"input": nwbfile}
