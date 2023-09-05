@@ -69,10 +69,11 @@ def test_alltimedata():
 
 
 tif_filepath = "test.tif"
+workspace_id = "1"
 
 
 def test_image():
-    response = client.get(f"/outputs/image/{tif_filepath}")
+    response = client.get(f"/outputs/image/{tif_filepath}?workspace_id={workspace_id}")
     data = response.json()
 
     assert response.status_code == 200
