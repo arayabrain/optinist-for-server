@@ -19,7 +19,12 @@ ACCEPT_MATLAB_EXT = [".mat"]
 NOT_DISPLAY_ARGS_LIST = ["params", "output_dir", "nwbfile", "export_plot"]
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 TC_SUFFIX = "timecourse"
 TC_FIELDNAME = "timecourse"
 TS_SUFFIX = "trialstructure"
 TS_FIELDNAME = "trialstructure"
+CELLMASK_SUFFIX = "cellmask"
+CELLMASK_FIELDNAME = "cellmask"
+FOV_SUFFIX = "fov"
+FOV_CONTRAST = 0.4
