@@ -61,7 +61,7 @@ class DirTreeGetter:
                         path=node_name,
                         name=node_name,
                         isdir=True,
-                        nodes=cls.get_tree(file_types, relative_path),
+                        nodes=cls.get_tree(workspace_id, file_types, relative_path),
                     )
                 )
 
