@@ -9,6 +9,8 @@ services:
       - studio/config/.env
     volumes:
       - db_data:/var/lib/mysql
+    environment:
+      TZ: Asia/Tokyo
 
   phpmyadmin:
     image: phpmyadmin
@@ -18,6 +20,8 @@ services:
       - studio/config/.env
     ports:
       - 20080:80
+    environment:
+      TZ: Asia/Tokyo
 
   studio-dev-be:
     build:
@@ -43,6 +47,8 @@ services:
     ports:
       - "3000:3000"
     command: ash -c 'yarn install && yarn start'
+    environment:
+      TZ: Asia/Tokyo
 
 volumes:
   db_data:
