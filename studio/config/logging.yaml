@@ -3,10 +3,10 @@ disable_existing_loggers: true
 formatters:
   default:
     (): "uvicorn.logging.DefaultFormatter"
-    fmt: "%(asctime)s %(levelprefix)s %(message)s"
+    fmt: "%(asctime)s %(levelprefix)s %(funcName)s():%(lineno)d - %(message)s"
   access:
     (): "uvicorn.logging.AccessFormatter"
-    fmt: "%(asctime)s %(levelprefix)s %(message)s"
+    fmt: "%(asctime)s %(levelprefix)s %(funcName)s():%(lineno)d - %(message)s"
 handlers:
   console:
     class: logging.StreamHandler
@@ -16,10 +16,10 @@ handlers:
     class: logging.handlers.TimedRotatingFileHandler
     level: DEBUG
     formatter: default
-    filename: studio/logs/app.log
+    filename: logs/studio.log
     when: midnight
     interval: 1
-    backupCount: 7
+    backupCount: 365
 loggers:
   uvicorn:
     level: INFO
