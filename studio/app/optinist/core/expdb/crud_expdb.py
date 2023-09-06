@@ -2,6 +2,9 @@ from fastapi import HTTPException
 from sqlmodel import Session
 
 from studio.app.optinist.models import Experiment as ExperimentModel
+from studio.app.optinist.models.expdb.experiment import (
+    ExperimentShareUser as ExperimentShareUserModel,
+)
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
     ExpDbExperimentCreate,
@@ -31,10 +34,7 @@ def get_experiment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-def create_experiment(
-    db: Session,
-    data: ExpDbExperimentCreate,
-) -> ExpDbExperiment:
+def create_experiment(db: Session, data: ExpDbExperimentCreate) -> ExpDbExperiment:
     try:
         expdb = ExperimentModel(
             experiment_id=data.experiment_id,
@@ -70,15 +70,19 @@ def update_experiment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-def delete_experiment(
-    db: Session,
-    id: int,
-):
+def delete_experiment(db: Session, id: int):
     try:
         expdb = db.query(ExperimentModel).get(id)
         assert expdb is not None, "Experiment not found"
 
         db.delete(expdb)
+        db.flush()
+
+        db.query(ExperimentShareUserModel).filter(
+            ExperimentShareUserModel.experiment_uid == id
+        ).delete()
+        db.flush()
+
         db.commit()
         return True
     except AssertionError as e:

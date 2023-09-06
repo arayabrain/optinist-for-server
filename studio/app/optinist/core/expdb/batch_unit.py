@@ -88,9 +88,6 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
-        for expdb_path in self.expdb_paths:
-            create_directory(expdb_path.output_dir, delete_dir=True)
-
         try:
             exp = get_experiment(db, self.exp_id, self.org_id)
             bulk_delete_cells(db, exp.id)
@@ -98,6 +95,9 @@ class ExpDbBatch:
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
+
+        for expdb_path in self.expdb_paths:
+            create_directory(expdb_path.output_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
