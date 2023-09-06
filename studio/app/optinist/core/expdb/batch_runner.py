@@ -8,10 +8,9 @@ from enum import Enum
 
 import yaml
 from lauda import stopwatch
-from sqlmodel import Session
 from zc import lockfile
 
-from studio.app.common.db.database import engine
+from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
@@ -168,7 +167,7 @@ class ExpDbBatchRunner:
         exp_id = os.path.basename(flag_file).split(".", 1)[0]
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
-        with Session(engine) as db:
+        with session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
 
             expdb_batch.generate_statdata()
@@ -196,7 +195,7 @@ class ExpDbBatchRunner:
         exp_id = os.path.basename(flag_file).split(".", 1)[0]
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
-        with Session(engine) as db:
+        with session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
 
         return True
