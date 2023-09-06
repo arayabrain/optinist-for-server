@@ -30,6 +30,8 @@ class ProcessCommand(Enum):
 
 class ExpDbBatchRunner:
     def __init__(self, organization_id: int):
+        self.start_time = datetime.datetime.now()
+
         # init logger.
         self.logger_ = logging.getLogger()
         self.logger_.setLevel(logging.DEBUG)
@@ -39,6 +41,7 @@ class ExpDbBatchRunner:
         )
         stream_hander.setFormatter(formatter)
         self.logger_.addHandler(stream_hander)
+
         # TODO: add organization id validation.
         self.org_id = organization_id
 
@@ -216,6 +219,7 @@ class ExpDbBatchRunner:
         if not error:
             result_log = {
                 "command": command,
+                "start_time": self.start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "success",
                 "log": "completed successfully.",
@@ -223,6 +227,7 @@ class ExpDbBatchRunner:
         else:
             result_log = {
                 "command": command,
+                "start_time": self.start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "error",
                 "log": "{}: {}".format(type(error), str(error)),
