@@ -4,6 +4,7 @@ import glob
 import logging
 import os
 import pathlib
+import traceback
 from enum import Enum
 
 import yaml
@@ -52,18 +53,21 @@ class ExpDbBatchRunner:
     def process(self):
         self.logger_.info("process start.")
 
-        # 前処理
-        self.__process_preprocess()
-
-        # メイン処理（データ管理・解析処理処理）
         try:
-            self.__process_datasets()
-        except Exception as e:
-            self.logger_.error("%s: %s", type(e), e)
-            raise e
+            # 前処理
+            self.__process_preprocess()
 
-        # 後処理
-        self.__process_postprocess()
+            # メイン処理（データ管理・解析処理処理）
+            self.__process_datasets()
+
+            # 後処理
+            self.__process_postprocess()
+
+        except lockfile.LockError as e:
+            None  # do nothing.
+
+        except Exception as e:
+            self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
 
         self.logger_.info("process finish.")
 
@@ -86,9 +90,9 @@ class ExpDbBatchRunner:
         # lockfile チェック
         try:
             self.lock = lockfile.LockFile(LOCKFILE_NAME)
-        except lockfile.LockError:
-            self.logger_.error("already running.")
-            exit()
+        except lockfile.LockError as e:
+            self.logger_.error("already running. - %s", e)
+            raise e
 
     def __process_postprocess(self):
         """
@@ -136,11 +140,12 @@ class ExpDbBatchRunner:
                     self.logger_.warning("invalid command: %s", command)
                     continue
             except Exception as e:
-                self.logger_.error("%s: %s", type(e), e)
+                self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
                 error = e
             finally:
                 self.__process_dataset_postprocess(flag_file, command, error)
 
+    @stopwatch(callback=__stopwatch_callback)
     def __search_target_datasets(self) -> list:
         """
         処理対象datasets検索
@@ -213,7 +218,7 @@ class ExpDbBatchRunner:
                 "command": command,
                 "complete_time": datetime.datetime.now(),
                 "result": "success",
-                "log": "",
+                "log": "completed successfully.",
             }
         else:
             result_log = {
