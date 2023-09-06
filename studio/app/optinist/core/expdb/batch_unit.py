@@ -1,7 +1,6 @@
 import logging
 import math
 import os
-import shutil
 from dataclasses import dataclass
 from glob import glob
 from typing import Optional
@@ -45,34 +44,40 @@ def get_default_params(name: str):
     return ConfigReader.read(filepath)
 
 
+class ExpDbPath:
+    def __init__(self, exp_id: str, is_raw=False):
+        base_dir = DIRPATH.EXPDB_DIR if is_raw else DIRPATH.PUBLIC_EXPDB_DIR
+        subject_id = exp_id.split("_")[0]
+
+        self.exp_dir = join_filepath([base_dir, subject_id, exp_id])
+        self.output_dir = join_filepath([self.exp_dir, "outputs"])
+        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
+        self.plot_dir = join_filepath([self.output_dir, "plots"])
+        self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
+
+        if is_raw:
+            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+            self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
+            self.cellmask_file = join_filepath(
+                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
+            )
+            self.fov_file = join_filepath([self.exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+
+
 class ExpDbBatch:
     def __init__(self, exp_id: str, org_id: int) -> None:
         self.logger_ = logging.getLogger()
         self.exp_id = exp_id
         self.org_id = org_id
-        self.subject_id = self.exp_id.split("_")[0]
 
-        self.exp_dir = join_filepath([DIRPATH.EXPDB_DIR, self.subject_id, self.exp_id])
-        if not (os.path.exists(self.exp_dir)):
+        self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
+        if not (os.path.exists(self.raw_path.exp_dir)):
             raise Exception(
                 f"Experiment directory for id: {self.exp_id} does not exist"
             )
 
-        # RAW DATA
-        self.tc_file = join_filepath([self.exp_dir, f"{self.exp_id}_{TC_SUFFIX}.mat"])
-        self.ts_file = join_filepath([self.exp_dir, f"{self.exp_id}_{TS_SUFFIX}.mat"])
-        self.cellmask_file = join_filepath(
-            [self.exp_dir, f"{self.exp_id}_{CELLMASK_SUFFIX}.mat"]
-        )
-        self.fov_file = join_filepath([self.exp_dir, f"{self.exp_id}_{FOV_SUFFIX}.tif"])
-
-        # OUTPUT DATA
-        self.exp_output_dir = join_filepath([self.exp_dir, "outputs"])
-        self.pixelmap_dir = join_filepath([self.exp_output_dir, "pixelmaps"])
-        self.plot_dir = join_filepath([self.exp_output_dir, "plots"])
-        self.stat_file = join_filepath(
-            [self.exp_output_dir, f"{self.exp_id}_oristats.hdf5"]
-        )
+        self.pub_path = ExpDbPath(self.exp_id)
+        self.expdb_paths = [self.raw_path, self.pub_path]
 
     def __stopwatch_callback(watch, function):
         logging.getLogger().info(
@@ -83,9 +88,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
-        if os.path.exists(self.exp_output_dir):
-            shutil.rmtree(self.exp_output_dir)
-        os.mkdir(self.exp_output_dir)
+        for expdb_path in self.expdb_paths:
+            create_directory(expdb_path.output_dir, delete_dir=True)
 
         try:
             exp = get_experiment(db, self.exp_id, self.org_id)
@@ -97,23 +101,28 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
-        expdb = ExpDbData(paths=[self.tc_file, self.ts_file])
-
+        expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
-            expdb, self.exp_output_dir, get_default_params("analyze_stats")
+            expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
         ).get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        stat.save_as_hdf5(self.exp_output_dir, f"{self.exp_id}_oristats")
-        assert os.path.exists(self.stat_file), "save statdata failed"
+        for expdb_path in self.expdb_paths:
+            stat.save_as_hdf5(expdb_path.stat_file)
+            assert os.path.exists(
+                expdb_path.stat_file
+            ), f"save statfile failed: {expdb_path.stat_file}"
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self) -> int:
-        create_directory(self.pixelmap_dir)
+        for expdb_path in self.expdb_paths:
+            create_directory(expdb_path.pixelmap_dir)
 
         # csr_matrix to numpy array
-        cellmask = loadmat(self.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
-        fov = tifffile.imread(self.fov_file).astype(np.double)
+        cellmask = (
+            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
+        )
+        fov = tifffile.imread(self.raw_path.fov_file).astype(np.double)
         fov_n = fov / np.max(fov)
 
         imxx, ncells = cellmask.shape
@@ -127,35 +136,44 @@ class ExpDbBatch:
             fov_cell_merge = np.repeat(fov_highcontrast[:, :, np.newaxis], 3, axis=2)
             fov_cell_merge[:, :, 1] = fov_cell_merge[:, :, 2] * (1 - cell_mask / 2)
             fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
-            pixelmap_file = join_filepath(
-                [self.pixelmap_dir, f"fov_cell_merge_{i}.tif"]
-            )
-            tifffile.imwrite(pixelmap_file, fov_cell_merge)
 
-        assert (
-            len(glob(join_filepath([self.pixelmap_dir, "fov_cell_merge_*.tif"])))
-            == ncells
-        ), "generate pixelmaps failed"
+            for expdb_path in self.expdb_paths:
+                pixelmap_file = join_filepath(
+                    [expdb_path.pixelmap_dir, f"fov_cell_merge_{i}.tif"]
+                )
+                tifffile.imwrite(pixelmap_file, fov_cell_merge)
+
+        for expdb_path in self.expdb_paths:
+            assert (
+                len(
+                    glob(
+                        join_filepath([expdb_path.pixelmap_dir, "fov_cell_merge_*.tif"])
+                    )
+                )
+                == ncells
+            ), f"generate pixelmaps in failed: {expdb_path.pixelmap_dir}"
 
         return ncells
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_plots(self):
-        create_directory(self.plot_dir)
+        stat = StatData.load_from_hdf5(self.raw_path.stat_file)
 
-        stat = StatData.load_from_hdf5(self.stat_file)
+        for expdb_path in self.expdb_paths:
+            dir_path = expdb_path.plot_dir
+            create_directory(dir_path)
 
-        stat.tuning_curve.save_plot(self.plot_dir)
-        stat.tuning_curve_polar.save_plot(self.plot_dir)
+            stat.tuning_curve.save_plot(dir_path)
+            stat.tuning_curve_polar.save_plot(dir_path)
 
-        stat.direction_responsivity_ratio.save_plot(self.plot_dir)
-        stat.orientation_responsivity_ratio.save_plot(self.plot_dir)
-        stat.direction_selectivity.save_plot(self.plot_dir)
-        stat.orientation_selectivity.save_plot(self.plot_dir)
-        stat.best_responsivity.save_plot(self.plot_dir)
+            stat.direction_responsivity_ratio.save_plot(dir_path)
+            stat.orientation_responsivity_ratio.save_plot(dir_path)
+            stat.direction_selectivity.save_plot(dir_path)
+            stat.orientation_selectivity.save_plot(dir_path)
+            stat.best_responsivity.save_plot(dir_path)
 
-        stat.preferred_direction.save_plot(self.plot_dir)
-        stat.preferred_orientation.save_plot(self.plot_dir)
+            stat.preferred_direction.save_plot(dir_path)
+            stat.preferred_orientation.save_plot(dir_path)
 
-        stat.direction_tuning_width.save_plot(self.plot_dir)
-        stat.orientation_tuning_width.save_plot(self.plot_dir)
+            stat.direction_tuning_width.save_plot(dir_path)
+            stat.orientation_tuning_width.save_plot(dir_path)
