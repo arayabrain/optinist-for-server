@@ -9,7 +9,7 @@ from studio.app.optinist.schemas.expdb.experiment import (
 )
 
 
-async def get_experiment(
+def get_experiment(
     db: Session,
     experiment_id: str,
     organization_id: int,
@@ -31,7 +31,7 @@ async def get_experiment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def create_experiment(
+def create_experiment(
     db: Session,
     data: ExpDbExperimentCreate,
 ) -> ExpDbExperiment:
@@ -50,7 +50,7 @@ async def create_experiment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def update_experiment(
+def update_experiment(
     db: Session,
     id: int,
     data: ExpDbExperimentUpdate,
@@ -70,7 +70,7 @@ async def update_experiment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_experiment(
+def delete_experiment(
     db: Session,
     id: int,
 ):
