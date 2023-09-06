@@ -6,14 +6,16 @@ from studio.app.common.models.base import Base, TimestampMixin
 class Cell(Base, TimestampMixin, table=True):
     __tablename__ = "cells"
     __table_args__ = (
-        UniqueConstraint("experiment_uid", "sequence", name="idx_experiment_uid_seq"),
+        UniqueConstraint(
+            "experiment_uid", "cell_number", name="idx_experiment_uid_cell_number"
+        ),
     )
 
-    sequence: int = Field(
+    cell_number: int = Field(
         sa_column=Column(
             Integer(),
             nullable=False,
-            comment="sequence number of cell in experiment",
+            comment="number of cell in experiment",
         ),
     )
     experiment_uid: int = Field(
