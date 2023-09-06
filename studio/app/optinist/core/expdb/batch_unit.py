@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from glob import glob
 from typing import Optional
 
+import cv2
 import numpy as np
 import tifffile
 from lauda import stopwatch
@@ -137,15 +138,15 @@ class ExpDbBatch:
 
             for expdb_path in self.expdb_paths:
                 pixelmap_file = join_filepath(
-                    [expdb_path.pixelmap_dir, f"fov_cell_merge_{i}.tif"]
+                    [expdb_path.pixelmap_dir, f"fov_cell_merge_{i}.png"]
                 )
-                tifffile.imwrite(pixelmap_file, fov_cell_merge)
+                cv2.imwrite(pixelmap_file, fov_cell_merge)
 
         for expdb_path in self.expdb_paths:
             assert (
                 len(
                     glob(
-                        join_filepath([expdb_path.pixelmap_dir, "fov_cell_merge_*.tif"])
+                        join_filepath([expdb_path.pixelmap_dir, "fov_cell_merge_*.png"])
                     )
                 )
                 == ncells
