@@ -289,11 +289,11 @@ const AccountManager = () => {
   }, [JSON.stringify(sort)])
 
   const filterParams = useMemo(() => {
-    return {
-      name: name,
-      email: email
-    }
-  }, [name, email])
+      return {
+        name: name,
+        email: email
+      }
+    }, [name, email])
 
   const params = useMemo(() => {
     return {
@@ -467,9 +467,7 @@ const AccountManager = () => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
+        .map((item: any) => `${item}=${(filterParams as any)[item]}`)
         .join('&')
     const { sort } = sortParams
     setParams(
