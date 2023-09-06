@@ -51,20 +51,28 @@ class ExpDbBatch:
         self.exp_id = exp_id
         self.org_id = org_id
         self.subject_id = self.exp_id.split("_")[0]
+
         self.exp_dir = join_filepath([DIRPATH.EXPDB_DIR, self.subject_id, self.exp_id])
         if not (os.path.exists(self.exp_dir)):
             raise Exception(
                 f"Experiment directory for id: {self.exp_id} does not exist"
             )
 
-        self.pixelmap_dir = join_filepath([self.exp_dir, "pixelmaps"])
-        self.plot_dir = join_filepath([self.exp_dir, "plots"])
-
-        self.stat_file = join_filepath([self.exp_dir, f"{self.exp_id}_oristats.hdf5"])
+        # RAW DATA
+        self.tc_file = join_filepath([self.exp_dir, f"{self.exp_id}_{TC_SUFFIX}.mat"])
+        self.ts_file = join_filepath([self.exp_dir, f"{self.exp_id}_{TS_SUFFIX}.mat"])
         self.cellmask_file = join_filepath(
             [self.exp_dir, f"{self.exp_id}_{CELLMASK_SUFFIX}.mat"]
         )
         self.fov_file = join_filepath([self.exp_dir, f"{self.exp_id}_{FOV_SUFFIX}.tif"])
+
+        # OUTPUT DATA
+        self.exp_output_dir = join_filepath([self.exp_dir, "outputs"])
+        self.pixelmap_dir = join_filepath([self.exp_output_dir, "pixelmaps"])
+        self.plot_dir = join_filepath([self.exp_output_dir, "plots"])
+        self.stat_file = join_filepath(
+            [self.exp_output_dir, f"{self.exp_id}_oristats.hdf5"]
+        )
 
     def __stopwatch_callback(watch, function):
         logging.getLogger().info(
@@ -75,12 +83,9 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
-        if os.path.exists(self.stat_file):
-            os.remove(self.stat_file)
-        if os.path.exists(self.pixelmap_dir):
-            shutil.rmtree(self.pixelmap_dir)
-        if os.path.exists(self.plot_dir):
-            shutil.rmtree(self.plot_dir)
+        if os.path.exists(self.exp_output_dir):
+            shutil.rmtree(self.exp_output_dir)
+        os.mkdir(self.exp_output_dir)
 
         try:
             exp = get_experiment(db, self.exp_id, self.org_id)
@@ -92,19 +97,14 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
-        expdb = ExpDbData(
-            paths=[
-                join_filepath([self.exp_dir, f"{self.exp_id}_{TS_SUFFIX}.mat"]),
-                join_filepath([self.exp_dir, f"{self.exp_id}_{TC_SUFFIX}.mat"]),
-            ]
-        )
+        expdb = ExpDbData(paths=[self.tc_file, self.ts_file])
 
         stat: StatData = analyze_stats(
-            expdb, self.exp_dir, get_default_params("analyze_stats")
+            expdb, self.exp_output_dir, get_default_params("analyze_stats")
         ).get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        stat.save_as_hdf5(self.exp_dir, f"{self.exp_id}_oristats")
+        stat.save_as_hdf5(self.exp_output_dir, f"{self.exp_id}_oristats")
         assert os.path.exists(self.stat_file), "save statdata failed"
 
     @stopwatch(callback=__stopwatch_callback)
@@ -143,9 +143,7 @@ class ExpDbBatch:
     def generate_plots(self):
         create_directory(self.plot_dir)
 
-        stat = StatData.load_from_hdf5(
-            join_filepath([self.exp_dir, f"{self.exp_id}_oristats.hdf5"])
-        )
+        stat = StatData.load_from_hdf5(self.stat_file)
 
         stat.tuning_curve.save_plot(self.plot_dir)
         stat.tuning_curve_polar.save_plot(self.plot_dir)
