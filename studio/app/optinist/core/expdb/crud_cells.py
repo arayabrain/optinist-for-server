@@ -13,7 +13,7 @@ async def bulk_insert_cells(db: Session, experiment_uid: int, cells: int):
         db.query(CellModel).filter(CellModel.experiment_uid == experiment_uid).delete()
 
         for cell in range(cells):
-            db.add(CellModel(sequence=cell, experiment_uid=experiment_uid))
+            db.add(CellModel(cell_number=cell, experiment_uid=experiment_uid))
 
         db.commit()
 
