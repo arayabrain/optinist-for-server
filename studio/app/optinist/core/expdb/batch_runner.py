@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import glob
 import logging
+import logging.config
 import os
 import pathlib
 import traceback
@@ -30,17 +31,16 @@ class ProcessCommand(Enum):
 
 class ExpDbBatchRunner:
     def __init__(self, organization_id: int):
-        # init logger.
-        self.logger_ = logging.getLogger()
-        self.logger_.setLevel(logging.DEBUG)
-        stream_hander = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s : %(levelname)s - %(filename)s:%(lineno)d %(funcName)s() - %(message)s"  # noqa: E501
-        )
-        stream_hander.setFormatter(formatter)
-        self.logger_.addHandler(stream_hander)
+        self.__init_logger()
+
         # TODO: add organization id validation.
         self.org_id = organization_id
+
+    def __init_logger(self):
+        logging_config_file = DIRPATH.CONFIG_DIR + "/logging.expdb_batch.yaml"
+        logging.config.dictConfig(yaml.safe_load(open(logging_config_file, encoding="utf-8").read()))
+
+        self.logger_ = logging.getLogger()
 
     def __stopwatch_callback(watch, function):
         logging.getLogger().info(
