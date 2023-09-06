@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from studio.app.common.core.experiment.experiment import ExptConfig
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
+from studio.app.common.core.experiment.experiment_utils import ExptUtils
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.schemas.experiment import DeleteItem, RenameItem
 from studio.app.dir_path import DIRPATH
@@ -62,6 +63,16 @@ async def delete_experiment_list(workspace_id: str, deleteItem: DeleteItem):
         return True
     except Exception:
         return False
+
+
+@router.get("/fetch/{workspace_id}", response_model=ExptConfig)
+async def fetch_last_experiment(workspace_id: str):
+    print(workspace_id)
+    last_expt_config = ExptUtils.get_last_experiment(workspace_id)
+    if last_expt_config:
+        return last_expt_config
+    else:
+        raise HTTPException(status_code=404)
 
 
 @router.get("/download/config/{workspace_id}/{unique_id}")

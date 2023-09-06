@@ -6,25 +6,46 @@ import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
-import HomeIcon from '@mui/icons-material/Home'
-import SourceIcon from '@mui/icons-material/Source'
+import WebIcon from '@mui/icons-material/Web';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import StorageIcon from '@mui/icons-material/Storage'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import AnalyticsIcon from '@mui/icons-material/Analytics'
 import { DRAWER_WIDTH } from 'const/Layout'
 import { Box } from '@mui/material'
+import {useSelector} from "react-redux";
+import {isAdmin} from "../../store/slice/User/UserSelector";
 
 const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
   open,
   handleDrawerClose,
 }) => {
   const navigate = useNavigate()
+  const admin = useSelector(isAdmin)
 
   const onClickDashboard = () => {
     handleDrawerClose()
-    navigate('/')
+    navigate('/console')
+  }
+
+  const onClickDatabase = () => {
+    handleDrawerClose()
+    navigate('/console/experiments')
   }
 
   const onClickWorkspaces = () => {
     handleDrawerClose()
-    navigate('/workspaces')
+    navigate('/console/workspaces')
+  }
+
+  const onClickAccountManager = () => {
+    handleDrawerClose()
+    navigate('/console/account-manager')
+  }
+
+  const onClickOpenSite = () => {
+    handleDrawerClose()
+    navigate('/')
   }
 
   return (
@@ -35,17 +56,44 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="dashboard" disablePadding>
               <ListItemButton onClick={onClickDashboard}>
                 <ListItemIcon>
-                  <HomeIcon />
+                  <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key="database" disablePadding>
+              <ListItemButton onClick={onClickDatabase}>
+                <ListItemIcon>
+                  <StorageIcon />
+                </ListItemIcon>
+                <ListItemText primary="Database" />
               </ListItemButton>
             </ListItem>
             <ListItem key="workspaces" disablePadding>
               <ListItemButton onClick={onClickWorkspaces}>
                 <ListItemIcon>
-                  <SourceIcon />
+                  <AnalyticsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Workspaces" />
+              </ListItemButton>
+            </ListItem>
+            {
+              admin ?
+                <ListItem key="account-manager" disablePadding>
+                  <ListItemButton onClick={onClickAccountManager}>
+                    <ListItemIcon>
+                      <ManageAccountsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Account Manager" />
+                  </ListItemButton>
+                </ListItem> : null
+            }
+            <ListItem key="site" disablePadding>
+              <ListItemButton onClick={onClickOpenSite}>
+                <ListItemIcon>
+                  <WebIcon />
+                </ListItemIcon>
+                <ListItemText primary="Open Site" />
               </ListItemButton>
             </ListItem>
           </List>

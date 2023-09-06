@@ -3,6 +3,7 @@ import {
   reproduceWorkflow,
   importWorkflowConfig,
 } from 'store/slice/Workflow/WorkflowActions'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 import {
   deleteFlowNodes,
   deleteFlowNodeById,
@@ -92,10 +93,13 @@ export const rightDrawerSlice = createSlice({
         }
       })
       .addMatcher(
-        isAnyOf(reproduceWorkflow.fulfilled, importWorkflowConfig.fulfilled),
-        () => {
-          return initialState
-        },
+        isAnyOf(
+          reproduceWorkflow.fulfilled,
+          importWorkflowConfig.fulfilled,
+          fetchExperiment.fulfilled,
+          fetchExperiment.rejected,
+        ),
+        () => initialState,
       )
   },
 })

@@ -62,22 +62,24 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
   }
 
   const validateForm = () => {
+    const errorPassword = !values.password ? 'This field is required' : ''
     const errorNewPass = validatePassword(values.new_password)
     const errorConfirmPass = validatePassword(values.confirm_password)
     return {
+      password: errorPassword,
       new_password: errorNewPass,
       confirm_password: errorConfirmPass
     }
   }
 
-  const onChangePass = () => {
+  const onChangePass = async () => {
     const newErrors: { [key: string]: string } = validateForm()
-    if(errors.new_password || errors.confirm_password) return
-    if(newErrors.new_password || newErrors.confirm_password) {
+    if(errors.new_password || errors.confirm_password || errors.password) return
+    if(newErrors.new_password || newErrors.confirm_password || newErrors.password) {
       setErrors(newErrors)
       return
     }
-    onSubmit(values.password, values.new_password)
+    await onSubmit(values.password, values.new_password)
   }
 
   const onCloseModal = () => {
@@ -108,10 +110,10 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
               Old Password <span style={{ color: 'red' }}>*</span>
             </Label>
             <InputPassword
-              onChange={(e) => onChangeValue(e)}
+              onChange={(e) => onChangeValue(e, validatePassword)}
               name="password"
               error={errors.password}
-              onBlur={(e) => onChangeValue(e)}
+              onBlur={(e) => onChangeValue(e, validatePassword)}
               placeholder="Old Password"
             />
           </FormInline>
@@ -140,7 +142,7 @@ const ChangePasswordModal: FC<ChangePasswordModalProps> = ({
             />
           </FormInline>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <ButtonConfirm onClick={() => onChangePass()}>UPDATE</ButtonConfirm>
+            <Button variant='contained' color='success' onClick={() => onChangePass()}>UPDATE</Button>
           </Box>
         </BoxConfirm>
         <Button onClick={onCloseModal}>
@@ -192,17 +194,6 @@ const Label = styled(Typography)({
   fontSize: 14,
   marginTop: 7,
   width: '100%',
-})
-
-const ButtonConfirm = styled(Button)({
-  height: 36,
-  color: '#ffffff',
-  marginTop: -1,
-  width: 90,
-  backgroundColor: '#283237 !important',
-  "&:hover": {
-    backgroundColor: '#283237',
-  }
 })
 
 export default ChangePasswordModal

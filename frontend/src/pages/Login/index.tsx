@@ -1,6 +1,6 @@
 import { Box, Stack, styled, Typography } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { getMe, login } from 'store/slice/User/UserActions'
+import {getMe, login} from 'store/slice/User/UserActions'
 import { AppDispatch } from 'store/store'
 import { ChangeEvent, FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -25,15 +25,11 @@ const Login = () => {
     const errorCheck = validateSubmit()
     if (errorCheck) return
     setIsLoading(true)
-
     dispatch(login(values))
       .unwrap()
-      .then((_) => {
-        dispatch(getMe())
-          .unwrap()
-          .then((_) => {
-            navigate('/')
-          })
+      .then(async (_) => {
+        await dispatch(getMe())
+        navigate('/console')
       })
       .catch((_) => {
         setErrors({ email: 'Email or password is wrong', password: '' })

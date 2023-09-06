@@ -2,9 +2,12 @@ FROM --platform=linux/amd64 python:3.8.16-slim
 
 WORKDIR /app
 
+RUN echo 'alias ll="ls -la"' >> ~/.bashrc
+
 RUN mkdir -p /root/miniconda3 && \
     apt-get --allow-releaseinfo-change update && \
     apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev && \
+    apt-get install --no-install-recommends -y procps iproute2 less vim && \
     apt-get install --no-install-recommends -y wget && \
     wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh && \
     apt-get purge wget -y && apt-get autoremove -y && apt-get clean && \
@@ -19,7 +22,7 @@ ENV PATH $PATH:/root/miniconda3/bin
 
 COPY frontend/build /app/frontend/build
 COPY studio /app/studio
-COPY main.py pyproject.toml ./
+COPY main.py pyproject.toml alembic.ini ./
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e .
