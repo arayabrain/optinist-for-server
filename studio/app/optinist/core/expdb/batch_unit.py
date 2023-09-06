@@ -74,7 +74,7 @@ class ExpDbBatch:
         )
 
     @stopwatch(callback=__stopwatch_callback)
-    async def cleanup_exp_record(self, db: Session):
+    def cleanup_exp_record(self, db: Session):
         if os.path.exists(self.stat_file):
             os.remove(self.stat_file)
         if os.path.exists(self.pixelmap_dir):
@@ -83,9 +83,9 @@ class ExpDbBatch:
             shutil.rmtree(self.plot_dir)
 
         try:
-            exp = await get_experiment(db, self.exp_id, self.org_id)
-            await bulk_delete_cells(db, exp.id)
-            await delete_experiment(db, exp.id)
+            exp = get_experiment(db, self.exp_id, self.org_id)
+            bulk_delete_cells(db, exp.id)
+            delete_experiment(db, exp.id)
         except HTTPException as e:
             if e.status_code != 404:
                 raise e

@@ -5,7 +5,7 @@ from studio.app.optinist.models import Cell as CellModel
 from studio.app.optinist.models import Experiment as ExperimentModel
 
 
-async def bulk_insert_cells(db: Session, experiment_uid: int, cells: int):
+def bulk_insert_cells(db: Session, experiment_uid: int, cells: int):
     try:
         experiment = db.query(ExperimentModel).get(experiment_uid)
         assert experiment is not None, "Experiment not found"
@@ -24,7 +24,7 @@ async def bulk_insert_cells(db: Session, experiment_uid: int, cells: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def bulk_delete_cells(db: Session, experiment_uid: int):
+def bulk_delete_cells(db: Session, experiment_uid: int):
     try:
         db.query(CellModel).filter(CellModel.experiment_uid == experiment_uid).delete()
 

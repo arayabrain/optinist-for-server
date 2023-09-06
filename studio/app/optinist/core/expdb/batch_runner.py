@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import glob
 import logging
@@ -170,21 +169,20 @@ class ExpDbBatchRunner:
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with Session(engine) as db:
-            asyncio.run(expdb_batch.cleanup_exp_record(db))
+            expdb_batch.cleanup_exp_record(db)
 
             expdb_batch.generate_statdata()
             expdb_batch.generate_plots()
             ncells = expdb_batch.generate_pixelmaps()
 
-            exp = asyncio.run(
-                create_experiment(
-                    db,
-                    ExpDbExperimentCreate(
-                        experiment_id=exp_id, organization_id=self.org_id
-                    ),
-                )
+            exp = create_experiment(
+                db,
+                ExpDbExperimentCreate(
+                    experiment_id=exp_id, organization_id=self.org_id
+                ),
             )
-            asyncio.run(bulk_insert_cells(db, exp.id, ncells))
+
+            bulk_insert_cells(db, exp.id, ncells)
 
         return True
 
@@ -199,7 +197,7 @@ class ExpDbBatchRunner:
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with Session(engine) as db:
-            asyncio.run(expdb_batch.cleanup_exp_record(db))
+            expdb_batch.cleanup_exp_record(db)
 
         return True
 
