@@ -36,7 +36,7 @@ def create_experiment(db: Session, data: ExpDbExperimentCreate) -> ExpDbExperime
     )
 
     db.add(expdb)
-    db.commit()
+    db.flush()
     db.refresh(expdb)
     return ExpDbExperiment.from_orm(expdb)
 
@@ -52,7 +52,7 @@ def update_experiment(
     new_data = data.dict(exclude_unset=True)
     for key, value in new_data.items():
         setattr(expdb, key, value)
-    db.commit()
+    db.flush()
     db.refresh(expdb)
     return ExpDbExperiment.from_orm(expdb)
 
@@ -69,5 +69,4 @@ def delete_experiment(db: Session, id: int):
     ).delete()
     db.flush()
 
-    db.commit()
     return True

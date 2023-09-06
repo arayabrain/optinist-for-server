@@ -22,6 +22,7 @@ def session_scope():
     session = SessionLocal()
     try:
         yield session
+        session.commit()
     except:  # noqa
         session.rollback()
         raise
