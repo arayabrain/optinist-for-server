@@ -444,9 +444,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-      .map((item: any) => {
-        return `${item.field}=${item?.value}`
-      })
+      .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
       .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     setParams(
