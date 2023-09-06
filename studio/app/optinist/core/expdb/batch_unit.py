@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import shutil
@@ -8,6 +9,7 @@ from typing import Optional
 import numpy as np
 import tifffile
 from fastapi import HTTPException
+from lauda import stopwatch
 from scipy.io import loadmat
 from sqlmodel import Session
 
@@ -45,6 +47,7 @@ def get_default_params(name: str):
 
 class ExpDbBatch:
     def __init__(self, exp_id: str, org_id: int) -> None:
+        self.logger_ = logging.getLogger()
         self.exp_id = exp_id
         self.org_id = org_id
         self.subject_id = self.exp_id.split("_")[0]
@@ -63,6 +66,14 @@ class ExpDbBatch:
         )
         self.fov_file = join_filepath([self.exp_dir, f"{self.exp_id}_{FOV_SUFFIX}.tif"])
 
+    def __stopwatch_callback(watch, function):
+        logging.getLogger().info(
+            "processing done. [%s()][elapsed_time: %.6f sec]",
+            function.__name__,
+            watch.elapsed_time,
+        )
+
+    @stopwatch(callback=__stopwatch_callback)
     async def cleanup_exp_record(self, db: Session):
         if os.path.exists(self.stat_file):
             os.remove(self.stat_file)
@@ -79,6 +90,7 @@ class ExpDbBatch:
             if e.status_code != 404:
                 raise e
 
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
         expdb = ExpDbData(
             paths=[
@@ -95,6 +107,7 @@ class ExpDbBatch:
         stat.save_as_hdf5(self.exp_dir, f"{self.exp_id}_oristats")
         assert os.path.exists(self.stat_file), "save statdata failed"
 
+    @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self) -> int:
         create_directory(self.pixelmap_dir)
 
@@ -126,6 +139,7 @@ class ExpDbBatch:
 
         return ncells
 
+    @stopwatch(callback=__stopwatch_callback)
     def generate_plots(self):
         create_directory(self.plot_dir)
 
