@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import glob
 import logging
@@ -10,10 +9,9 @@ from enum import Enum
 
 import yaml
 from lauda import stopwatch
-from sqlmodel import Session
 from zc import lockfile
 
-from studio.app.common.db.database import engine
+from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
@@ -31,6 +29,7 @@ class ProcessCommand(Enum):
 
 class ExpDbBatchRunner:
     def __init__(self, organization_id: int):
+        self.start_time = datetime.datetime.now()
         self.__init_logger()
 
         # TODO: add organization id validation.
@@ -63,7 +62,7 @@ class ExpDbBatchRunner:
             # 後処理
             self.__process_postprocess()
 
-        except lockfile.LockError as e:
+        except lockfile.LockError:
             None  # do nothing.
 
         except Exception as e:
@@ -166,22 +165,22 @@ class ExpDbBatchRunner:
         exp_id = os.path.basename(flag_file).split(".", 1)[0]
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
-        with Session(engine) as db:
-            asyncio.run(expdb_batch.cleanup_exp_record(db))
+        with session_scope() as db:
+            expdb_batch.cleanup_exp_record(db)
+            db.commit()
 
             expdb_batch.generate_statdata()
             expdb_batch.generate_plots()
             ncells = expdb_batch.generate_pixelmaps()
 
-            exp = asyncio.run(
-                create_experiment(
-                    db,
-                    ExpDbExperimentCreate(
-                        experiment_id=exp_id, organization_id=self.org_id
-                    ),
-                )
+            exp = create_experiment(
+                db,
+                ExpDbExperimentCreate(
+                    experiment_id=exp_id, organization_id=self.org_id
+                ),
             )
-            asyncio.run(bulk_insert_cells(db, exp.id, ncells))
+
+            bulk_insert_cells(db, exp.id, ncells)
 
         return True
 
@@ -195,8 +194,8 @@ class ExpDbBatchRunner:
         exp_id = os.path.basename(flag_file).split(".", 1)[0]
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
-        with Session(engine) as db:
-            asyncio.run(expdb_batch.cleanup_exp_record(db))
+        with session_scope() as db:
+            expdb_batch.cleanup_exp_record(db)
 
         return True
 
@@ -216,6 +215,7 @@ class ExpDbBatchRunner:
         if not error:
             result_log = {
                 "command": command,
+                "start_time": self.start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "success",
                 "log": "completed successfully.",
@@ -223,6 +223,7 @@ class ExpDbBatchRunner:
         else:
             result_log = {
                 "command": command,
+                "start_time": self.start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "error",
                 "log": "{}: {}".format(type(error), str(error)),
