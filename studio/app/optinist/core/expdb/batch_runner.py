@@ -169,6 +169,7 @@ class ExpDbBatchRunner:
 
         with session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
+            db.commit()
 
             expdb_batch.generate_statdata()
             expdb_batch.generate_plots()
