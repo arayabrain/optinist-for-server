@@ -63,7 +63,7 @@ class ExpDbBatchRunner:
             # 後処理
             self.__process_postprocess()
 
-        except lockfile.LockError as e:
+        except lockfile.LockError:
             None  # do nothing.
 
         except Exception as e:
