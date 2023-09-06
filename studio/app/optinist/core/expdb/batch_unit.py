@@ -7,7 +7,6 @@ from typing import Optional
 
 import numpy as np
 import tifffile
-from fastapi import HTTPException
 from lauda import stopwatch
 from scipy.io import loadmat
 from sqlmodel import Session
@@ -92,9 +91,8 @@ class ExpDbBatch:
             exp = get_experiment(db, self.exp_id, self.org_id)
             bulk_delete_cells(db, exp.id)
             delete_experiment(db, exp.id)
-        except HTTPException as e:
-            if e.status_code != 404:
-                raise e
+        except AssertionError:
+            pass
 
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.output_dir, delete_dir=True)
