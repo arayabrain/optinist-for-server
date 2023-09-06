@@ -1,11 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
-  ExperimentDTO,
   ExperimentsDTO,
   getExperimentsApi,
   deleteExperimentByUidApi,
   deleteExperimentByListApi,
   fetchExperimentApi,
+  FetchExperimentDTO,
 } from 'api/experiments/Experiments'
 import { EXPERIMENTS_SLICE_NAME } from './ExperimentsType'
 import { selectCurrentWorkspaceId } from '../Workspace/WorkspaceSelector'
@@ -65,7 +65,7 @@ export const deleteExperimentByList = createAsyncThunk<
   }
 })
 
-export const fetchExperiment = createAsyncThunk<ExperimentDTO, number>(
+export const fetchExperiment = createAsyncThunk<FetchExperimentDTO, number>(
   `${EXPERIMENTS_SLICE_NAME}/fetchExperiment`,
   async (workspaceId, thunkAPI) => {
     try {
