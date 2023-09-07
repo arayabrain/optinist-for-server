@@ -12,6 +12,9 @@ class Organization(BaseModel):
     id: int
     name: str
 
+    class Config:
+        orm_mode = True
+
 
 class UserSearchOptions(BaseModel):
     email: Optional[str] = Field(Query(default=""))
