@@ -421,7 +421,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
       )
     },
     //eslint-disable-next-line
-    [pagiFilter, getParamsData],
+    [pagiFilter],
   )
 
   const handleFilter = (model: GridFilterModel) => {
@@ -437,7 +437,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     }
     const { sort } = dataParams
     setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
+      sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
     )
   }
 
