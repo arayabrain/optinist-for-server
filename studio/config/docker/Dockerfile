@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN mkdir -p /root/miniconda3 && \
     apt-get --allow-releaseinfo-change update && \
-    apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev && \
+    apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev libopencv-dev && \
     apt-get install --no-install-recommends -y procps iproute2 cron less vim && \
     apt-get install --no-install-recommends -y wget && \
     wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh && \
