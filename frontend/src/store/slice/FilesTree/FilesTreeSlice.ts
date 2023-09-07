@@ -6,6 +6,7 @@ import { FILE_TYPE_SET } from 'store/slice/InputNode/InputNodeType'
 import { getFilesTree } from './FilesTreeAction'
 import { FilesTree, FILES_TREE_SLICE_NAME } from './FilesTreeType'
 import { convertToTreeNodeType } from './FilesTreeUtils'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 
 export const initialState: FilesTree = {}
 export const filesTreeSlice = createSlice({
@@ -14,6 +15,7 @@ export const filesTreeSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(fetchExperiment.pending, (state, action) => initialState)
       .addCase(getFilesTree.pending, (state, action) => {
         const { fileType } = action.meta.arg
         state[fileType] = {
