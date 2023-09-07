@@ -22,6 +22,9 @@ COPY pyproject.toml .
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e '.[dev]'
 
+# for cron settings.
+RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone
+
 RUN echo 'alias ll="ls -la --color=auto"' >> ~/.bashrc
 RUN echo 'set nu ic hls nowrap ts=4 sw=4 | syntax on' >> ~/.vimrc
 
