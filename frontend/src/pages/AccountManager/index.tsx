@@ -311,9 +311,7 @@ const AccountManager = () => {
     if(!listUser) return
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-      .map((item: any) => {
-        return `${item.field}=${item?.value}`
-      })
+      .map((item: any) => `${item.field}=${item?.value}`)
       .join('&')
     const { sort } = sortParams
     setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
@@ -338,17 +336,18 @@ const AccountManager = () => {
 
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
-      const filter = getParamsData()
-      if (!rowSelectionModel[0]) {
-        setParams(`${filter}&${paramsManager()}`)
-        return
-      }
+    const filter = getParamsData()
+    if (!rowSelectionModel[0]) {
+      setParams(filter || sortParams.sort[0] || offset ? `${filter}&${paramsManager()}` : '')
+      return
+    }
       setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
+        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field
+          .replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
       )
     },
     //eslint-disable-next-line
-    [paramsManager, getParamsData],
+    [paramsManager],
   )
 
   const handleFilter = (model: GridFilterModel) => {
@@ -363,9 +362,7 @@ const AccountManager = () => {
         .join('&')
     }
     const { sort } = sortParams
-    setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}`,
-    )
+    setParams(sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}` : '')
   }
 
   const handleOpenModal = () => {
@@ -467,9 +464,7 @@ const AccountManager = () => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
+        .map((item: any) => `${item.field}=${item?.value}`)
         .join('&')
     const { sort } = sortParams
     setParams(
