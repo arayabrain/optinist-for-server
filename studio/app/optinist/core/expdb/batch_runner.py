@@ -37,7 +37,16 @@ class ExpDbBatchRunner:
 
     def __init_logger(self):
         logging_config_file = DIRPATH.CONFIG_DIR + "/logging.expdb_batch.yaml"
-        logging.config.dictConfig(yaml.safe_load(open(logging_config_file, encoding="utf-8").read()))
+        logging_config = yaml.safe_load(open(logging_config_file, encoding="utf-8").read())
+
+        # ログ出力先フォルダ生成（初回のみの処理）
+        # ※ logging.config.dictConfig() の前に実施必要
+        log_file = logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
+        log_dir = os.path.dirname(log_file) if log_file else None
+        if log_dir and (not os.path.isdir(log_dir)):
+            os.mkdir(log_dir)
+
+        logging.config.dictConfig(logging_config)
 
         self.logger_ = logging.getLogger()
 
