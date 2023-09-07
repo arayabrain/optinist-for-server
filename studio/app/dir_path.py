@@ -28,6 +28,7 @@ class DIRPATH:
     load_dotenv(f"{CONFIG_DIR}/.env")
     EXPDB_DIR = os.environ.get("EXPDB_DIR", INPUT_DIR)
     PUBLIC_EXPDB_DIR = os.environ.get("PUBLIC_EXPDB_DIR", OUTPUT_DIR)
+    GRAPH_HOST = os.environ.get("GRAPH_HOST")
 
     CONDAENV_DIR = (
         f"{os.path.dirname(os.path.dirname(os.path.dirname(__file__)))}/conda"
