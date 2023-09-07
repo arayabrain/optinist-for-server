@@ -229,8 +229,8 @@ class StatData(BaseData):
             file_name="orientation_tuning_width",
         )
 
-    def save_as_hdf5(self, output_dir, file_name):
-        with h5py.File(f"{output_dir}/{file_name}.hdf5", "w") as f:
+    def save_as_hdf5(self, filepath):
+        with h5py.File(filepath, "w") as f:
             for k, v in self.__dict__.items():
                 f.create_dataset(k, data=v)
 
