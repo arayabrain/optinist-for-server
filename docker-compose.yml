@@ -9,20 +9,33 @@ services:
       - studio/config/.env
     volumes:
       - db_data:/var/lib/mysql
+    environment:
+      TZ: Asia/Tokyo
+    restart: always
 
   studio:
     build:
       context: .
       dockerfile: studio/config/docker/Dockerfile
     working_dir: /app
+    volumes:
+      - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
+      - ../optinist-docker-volumes/logs/:/app/logs
+      - ../optinist-docker-volumes/studio_data/:/app/studio_data
+
+      # TODO: Paths need to be Fixed to meet production environment specifications.
+      - ../experiments_datasets/:/app/experiments_datasets
+      - ../experiments_public/:/app/experiments_public
     ports:
       - "8000:8000"
-    command: bash -c "alembic upgrade head && python main.py --host 0.0.0.0 --port 8000"
+    command: bash -c "service cron start && alembic upgrade head && python main.py --host 0.0.0.0 --port 8000"
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
+      OPTINIST_DIR: /app/studio_data
     depends_on:
       - db
+    restart: always
 
 volumes:
   db_data:
