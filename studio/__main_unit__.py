@@ -69,6 +69,13 @@ app.mount(
     name="static",
 )
 
+if DIRPATH.GRAPH_HOST is None:
+    app.mount(
+        "/datasets",
+        StaticFiles(directory=DIRPATH.PUBLIC_EXPDB_DIR),
+        name="datasets",
+    )
+
 templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
 
 
