@@ -46,22 +46,32 @@ def get_default_params(name: str):
 
 class ExpDbPath:
     def __init__(self, exp_id: str, is_raw=False):
-        base_dir = DIRPATH.EXPDB_DIR if is_raw else DIRPATH.PUBLIC_EXPDB_DIR
         subject_id = exp_id.split("_")[0]
 
-        self.exp_dir = join_filepath([base_dir, subject_id, exp_id])
-        self.output_dir = join_filepath([self.exp_dir, "outputs"])
-        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
-        self.plot_dir = join_filepath([self.output_dir, "plots"])
-        self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
-
         if is_raw:
+            self.exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
+            assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
+            self.output_dir = join_filepath([self.exp_dir, "outputs"])
             self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
             self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
             self.cellmask_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
             self.fov_file = join_filepath([self.exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+            assert os.path.exists(self.tc_file), f"tc_file not found: {self.tc_file}"
+            assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
+            assert os.path.exists(
+                self.cellmask_file
+            ), f"cellmask_file not found: {self.cellmask_file}"
+            assert os.path.exists(self.fov_file), f"fov_file not found: {self.fov_file}"
+        else:
+            self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
+            self.output_dir = self.exp_dir
+
+        # outputs
+        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
+        self.plot_dir = join_filepath([self.output_dir, "plots"])
+        self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
 
 
 class ExpDbBatch:
@@ -71,11 +81,6 @@ class ExpDbBatch:
         self.org_id = org_id
 
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
-        if not (os.path.exists(self.raw_path.exp_dir)):
-            raise Exception(
-                f"Experiment directory for id: {self.exp_id} does not exist"
-            )
-
         self.pub_path = ExpDbPath(self.exp_id)
         self.expdb_paths = [self.raw_path, self.pub_path]
 

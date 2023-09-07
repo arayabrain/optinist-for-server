@@ -112,8 +112,8 @@ EXPERIMENT_GRAPHS = {
 def get_experiment_urls(source, exp_dir, params=None):
     return [
         ImageInfo(
-            url=f"{exp_dir}/outputs/{v['dir']}/{k}.png",
-            thumb_url=f"{exp_dir}/outputs/{v['dir']}/{k}.png",
+            url=f"{exp_dir}/{v['dir']}/{k}.png",
+            thumb_url=f"{exp_dir}/{v['dir']}/{k}.png",
             params=params,
         )
         for k, v in source.items()
@@ -132,8 +132,8 @@ CELL_IMAGES = {"fov_cell_merge": {"title": "Pixel Map", "dir": "pixelmaps"}}
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
         ImageInfo(
-            url=f"{exp_dir}/outputs/{v['dir']}/{k}_{index}.png",
-            thumb_url=f"{exp_dir}/outputs/{v['dir']}/{k}_{index}.png",
+            url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
+            thumb_url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
             params=params,
         )
         for k, v in source.items()
