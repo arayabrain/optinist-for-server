@@ -14,6 +14,8 @@ class NodeType:
     BEHAVIOR: str = "BehaviorFileNode"
     HDF5: str = "HDF5FileNode"
     ALGO: str = "AlgorithmNode"
+    MATLAB: str = "MatlabFileNode"
+    EXPDB: str = "ExpDbNode"
 
 
 @dataclass
@@ -25,6 +27,10 @@ class OutputType:
     SCATTER: str = "scatter"
     BAR: str = "bar"
     HTML: str = "html"
+    LINE: str = "line"
+    POLAR: str = "polar"
+    HISTOGRAM: str = "histogram"
+    PIE: str = "pie"
 
 
 class NodeItem(BaseModel):
