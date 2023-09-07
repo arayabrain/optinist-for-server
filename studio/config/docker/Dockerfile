@@ -20,7 +20,7 @@ ENV PATH $PATH:/root/miniconda3/bin
 
 COPY frontend/build /app/frontend/build
 COPY studio /app/studio
-COPY main.py pyproject.toml alembic.ini run_batch.py ./
+COPY main.py pyproject.toml alembic.ini run_expdb_batch.py ./
 
 # copy production-mode config files.
 COPY studio/config.production/* /app/studio/config/
@@ -28,6 +28,9 @@ RUN rm -rf /app/studio/config.production
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e .
+
+# for cron settings.
+RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone
 
 RUN echo 'alias ll="ls -la --color=auto"' >> ~/.bashrc
 RUN echo 'set nu ic hls nowrap ts=4 sw=4 | syntax on' >> ~/.vimrc
