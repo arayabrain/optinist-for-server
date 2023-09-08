@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
@@ -34,6 +35,7 @@ async def authenticate_user(db: Session, data: UserAuth):
             ex_token=ex_token,
         )
     except Exception as e:
+        logging.getLogger().error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -45,7 +47,8 @@ async def refresh_current_user_token(refresh_token: str):
     try:
         user = pyrebase_app.auth().refresh(refresh_token=token["sub"])
         return AccessToken(access_token=user["idToken"])
-    except Exception:
+    except Exception as e:
+        logging.getLogger().error(e)
         raise HTTPException(status_code=400)
 
 
@@ -54,10 +57,12 @@ async def send_reset_password_mail(email: str):
         pyrebase_app.auth().send_password_reset_email(email)
         return JSONResponse(status_code=status.HTTP_200_OK)
     except HTTPError as e:
+        logging.getLogger().error(e)
         err = json.loads(e.strerror)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=err.get("error").get("message"),
         )
-    except Exception:
+    except Exception as e:
+        logging.getLogger().error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
