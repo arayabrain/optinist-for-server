@@ -14,7 +14,6 @@ class DatabaseConfig(BaseSettings):
     MYSQL_PASSWORD: str = Field(default=None, env="MYSQL_PASSWORD")
     MYSQL_DATABASE: str = Field(default=None, env="MYSQL_DATABASE")
     DATABASE_URL: str = Field(default=None)
-    ECHO_SQL: bool = Field(default=None, env="ECHO_SQL")
 
     @validator("DATABASE_URL", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:

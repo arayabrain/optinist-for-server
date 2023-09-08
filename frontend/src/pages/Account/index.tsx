@@ -149,10 +149,6 @@ const Account = () => {
       />
       <Title>Account Profile</Title>
       <BoxFlex>
-        <TitleData>Account ID</TitleData>
-        <BoxData>{user?.uid}</BoxData>
-      </BoxFlex>
-      <BoxFlex>
         <TitleData>Organization</TitleData>
         <BoxData>{user?.organization?.name}</BoxData>
       </BoxFlex>

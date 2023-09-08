@@ -1,10 +1,11 @@
 import { createSlice, isAnyOf, PayloadAction } from '@reduxjs/toolkit'
 import { isInputNodePostData } from 'api/run/RunUtils'
 import { INITIAL_IMAGE_ELEMENT_ID } from 'const/flowchart'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 import {
-  fetchExperiment,
-  importExperimentByUid,
-} from '../Experiments/ExperimentsActions'
+  reproduceWorkflow,
+  importWorkflowConfig,
+} from 'store/slice/Workflow/WorkflowActions'
 import { uploadFile } from '../FileUploader/FileUploaderActions'
 import { addInputNode } from '../FlowElement/FlowElementActions'
 import {
@@ -18,8 +19,13 @@ import {
   FILE_TYPE_SET,
   InputNode,
   INPUT_NODE_SLICE_NAME,
+  MatlabInputParamType,
 } from './InputNodeType'
-import { isCsvInputNode, isHDF5InputNode } from './InputNodeUtils'
+import {
+  isCsvInputNode,
+  isHDF5InputNode,
+  isMatlabInputNode,
+} from './InputNodeUtils'
 
 const initialState: InputNode = {
   [INITIAL_IMAGE_ELEMENT_ID]: {
@@ -59,6 +65,19 @@ export const inputNodeSlice = createSlice({
       const item = state[nodeId]
       if (isHDF5InputNode(item)) {
         item.hdf5Path = path
+      }
+    },
+    setMatlabInputNodeParam(
+      state,
+      action: PayloadAction<{
+        nodeId: string
+        param: MatlabInputParamType
+      }>,
+    ) {
+      const { nodeId, param } = action.payload
+      const inputNode = state[nodeId]
+      if (isMatlabInputNode(inputNode)) {
+        inputNode.param = param
       }
     },
   },
@@ -118,6 +137,18 @@ export const inputNodeSlice = createSlice({
                 },
               }
               break
+            case FILE_TYPE_SET.MATLAB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
+            case FILE_TYPE_SET.EXPDB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
           }
         }
       })
@@ -146,8 +177,34 @@ export const inputNodeSlice = createSlice({
         }
       })
       .addCase(fetchExperiment.rejected, () => initialState)
+      .addCase(importWorkflowConfig.fulfilled, (_, action) => {
+        const newState: InputNode = {}
+        Object.values(action.payload.nodeDict)
+          .filter(isInputNodePostData)
+          .forEach((node) => {
+            if (node.data != null) {
+              if (node.data.fileType === FILE_TYPE_SET.IMAGE) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.IMAGE,
+                  param: {},
+                }
+              } else if (node.data.fileType === FILE_TYPE_SET.CSV) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.CSV,
+                  param: node.data.param as CsvInputParamType,
+                }
+              } else if (node.data.fileType === FILE_TYPE_SET.HDF5) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.HDF5,
+                  param: {},
+                }
+              }
+            }
+          })
+        return newState
+      })
       .addMatcher(
-        isAnyOf(importExperimentByUid.fulfilled, fetchExperiment.fulfilled),
+        isAnyOf(reproduceWorkflow.fulfilled, fetchExperiment.fulfilled),
         (_, action) => {
           const newState: InputNode = {}
           Object.values(action.payload.nodeDict)
@@ -173,6 +230,18 @@ export const inputNodeSlice = createSlice({
                     selectedFilePath: node.data.path as string,
                     param: {},
                   }
+                } else if (node.data.fileType === FILE_TYPE_SET.MATLAB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.MATLAB,
+                    selectedFilePath: node.data.path as string,
+                    param: node.data.param as MatlabInputParamType,
+                  }
+                } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.EXPDB,
+                    selectedFilePath: node.data.path as string,
+                    param: {},
+                  }
                 }
               }
             })
@@ -181,7 +250,10 @@ export const inputNodeSlice = createSlice({
       ),
 })
 
-export const { setCsvInputNodeParam, setInputNodeHDF5Path } =
-  inputNodeSlice.actions
+export const {
+  setCsvInputNodeParam,
+  setInputNodeHDF5Path,
+  setMatlabInputNodeParam,
+} = inputNodeSlice.actions
 
 export default inputNodeSlice.reducer
