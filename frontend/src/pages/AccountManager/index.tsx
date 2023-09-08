@@ -322,7 +322,7 @@ const AccountManager = () => {
       ],
   })
     //eslint-disable-next-line
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if(!newParams) return
@@ -503,11 +503,11 @@ const AccountManager = () => {
   const columns = useMemo(() =>
     [
       {
-        headerName: 'UID',
-        field: 'uid',
+        headerName: 'ID',
+        field: 'id',
         filterable: false,
         minWidth: 100,
-        flex: 2
+        flex: 1
       },
       {
         headerName: 'Name',
@@ -708,7 +708,7 @@ const AccountManager = () => {
 
 const AccountManagerWrapper = styled(Box)(({ theme }) => ({
   width: '80%',
-  margin: theme.spacing(6.125, 'auto')
+  margin: theme.spacing(5, 'auto')
 }))
 
 const ALink = styled('a')({

@@ -49,13 +49,18 @@ dependencies = [
   "alembic==1.9.2",
   "sqlmodel==0.0.8",
   "pymysql==1.0.2",
-  "fastapi_pagination==0.12.5"
+  "fastapi_pagination==0.12.5",
+  "plotly==5.15.0",
+  "kaleido==0.2.1",
+  "zc.lockfile",
+  "lauda",
+  "opencv-python",
 ]
 
 [project.optional-dependencies]
 dev = [
   "black",
-  "flake8",
+  "flake8==6.1.*",
   "isort",
   "build",
   "twine",

@@ -23,6 +23,7 @@ from studio.app.common.routers import (
     users_admin,
     users_me,
     users_search,
+    workflow,
     workspace,
 )
 from studio.app.dir_path import DIRPATH
@@ -43,6 +44,7 @@ app.include_router(run.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_admin.router, dependencies=[Depends(get_admin_user)])
 app.include_router(users_me.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_search.router, dependencies=[Depends(get_current_user)])
+app.include_router(workflow.router, dependencies=[Depends(get_current_user)])
 app.include_router(workspace.router, dependencies=[Depends(get_current_user)])
 
 # optinist routers
@@ -68,6 +70,13 @@ app.mount(
     StaticFiles(directory=f"{FRONTEND_DIRPATH}/build/static"),
     name="static",
 )
+
+if DIRPATH.GRAPH_HOST is None:
+    app.mount(
+        "/datasets",
+        StaticFiles(directory=DIRPATH.PUBLIC_EXPDB_DIR),
+        name="datasets",
+    )
 
 templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
 

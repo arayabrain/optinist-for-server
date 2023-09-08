@@ -217,7 +217,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       ],
     })
     //eslint-disable-next-line
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if(!newParams) return
