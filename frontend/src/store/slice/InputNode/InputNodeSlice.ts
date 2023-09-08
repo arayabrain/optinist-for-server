@@ -1,10 +1,11 @@
 import { createSlice, isAnyOf, PayloadAction } from '@reduxjs/toolkit'
 import { isInputNodePostData } from 'api/run/RunUtils'
 import { INITIAL_IMAGE_ELEMENT_ID } from 'const/flowchart'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 import {
-  fetchExperiment,
-  importExperimentByUid,
-} from '../Experiments/ExperimentsActions'
+  reproduceWorkflow,
+  importWorkflowConfig,
+} from 'store/slice/Workflow/WorkflowActions'
 import { uploadFile } from '../FileUploader/FileUploaderActions'
 import { addInputNode } from '../FlowElement/FlowElementActions'
 import {
@@ -176,8 +177,34 @@ export const inputNodeSlice = createSlice({
         }
       })
       .addCase(fetchExperiment.rejected, () => initialState)
+      .addCase(importWorkflowConfig.fulfilled, (_, action) => {
+        const newState: InputNode = {}
+        Object.values(action.payload.nodeDict)
+          .filter(isInputNodePostData)
+          .forEach((node) => {
+            if (node.data != null) {
+              if (node.data.fileType === FILE_TYPE_SET.IMAGE) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.IMAGE,
+                  param: {},
+                }
+              } else if (node.data.fileType === FILE_TYPE_SET.CSV) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.CSV,
+                  param: node.data.param as CsvInputParamType,
+                }
+              } else if (node.data.fileType === FILE_TYPE_SET.HDF5) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.HDF5,
+                  param: {},
+                }
+              }
+            }
+          })
+        return newState
+      })
       .addMatcher(
-        isAnyOf(importExperimentByUid.fulfilled, fetchExperiment.fulfilled),
+        isAnyOf(reproduceWorkflow.fulfilled, fetchExperiment.fulfilled),
         (_, action) => {
           const newState: InputNode = {}
           Object.values(action.payload.nodeDict)
