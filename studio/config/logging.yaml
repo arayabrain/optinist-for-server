@@ -1,5 +1,5 @@
 version: 1
-disable_existing_loggers: true
+disable_existing_loggers: false
 formatters:
   default:
     (): "uvicorn.logging.DefaultFormatter"
@@ -21,9 +21,11 @@ handlers:
     interval: 1
     backupCount: 365
 loggers:
-  uvicorn:
+  sqlalchemy.engine:
     level: INFO
-    handlers: [console, rotating_file]
+  snakemake:
+    level: INFO
+    handlers: [rotating_file]
     propagate: false
 root:
   level: INFO

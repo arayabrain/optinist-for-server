@@ -15,7 +15,7 @@ const Dashboard = () => {
   useEffect(() => {
     if(!user) return
     dispatch(getMe())
-    //eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

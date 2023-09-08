@@ -5,12 +5,7 @@ from sqlmodel import create_engine
 
 from .config import DATABASE_CONFIG
 
-engine = create_engine(
-    DATABASE_CONFIG.DATABASE_URL,
-    pool_recycle=360,
-    pool_size=20,
-    echo=DATABASE_CONFIG.ECHO_SQL,
-)
+engine = create_engine(DATABASE_CONFIG.DATABASE_URL, pool_recycle=360, pool_size=20)
 
 SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
