@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination.ext.sqlmodel import paginate
-from sqlmodel import Session, and_, or_, select
+from sqlmodel import Session, and_, func, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
@@ -11,6 +11,7 @@ from studio.app.common.core.auth.auth_dependencies import (
 )
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
+from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.schemas.base import SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
@@ -31,18 +32,35 @@ from studio.app.optinist.schemas.expdb.experiment import (
 router = APIRouter(tags=["Experiment Database"])
 public_router = APIRouter(tags=["Experiment Database"])
 
+GRAPH_HOST = (
+    "http://localhost:8000/datasets"
+    if DIRPATH.GRAPH_HOST is None
+    else DIRPATH.GRAPH_HOST
+)
+
 
 def expdbcell_transformer(items: Sequence) -> Sequence:
     expdbcells = []
     for item in items:
         expdbcell = ExpDbCell.from_orm(item[0])
+        cell_number = item[0].cell_number
         expdbcell.experiment_id = item[1]
+        subject_id = expdbcell.experiment_id.split("_")[0]
+        exp_dir = f"{GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         expdbcell.publish_status = item[2]
         expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        expdbcell.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        expdbcell.graph_urls = DUMMY_CELLS_GRAPH_URLS
+        expdbcell.cell_image_url = get_cell_urls(
+            CELL_IMAGES,
+            exp_dir,
+            cell_number,
+            params={"param1": 10, "param2": 20},
+        )[0]
+        expdbcell.graph_urls = get_cell_urls(
+            CELL_GRAPHS,
+            exp_dir,
+            cell_number,
+            params={"param1": 10, "param2": 20},
+        )
         expdbcells.append(expdbcell)
     return expdbcells
 
@@ -50,18 +68,20 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 def experiment_transformer(items: Sequence) -> Sequence:
     experiments = []
     for item in items:
-        exp = ExpDbExperiment.from_orm(item)
-        # TODO: set dummy data.
+        expdb, cell_count = item
+        exp = ExpDbExperiment.from_orm(expdb)
+        subject_id = exp.experiment_id.split("_")[0]
+        exp_dir = f"{GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
         exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        exp.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        exp.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
+        # TODO: replace cell images to hc images
+        exp.cell_image_urls = [
+            get_cell_urls(CELL_IMAGES, exp_dir, i)[0] for i in range(5)
+        ]
+        exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
 
 
-# TODO: set dummy data.
 DUMMY_EXPERIMENTS_FIELDS = {
     "brain_area": 13,
     "cre_driver": 20,
@@ -69,60 +89,55 @@ DUMMY_EXPERIMENTS_FIELDS = {
     "imaging_depth": 40,
 }
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_GRAPH_TITLES = [
-    "Direction Responsivity Ratio",
-    "Orientation Responsivity Ratio",
-    "Preferred Direction",
-    "Preferred Orientation",
-    "Direction Selectivity",
-    "Orientation Selectivity",
-    "Best Responsivity",
-    "Direction Tuning Width",
-    "Orientation Tuning Width",
-]
 
-# TODO: set dummy data.
-DUMMY_CELLS_GRAPH_TITLES = [
-    "Responsivity Statistic",
-    "Preferred Direction",
-    "Preferred Orientation",
-    "Direction Selectivity",
-    "Orientation Selectivity",
-    "Best Responsivity",
-    "Direction Tuning Width",
-    "Orientation Tuning Width",
-    "Tuning Curve",
-    "Tuning Curve Poler",
-]
+EXPERIMENT_GRAPHS = {
+    "direction_responsivity_ratio": {
+        "title": "Direction Responsivity Ratio",
+        "dir": "plots",
+    },
+    "orientation_responsivity_ratio": {
+        "title": "Orientation Responsivity Ratio",
+        "dir": "plots",
+    },
+    "preferred_direction": {"title": "Preferred Direction", "dir": "plots"},
+    "preferred_orientation": {"title": "Preferred Orientation", "dir": "plots"},
+    "direction_selectivity": {"title": "Direction Selectivity", "dir": "plots"},
+    "orientation_selectivity": {"title": "Orientation Selectivity", "dir": "plots"},
+    "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
+    "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
+    "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+}
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
-    ImageInfo(
-        url="http://localhost:8000/static/sample_media/pixel_image.png",
-        thumb_url="http://localhost:8000/static/sample_media/pixel_image_thumb.png",
-    )
-    for _ in range(5)
-]
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_GRAPH_URLS = [
-    ImageInfo(
-        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
-    )
-    for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
-]
+def get_experiment_urls(source, exp_dir, params=None):
+    return [
+        ImageInfo(
+            url=f"{exp_dir}/{v['dir']}/{k}.png",
+            thumb_url=f"{exp_dir}/{v['dir']}/{k}.png",
+            params=params,
+        )
+        for k, v in source.items()
+    ]
 
-# TODO: set dummy data.
-DUMMY_CELLS_GRAPH_URLS = [
-    ImageInfo(
-        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
-        params={"param1": 10, "param2": 20},
-    )
-    for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
-]
+
+CELL_GRAPHS = {
+    "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
+    "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
+}
+
+
+CELL_IMAGES = {"fov_cell_merge": {"title": "Pixel Map", "dir": "pixelmaps"}}
+
+
+def get_cell_urls(source, exp_dir, index: int, params=None):
+    return [
+        ImageInfo(
+            url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
+            thumb_url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
+            params=params,
+        )
+        for k, v in source.items()
+    ]
 
 
 @public_router.get(
@@ -139,17 +154,23 @@ async def search_public_experiments(
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+    graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
 
     data = paginate(
         session=db,
-        query=select(optinist_model.Experiment)
+        query=select(
+            optinist_model.Experiment,
+            func.count(optinist_model.Cell.id).label("cell_count"),
+        )
         .filter_by(publish_status=PublishStatus.on.value)
         .filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
+        )
+        .join(
+            optinist_model.Cell,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
         .group_by(optinist_model.Experiment.id)
         .order_by(*sa_sort_list),
@@ -194,8 +215,7 @@ async def search_public_cells(
     )
     query = query.group_by(optinist_model.Cell.id).order_by(*sa_sort_list)
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+    graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
     data = paginate(
         session=db,
@@ -221,9 +241,19 @@ async def search_db_experiments(
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
-    query = select(optinist_model.Experiment).join(
-        common_model.Organization,
-        optinist_model.Experiment.organization_id == common_model.Organization.id,
+    query = (
+        select(
+            optinist_model.Experiment,
+            func.count(optinist_model.Cell.id).label("cell_count"),
+        )
+        .join(
+            common_model.Organization,
+            optinist_model.Experiment.organization_id == common_model.Organization.id,
+        )
+        .join(
+            optinist_model.Cell,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
     )
     if current_user.is_admin_data:
         query = query.filter(
@@ -262,8 +292,7 @@ async def search_db_experiments(
         .order_by(*sa_sort_list)
     )
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+    graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
 
     data = paginate(
         session=db,
@@ -347,8 +376,7 @@ async def search_db_cells(
         .order_by(*sa_sort_list)
     )
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+    graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
     data = paginate(
         session=db,
