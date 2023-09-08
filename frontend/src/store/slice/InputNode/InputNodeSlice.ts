@@ -18,8 +18,13 @@ import {
   FILE_TYPE_SET,
   InputNode,
   INPUT_NODE_SLICE_NAME,
+  MatlabInputParamType,
 } from './InputNodeType'
-import { isCsvInputNode, isHDF5InputNode } from './InputNodeUtils'
+import {
+  isCsvInputNode,
+  isHDF5InputNode,
+  isMatlabInputNode,
+} from './InputNodeUtils'
 
 const initialState: InputNode = {
   [INITIAL_IMAGE_ELEMENT_ID]: {
@@ -59,6 +64,19 @@ export const inputNodeSlice = createSlice({
       const item = state[nodeId]
       if (isHDF5InputNode(item)) {
         item.hdf5Path = path
+      }
+    },
+    setMatlabInputNodeParam(
+      state,
+      action: PayloadAction<{
+        nodeId: string
+        param: MatlabInputParamType
+      }>,
+    ) {
+      const { nodeId, param } = action.payload
+      const inputNode = state[nodeId]
+      if (isMatlabInputNode(inputNode)) {
+        inputNode.param = param
       }
     },
   },
@@ -118,6 +136,18 @@ export const inputNodeSlice = createSlice({
                 },
               }
               break
+            case FILE_TYPE_SET.MATLAB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
+            case FILE_TYPE_SET.EXPDB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
           }
         }
       })
@@ -173,6 +203,18 @@ export const inputNodeSlice = createSlice({
                     selectedFilePath: node.data.path as string,
                     param: {},
                   }
+                } else if (node.data.fileType === FILE_TYPE_SET.MATLAB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.MATLAB,
+                    selectedFilePath: node.data.path as string,
+                    param: node.data.param as MatlabInputParamType,
+                  }
+                } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.EXPDB,
+                    selectedFilePath: node.data.path as string,
+                    param: {},
+                  }
                 }
               }
             })
@@ -181,7 +223,10 @@ export const inputNodeSlice = createSlice({
       ),
 })
 
-export const { setCsvInputNodeParam, setInputNodeHDF5Path } =
-  inputNodeSlice.actions
+export const {
+  setCsvInputNodeParam,
+  setInputNodeHDF5Path,
+  setMatlabInputNodeParam,
+} = inputNodeSlice.actions
 
 export default inputNodeSlice.reducer
