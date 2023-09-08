@@ -262,6 +262,7 @@ const AccountManager = () => {
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
   const [newParams, setNewParams] = useState('')
+  const [keyTable, setKeyTable] = useState(0)
 
   const limit = searchParams.get('limit') || 50
   const offset = searchParams.get('offset') || 0
@@ -302,6 +303,13 @@ const AccountManager = () => {
       offset: Number(offset)
     }
   }, [limit, offset])
+
+  useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+      setKeyTable(pre => pre + 1)
+    })
+  }, [])
 
   useEffect(() => {
     if(!newParams) return
@@ -354,7 +362,7 @@ const AccountManager = () => {
       )
     },
     //eslint-disable-next-line
-    [paramsManager],
+    [paramsManager, searchParams],
   )
 
   const handleFilter = (model: GridFilterModel) => {
@@ -630,6 +638,7 @@ const AccountManager = () => {
       </Box>
       <DataGrid
         sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
+        key={keyTable}
         columns={columns as any}
         rows={listUser?.items || []}
         filterMode={'server'}
