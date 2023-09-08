@@ -265,6 +265,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   )
 
   const [newParams, setNewParams] = useState('')
+  const [keyTable, setKeyTable] = useState(0)
   const [openShare, setOpenShare] = useState<{open: boolean, id?: number}>({open: false})
   const [dataDialog, setDataDialog] = useState<{
     type?: string
@@ -345,6 +346,26 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   }
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+      setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
+        },
+      ],
+    })
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
     if(!newParams) return
     setParams(newParams)
     //eslint-disable-next-line
@@ -417,7 +438,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setNewParams(`${filter}&${pagiFilter()}`)
+        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
         return
       }
       setNewParams(
@@ -547,6 +568,7 @@ const DatabaseExperiments = ({ user, cellPath }: DatabaseProps) => {
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
+        key={keyTable}
         columns={
           adminOrManager && user
             ? ([...columnsTable, ...ColumnPrivate] as any)

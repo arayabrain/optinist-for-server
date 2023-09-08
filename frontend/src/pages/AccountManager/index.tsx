@@ -307,8 +307,21 @@ const AccountManager = () => {
   useEffect(() => {
     if (!window) return;
     window.addEventListener('popstate', function(event) {
-      setKeyTable(pre => pre + 1)
+    setKeyTable(pre => pre + 1)
     })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(filterParams).find(value => value) || null,
+        },
+      ],
+  })
+    //eslint-disable-next-line
   }, [])
 
   useEffect(() => {
@@ -362,7 +375,7 @@ const AccountManager = () => {
       )
     },
     //eslint-disable-next-line
-    [paramsManager, searchParams],
+    [paramsManager],
   )
 
   const handleFilter = (model: GridFilterModel) => {
