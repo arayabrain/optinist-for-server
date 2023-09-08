@@ -18,7 +18,6 @@ Pipfile.lock
 .snakemake
 .pytest_cache
 
-studio/config.yaml
 studio/test_data/output
 studio/notebooks
 studio/config.production*
