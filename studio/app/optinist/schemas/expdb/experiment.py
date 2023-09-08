@@ -58,6 +58,20 @@ class ExpDbExperiment(BaseModel):
         orm_mode = True
 
 
+class ExpDbExperimentCreate(BaseModel):
+    experiment_id: str
+    organization_id: int
+    attributes: Optional[dict] = {}
+
+
+class ExpDbExperimentUpdate(BaseModel):
+    experiment_id: Optional[str]
+    organization_id: Optional[int]
+    attributes: Optional[dict]
+    share_type: Optional[int]
+    publish_status: Optional[int]
+
+
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")
