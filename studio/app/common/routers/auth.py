@@ -19,5 +19,5 @@ async def refresh(refresh_token: RefreshToken):
 
 
 @router.post("/send_reset_password_mail")
-async def send_reset_password_mail(email: str):
-    return await auth.send_reset_password_mail(email)
+async def send_reset_password_mail(email: str, db: Session = Depends(get_db)):
+    return await auth.send_reset_password_mail(db, email)
