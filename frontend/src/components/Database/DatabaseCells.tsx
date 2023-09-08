@@ -136,6 +136,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }),
   )
 
+  const [keyTable, setKeyTable] = useState(0)
   const [newParams, setNewParams] = useState('')
   const [dataDialog, setDataDialog] = useState<{
     type: string
@@ -199,6 +200,26 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+    setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
+        },
+      ],
+    })
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
     if(!newParams) return
     setParams(newParams)
     //eslint-disable-next-line
@@ -241,7 +262,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setNewParams(`${filter}&${pagiFilter()}`)
+        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
         return
       }
       setNewParams(
@@ -333,6 +354,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
+        key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
         hideFooter={true}
