@@ -49,10 +49,13 @@ async def refresh_current_user_token(refresh_token: str):
         raise HTTPException(status_code=400)
 
 
-async def send_reset_password_mail(email: str):
+async def send_reset_password_mail(db: Session, email: str):
     try:
+        db.query(UserModel).filter(
+            UserModel.email == email, UserModel.active.is_(True)
+        ).one()
         pyrebase_app.auth().send_password_reset_email(email)
-        return JSONResponse(status_code=status.HTTP_200_OK)
+        return JSONResponse(content=None, status_code=status.HTTP_200_OK)
     except HTTPError as e:
         err = json.loads(e.strerror)
         raise HTTPException(
