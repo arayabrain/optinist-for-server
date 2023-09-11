@@ -302,6 +302,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       <DataGrid
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
+        rowHeight={128}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}

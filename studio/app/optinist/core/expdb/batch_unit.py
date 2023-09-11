@@ -24,6 +24,7 @@ from studio.app.const import (
     FOV_CONTRAST,
     FOV_SUFFIX,
     TC_SUFFIX,
+    THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
 from studio.app.dir_path import DIRPATH
@@ -42,6 +43,12 @@ class Result:
 def get_default_params(name: str):
     filepath = find_param_filepath(name)
     return ConfigReader.read(filepath)
+
+
+def save_image_with_thumb(img_path: str, img):
+    cv2.imwrite(img_path, img)
+    thumb_img = cv2.resize(img, dsize=(THUMBNAIL_HEIGHT, THUMBNAIL_HEIGHT))
+    cv2.imwrite(img_path.replace(".png", ".thumb.png"), thumb_img)
 
 
 class ExpDbPath:
@@ -143,16 +150,18 @@ class ExpDbBatch:
             fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
 
             for expdb_path in self.expdb_paths:
-                pixelmap_file = join_filepath(
-                    [expdb_path.cellmask_dir, f"fov_cell_merge_{i}.png"]
+                save_image_with_thumb(
+                    join_filepath([expdb_path.cellmask_dir, f"fov_cell_merge_{i}.png"]),
+                    fov_cell_merge,
                 )
-                cv2.imwrite(pixelmap_file, fov_cell_merge)
 
         for expdb_path in self.expdb_paths:
             assert (
                 len(
                     glob(
-                        join_filepath([expdb_path.cellmask_dir, "fov_cell_merge_*.png"])
+                        join_filepath(
+                            [expdb_path.cellmask_dir, "fov_cell_merge_*.thumb.png"]
+                        )
                     )
                 )
                 == ncells
@@ -195,13 +204,13 @@ class ExpDbBatch:
             file_name = os.path.splitext(os.path.basename(pixelmap))[0]
 
             for expdb_path in self.expdb_paths:
-                cv2.imwrite(
+                save_image_with_thumb(
                     join_filepath([expdb_path.pixelmap_dir, f"{file_name}.png"]), img
                 )
 
         for expdb_path in self.expdb_paths:
-            assert len(glob(join_filepath([expdb_path.pixelmap_dir, "*.png"]))) == len(
-                pixelmaps
-            ) + len(
+            assert len(
+                glob(join_filepath([expdb_path.pixelmap_dir, "*.thumb.png"]))
+            ) == len(pixelmaps) + len(
                 pixlemaps_with_num
             ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"

@@ -107,7 +107,6 @@ def get_experiment_urls(source, exp_dir, params=None):
     return [
         ImageInfo(
             url=f"{exp_dir}/{v['dir']}/{k}.png",
-            thumb_url=f"{exp_dir}/{v['dir']}/{k}.png",
             params=params,
         )
         for k, v in source.items()
@@ -116,14 +115,14 @@ def get_experiment_urls(source, exp_dir, params=None):
 
 def get_pixelmap_urls(exp_dir, params=None):
     dirs = exp_dir.split("/")
-    pixelmaps = glob(
-        f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pixelmaps/*.png"
+    pub_dir = f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pixelmaps/"
+    pixelmaps = sorted(
+        list(set(glob(f"{pub_dir}/*.png")) - set(glob(f"{pub_dir}/*.thumb.png")))
     )
 
     return [
         ImageInfo(
             url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}",
-            thumb_url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}",
             params=params,
         )
         for k in pixelmaps
@@ -141,7 +140,6 @@ def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
         ImageInfo(
             url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
-            thumb_url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
             params=params,
         )
         for k, v in source.items()
