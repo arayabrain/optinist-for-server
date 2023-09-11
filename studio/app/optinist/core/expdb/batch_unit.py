@@ -133,7 +133,7 @@ class ExpDbBatch:
             create_directory(expdb_path.pixelmap_dir)
 
         # csr_matrix to numpy array
-        cellmask, imxx, ncells = this.load_raw_cellmask_data()
+        cellmask, imxx, ncells = self.load_raw_cellmask_data()
 
         fov = tifffile.imread(self.raw_path.fov_file).astype(np.double)
         fov_n = fov / np.max(fov)
