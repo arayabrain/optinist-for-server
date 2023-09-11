@@ -88,6 +88,7 @@ class ExpDbBatchRunner:
         self.logger_.info("process start.")
 
         processResult = ProcessResult()
+        error: Exception = None
 
         try:
             # 前処理
@@ -104,18 +105,23 @@ class ExpDbBatchRunner:
 
         except Exception as e:
             self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
+            error = e
 
         finally:
-            if processResult.has_error():
-                self.logger_.warning(
-                    "process finish. [status: warning][success: %d][failure: %d][failure_ids: %s]",
-                    len(processResult.success_ids), len(processResult.failure_ids),
-                    processResult.failure_ids,
-                )
+            # 処理終了ログ出力
+            if error is None:
+                if processResult.has_error():
+                    self.logger_.warning(
+                        "process finish. [status: warning][success: %d][failure: %d][failure_ids: %s]",
+                        len(processResult.success_ids), len(processResult.failure_ids),
+                        processResult.failure_ids,
+                    )
+                else:
+                    self.logger_.info("process finish. [status: success][total: %d]",
+                        len(processResult.total_ids)
+                    )
             else:
-                self.logger_.info("process finish. [status: success][total: %d]",
-                    len(processResult.total_ids)
-                )
+                self.logger_.info("process finish. [status: error (suspended)]")
 
 
     def __process_preprocess(self):
@@ -231,6 +237,7 @@ class ExpDbBatchRunner:
             expdb_batch.cleanup_exp_record(db)
             db.commit()
 
+            # Analyze & Plotting
             expdb_batch.generate_statdata()
             expdb_batch.generate_plots()
             ncells = expdb_batch.generate_pixelmaps()
