@@ -26,5 +26,5 @@ TS_SUFFIX = "trialstructure"
 TS_FIELDNAME = "trialstructure"
 CELLMASK_SUFFIX = "cellmask"
 CELLMASK_FIELDNAME = "cellmask"
-FOV_SUFFIX = "fov"
+FOV_SUFFIX = "FOV"
 FOV_CONTRAST = 0.4
