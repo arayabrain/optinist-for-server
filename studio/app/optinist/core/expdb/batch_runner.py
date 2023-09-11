@@ -28,6 +28,27 @@ class ProcessCommand(Enum):
     DELETE = "delete"
 
 
+class ProcessResult:
+    def __init__(self):
+        self.success_ids_ = []
+        self.failure_ids_ = []
+
+    @property
+    def success_ids(self):
+        return self.success_ids_
+
+    @property
+    def failure_ids(self):
+        return self.failure_ids_
+
+    @property
+    def total_ids(self):
+        return self.success_ids_ + self.failure_ids_
+
+    def has_error(self) -> bool:
+        return len(self.failure_ids_) > 0
+
+
 class ExpDbBatchRunner:
     def __init__(self, organization_id: int):
         self.start_time = datetime.datetime.now()
@@ -66,12 +87,14 @@ class ExpDbBatchRunner:
     def process(self):
         self.logger_.info("process start.")
 
+        processResult = ProcessResult()
+
         try:
             # 前処理
             self.__process_preprocess()
 
             # メイン処理（データ管理・解析処理処理）
-            self.__process_datasets()
+            processResult = self.__process_datasets()
 
             # 後処理
             self.__process_postprocess()
@@ -82,7 +105,18 @@ class ExpDbBatchRunner:
         except Exception as e:
             self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
 
-        self.logger_.info("process finish.")
+        finally:
+            if processResult.has_error():
+                self.logger_.warning(
+                    "process finish. [status: warning][success: %d][failure: %d][failure_ids: %s]",
+                    len(processResult.success_ids), len(processResult.failure_ids),
+                    processResult.failure_ids,
+                )
+            else:
+                self.logger_.info("process finish. [status: success][total: %d]",
+                    len(processResult.total_ids)
+                )
+
 
     def __process_preprocess(self):
         """
@@ -116,22 +150,25 @@ class ExpDbBatchRunner:
         self.lock.close()
 
     @stopwatch(callback=__stopwatch_callback)
-    def __process_datasets(self):
+    def __process_datasets(self) -> ProcessResult:
         """
         メイン処理（データ管理・解析処理処理）
         """
+
+        processResult = ProcessResult()
 
         target_flag_files = self.__search_target_datasets()
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
         if len(target_flag_files) == 0:
             self.logger_.info("No datasets found.")
-            return
+            return processResult
 
         # フラグファイルを走査
         for flag_file in target_flag_files:
-            self.logger_.info("process dataset: %s", flag_file)
+            self.logger_.info("start process dataset: %s", flag_file)
 
+            exp_id = self.__set_exp_id_from_flag_file(flag_file)
             error: Exception = None
 
             # フラグファイル read
@@ -150,24 +187,35 @@ class ExpDbBatchRunner:
                 elif command == ProcessCommand.DELETE.value:
                     self.__process_dataset_deletion(flag_file)
                 else:
-                    self.logger_.warning("invalid command: %s", command)
-                    continue
+                    raise ValueError(f"invalid command: [exp_id: {exp_id}][command: {command}]")
+
+                processResult.success_ids.append(exp_id)
+
             except Exception as e:
                 self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
                 error = e
+
+                processResult.failure_ids.append(exp_id)
+
             finally:
                 self.__process_dataset_postprocess(flag_file, command, error)
+
+        return processResult
 
     @stopwatch(callback=__stopwatch_callback)
     def __search_target_datasets(self) -> list:
         """
         処理対象datasets検索
         """
-        self.logger_.info(DIRPATH.EXPDB_DIR)
+        self.logger_.info("path: %s", DIRPATH.EXPDB_DIR)
+
         # フラグファイル検索
         target_flag_files = glob.glob(DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
 
         return target_flag_files
+
+    def __set_exp_id_from_flag_file(self, flag_file: str) -> str:
+        return os.path.basename(flag_file).split(".", 1)[0]
 
     @stopwatch(callback=__stopwatch_callback)
     def __process_dataset_registration(self, flag_file: str) -> bool:
@@ -176,7 +224,7 @@ class ExpDbBatchRunner:
         """
 
         self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = os.path.basename(flag_file).split(".", 1)[0]
+        exp_id = self.__set_exp_id_from_flag_file(flag_file)
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with session_scope() as db:
@@ -205,7 +253,7 @@ class ExpDbBatchRunner:
         """
 
         self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = os.path.basename(flag_file).split(".", 1)[0]
+        exp_id = self.__set_exp_id_from_flag_file(flag_file)
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with session_scope() as db:
