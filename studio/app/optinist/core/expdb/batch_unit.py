@@ -104,6 +104,16 @@ class ExpDbBatch:
             create_directory(expdb_path.output_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
+    def load_raw_cellmask_data(self) -> int:
+        # csr_matrix to numpy array
+        cellmask = (
+            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
+        )
+
+        imxx, ncells = cellmask.shape
+        return (cellmask, imxx, ncells)
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
@@ -123,13 +133,11 @@ class ExpDbBatch:
             create_directory(expdb_path.pixelmap_dir)
 
         # csr_matrix to numpy array
-        cellmask = (
-            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
-        )
+        cellmask, imxx, ncells = this.load_raw_cellmask_data()
+
         fov = tifffile.imread(self.raw_path.fov_file).astype(np.double)
         fov_n = fov / np.max(fov)
 
-        imxx, ncells = cellmask.shape
         imx = imy = int(math.sqrt(imxx))
 
         cellmask = np.reshape(cellmask, (imx, imy, ncells), order="F")
