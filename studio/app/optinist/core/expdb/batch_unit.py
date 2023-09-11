@@ -69,9 +69,10 @@ class ExpDbPath:
             self.output_dir = self.exp_dir
 
         # outputs
-        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
-        self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
+        self.plot_dir = join_filepath([self.output_dir, "plots"])
+        self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
+        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
 
 
 class ExpDbBatch:
@@ -118,9 +119,9 @@ class ExpDbBatch:
             ), f"save statfile failed: {expdb_path.stat_file}"
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_pixelmaps(self) -> int:
+    def generate_cellmasks(self) -> int:
         for expdb_path in self.expdb_paths:
-            create_directory(expdb_path.pixelmap_dir)
+            create_directory(expdb_path.cellmask_dir)
 
         # csr_matrix to numpy array
         cellmask = (
@@ -143,7 +144,7 @@ class ExpDbBatch:
 
             for expdb_path in self.expdb_paths:
                 pixelmap_file = join_filepath(
-                    [expdb_path.pixelmap_dir, f"fov_cell_merge_{i}.png"]
+                    [expdb_path.cellmask_dir, f"fov_cell_merge_{i}.png"]
                 )
                 cv2.imwrite(pixelmap_file, fov_cell_merge)
 
@@ -151,11 +152,11 @@ class ExpDbBatch:
             assert (
                 len(
                     glob(
-                        join_filepath([expdb_path.pixelmap_dir, "fov_cell_merge_*.png"])
+                        join_filepath([expdb_path.cellmask_dir, "fov_cell_merge_*.png"])
                     )
                 )
                 == ncells
-            ), f"generate pixelmaps in failed: {expdb_path.pixelmap_dir}"
+            ), f"generate cellmasks failed in {expdb_path.cellmask_dir}"
 
         return ncells
 
@@ -181,3 +182,26 @@ class ExpDbBatch:
 
             stat.direction_tuning_width.save_plot(dir_path)
             stat.orientation_tuning_width.save_plot(dir_path)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def generate_pixelmaps(self):
+        for expdb_path in self.expdb_paths:
+            create_directory(expdb_path.pixelmap_dir)
+
+        pixelmaps = glob(join_filepath([self.raw_path.exp_dir, "*_hc.tif"]))
+        pixlemaps_with_num = glob(join_filepath([self.raw_path.exp_dir, "*_hc_*.tif"]))
+        for pixelmap in [*pixelmaps, *pixlemaps_with_num]:
+            img = tifffile.imread(pixelmap)
+            file_name = os.path.splitext(os.path.basename(pixelmap))[0]
+
+            for expdb_path in self.expdb_paths:
+                cv2.imwrite(
+                    join_filepath([expdb_path.pixelmap_dir, f"{file_name}.png"]), img
+                )
+
+        for expdb_path in self.expdb_paths:
+            assert len(glob(join_filepath([expdb_path.pixelmap_dir, "*.png"]))) == len(
+                pixelmaps
+            ) + len(
+                pixlemaps_with_num
+            ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"

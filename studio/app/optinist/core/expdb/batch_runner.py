@@ -185,7 +185,8 @@ class ExpDbBatchRunner:
 
             expdb_batch.generate_statdata()
             expdb_batch.generate_plots()
-            ncells = expdb_batch.generate_pixelmaps()
+            ncells = expdb_batch.generate_cellmasks()
+            expdb_batch.generate_pixelmaps()
 
             exp = create_experiment(
                 db,
