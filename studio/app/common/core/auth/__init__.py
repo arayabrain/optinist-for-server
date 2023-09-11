@@ -12,7 +12,8 @@ try:
 
     if pyrebase_app is None:
         logging.getLogger().error(
-            "Invalid pyrebase_app: config_path: %s", DIRPATH.FIREBASE_CONFIG_PATH)
+            "Invalid pyrebase_app: config_path: %s", DIRPATH.FIREBASE_CONFIG_PATH
+        )
     else:
         logging.getLogger().info("Init pyrebase_app success.")
 
