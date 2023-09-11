@@ -14,7 +14,6 @@ class ExpDbCell(BaseModel):
     experiment_id: str = None
     publish_status: Optional[int] = Field(description="0: private, 1: public")
     fields: ExpDbExperimentFields = None
-    cell_image_url: ImageInfo = None
     graph_urls: List[ImageInfo] = None
     created_at: datetime = None
     updated_at: datetime = None
