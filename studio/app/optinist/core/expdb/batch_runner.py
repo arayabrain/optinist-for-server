@@ -112,17 +112,21 @@ class ExpDbBatchRunner:
             if error is None:
                 if processResult.has_error():
                     self.logger_.warning(
-                        "process finish. [status: warning][success: %d][failure: %d][failure_ids: %s]",
-                        len(processResult.success_ids), len(processResult.failure_ids),
+                        (
+                            "process finish. [status: warning]"
+                            "[success: %d][failure: %d][failure_ids: %s]"
+                        ),
+                        len(processResult.success_ids),
+                        len(processResult.failure_ids),
                         processResult.failure_ids,
                     )
                 else:
-                    self.logger_.info("process finish. [status: success][total: %d]",
-                        len(processResult.total_ids)
+                    self.logger_.info(
+                        "process finish. [status: success][total: %d]",
+                        len(processResult.total_ids),
                     )
             else:
                 self.logger_.info("process finish. [status: error (suspended)]")
-
 
     def __process_preprocess(self):
         """
@@ -193,7 +197,9 @@ class ExpDbBatchRunner:
                 elif command == ProcessCommand.DELETE.value:
                     self.__process_dataset_deletion(flag_file)
                 else:
-                    raise ValueError(f"invalid command: [exp_id: {exp_id}][command: {command}]")
+                    raise ValueError(
+                        f"invalid command: [exp_id: {exp_id}][command: {command}]"
+                    )
 
                 processResult.success_ids.append(exp_id)
 
