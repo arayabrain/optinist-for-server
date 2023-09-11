@@ -30,7 +30,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void, user?: boolean) => [
+const columns = (user?: boolean) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -97,32 +97,6 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.imaging_depth,
-  },
-  {
-    field: 'cell_image_url',
-    headerName: 'Pixel Image',
-    width: 160,
-    filterable: false,
-    sortable: false,
-    renderCell: (params: { row: DatabaseType }) => {
-      const { cell_image_url } = params.row
-      if (!cell_image_url) return null
-      return (
-        <Box
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-          }}
-          onClick={() => handleOpenDialog([cell_image_url])}
-        >
-          <img
-            src={params.row?.cell_image_url?.thumb_url}
-            alt={''}
-            width={'100%'}
-            height={'100%'}
-          />
-      </Box>
-    )}
   },
 ]
 
@@ -319,7 +293,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
+  const columnsTable = [...columns(!!user), ...getColumns].filter(
     Boolean,
   ) as any
 
