@@ -568,7 +568,7 @@ const DatabaseExperiments = ({
             </Box>
           )
         },
-        width: 300,
+        width: 160,
       }),
     )
   }, [dataExperiments.header?.graph_titles])
