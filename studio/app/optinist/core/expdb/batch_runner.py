@@ -176,9 +176,11 @@ class ExpDbBatchRunner:
 
         # フラグファイルを走査
         for flag_file in target_flag_files:
-            self.logger_.info("start process dataset: %s", flag_file)
+            exp_id = self.__get_exp_id_from_flag_file(flag_file)
+            self.logger_.info(
+                "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
+            )
 
-            exp_id = self.__set_exp_id_from_flag_file(flag_file)
             error: Exception = None
 
             # フラグファイル read
@@ -212,6 +214,11 @@ class ExpDbBatchRunner:
             finally:
                 self.__process_dataset_postprocess(flag_file, command, error)
 
+                if error:
+                    self.logger_.error("finish process dataset: [exp_id: %s]", exp_id)
+                else:
+                    self.logger_.info("finish process dataset: [exp_id: %s]", exp_id)
+
         return processResult
 
     @stopwatch(callback=__stopwatch_callback)
@@ -222,11 +229,13 @@ class ExpDbBatchRunner:
         self.logger_.info("path: %s", DIRPATH.EXPDB_DIR)
 
         # フラグファイル検索
-        target_flag_files = glob.glob(DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
+        target_flag_files = sorted(
+            glob.glob(DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
+        )
 
         return target_flag_files
 
-    def __set_exp_id_from_flag_file(self, flag_file: str) -> str:
+    def __get_exp_id_from_flag_file(self, flag_file: str) -> str:
         return os.path.basename(flag_file).split(".", 1)[0]
 
     @stopwatch(callback=__stopwatch_callback)
@@ -236,7 +245,7 @@ class ExpDbBatchRunner:
         """
 
         self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = self.__set_exp_id_from_flag_file(flag_file)
+        exp_id = self.__get_exp_id_from_flag_file(flag_file)
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with session_scope() as db:
@@ -269,7 +278,7 @@ class ExpDbBatchRunner:
         """
 
         self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = self.__set_exp_id_from_flag_file(flag_file)
+        exp_id = self.__get_exp_id_from_flag_file(flag_file)
         expdb_batch = ExpDbBatch(exp_id, self.org_id)
 
         with session_scope() as db:
