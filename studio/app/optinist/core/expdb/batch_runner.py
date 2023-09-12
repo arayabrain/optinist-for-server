@@ -244,9 +244,9 @@ class ExpDbBatchRunner:
             db.commit()
 
             # Analyze & Plotting
-            expdb_batch.generate_statdata()
-            expdb_batch.generate_plots()
-            ncells = expdb_batch.generate_pixelmaps()
+            stat_data = expdb_batch.generate_statdata()
+            expdb_batch.generate_plots(stat_data=stat_data)
+            expdb_batch.generate_pixelmaps()
 
             exp = create_experiment(
                 db,
@@ -255,9 +255,7 @@ class ExpDbBatchRunner:
                 ),
             )
 
-            # TODO: 現時点ではcellsの件数を登録しているが、
-            #   cellsの掲載情報仕様Fix後、cellsのattributesを登録する形式を想定
-            bulk_insert_cells(db, exp.id, ncells)
+            bulk_insert_cells(db, exp.id, stat_data)
 
         return True
 
