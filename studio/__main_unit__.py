@@ -71,7 +71,7 @@ app.mount(
     name="static",
 )
 
-if DIRPATH.GRAPH_HOST is None:
+if DIRPATH.SELFHOST_GRAPH:
     app.mount(
         "/datasets",
         StaticFiles(directory=DIRPATH.PUBLIC_EXPDB_DIR),

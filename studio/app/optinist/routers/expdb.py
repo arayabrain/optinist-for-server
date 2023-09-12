@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -32,12 +34,6 @@ from studio.app.optinist.schemas.expdb.experiment import (
 router = APIRouter(tags=["Experiment Database"])
 public_router = APIRouter(tags=["Experiment Database"])
 
-GRAPH_HOST = (
-    "http://localhost:8000/datasets"
-    if DIRPATH.GRAPH_HOST is None
-    else DIRPATH.GRAPH_HOST
-)
-
 
 def expdbcell_transformer(items: Sequence) -> Sequence:
     expdbcells = []
@@ -46,15 +42,10 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         cell_number = item[0].cell_number
         expdbcell.experiment_id = item[1]
         subject_id = expdbcell.experiment_id.split("_")[0]
-        exp_dir = f"{GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         expdbcell.publish_status = item[2]
         # TODO: set fields from real data
         expdbcell.fields = ExpDbExperimentFields()
-        expdbcell.cell_image_url = get_cell_urls(
-            CELL_IMAGES,
-            exp_dir,
-            cell_number,
-        )[0]
         expdbcell.graph_urls = get_cell_urls(
             CELL_GRAPHS,
             exp_dir,
@@ -85,13 +76,10 @@ def experiment_transformer(items: Sequence) -> Sequence:
         expdb, cell_count = item
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
-        exp_dir = f"{GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
         # TODO: set fields from real data
         exp.fields = ExpDbExperimentFields()
-        # TODO: replace cell images to hc images
-        exp.cell_image_urls = [
-            get_cell_urls(CELL_IMAGES, exp_dir, i)[0] for i in range(5)
-        ]
+        exp.cell_image_urls = get_pixelmap_urls(exp_dir)
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
@@ -120,27 +108,39 @@ def get_experiment_urls(source, exp_dir, params=None):
     return [
         ImageInfo(
             url=f"{exp_dir}/{v['dir']}/{k}.png",
-            thumb_url=f"{exp_dir}/{v['dir']}/{k}.png",
             params=params,
         )
         for k, v in source.items()
     ]
 
 
+def get_pixelmap_urls(exp_dir, params=None):
+    dirs = exp_dir.split("/")
+    pub_dir = f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pixelmaps/"
+    pixelmaps = sorted(
+        list(set(glob(f"{pub_dir}/*.png")) - set(glob(f"{pub_dir}/*.thumb.png")))
+    )
+
+    return [
+        ImageInfo(
+            url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}",
+            params=params,
+        )
+        for k in pixelmaps
+    ]
+
+
 CELL_GRAPHS = {
+    "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
     "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
     "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
 }
-
-
-CELL_IMAGES = {"fov_cell_merge": {"title": "Pixel Map", "dir": "pixelmaps"}}
 
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
         ImageInfo(
             url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
-            thumb_url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
             params=params,
         )
         for k, v in source.items()
