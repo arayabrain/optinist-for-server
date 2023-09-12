@@ -645,6 +645,7 @@ const DatabaseExperiments = ({
             : (columnsTable as any)
         }
         rows={dataExperiments?.items || []}
+        rowHeight={128}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
