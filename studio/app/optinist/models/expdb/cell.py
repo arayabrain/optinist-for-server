@@ -1,4 +1,4 @@
-from sqlmodel import Column, Field, Float, Integer, UniqueConstraint
+from sqlmodel import JSON, Column, Field, Integer, UniqueConstraint
 
 from studio.app.common.models.base import Base, TimestampMixin
 
@@ -27,16 +27,4 @@ class Cell(Base, TimestampMixin, table=True):
         ),
     )
 
-    p_value_resp: float = Field(sa_column=Column(Float(), nullable=True))
-    p_value_sel: float = Field(sa_column=Column(Float(), nullable=True))
-    p_value_ori_resp: float = Field(sa_column=Column(Float(), nullable=True))
-    p_value_ori_sel: float = Field(sa_column=Column(Float(), nullable=True))
-    dir_vector_angle: float = Field(sa_column=Column(Float(), nullable=True))
-    ori_vector_angle: float = Field(sa_column=Column(Float(), nullable=True))
-    oi: float = Field(sa_column=Column(Float(), nullable=True))
-    di: float = Field(sa_column=Column(Float(), nullable=True))
-    dsi: float = Field(sa_column=Column(Float(), nullable=True))
-    osi: float = Field(sa_column=Column(Float(), nullable=True))
-    r_best_dir: float = Field(sa_column=Column(Float(), nullable=True))
-    dir_tuning_width: float = Field(sa_column=Column(Float(), nullable=True))
-    ori_tuning_width: float = Field(sa_column=Column(Float(), nullable=True))
+    statistics: dict = Field(sa_column=Column(JSON), default={})

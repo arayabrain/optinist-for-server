@@ -50,21 +50,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
             CELL_GRAPHS,
             exp_dir,
             cell_number,
-            params={
-                "p_value_resp": item[0].p_value_resp,
-                "p_value_sel": item[0].p_value_sel,
-                "p_value_ori_resp": item[0].p_value_ori_resp,
-                "p_value_ori_sel": item[0].p_value_ori_sel,
-                "dir_vector_angle": item[0].dir_vector_angle,
-                "ori_vector_angle": item[0].ori_vector_angle,
-                "di": item[0].di,
-                "oi": item[0].oi,
-                "dsi": item[0].dsi,
-                "osi": item[0].osi,
-                "r_best_dir": item[0].r_best_dir,
-                "dir_tuning_width": item[0].dir_tuning_width,
-                "ori_tuning_width": item[0].ori_tuning_width,
-            },
+            params={**item[0].statistics},
         )
         expdbcells.append(expdbcell)
     return expdbcells
