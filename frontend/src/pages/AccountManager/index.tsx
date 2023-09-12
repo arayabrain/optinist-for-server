@@ -261,6 +261,8 @@ const AccountManager = () => {
 
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
+  const [newParams, setNewParams] = useState('')
+  const [keyTable, setKeyTable] = useState(0)
 
   const limit = searchParams.get('limit') || 50
   const offset = searchParams.get('offset') || 0
@@ -303,6 +305,32 @@ const AccountManager = () => {
   }, [limit, offset])
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+    setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(filterParams).find(value => value) || null,
+        },
+      ],
+  })
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
+    if(!newParams) return
+    setParams(newParams)
+    //eslint-disable-next-line
+  }, [newParams])
+
+  useEffect(() => {
     dispatch(getListUser({...filterParams, ...sortParams, ...params}))
     //eslint-disable-next-line
   }, [limit, offset, email, name, JSON.stringify(sort)])
@@ -314,7 +342,7 @@ const AccountManager = () => {
       .map((item: any) => `${item.field}=${item?.value}`)
       .join('&')
     const { sort } = sortParams
-    setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
+    setNewParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
   }
 
   const getParamsData = () => {
@@ -338,10 +366,10 @@ const AccountManager = () => {
     (rowSelectionModel: GridSortModel) => {
     const filter = getParamsData()
     if (!rowSelectionModel[0]) {
-      setParams(filter || sortParams.sort[0] || offset ? `${filter}&${paramsManager()}` : '')
+      setNewParams(filter || sortParams.sort[0] || offset ? `${filter}&${paramsManager()}` : '')
       return
     }
-      setParams(
+      setNewParams(
         `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field
           .replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
       )
@@ -362,7 +390,7 @@ const AccountManager = () => {
         .join('&')
     }
     const { sort } = sortParams
-    setParams(sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}` : '')
+    setNewParams(sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}` : '')
   }
 
   const handleOpenModal = () => {
@@ -467,7 +495,7 @@ const AccountManager = () => {
         .map((item: any) => `${item.field}=${item?.value}`)
         .join('&')
     const { sort } = sortParams
-    setParams(
+    setNewParams(
         `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
@@ -623,6 +651,7 @@ const AccountManager = () => {
       </Box>
       <DataGrid
         sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
+        key={keyTable}
         columns={columns as any}
         rows={listUser?.items || []}
         filterMode={'server'}

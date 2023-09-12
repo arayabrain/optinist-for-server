@@ -277,6 +277,8 @@ const DatabaseExperiments = ({
     }),
   )
 
+  const [newParams, setNewParams] = useState('')
+  const [keyTable, setKeyTable] = useState(0)
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
@@ -367,6 +369,32 @@ const DatabaseExperiments = ({
   }
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+      setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
+        },
+      ],
+    })
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
+    if(!newParams) return
+    setParams(newParams)
+    //eslint-disable-next-line
+  }, [newParams])
+
+  useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
@@ -422,10 +450,10 @@ const DatabaseExperiments = ({
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(
+    setNewParams(
       `${filter}&${
         dataParams.sort[0]
-          ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}`
+          ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` 
           : ''
       }&${pagiFilter(page)}`,
     )
@@ -456,17 +484,17 @@ const DatabaseExperiments = ({
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&${pagiFilter()}`)
+        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
         return
       }
-      setParams(
+      setNewParams(
         `${filter}&${
-          rowSelectionModel[0]
+          rowSelectionModel[0] 
             ? `sort=${rowSelectionModel[0].field?.replace(
-                'publish_status',
-                'published',
-              )}&sort=${rowSelectionModel[0].sort}`
-            : ''
+              'publish_status',
+              'published',
+            )}&sort=${rowSelectionModel[0].sort}` 
+          : ''
         }&${pagiFilter()}`,
       )
     },
@@ -487,7 +515,7 @@ const DatabaseExperiments = ({
         ?.replace('publish_status', 'published')
     }
     const { sort } = dataParams
-    setParams(
+    setNewParams(
       sort[0] || filter || offset ?
         `${filter}&${
           sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
@@ -505,7 +533,7 @@ const DatabaseExperiments = ({
       .join('&')
       .replace('publish_status', 'published')
     const { sort } = dataParams
-    setParams(
+    setNewParams(
       `${filter}&${
         sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''
       }&limit=${Number(event.target.value)}&offset=0`,
@@ -610,6 +638,7 @@ const DatabaseExperiments = ({
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
+        key={keyTable}
         columns={
           adminOrManager && user && !readonly
             ? ([...columnsTable, ...ColumnPrivate] as any)
