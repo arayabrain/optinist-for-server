@@ -106,10 +106,7 @@ EXPERIMENT_GRAPHS = {
 
 def get_experiment_urls(source, exp_dir, params=None):
     return [
-        ImageInfo(
-            url=f"{exp_dir}/{v['dir']}/{k}.png",
-            params=params,
-        )
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}.png", params=params)
         for k, v in source.items()
     ]
 
@@ -122,18 +119,38 @@ def get_pixelmap_urls(exp_dir, params=None):
     )
 
     return [
-        ImageInfo(
-            url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}",
-            params=params,
-        )
+        ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
         for k in pixelmaps
     ]
 
 
 CELL_GRAPHS = {
     "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
-    "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
-    "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
+    "tuning_curve": {
+        "title": "Tuning Curve",
+        "dir": "plots",
+        "params": [
+            "p_value_resp",
+            "p_value_sel",
+            "p_value_ori_resp",
+            "p_value_ori_sel",
+            "di",
+            "oi",
+            "dsi",
+            "osi",
+        ],
+    },
+    "tuning_curve_polar": {
+        "title": "Tuning Curve Polar",
+        "dir": "plots",
+        "params": [
+            "dir_vector_angle",
+            "ori_vector_angle",
+            "r_best_dir",
+            "dir_tuning_width",
+            "ori_tuning_width",
+        ],
+    },
 }
 
 
@@ -141,7 +158,7 @@ def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
         ImageInfo(
             url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
-            params=params,
+            params={param: params.get(param) for param in v.get("params", [])},
         )
         for k, v in source.items()
     ]

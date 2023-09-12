@@ -104,7 +104,7 @@ const columns = (user?: boolean) => [
     filterable: false,
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth ?? 'NA',
   },
 ]
 
@@ -321,24 +321,31 @@ const DatabaseCells = ({ user }: CellProps) => {
               handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)
             }
           >
-            <Grid item xs={3}>
-              <List>
-                {Object.entries(graph_url.params).map(([k, v]) => (
-                  <ListItem dense disablePadding>
-                    <Typography variant='caption' sx={{fontSize: 10}}>
-                      {k}: {typeof v === 'number' ? v.toFixed(4) : v}
-                    </Typography>
-                  </ListItem>
-                ))}
-              </List>
+          {Object.keys(graph_url.params).length > 0 ?
+            <>
+              <Grid item xs={3}>
+                <List>
+                  {Object.entries(graph_url.params).map(([k, v]) => (
+                    <ListItem key={k} dense disablePadding>
+                      <Typography variant='caption' sx={{fontSize: 10}}>
+                        {k}: {typeof v === 'number' ? v.toFixed(4) : v}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
+              <Grid item xs={9}>
+                <img src={graph_url.thumb_url} alt={''} height={128} />
+              </Grid>
+            </>:
+            <Grid item xs={12}>
+              <img src={graph_url.thumb_url} alt={''} height={128} />
             </Grid>
-            <Grid item xs={9}>
-              <img src={graph_url.thumb_url} alt={''} height={200} />
-            </Grid>
+          }
           </Grid>
         )
       },
-      width: 300,
+      width: 240,
     }),
     )
   }, [dataCells.header?.graph_titles])
@@ -353,7 +360,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
-        rowHeight={220}
+        rowHeight={128}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
