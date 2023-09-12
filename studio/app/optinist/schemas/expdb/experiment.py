@@ -38,8 +38,13 @@ class ExpDbExperimentHeader(BaseModel):
 
 class ImageInfo(BaseModel):
     url: str
-    thumb_url: str
+    thumb_url: Optional[str]
     params: Optional[dict]
+
+    def __init__(self, url, params=None, thumb_url=None):
+        super().__init__(url=url, thumb_url=thumb_url, params=params)
+        if thumb_url is None:
+            self.thumb_url = url.replace(".png", ".thumb.png")
 
 
 class ExpDbExperiment(BaseModel):
