@@ -136,6 +136,8 @@ const DatabaseCells = ({ user }: CellProps) => {
     }),
   )
 
+  const [keyTable, setKeyTable] = useState(0)
+  const [newParams, setNewParams] = useState('')
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data?: string | string[]
@@ -198,6 +200,32 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+    setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
+        },
+      ],
+    })
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
+    if(!newParams) return
+    setParams(newParams)
+    //eslint-disable-next-line
+  }, [newParams])
+
+  useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
@@ -225,7 +253,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(
+    setNewParams(
       `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
     )
   }
@@ -234,10 +262,10 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&${pagiFilter()}`)
+        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
         return
       }
-      setParams(
+      setNewParams(
         `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replaceAll(
             'publish_status',
             'published'
@@ -245,7 +273,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       )
     },
     //eslint-disable-next-line
-    [pagiFilter, getParamsData],
+    [pagiFilter],
   )
 
   const handleFilter = (model: GridFilterModel) => {
@@ -260,8 +288,8 @@ const DatabaseCells = ({ user }: CellProps) => {
         .join('&').replace('publish_status', 'published')
     }
     const { sort } = dataParams
-    setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
+    setNewParams(
+        sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
     )
   }
 
@@ -283,7 +311,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         })
         .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
-    setParams(
+    setNewParams(
         `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
@@ -326,6 +354,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
+        key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
         hideFooter={true}
