@@ -26,7 +26,7 @@ async def authenticate_user(db: Session, data: UserAuth):
             .filter(UserModel.uid == user["localId"], UserModel.active.is_(True))
             .first()
         )
-        assert user_db is not None
+        assert user_db is not None, "Invalid user uid"
         ex_token = create_access_token(subject=user_db.uid)
         return Token(
             access_token=user["idToken"],
