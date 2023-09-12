@@ -359,7 +359,7 @@ const DatabaseCells = ({ user }: CellProps) => {
               </List>
             </Grid>
             <Grid item xs={9}>
-              <img src={graph_url.thumb_url} alt={''} height={220} />
+              <img src={graph_url.thumb_url} alt={''} height={200} />
             </Grid>
           </Grid>
         )
