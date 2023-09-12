@@ -48,18 +48,32 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         subject_id = expdbcell.experiment_id.split("_")[0]
         exp_dir = f"{GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         expdbcell.publish_status = item[2]
-        expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set fields from real data
+        expdbcell.fields = ExpDbExperimentFields()
         expdbcell.cell_image_url = get_cell_urls(
             CELL_IMAGES,
             exp_dir,
             cell_number,
-            params={"param1": 10, "param2": 20},
         )[0]
         expdbcell.graph_urls = get_cell_urls(
             CELL_GRAPHS,
             exp_dir,
             cell_number,
-            params={"param1": 10, "param2": 20},
+            params={
+                "p_value_resp": item[0].p_value_resp,
+                "p_value_sel": item[0].p_value_sel,
+                "p_value_ori_resp": item[0].p_value_ori_resp,
+                "p_value_ori_sel": item[0].p_value_ori_sel,
+                "dir_vector_angle": item[0].dir_vector_angle,
+                "ori_vector_angle": item[0].ori_vector_angle,
+                "di": item[0].di,
+                "oi": item[0].oi,
+                "dsi": item[0].dsi,
+                "osi": item[0].osi,
+                "r_best_dir": item[0].r_best_dir,
+                "dir_tuning_width": item[0].dir_tuning_width,
+                "ori_tuning_width": item[0].ori_tuning_width,
+            },
         )
         expdbcells.append(expdbcell)
     return expdbcells
@@ -72,7 +86,8 @@ def experiment_transformer(items: Sequence) -> Sequence:
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
         exp_dir = f"{GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
-        exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set fields from real data
+        exp.fields = ExpDbExperimentFields()
         # TODO: replace cell images to hc images
         exp.cell_image_urls = [
             get_cell_urls(CELL_IMAGES, exp_dir, i)[0] for i in range(5)
@@ -80,14 +95,6 @@ def experiment_transformer(items: Sequence) -> Sequence:
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
-
-
-DUMMY_EXPERIMENTS_FIELDS = {
-    "brain_area": 13,
-    "cre_driver": 20,
-    "reporter_line": 30,
-    "imaging_depth": 40,
-}
 
 
 EXPERIMENT_GRAPHS = {

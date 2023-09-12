@@ -11,10 +11,10 @@ export type ImageUrls = {
 export type DatabaseType = {
   id: number
   fields: {
-    brain_area: string
-    cre_driver: string
-    reporter_line: string
-    imaging_depth: number
+    brain_area?: string
+    cre_driver?: string
+    reporter_line?: string
+    imaging_depth?: number
   }
   experiment_id?: string
   attributes?: object

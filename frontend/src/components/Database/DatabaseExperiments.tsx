@@ -43,10 +43,10 @@ import PaginationCustom from '../common/PaginationCustom'
 export type Data = {
   id: number
   fields: {
-    brain_area: string
-    cre_driver: string
-    reporter_line: string
-    imaging_depth: number
+    brain_area?: string
+    cre_driver?: string
+    reporter_line?: string
+    imaging_depth?: number
   }
   experiment_id: string
   attributes: string
@@ -124,7 +124,7 @@ const columns = (
     field: 'brain_area',
     headerName: 'Brain area',
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area,
+      params.row.fields?.brain_area ?? 'NA',
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: 'singleSelect',
     width: 160,
@@ -134,21 +134,21 @@ const columns = (
     headerName: 'Cre driver',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver,
+      params.row.fields?.cre_driver ?? 'NA',
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line,
+      params.row.fields?.reporter_line ?? 'NA',
   },
   {
     field: 'imaging_depth',
     headerName: 'Imaging depth',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth ?? 'NA',
   },
   {
     field: 'attributes',
@@ -568,7 +568,7 @@ const DatabaseExperiments = ({
             </Box>
           )
         },
-        width: 160,
+        width: 300,
       }),
     )
   }, [dataExperiments.header?.graph_titles])
@@ -645,6 +645,7 @@ const DatabaseExperiments = ({
             : (columnsTable as any)
         }
         rows={dataExperiments?.items || []}
+        rowHeight={200}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}

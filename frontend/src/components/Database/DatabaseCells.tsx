@@ -1,4 +1,12 @@
-import { Box, Input, styled } from '@mui/material'
+import {
+  Box,
+  Grid,
+  Input,
+  List,
+  ListItem,
+  Typography,
+  styled
+} from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
@@ -39,9 +47,9 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
         label: 'Contains', value: 'contains',
         InputComponent: ({applyValue, item}: any) => {
           return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-            if(timeout) clearTimeout(timeout)
-            timeout = setTimeout(() => {
-              applyValue({...item, value: e.target.value})
+                if(timeout) clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                  applyValue({...item, value: e.target.value})
             }, 300)
           }
           } />
@@ -56,7 +64,7 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     field: 'published',
     headerName: 'Published',
     renderCell: (params: { row: DatabaseType }) => (
-        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+      params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
     ),
     valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
@@ -74,21 +82,21 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     headerName: 'Brain area',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area,
+      params.row.fields?.brain_area ?? 'NA',
   },
   {
     field: 'cre_driver',
     headerName: 'Cre driver',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver,
+      params.row.fields?.cre_driver ?? 'NA',
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line,
+      params.row.fields?.reporter_line ?? 'NA',
   },
   {
     field: 'imaging_depth',
@@ -96,7 +104,7 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     filterable: false,
     width: 160,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth ?? 'NA',
   },
   {
     field: 'cell_image_url',
@@ -202,7 +210,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   useEffect(() => {
     if (!window) return;
     window.addEventListener('popstate', function(event) {
-    setKeyTable(pre => pre + 1)
+      setKeyTable(pre => pre + 1)
     })
   }, [searchParams])
 
@@ -289,7 +297,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     const { sort } = dataParams
     setNewParams(
-        sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
+      sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
     )
   }
 
@@ -306,44 +314,58 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&').replace('publish_status', 'published')
+      .map((item: any) => {
+        return `${item.field}=${item?.value}`
+      })
+      .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     setNewParams(
-        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
+      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
 
   const getColumns = useMemo(() => {
     return (dataCells.header?.graph_titles || []).map(
       (graphTitle, index) => ({
-        field: `graph_urls.${index}`,
-        headerName: graphTitle,
-        filterable: false,
-        sortable: false,
-        renderCell: (params: { row: DatabaseType }) => {
-          const {row} = params
-          const {graph_urls} = row
-          const graph_url = graph_urls[index]
-          if(!graph_url) return null
-          return (
-            <Box
-              sx={{ display: 'flex', cursor: "pointer" }}
-              onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
-            >
-              <img
-                src={graph_url.thumb_url}
-                alt={''}
-                width={'100%'}
-                height={'100%'}
-              />
-            </Box>
-          )
-        },
-        width: 160,
-      }),
+      field: `graph_urls.${index}`,
+      headerName: graphTitle,
+      filterable: false,
+      sortable: false,
+      renderCell: (params: { row: DatabaseType }) => {
+        const {row} = params
+        const {graph_urls} = row
+        const graph_url = graph_urls[index]
+        if(!graph_url) return null
+        return (
+          <Grid
+            container
+            spacing={2}
+            sx={{ display: 'flex', cursor: "pointer" }}
+            justifyContent={'center'}
+            alignItems={'center'}
+            onClick={() =>
+              handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)
+            }
+          >
+            <Grid item xs={3}>
+              <List>
+                {Object.entries(graph_url.params).map(([k, v]) => (
+                  <ListItem dense disablePadding>
+                    <Typography variant='caption' sx={{fontSize: 10}}>
+                      {k}: {typeof v === 'number' ? v.toFixed(4) : v}
+                    </Typography>
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
+            <Grid item xs={9}>
+              <img src={graph_url.thumb_url} alt={''} height={220} />
+            </Grid>
+          </Grid>
+        )
+      },
+      width: 300,
+    }),
     )
   }, [dataCells.header?.graph_titles])
 
@@ -357,6 +379,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
+        rowHeight={220}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
@@ -376,12 +399,12 @@ const DatabaseCells = ({ user }: CellProps) => {
       />
       {
         dataCells?.items.length > 0 ?
-          <PaginationCustom
-            data={dataCells}
-            handlePage={handlePage}
-            handleLimit={handleLimit}
-            limit={Number(limit)}
-          /> : null
+        <PaginationCustom
+          data={dataCells}
+          handlePage={handlePage}
+          handleLimit={handleLimit}
+          limit={Number(limit)}
+        /> : null
       }
       <DialogImage
         open={dataDialog.type === 'image'}
