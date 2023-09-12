@@ -28,13 +28,11 @@ import {
   exportWorkspace,
   getListUserShareWorkSpaces,
   getWorkspaceList,
-  importWorkspace,
   postWorkspace,
   putWorkspace,
 } from 'store/slice/Workspace/WorkspacesActions'
 import PopupShare from 'components/PopupShare'
 import moment from 'moment'
-import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -190,19 +188,6 @@ const columns = (
         </Button>
       )
     }
-  },
-  {
-    field: 'download',
-    headerName: '',
-    flex: 1,
-    minWidth: 70,
-    filterable: false, // todo enable when api complete
-    sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-      <ButtonIcon onClick={() => handleDownload(params?.row?.id)}>
-        <SystemUpdateAltIcon />
-      </ButtonIcon>
-    ),
   },
   {
     field: 'share',
@@ -405,10 +390,6 @@ const Workspaces = () => {
     return newRow
   }
 
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    dispatch(importWorkspace({}))
-  }
-
   const pagi = useCallback(
     (page?: number) => {
       return `limit=${data.limit}&offset=${page ? (page-1) * data.limit : data.offset}`
@@ -479,25 +460,6 @@ const Workspaces = () => {
           marginBottom: 2,
         }}
       >
-        <label htmlFor="upload-image">
-          <Button
-            sx={{
-              background: '#000000c4',
-              '&:hover': { backgroundColor: '#00000090' },
-            }}
-            variant="contained"
-            component="span"
-          >
-            Import
-          </Button>
-          <input
-            id="upload-image"
-            hidden
-            accept="*"
-            type="file"
-            onChange={handleFileUpload}
-          />
-        </label>
         <Button
           sx={{
             background: '#000000c4',
