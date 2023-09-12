@@ -41,7 +41,7 @@ async def get_current_user(
             .filter(UserModel.uid == uid)
             .first()
         )
-        assert user_data is not None
+        assert user_data is not None, "Invalid user data"
         authed_user, role_id = user_data
         authed_user.__dict__["role_id"] = role_id
         return User.from_orm(authed_user)
