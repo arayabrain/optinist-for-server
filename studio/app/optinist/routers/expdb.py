@@ -32,12 +32,6 @@ from studio.app.optinist.schemas.expdb.experiment import (
 router = APIRouter(tags=["Experiment Database"])
 public_router = APIRouter(tags=["Experiment Database"])
 
-GRAPH_HOST = (
-    "http://localhost:8000/datasets"
-    if DIRPATH.GRAPH_HOST is None
-    else DIRPATH.GRAPH_HOST
-)
-
 
 def expdbcell_transformer(items: Sequence) -> Sequence:
     expdbcells = []
@@ -46,7 +40,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         cell_number = item[0].cell_number
         expdbcell.experiment_id = item[1]
         subject_id = expdbcell.experiment_id.split("_")[0]
-        exp_dir = f"{GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         expdbcell.publish_status = item[2]
         expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
         expdbcell.cell_image_url = get_cell_urls(
@@ -71,7 +65,7 @@ def experiment_transformer(items: Sequence) -> Sequence:
         expdb, cell_count = item
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
-        exp_dir = f"{GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
         exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
         # TODO: replace cell images to hc images
         exp.cell_image_urls = [
