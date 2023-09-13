@@ -26,10 +26,10 @@ class PublishStatus(int, Enum):
 
 
 class ExpDbExperimentFields(BaseModel):
-    brain_area: str
-    cre_driver: str
-    reporter_line: str
-    imaging_depth: int
+    brain_area: Optional[str]
+    cre_driver: Optional[str]
+    reporter_line: Optional[str]
+    imaging_depth: Optional[int]
 
 
 class ExpDbExperimentHeader(BaseModel):
