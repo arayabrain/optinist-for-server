@@ -241,3 +241,7 @@ class StatData(BaseData):
             for k, v in f.items():
                 cls.__dict__[k] = v[()]
         return cls
+
+    @classmethod
+    def fill_nan_with_none(cls, data):
+        return np.where(np.isnan(data), None, data)
