@@ -46,12 +46,11 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         expdbcell.publish_status = item[2]
         # TODO: set fields from real data
         expdbcell.fields = ExpDbExperimentFields()
-        expdbcell.graph_urls = get_cell_urls(
-            CELL_GRAPHS,
-            exp_dir,
-            cell_number,
-            params={**item[0].statistics},
-        )
+        expdbcell.graph_urls = get_cell_urls(CELL_GRAPHS, exp_dir, cell_number)
+        expdbcell.statistics = {
+            k: "{:.4g}".format(v) if v else None
+            for k, v in expdbcell.statistics.items()
+        }
         expdbcells.append(expdbcell)
     return expdbcells
 
@@ -112,40 +111,14 @@ def get_pixelmap_urls(exp_dir, params=None):
 
 CELL_GRAPHS = {
     "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
-    "tuning_curve": {
-        "title": "Tuning Curve",
-        "dir": "plots",
-        "params": [
-            "p_value_resp",
-            "p_value_sel",
-            "p_value_ori_resp",
-            "p_value_ori_sel",
-            "di",
-            "oi",
-            "dsi",
-            "osi",
-        ],
-    },
-    "tuning_curve_polar": {
-        "title": "Tuning Curve Polar",
-        "dir": "plots",
-        "params": [
-            "dir_vector_angle",
-            "ori_vector_angle",
-            "r_best_dir",
-            "dir_tuning_width",
-            "ori_tuning_width",
-        ],
-    },
+    "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
+    "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
 }
 
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
-        ImageInfo(
-            url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
-            params={param: params.get(param) for param in v.get("params", [])},
-        )
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
         for k, v in source.items()
     ]
 

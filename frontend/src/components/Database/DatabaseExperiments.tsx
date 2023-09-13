@@ -118,7 +118,7 @@ const columns = (
       params.row.publish_status ? <CheckCircleIcon color={'success'} /> : null,
     valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
-    width: 160,
+    width: 120,
   },
   {
     field: 'brain_area',
@@ -127,33 +127,33 @@ const columns = (
       params.row.fields?.brain_area ?? 'NA',
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: 'singleSelect',
-    width: 160,
+    width: 120,
   },
   {
     field: 'cre_driver',
     headerName: 'Cre driver',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.cre_driver ?? 'NA',
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.reporter_line ?? 'NA',
   },
   {
     field: 'imaging_depth',
     headerName: 'Imaging depth',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.imaging_depth ?? 'NA',
   },
   {
     field: 'attributes',
     headerName: 'Attributes',
-    width: 160,
+    width: 120,
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
@@ -170,7 +170,7 @@ const columns = (
   !readonly && {
     field: 'cells',
     headerName: 'Cells',
-    width: 160,
+    width: 120,
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
@@ -578,7 +578,7 @@ const DatabaseExperiments = ({
       {
         field: 'share_type',
         headerName: 'Share',
-        width: 160,
+        width: 120,
         sortable: false,
         filterable: false,
         renderCell: (params: { value: number; row: DatabaseType }) => {
@@ -602,7 +602,7 @@ const DatabaseExperiments = ({
       {
         field: 'publish_status',
         headerName: 'Publish',
-        width: 160,
+        width: 120,
         sortable: false,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => (
