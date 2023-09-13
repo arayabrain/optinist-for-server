@@ -400,10 +400,8 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-      .map((item: any) => {
-        return `${item.field}=${item?.value}`
-      })
-      .join('&').replace('publish_status', 'published')
+        .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
+        .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     setNewParams(
       `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
