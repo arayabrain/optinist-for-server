@@ -1,12 +1,12 @@
 import { Box, Input, styled } from '@mui/material'
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DialogImage from '../common/DialogImage'
 import {
   GridFilterModel,
   GridSortModel,
   DataGrid,
-  GridSortDirection
+  GridSortDirection, GridSortItem
 } from '@mui/x-data-grid'
 import {
   DatabaseType,
@@ -136,7 +136,6 @@ const DatabaseCells = ({ user }: CellProps) => {
     }),
   )
 
-  const [keyTable, setKeyTable] = useState(0)
   const [newParams, setNewParams] = useState('')
   const [dataDialog, setDataDialog] = useState<{
     type: string
@@ -200,27 +199,26 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
-    if (!window) return;
-    window.addEventListener('popstate', function(event) {
-    setKeyTable(pre => pre + 1)
-    })
-  }, [searchParams])
-
-  useEffect(() => {
-    setFilterModel({
-      items: [
-        {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
-          operator: 'contains',
-          value: Object.values(dataParamsFilter).find(value => value) || null,
-        },
-      ],
+    setModel({
+      filter: {
+        items: [
+          {
+            field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '' ,
+            operator: 'contains',
+            value: Object.values(dataParamsFilter).find(value => value) || null,
+          },
+        ],
+      },
+      sort: [{
+        field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+        sort: dataParams.sort[1] as GridSortDirection
+      }]
     })
     //eslint-disable-next-line
-  }, [searchParams])
+  }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
-    if(!newParams) return
+    if(newParams === window.location.search.replace("?", "")) return;
     setParams(newParams)
     //eslint-disable-next-line
   }, [newParams])
@@ -252,35 +250,41 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
+    if(!dataCells) return
     const filter = getParamsData()
-    setNewParams(
-      `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
-    )
+    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
+    setNewParams(param)
   }
 
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
+      setModel({
+        ...model, sort: rowSelectionModel
+      })
+      let param
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
+        param = filter || dataParams.sort[0] || offset ? `${filter ? '&' : ''}${pagiFilter()}` : ''
+        setNewParams(param)
         return
       }
-      setNewParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replaceAll(
-            'publish_status',
-            'published'
-        )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`,
-      )
+      param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replaceAll(
+          'publish_status',
+          'published'
+      )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+      setNewParams(param)
     },
     //eslint-disable-next-line
     [pagiFilter],
   )
 
-  const handleFilter = (model: GridFilterModel) => {
-    setFilterModel(model)
+  const handleFilter = (modelFilter: GridFilterModel) => {
+    setModel({
+      ...model, filter: modelFilter
+    })
     let filter = ''
-    if (!!model.items[0]?.value) {
-      filter = model.items
+    if (!!modelFilter.items[0]?.value) {
+      filter = modelFilter.items
         .filter((item) => item.value)
         .map((item: any) => {
           return `${item.field}=${item?.value}`
@@ -288,32 +292,35 @@ const DatabaseCells = ({ user }: CellProps) => {
         .join('&').replace('publish_status', 'published')
     }
     const { sort } = dataParams
-    setNewParams(
-        sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
-    )
+    const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
+    setNewParams(param)
   }
 
-  const [filterModel, setFilterModel] = useState<GridFilterModel>({
-    items: [
-      {
-        field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '',
-        operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key] && ['publish_status'].includes(key)) ? 'is' : 'contains',
-        value: Object.values(dataParamsFilter).find(value => value),
-      },
-    ],
-  });
+  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
+    filter : {
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value),
+        },
+      ],
+    },
+    sort: [{
+      field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+      sort: dataParams.sort[1] as GridSortDirection
+    }]
+  })
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
+    if(!dataCells) return
     let filter = ''
     filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&').replace('publish_status', 'published')
+      .map((item: any) => `${item.field}=${item?.value}`)
+      .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
-    setNewParams(
-        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
-    )
+    const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`
+    setNewParams(param)
   }
 
   const getColumns = useMemo(() => {
@@ -354,24 +361,14 @@ const DatabaseCells = ({ user }: CellProps) => {
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
-        key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}
         onSortModelChange={handleSort}
-        filterModel={filterModel}
-        initialState={{
-          sorting: {
-            sortModel: [
-              {
-                field: dataParams.sort[0]?.replace('publish_status', 'published'),
-                sort: dataParams.sort[1] as GridSortDirection,
-              },
-            ],
-          },
-        }}
+        filterModel={model.filter}
+        sortModel={model.sort as GridSortItem[]}
         onFilterModelChange={handleFilter as any}
       />
       {
