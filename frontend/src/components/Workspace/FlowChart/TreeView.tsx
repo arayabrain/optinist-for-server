@@ -82,7 +82,7 @@ export const AlgorithmTreeView = React.memo(() => {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        <InputNodeComponent
+        {/* <InputNodeComponent
           fileName={'image'}
           nodeName={'imageData'}
           fileType={FILE_TYPE_SET.IMAGE}
@@ -106,7 +106,7 @@ export const AlgorithmTreeView = React.memo(() => {
           fileName={'behavior'}
           nodeName={'behaviorData'}
           fileType={FILE_TYPE_SET.BEHAVIOR}
-        />
+        /> */}
         <InputNodeComponent
           fileName={'expdb'}
           nodeName={'expdbData'}
