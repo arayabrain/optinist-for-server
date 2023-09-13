@@ -380,9 +380,9 @@ const AccountManager = () => {
       let param
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        param = filter || sortParams.sort[0] || offset ? `${filter ? '&' : ''}${paramsManager()}` : ''
+        param = filter || sortParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${paramsManager()}` : ''
       } else {
-        param = `${filter}${rowSelectionModel[0] ? `${filter ? '&': ''}sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? `${filter}&` : ''}sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`
       }
       setNewParams(param)
       //eslint-disable-next-line
