@@ -385,8 +385,10 @@ const DatabaseExperiments = ({
   }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
-    if(newParams === window.location.search.replace("?", "")) return;
-    setParams(newParams)
+    let param = newParams
+    if(newParams[0] === '&') param = newParams.slice(1, param.length)
+    if(param === window.location.search.replace("?", "")) return;
+    setParams(param)
     //eslint-disable-next-line
   }, [newParams])
 
@@ -481,12 +483,12 @@ const DatabaseExperiments = ({
       if (!rowSelectionModel[0]) {
         param = filter || dataParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${pagiFilter()}` : ''
       } else {
-        param = `${filter}${rowSelectionModel[0] ? `${filter ? `${filter}&` : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published',)}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published',)}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
       }
       setNewParams(param)
     },
     //eslint-disable-next-line
-    [pagiFilter],
+    [pagiFilter, model],
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
@@ -510,7 +512,7 @@ const DatabaseExperiments = ({
     let filter = ''
     filter = Object.keys(dataParamsFilter)
       .filter((key) => (dataParamsFilter as any)[key])
-      .map((item: any) => `${item.field}=${item?.value}`)
+      .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
       .join('&')
       .replace('publish_status', 'published')
     const { sort } = dataParams
