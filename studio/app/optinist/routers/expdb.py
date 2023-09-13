@@ -44,13 +44,13 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         subject_id = expdbcell.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         expdbcell.publish_status = item[2]
-        expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        expdbcell.graph_urls = get_cell_urls(
-            CELL_GRAPHS,
-            exp_dir,
-            cell_number,
-            params={"param1": 10, "param2": 20},
-        )
+        # TODO: set fields from real data
+        expdbcell.fields = ExpDbExperimentFields()
+        expdbcell.graph_urls = get_cell_urls(CELL_GRAPHS, exp_dir, cell_number)
+        expdbcell.statistics = {
+            k: "{:.4g}".format(v) if v else None
+            for k, v in expdbcell.statistics.items()
+        }
         expdbcells.append(expdbcell)
     return expdbcells
 
@@ -62,20 +62,12 @@ def experiment_transformer(items: Sequence) -> Sequence:
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
-        exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
+        # TODO: set fields from real data
+        exp.fields = ExpDbExperimentFields()
         exp.cell_image_urls = get_pixelmap_urls(exp_dir)
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
-
-
-# TODO: use real data
-DUMMY_EXPERIMENTS_FIELDS = {
-    "brain_area": 13,
-    "cre_driver": 20,
-    "reporter_line": 30,
-    "imaging_depth": 40,
-}
 
 
 EXPERIMENT_GRAPHS = {
@@ -99,10 +91,7 @@ EXPERIMENT_GRAPHS = {
 
 def get_experiment_urls(source, exp_dir, params=None):
     return [
-        ImageInfo(
-            url=f"{exp_dir}/{v['dir']}/{k}.png",
-            params=params,
-        )
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}.png", params=params)
         for k, v in source.items()
     ]
 
@@ -115,10 +104,7 @@ def get_pixelmap_urls(exp_dir, params=None):
     )
 
     return [
-        ImageInfo(
-            url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}",
-            params=params,
-        )
+        ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
         for k in pixelmaps
     ]
 
@@ -132,10 +118,7 @@ CELL_GRAPHS = {
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
-        ImageInfo(
-            url=f"{exp_dir}/{v['dir']}/{k}_{index}.png",
-            params=params,
-        )
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
         for k, v in source.items()
     ]
 
