@@ -478,9 +478,9 @@ const DatabaseExperiments = ({
       let param
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        param = filter || dataParams.sort[0] || offset ? `${filter ? '&' : ''}${pagiFilter()}` : ''
+        param = filter || dataParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${pagiFilter()}` : ''
       } else {
-        param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published',)}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? `${filter}&` : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published',)}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
       }
       setNewParams(param)
     },
@@ -622,6 +622,7 @@ const DatabaseExperiments = ({
         }
         sortModel={model.sort as GridSortItem[]}
         rows={dataExperiments?.items || []}
+        rowHeight={128}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}

@@ -16,6 +16,9 @@ handlers:
     when: midnight
     interval: 1
     backupCount: 365
+loggers:
+  sqlalchemy.engine:
+    level: INFO
 root:
   level: INFO
   handlers: [console, rotating_file]

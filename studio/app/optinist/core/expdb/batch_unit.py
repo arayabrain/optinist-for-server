@@ -24,6 +24,7 @@ from studio.app.const import (
     FOV_CONTRAST,
     FOV_SUFFIX,
     TC_SUFFIX,
+    THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
 from studio.app.dir_path import DIRPATH
@@ -42,6 +43,12 @@ class Result:
 def get_default_params(name: str):
     filepath = find_param_filepath(name)
     return ConfigReader.read(filepath)
+
+
+def save_image_with_thumb(img_path: str, img):
+    cv2.imwrite(img_path, img)
+    thumb_img = cv2.resize(img, dsize=(THUMBNAIL_HEIGHT, THUMBNAIL_HEIGHT))
+    cv2.imwrite(img_path.replace(".png", ".thumb.png"), thumb_img)
 
 
 class ExpDbPath:
@@ -69,9 +76,10 @@ class ExpDbPath:
             self.output_dir = self.exp_dir
 
         # outputs
-        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
-        self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
+        self.plot_dir = join_filepath([self.output_dir, "plots"])
+        self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
+        self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
 
 
 class ExpDbBatch:
@@ -104,6 +112,16 @@ class ExpDbBatch:
             create_directory(expdb_path.output_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
+    def load_raw_cellmask_data(self) -> int:
+        # csr_matrix to numpy array
+        cellmask = (
+            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
+        )
+
+        imxx, ncells = cellmask.shape
+        return (cellmask, imxx, ncells)
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self):
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
@@ -118,18 +136,16 @@ class ExpDbBatch:
             ), f"save statfile failed: {expdb_path.stat_file}"
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_pixelmaps(self) -> int:
+    def generate_cellmasks(self) -> int:
         for expdb_path in self.expdb_paths:
-            create_directory(expdb_path.pixelmap_dir)
+            create_directory(expdb_path.cellmask_dir)
 
         # csr_matrix to numpy array
-        cellmask = (
-            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
-        )
+        cellmask, imxx, ncells = self.load_raw_cellmask_data()
+
         fov = tifffile.imread(self.raw_path.fov_file).astype(np.double)
         fov_n = fov / np.max(fov)
 
-        imxx, ncells = cellmask.shape
         imx = imy = int(math.sqrt(imxx))
 
         cellmask = np.reshape(cellmask, (imx, imy, ncells), order="F")
@@ -142,20 +158,22 @@ class ExpDbBatch:
             fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
 
             for expdb_path in self.expdb_paths:
-                pixelmap_file = join_filepath(
-                    [expdb_path.pixelmap_dir, f"fov_cell_merge_{i}.png"]
+                save_image_with_thumb(
+                    join_filepath([expdb_path.cellmask_dir, f"fov_cell_merge_{i}.png"]),
+                    fov_cell_merge,
                 )
-                cv2.imwrite(pixelmap_file, fov_cell_merge)
 
         for expdb_path in self.expdb_paths:
             assert (
                 len(
                     glob(
-                        join_filepath([expdb_path.pixelmap_dir, "fov_cell_merge_*.png"])
+                        join_filepath(
+                            [expdb_path.cellmask_dir, "fov_cell_merge_*.thumb.png"]
+                        )
                     )
                 )
                 == ncells
-            ), f"generate pixelmaps in failed: {expdb_path.pixelmap_dir}"
+            ), f"generate cellmasks failed in {expdb_path.cellmask_dir}"
 
         return ncells
 
@@ -181,3 +199,26 @@ class ExpDbBatch:
 
             stat.direction_tuning_width.save_plot(dir_path)
             stat.orientation_tuning_width.save_plot(dir_path)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def generate_pixelmaps(self):
+        for expdb_path in self.expdb_paths:
+            create_directory(expdb_path.pixelmap_dir)
+
+        pixelmaps = glob(join_filepath([self.raw_path.exp_dir, "*_hc.tif"]))
+        pixlemaps_with_num = glob(join_filepath([self.raw_path.exp_dir, "*_hc_*.tif"]))
+        for pixelmap in [*pixelmaps, *pixlemaps_with_num]:
+            img = tifffile.imread(pixelmap)
+            file_name = os.path.splitext(os.path.basename(pixelmap))[0]
+
+            for expdb_path in self.expdb_paths:
+                save_image_with_thumb(
+                    join_filepath([expdb_path.pixelmap_dir, f"{file_name}.png"]), img
+                )
+
+        for expdb_path in self.expdb_paths:
+            assert len(
+                glob(join_filepath([expdb_path.pixelmap_dir, "*.thumb.png"]))
+            ) == len(pixelmaps) + len(
+                pixlemaps_with_num
+            ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"

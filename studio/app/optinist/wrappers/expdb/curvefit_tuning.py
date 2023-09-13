@@ -94,6 +94,8 @@ class TempTuning:
                 return self.curve_fit_result(params)
             except RuntimeError:
                 continue
+        else:
+            return None
 
     def tuning_width(self, k):
         return (
@@ -271,27 +273,32 @@ def curvefit_tuning(
 
         if stat.p_value_sel[i] > p_threshold:
             continue
-        (
-            stat.dir_a1[i],
-            stat.dir_a2[i],
-            stat.dir_k1[i],
-            stat.dir_k2[i],
-            stat.best_dir_fit[i],
-            stat.null_dir_fit[i],
-            stat.r_best_dir_fit[i],
-            stat.r_null_dir_fit[i],
-            stat.di_fit[i],
-            stat.ds[i],
-            stat.dir_tuning_width[i],
-        ) = dir_temp.get_curvefit_results()
+
+        dir_curvefit_results = dir_temp.get_curvefit_results()
+        if dir_curvefit_results is not None:
+            (
+                stat.dir_a1[i],
+                stat.dir_a2[i],
+                stat.dir_k1[i],
+                stat.dir_k2[i],
+                stat.best_dir_fit[i],
+                stat.null_dir_fit[i],
+                stat.r_best_dir_fit[i],
+                stat.r_null_dir_fit[i],
+                stat.di_fit[i],
+                stat.ds[i],
+                stat.dir_tuning_width[i],
+            ) = dir_curvefit_results
 
         ori_temp = OriTempTuning(stat.ori_ratio_change[i], interp_method, do_interp)
-        (
-            stat.ori_a1[i],
-            stat.ori_k1[i],
-            stat.best_ori_fit[i],
-            stat.ori_tuning_width[i],
-        ) = ori_temp.get_curvefit_results()
+        ori_curvefit_results = ori_temp.get_curvefit_results()
+        if ori_curvefit_results is not None:
+            (
+                stat.ori_a1[i],
+                stat.ori_k1[i],
+                stat.best_ori_fit[i],
+                stat.ori_tuning_width[i],
+            ) = ori_curvefit_results
 
     return {
         "stat": stat,
