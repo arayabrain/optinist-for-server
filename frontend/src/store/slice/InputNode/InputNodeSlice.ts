@@ -29,7 +29,7 @@ import {
 
 const initialState: InputNode = {
   [INITIAL_IMAGE_ELEMENT_ID]: {
-    fileType: FILE_TYPE_SET.IMAGE,
+    fileType: FILE_TYPE_SET.EXPDB,
     param: {},
   },
 }
