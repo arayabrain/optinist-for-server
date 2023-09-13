@@ -40,6 +40,9 @@ class DIRPATH:
     ), "EXPDB_DIR and PUBLIC_EXPDB_DIR must be different"
 
     GRAPH_HOST = os.environ.get("GRAPH_HOST")
+    assert GRAPH_HOST is not None, "GRAPH_HOST must be set"
+
+    SELFHOST_GRAPH = os.environ.get("SELFHOST_GRAPH", True)
 
     CONDAENV_DIR = (
         f"{os.path.dirname(os.path.dirname(os.path.dirname(__file__)))}/conda"
@@ -47,7 +50,8 @@ class DIRPATH:
 
     SNAKEMAKE_FILEPATH = f"{APP_DIR}/Snakefile"
     EXPERIMENT_YML = "experiment.yaml"
-    SNAKEMAKE_CONFIG_YML = "config.yaml"
+    SNAKEMAKE_CONFIG_YML = "snakemake.yaml"
+    WORKFLOW_YML = "workflow.yaml"
 
     FIREBASE_PRIVATE_PATH = f"{CONFIG_DIR}/auth/firebase_private.json"
     FIREBASE_CONFIG_PATH = f"{CONFIG_DIR}/auth/firebase_config.json"

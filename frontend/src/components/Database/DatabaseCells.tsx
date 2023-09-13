@@ -30,7 +30,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void, user?: boolean) => [
+const columns = (user?: boolean) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -98,32 +98,6 @@ const columns = (handleOpenDialog: (value: ImageUrls[], expId?: string) => void,
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.imaging_depth,
   },
-  {
-    field: 'cell_image_url',
-    headerName: 'Pixel Image',
-    width: 160,
-    filterable: false,
-    sortable: false,
-    renderCell: (params: { row: DatabaseType }) => {
-      const { cell_image_url } = params.row
-      if (!cell_image_url) return null
-      return (
-        <Box
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-          }}
-          onClick={() => handleOpenDialog([cell_image_url])}
-        >
-          <img
-            src={params.row?.cell_image_url?.thumb_url}
-            alt={''}
-            width={'100%'}
-            height={'100%'}
-          />
-      </Box>
-    )}
-  },
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
@@ -136,6 +110,8 @@ const DatabaseCells = ({ user }: CellProps) => {
     }),
   )
 
+  const [keyTable, setKeyTable] = useState(0)
+  const [newParams, setNewParams] = useState('')
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data?: string | string[]
@@ -198,6 +174,32 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    if (!window) return;
+    window.addEventListener('popstate', function(event) {
+    setKeyTable(pre => pre + 1)
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    setFilterModel({
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
+        },
+      ],
+    })
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
+    if(!newParams) return
+    setParams(newParams)
+    //eslint-disable-next-line
+  }, [newParams])
+
+  useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
@@ -225,7 +227,7 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const filter = getParamsData()
-    setParams(
+    setNewParams(
       `${filter}&${dataParams.sort[0] ? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`,
     )
   }
@@ -234,10 +236,10 @@ const DatabaseCells = ({ user }: CellProps) => {
     (rowSelectionModel: GridSortModel) => {
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&${pagiFilter()}`)
+        setNewParams(filter || dataParams.sort[0] || offset ? `${filter}&${pagiFilter()}` : '')
         return
       }
-      setParams(
+      setNewParams(
         `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field?.replaceAll(
             'publish_status',
             'published'
@@ -245,7 +247,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       )
     },
     //eslint-disable-next-line
-    [pagiFilter, getParamsData],
+    [pagiFilter],
   )
 
   const handleFilter = (model: GridFilterModel) => {
@@ -260,8 +262,8 @@ const DatabaseCells = ({ user }: CellProps) => {
         .join('&').replace('publish_status', 'published')
     }
     const { sort } = dataParams
-    setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}`,
+    setNewParams(
+        sort[0] || filter || offset ? `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : '',
     )
   }
 
@@ -281,7 +283,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
         .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
-    setParams(
+    setNewParams(
         `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
     )
   }
@@ -317,15 +319,17 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(handleOpenDialog, !!user), ...getColumns].filter(
+  const columnsTable = [...columns(!!user), ...getColumns].filter(
     Boolean,
   ) as any
 
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
+        key={keyTable}
         columns={[...columnsTable] as any}
         rows={dataCells?.items || []}
+        rowHeight={128}
         hideFooter={true}
         filterMode={'server'}
         sortingMode={'server'}

@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { WORKSPACE_SLICE_NAME, Workspace } from './WorkspaceType'
-import { importExperimentByUid } from '../Experiments/ExperimentsActions'
+import { reproduceWorkflow } from '../Workflow/WorkflowActions'
 import {
   delWorkspace,
   getListUserShareWorkSpaces,
@@ -43,7 +43,7 @@ export const workspaceSlice = createSlice({
   },
   extraReducers(builder) {
     builder
-      .addCase(importExperimentByUid.fulfilled, (state, action) => {
+      .addCase(reproduceWorkflow.fulfilled, (state, action) => {
         state.currentWorkspace.workspaceId = action.meta.arg.workspaceId
       })
       .addCase(getWorkspace.fulfilled, (state, action) => {
