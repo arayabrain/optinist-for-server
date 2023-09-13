@@ -11,10 +11,10 @@ export type ImageUrls = {
 export type DatabaseType = {
   id: number
   fields: {
-    brain_area: string
-    cre_driver: string
-    reporter_line: string
-    imaging_depth: number
+    brain_area?: string
+    cre_driver?: string
+    reporter_line?: string
+    imaging_depth?: number
   }
   experiment_id?: string
   attributes?: object
@@ -23,6 +23,21 @@ export type DatabaseType = {
     url: string,
     thumb_url: string,
     params: {}
+  }
+  statistics? : {
+    p_value_resp?: string
+    p_value_sel?: string
+    p_value_ori_resp?: string
+    p_value_ori_sel?: string
+    dir_vector_angle?: string
+    ori_vector_angle?: string
+    oi?: string
+    di?: string
+    dsi?: string
+    osi?: string
+    r_best_dir?: string
+    dir_tuning_width?: string
+    ori_tuning_width?: string
   }
   graph_urls: {url: string, params: {}, thumb_url: string}[]
   share_type?: number

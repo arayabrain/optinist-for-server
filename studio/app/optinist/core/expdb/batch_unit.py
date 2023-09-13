@@ -122,7 +122,7 @@ class ExpDbBatch:
         return (cellmask, imxx, ncells)
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_statdata(self):
+    def generate_statdata(self) -> StatData:
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
             expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
@@ -134,6 +134,8 @@ class ExpDbBatch:
             assert os.path.exists(
                 expdb_path.stat_file
             ), f"save statfile failed: {expdb_path.stat_file}"
+
+        return stat
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_cellmasks(self) -> int:
@@ -178,27 +180,28 @@ class ExpDbBatch:
         return ncells
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_plots(self):
-        stat = StatData.load_from_hdf5(self.raw_path.stat_file)
+    def generate_plots(self, stat_data: Optional[StatData] = None):
+        if stat_data is None:
+            stat_data = StatData.load_from_hdf5(self.raw_path.stat_file)
 
         for expdb_path in self.expdb_paths:
             dir_path = expdb_path.plot_dir
             create_directory(dir_path)
 
-            stat.tuning_curve.save_plot(dir_path)
-            stat.tuning_curve_polar.save_plot(dir_path)
+            stat_data.tuning_curve.save_plot(dir_path)
+            stat_data.tuning_curve_polar.save_plot(dir_path)
 
-            stat.direction_responsivity_ratio.save_plot(dir_path)
-            stat.orientation_responsivity_ratio.save_plot(dir_path)
-            stat.direction_selectivity.save_plot(dir_path)
-            stat.orientation_selectivity.save_plot(dir_path)
-            stat.best_responsivity.save_plot(dir_path)
+            stat_data.direction_responsivity_ratio.save_plot(dir_path)
+            stat_data.orientation_responsivity_ratio.save_plot(dir_path)
+            stat_data.direction_selectivity.save_plot(dir_path)
+            stat_data.orientation_selectivity.save_plot(dir_path)
+            stat_data.best_responsivity.save_plot(dir_path)
 
-            stat.preferred_direction.save_plot(dir_path)
-            stat.preferred_orientation.save_plot(dir_path)
+            stat_data.preferred_direction.save_plot(dir_path)
+            stat_data.preferred_orientation.save_plot(dir_path)
 
-            stat.direction_tuning_width.save_plot(dir_path)
-            stat.orientation_tuning_width.save_plot(dir_path)
+            stat_data.direction_tuning_width.save_plot(dir_path)
+            stat_data.orientation_tuning_width.save_plot(dir_path)
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self):

@@ -6,7 +6,8 @@ import {
   GridFilterModel,
   GridSortModel,
   DataGrid,
-  GridSortDirection, GridSortItem
+  GridSortDirection,
+  GridSortItem
 } from '@mui/x-data-grid'
 import {
   DatabaseType,
@@ -39,9 +40,9 @@ const columns = (user?: boolean) => [
         label: 'Contains', value: 'contains',
         InputComponent: ({applyValue, item}: any) => {
           return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-            if(timeout) clearTimeout(timeout)
-            timeout = setTimeout(() => {
-              applyValue({...item, value: e.target.value})
+                if(timeout) clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                  applyValue({...item, value: e.target.value})
             }, 300)
           }
           } />
@@ -56,47 +57,167 @@ const columns = (user?: boolean) => [
     field: 'published',
     headerName: 'Published',
     renderCell: (params: { row: DatabaseType }) => (
-        params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
+      params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
     ),
     valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
-    width: 160,
+    width: 120,
   },
   {
     field: 'id',
     headerName: 'Cell ID',
-    width: 160,
+    width: 120,
     filterable: false,
     renderCell: (params: { value: number }) => params.value,
   },
   {
     field: 'brain_area',
     headerName: 'Brain area',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area,
+      params.row.fields?.brain_area ?? 'NA',
   },
   {
     field: 'cre_driver',
     headerName: 'Cre driver',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver,
+      params.row.fields?.cre_driver ?? 'NA',
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line,
+      params.row.fields?.reporter_line ?? 'NA',
   },
   {
     field: 'imaging_depth',
     headerName: 'Imaging depth',
     filterable: false,
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth ?? 'NA',
+  },
+]
+
+const statistics = () => [
+  {
+    field: 'p_value_resp',
+    headerName: 'p_value_resp',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.p_value_resp ?? 'NA',
+  },
+  {
+    field: 'p_value_sel',
+    headerName: 'p_value_sel',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.p_value_sel ?? 'NA',
+  },
+  {
+    field: 'p_value_ori_resp',
+    headerName: 'p_value_ori_resp',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.p_value_ori_resp ?? 'NA',
+  },
+  {
+    field: 'p_value_ori_sel',
+    headerName: 'p_value_ori_sel',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.p_value_ori_sel ?? 'NA',
+  },
+  {
+    field: 'dir_vector_angle',
+    headerName: 'dir_vector_angle',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.dir_vector_angle ?? 'NA',
+  },
+  {
+    field: 'ori_vector_angle',
+    headerName: 'ori_vector_angle',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.ori_vector_angle ?? 'NA',
+  },
+  {
+    field: 'di',
+    headerName: 'di',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.di ?? 'NA',
+  },
+  {
+    field: 'oi',
+    headerName: 'oi',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.oi ?? 'NA',
+  },
+  {
+    field: 'dsi',
+    headerName: 'dsi',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.dsi ?? 'NA',
+  },
+  {
+    field: 'osi',
+    headerName: 'osi',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.osi ?? 'NA',
+  },
+  {
+    field: 'r_best_dir',
+    headerName: 'r_best_dir',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.r_best_dir ?? 'NA',
+  },
+  {
+    field: 'dir_tuning_width',
+    headerName: 'dir_tuning_width',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.dir_tuning_width ?? 'NA',
+  },
+  {
+    field: 'ori_tuning_width',
+    headerName: 'ori_tuning_width',
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.statistics?.ori_tuning_width ?? 'NA',
   },
 ]
 
@@ -300,35 +421,35 @@ const DatabaseCells = ({ user }: CellProps) => {
   const getColumns = useMemo(() => {
     return (dataCells.header?.graph_titles || []).map(
       (graphTitle, index) => ({
-        field: `graph_urls.${index}`,
-        headerName: graphTitle,
-        filterable: false,
-        sortable: false,
-        renderCell: (params: { row: DatabaseType }) => {
-          const {row} = params
-          const {graph_urls} = row
-          const graph_url = graph_urls[index]
-          if(!graph_url) return null
-          return (
-            <Box
-              sx={{ display: 'flex', cursor: "pointer" }}
-              onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
-            >
-              <img
-                src={graph_url.thumb_url}
-                alt={''}
-                width={'100%'}
-                height={'100%'}
-              />
-            </Box>
-          )
-        },
-        width: 160,
-      }),
+      field: `graph_urls.${index}`,
+      headerName: graphTitle,
+      filterable: false,
+      sortable: false,
+      renderCell: (params: { row: DatabaseType }) => {
+        const {row} = params
+        const {graph_urls} = row
+        const graph_url = graph_urls[index]
+        if(!graph_url) return null
+        return (
+          <Box
+            sx={{ display: 'flex', cursor: "pointer" }}
+            onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
+          >
+            <img
+              src={graph_url.thumb_url}
+              alt={''}
+              width={'100%'}
+              height={'100%'}
+            />
+          </Box>
+        )
+      },
+      width: 160,
+    }),
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(!!user), ...getColumns].filter(
+  const columnsTable = [...columns(!!user), ...getColumns, ...statistics()].filter(
     Boolean,
   ) as any
 
@@ -348,12 +469,12 @@ const DatabaseCells = ({ user }: CellProps) => {
       />
       {
         dataCells?.items.length > 0 ?
-          <PaginationCustom
-            data={dataCells}
-            handlePage={handlePage}
-            handleLimit={handleLimit}
-            limit={Number(limit)}
-          /> : null
+        <PaginationCustom
+          data={dataCells}
+          handlePage={handlePage}
+          handleLimit={handleLimit}
+          limit={Number(limit)}
+        /> : null
       }
       <DialogImage
         open={dataDialog.type === 'image'}

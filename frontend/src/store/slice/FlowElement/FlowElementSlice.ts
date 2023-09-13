@@ -37,7 +37,7 @@ import { uploadFile } from '../FileUploader/FileUploaderActions'
 const initialNodes: Node<NodeData>[] = [
   {
     id: INITIAL_IMAGE_ELEMENT_ID,
-    type: REACT_FLOW_NODE_TYPE_KEY.ImageFileNode,
+    type: REACT_FLOW_NODE_TYPE_KEY.ExpDbNode,
     data: {
       type: NODE_TYPE_SET.INPUT,
       label: INITIAL_IMAGE_ELEMENT_NAME,

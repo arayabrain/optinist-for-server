@@ -1,4 +1,4 @@
-from sqlmodel import Column, Field, Integer, UniqueConstraint
+from sqlmodel import JSON, Column, Field, Integer, UniqueConstraint
 
 from studio.app.common.models.base import Base, TimestampMixin
 
@@ -26,3 +26,5 @@ class Cell(Base, TimestampMixin, table=True):
             comment="foregn key for experiments.id",
         ),
     )
+
+    statistics: dict = Field(sa_column=Column(JSON), default={})

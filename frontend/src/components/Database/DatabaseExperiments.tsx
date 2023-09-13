@@ -1,5 +1,5 @@
 import { Box, Input, styled } from '@mui/material'
-import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch'
 import Button from '@mui/material/Button'
@@ -14,7 +14,8 @@ import {
   GridSortDirection,
   GridSortModel,
   DataGrid,
-  GridEventListener, GridSortItem,
+  GridEventListener,
+  GridSortItem,
 } from '@mui/x-data-grid'
 import GroupsIcon from '@mui/icons-material/Groups'
 import DomainIcon from '@mui/icons-material/Domain'
@@ -43,10 +44,10 @@ import PaginationCustom from '../common/PaginationCustom'
 export type Data = {
   id: number
   fields: {
-    brain_area: string
-    cre_driver: string
-    reporter_line: string
-    imaging_depth: number
+    brain_area?: string
+    cre_driver?: string
+    reporter_line?: string
+    imaging_depth?: number
   }
   experiment_id: string
   attributes: string
@@ -118,42 +119,42 @@ const columns = (
       params.row.publish_status ? <CheckCircleIcon color={'success'} /> : null,
     valueOptions: ['Published', 'No_Published'],
     type: 'singleSelect',
-    width: 160,
+    width: 120,
   },
   {
     field: 'brain_area',
     headerName: 'Brain area',
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area,
+      params.row.fields?.brain_area ?? 'NA',
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: 'singleSelect',
-    width: 160,
+    width: 120,
   },
   {
     field: 'cre_driver',
     headerName: 'Cre driver',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver,
+      params.row.fields?.cre_driver ?? 'NA',
   },
   {
     field: 'reporter_line',
     headerName: 'Reporter line',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line,
+      params.row.fields?.reporter_line ?? 'NA',
   },
   {
     field: 'imaging_depth',
     headerName: 'Imaging depth',
-    width: 160,
+    width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth,
+      params.row.fields?.imaging_depth ?? 'NA',
   },
   {
     field: 'attributes',
     headerName: 'Attributes',
-    width: 160,
+    width: 120,
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
@@ -170,7 +171,7 @@ const columns = (
   !readonly && {
     field: 'cells',
     headerName: 'Cells',
-    width: 160,
+    width: 120,
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => (
@@ -555,7 +556,7 @@ const DatabaseExperiments = ({
       {
         field: 'share_type',
         headerName: 'Share',
-        width: 160,
+        width: 120,
         sortable: false,
         filterable: false,
         renderCell: (params: { value: number; row: DatabaseType }) => {
@@ -579,7 +580,7 @@ const DatabaseExperiments = ({
       {
         field: 'publish_status',
         headerName: 'Publish',
-        width: 160,
+        width: 120,
         sortable: false,
         filterable: false,
         renderCell: (params: { row: DatabaseType }) => (
