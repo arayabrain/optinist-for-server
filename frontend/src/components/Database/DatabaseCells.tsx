@@ -272,6 +272,22 @@ const DatabaseCells = ({ user }: CellProps) => {
     [searchParams],
   )
 
+  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
+    filter : {
+      items: [
+        {
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(dataParamsFilter).find(value => value),
+        },
+      ],
+    },
+    sort: [{
+      field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+      sort: dataParams.sort[1] as GridSortDirection
+    }]
+  })
+
   const pagiFilter = useCallback(
     (page?: number) => {
       return `limit=${limit}&offset=${
@@ -313,8 +329,10 @@ const DatabaseCells = ({ user }: CellProps) => {
   }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
-    if(newParams === window.location.search.replace("?", "")) return;
-    setParams(newParams)
+    let param = newParams
+    if(newParams[0] === '&') param = newParams.slice(1, param.length)
+    if(param === window.location.search.replace("?", "")) return;
+    setParams(param)
     //eslint-disable-next-line
   }, [newParams])
 
@@ -347,7 +365,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     if(!dataCells) return
     const filter = getParamsData()
-    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
+    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&` : ''}${pagiFilter(page)}`
     setNewParams(param)
   }
 
@@ -363,14 +381,14 @@ const DatabaseCells = ({ user }: CellProps) => {
         setNewParams(param)
         return
       }
-      param = `${filter}${rowSelectionModel[0] ? `${filter ? `${filter}&` : ''}sort=${rowSelectionModel[0].field?.replaceAll(
+      param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replaceAll(
           'publish_status',
           'published'
-      )}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+      )}&sort=${rowSelectionModel[0].sort}&` : ''}${pagiFilter()}`
       setNewParams(param)
     },
     //eslint-disable-next-line
-    [pagiFilter],
+    [pagiFilter, model],
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
@@ -391,27 +409,11 @@ const DatabaseCells = ({ user }: CellProps) => {
     setNewParams(param)
   }
 
-  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
-    filter : {
-      items: [
-        {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
-          operator: 'contains',
-          value: Object.values(dataParamsFilter).find(value => value),
-        },
-      ],
-    },
-    sort: [{
-      field: dataParams.sort[0]?.replace('role', 'role_id') || '',
-      sort: dataParams.sort[1] as GridSortDirection
-    }]
-  })
-
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     if(!dataCells) return
     let filter = ''
     filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-      .map((item: any) => `${item.field}=${item?.value}`)
+      .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
       .join('&').replace('publish_status', 'published')
     const { sort } = dataParams
     const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`

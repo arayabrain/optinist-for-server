@@ -345,8 +345,10 @@ const AccountManager = () => {
   }, [searchParams])
 
   useEffect(() => {
-    if(newParams === window.location.search.replace("?", "")) return;
-    setParams(newParams)
+    let param = newParams
+    if(newParams[0] === '&') param = newParams.slice(1, param.length)
+    if(param === window.location.search.replace("?", "")) return;
+    setParams(param)
     //eslint-disable-next-line
   }, [newParams])
 
@@ -382,7 +384,7 @@ const AccountManager = () => {
       if (!rowSelectionModel[0]) {
         param = filter || sortParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${paramsManager()}` : ''
       } else {
-        param = `${filter}${rowSelectionModel[0] ? `${filter ? `${filter}&` : ''}sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? `&` : ''}sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`
       }
       setNewParams(param)
       //eslint-disable-next-line
@@ -493,7 +495,7 @@ const AccountManager = () => {
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-        .map((item: any) => `${item}=${(filterParams as any)[item]}`)
+      .map((item: any) => `${item}=${(filterParams as any)[item]}`)
       .join('&')
     const { sort } = sortParams
     const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`
