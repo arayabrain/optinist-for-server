@@ -365,7 +365,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     if(!dataCells) return
     const filter = getParamsData()
-    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}&` : ''}${pagiFilter(page)}`
+    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
     setNewParams(param)
   }
 

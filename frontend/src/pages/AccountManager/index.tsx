@@ -507,7 +507,7 @@ const AccountManager = () => {
     if(!listUser) return
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-      .map((item: any) => `${item.field}=${item?.value}`)
+      .map((item: any) => `${item}=${(filterParams as any)[item]}`)
       .join('&')
     const { sort } = sortParams
     const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`
