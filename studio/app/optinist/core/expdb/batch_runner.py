@@ -181,6 +181,7 @@ class ExpDbBatchRunner:
             self.logger_.info(
                 "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
             )
+            self.start_time = datetime.datetime.now()
 
             error: Exception = None
 
