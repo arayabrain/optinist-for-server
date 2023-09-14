@@ -92,8 +92,10 @@ async def get_files(workspace_id: str, file_type: str = None):
         return DirTreeGetter.get_tree(workspace_id, ACCEPT_CSV_EXT)
     elif file_type == FILETYPE.HDF5:
         return DirTreeGetter.get_tree(workspace_id, ACCEPT_HDF5_EXT)
-    elif file_type in [FILETYPE.MATLAB, FILETYPE.TC, FILETYPE.TS]:
+    elif file_type == FILETYPE.MATLAB:
         return DirTreeGetter.get_tree(workspace_id, ACCEPT_MATLAB_EXT)
+    else:
+        return []
 
 
 @router.post("/{workspace_id}/upload/{filename}", response_model=FilePath)
