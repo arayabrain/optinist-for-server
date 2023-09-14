@@ -337,17 +337,17 @@ const DatabaseExperiments = ({
   )
 
   const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
-    filter : {
+    filter: {
       items: [
         {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
-          operator: 'contains',
-          value: Object.values(dataParamsFilter).find(value => value),
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
+          operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
         },
       ],
     },
     sort: [{
-      field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+      field: dataParams.sort[0]?.replace('publish_status', 'published') || '',
       sort: dataParams.sort[1] as GridSortDirection
     }]
   })
@@ -370,14 +370,14 @@ const DatabaseExperiments = ({
       filter: {
         items: [
           {
-            field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '' ,
-            operator: 'contains',
+            field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
+            operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
             value: Object.values(dataParamsFilter).find(value => value) || null,
           },
         ],
       },
       sort: [{
-        field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+        field: dataParams.sort[0]?.replace('publish_status', 'published') || '',
         sort: dataParams.sort[1] as GridSortDirection
       }]
     })
@@ -483,9 +483,9 @@ const DatabaseExperiments = ({
       if (!rowSelectionModel[0]) {
         param = filter || dataParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${pagiFilter()}` : ''
       } else {
-        param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published',)}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published')}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
       }
-      setNewParams(param)
+      setNewParams(param.replace('publish_status', 'published'))
     },
     //eslint-disable-next-line
     [pagiFilter, model],
@@ -505,7 +505,7 @@ const DatabaseExperiments = ({
     }
     const { sort } = dataParams
     const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
-    setNewParams(param)
+    setNewParams(param.replace('publish_status', 'published'))
   }
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
