@@ -48,8 +48,6 @@ export const userSlice = createSlice({
         state.listUserSearch = action.payload
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        if(!state.listUser) return
-        state.listUser.items.push(action.payload)
         state.loading = false
       })
       .addMatcher(
