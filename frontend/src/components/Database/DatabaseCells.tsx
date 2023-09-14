@@ -273,17 +273,17 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
-    filter : {
+    filter: {
       items: [
         {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '',
-          operator: 'contains',
-          value: Object.values(dataParamsFilter).find(value => value),
+          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
+          operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
+          value: Object.values(dataParamsFilter).find(value => value) || null,
         },
       ],
     },
     sort: [{
-      field: dataParams.sort[0]?.replace('role', 'role_id') || '',
+      field: dataParams.sort[0]?.replace('publish_status', 'published') || '',
       sort: dataParams.sort[1] as GridSortDirection
     }]
   })

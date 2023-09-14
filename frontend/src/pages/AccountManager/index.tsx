@@ -344,7 +344,7 @@ const AccountManager = () => {
       setNewParams(window.location.search.replace("?", ""))
     }
     //eslint-disable-next-line
-  }, [JSON.stringify(searchParams)])
+  }, [searchParams)
 
   useEffect(() => {
     if(newParams === window.location.search.replace("?", "")) return;
