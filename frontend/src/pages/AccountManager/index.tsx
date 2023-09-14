@@ -257,6 +257,8 @@ const AccountManager = () => {
   const user = useSelector(selectCurrentUser)
   const admin = useSelector(isAdmin)
 
+  console.log(listUser)
+
   const [searchParams, setParams] = useSearchParams()
 
   const [openModal, setOpenModal] = useState(false)
@@ -342,13 +344,11 @@ const AccountManager = () => {
       setNewParams(window.location.search.replace("?", ""))
     }
     //eslint-disable-next-line
-  }, [searchParams])
+  }, [JSON.stringify(searchParams)])
 
   useEffect(() => {
-    let param = newParams
-    if(newParams[0] === '&') param = newParams.slice(1, param.length)
-    if(param === window.location.search.replace("?", "")) return;
-    setParams(param)
+    if(newParams === window.location.search.replace("?", "")) return;
+    setParams(newParams)
     //eslint-disable-next-line
   }, [newParams])
 
@@ -453,7 +453,10 @@ const AccountManager = () => {
           handleClickVariant('success', 'Your account has been edited successfully!')
         }
     } else {
-      const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
+      const data = await dispatch(createUser({
+        data: {...newData, role_id: newRole} as AddUserDTO,
+        params: {...filterParams, ...sortParams, ...params}
+      }))
       if(!(data as any).error) {
         handleClickVariant('success', 'Your account has been created successfully!')
       }
