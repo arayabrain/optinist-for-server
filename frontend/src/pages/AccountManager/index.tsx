@@ -297,7 +297,7 @@ const AccountManager = () => {
         {
           field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
           operator: 'contains',
-          value: Object.values(filterParams).find(value => value),
+          value: Object.values(filterParams).find(value => value) || null,
         },
       ],
     },
@@ -514,134 +514,133 @@ const AccountManager = () => {
     setNewParams(param)
   }
 
-  const columns = useMemo(() =>
-    [
-      {
-        headerName: 'ID',
-        field: 'id',
-        filterable: false,
-        minWidth: 100,
-        flex: 1
-      },
-      {
-        headerName: 'Name',
-        field: 'name',
-        minWidth: 100,
-        flex: 2,
-        filterOperators: [
-          {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
+  const columns = [
+    {
+      headerName: 'ID',
+      field: 'id',
+      filterable: false,
+      minWidth: 100,
+      flex: 1
+    },
+    {
+      headerName: 'Name',
+      field: 'name',
+      minWidth: 100,
+      flex: 2,
+      filterOperators: [
+        {
+          label: 'Contains',
+          value: 'contains',
+          InputComponent: ({applyValue, item}: any) => {
+            return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+              if(timeout) clearTimeout(timeout)
+              timeout = setTimeout(() => {
+                applyValue({...item, value: e.target.value})
+              }, 300)
             }
-          },
-        ],
-        type: "string",
-      },
-      {
-        headerName: 'Role',
-        field: 'role_id',
-        filterable: false,
-        minWidth: 100,
-        flex: 1,
-        renderCell: (params: {value: number}) => {
-          let role
-          switch (params.value) {
-            case ROLE.ADMIN:
-              role = "Admin";
-              break;
-            case ROLE.DATA_MANAGER:
-              role = "Data Manager";
-              break;
-            case ROLE.OPERATOR:
-              role = "Operator";
-              break;
-            case ROLE.GUEST_OPERATOR:
-              role = "Guest Operator";
-              break;
+            } />
           }
-          return (
-            <span>{role}</span>
-          )
-        }
-      },
-      {
-        headerName: 'Mail',
-        field: 'email',
-        minWidth: 100,
-        flex: 2,
-        filterOperators: [
-          {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
-            }
-          },
-        ],
-        type: "string",
-      },
-      {
-        headerName: '',
-        field: 'action',
-        sortable: false,
-        filterable: false,
-        minWidth: 100,
-        flex: 1,
-        renderCell: (params: {row: UserDTO}) => {
-          const { id, role_id, name, email} = params.row
-          if(!id || !role_id || !name || !email) return null
-          let role: any
-          switch (role_id) {
-            case ROLE.ADMIN:
-              role = "ADMIN";
-              break;
-            case ROLE.DATA_MANAGER:
-              role = "DATA_MANAGER";
-              break;
-            case ROLE.OPERATOR:
-              role = "OPERATOR";
-              break;
-            case ROLE.GUEST_OPERATOR:
-              role = "GUEST_OPERATOR";
-              break;
-          }
-
-          return (
-            <>
-              <ALink
-                sx={{ color: 'red' }}
-                onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
-              >
-                <EditIcon sx={{ color: 'black' }} />
-              </ALink>
-              {
-                !(params.row?.id === user?.id) ?
-                <ALink
-                  sx={{ ml: 1.25 }}
-                  onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
-                >
-                  <DeleteIcon sx={{ color: 'red' }} />
-                </ALink> : null
-              }
-            </>
-          )
         },
+      ],
+      type: "string",
+    },
+    {
+      headerName: 'Role',
+      field: 'role_id',
+      filterable: false,
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: {value: number}) => {
+        let role
+        switch (params.value) {
+          case ROLE.ADMIN:
+            role = "Admin";
+            break;
+          case ROLE.DATA_MANAGER:
+            role = "Data Manager";
+            break;
+          case ROLE.OPERATOR:
+            role = "Operator";
+            break;
+          case ROLE.GUEST_OPERATOR:
+            role = "Guest Operator";
+            break;
+        }
+        return (
+          <span>{role}</span>
+        )
+      }
+    },
+    {
+      headerName: 'Mail',
+      field: 'email',
+      minWidth: 100,
+      flex: 2,
+      filterOperators: [
+        {
+          label: 'Contains', value: 'contains',
+          InputComponent: ({applyValue, item}: any) => {
+            return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+              if(timeout) clearTimeout(timeout)
+              timeout = setTimeout(() => {
+                applyValue({...item, value: e.target.value})
+              }, 300)
+            }
+            } />
+          }
+        },
+      ],
+      type: "string",
+    },
+    {
+      headerName: '',
+      field: 'action',
+      sortable: false,
+      filterable: false,
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: {row: UserDTO}) => {
+        const { id, role_id, name, email} = params.row
+        if(!id || !role_id || !name || !email) return null
+        let role: any
+        switch (role_id) {
+          case ROLE.ADMIN:
+            role = "ADMIN";
+            break;
+          case ROLE.DATA_MANAGER:
+            role = "DATA_MANAGER";
+            break;
+          case ROLE.OPERATOR:
+            role = "OPERATOR";
+            break;
+          case ROLE.GUEST_OPERATOR:
+            role = "GUEST_OPERATOR";
+            break;
+        }
+
+        return (
+          <>
+            <ALink
+              sx={{ color: 'red' }}
+              onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
+            >
+              <EditIcon sx={{ color: 'black' }} />
+            </ALink>
+            {
+              !(params.row?.id === user?.id) ?
+              <ALink
+                sx={{ ml: 1.25 }}
+                onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
+              >
+                <DeleteIcon sx={{ color: 'red' }} />
+              </ALink> : null
+            }
+          </>
+        )
       },
-    ],
-    [user?.id],
-  )
+    },
+  ];
+
   return (
     <AccountManagerWrapper>
       <Box
