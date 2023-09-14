@@ -257,13 +257,11 @@ const AccountManager = () => {
   const user = useSelector(selectCurrentUser)
   const admin = useSelector(isAdmin)
 
-  console.log(listUser)
-
   const [searchParams, setParams] = useSearchParams()
 
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
-  const [newParams, setNewParams] = useState('')
+  const [newParams, setNewParams] = useState( window.location.search.replace("?", ""))
 
   const limit = searchParams.get('limit') || 50
   const offset = searchParams.get('offset') || 0
@@ -340,7 +338,7 @@ const AccountManager = () => {
   }, [sortParams, filterParams])
 
   useEffect(() => {
-    if(newParams !== window.location.search.replace("?", "")){
+    if(newParams && newParams !== window.location.search.replace("?", "")){
       setNewParams(window.location.search.replace("?", ""))
     }
     //eslint-disable-next-line
