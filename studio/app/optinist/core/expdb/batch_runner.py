@@ -53,9 +53,7 @@ class ExpDbBatchRunner:
     def __init__(self, organization_id: int):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
-
-        with session_scope() as db:
-            self.org_id = get_organization(db, organization_id).id
+        self.org_id = organization_id
 
     def __init_logger(self):
         logging_config_file = DIRPATH.CONFIG_DIR + "/logging.expdb_batch.yaml"
@@ -147,6 +145,9 @@ class ExpDbBatchRunner:
         # lockfile チェック
         try:
             self.lock = lockfile.LockFile(LOCKFILE_NAME)
+            # validate organization_id
+            with session_scope() as db:
+                get_organization(db, self.org_id)
         except lockfile.LockError as e:
             self.logger_.error("already running. - %s", e)
             raise e
@@ -180,6 +181,7 @@ class ExpDbBatchRunner:
             self.logger_.info(
                 "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
             )
+            self.start_time = datetime.datetime.now()
 
             error: Exception = None
 

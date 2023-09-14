@@ -5,30 +5,28 @@ from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_conve
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 
 expdb_wrapper_dict = {
-    "expdb": {
-        "analysis_preset": {
-            "analyze_stats": {
-                "function": analyze_stats,
-                "conda_name": "expdb",
-            },
+    "analysis_preset": {
+        "analyze_stats": {
+            "function": analyze_stats,
+            "conda_name": "expdb",
         },
-        "preset_components": {
-            "stat_file_convert": {
-                "function": stat_file_convert,
-                "conda_name": "expdb",
-            },
-            "anova1_mult": {
-                "function": anova1_mult,
-                "conda_name": "expdb",
-            },
-            "vector_average": {
-                "function": vector_average,
-                "conda_name": "expdb",
-            },
-            "curvefit_tuning": {
-                "function": curvefit_tuning,
-                "conda_name": "expdb",
-            },
+    },
+    "preset_components": {
+        "stat_file_convert": {
+            "function": stat_file_convert,
+            "conda_name": "expdb",
         },
-    }
+        "anova1_mult": {
+            "function": anova1_mult,
+            "conda_name": "expdb",
+        },
+        "vector_average": {
+            "function": vector_average,
+            "conda_name": "expdb",
+        },
+        "curvefit_tuning": {
+            "function": curvefit_tuning,
+            "conda_name": "expdb",
+        },
+    },
 }
