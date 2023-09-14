@@ -10,5 +10,5 @@ def get_organization(db: Session, organization_id: int):
         .filter(OrganizationModel.id == organization_id)
         .first()
     )
-    assert organization is not None, "Organization not found"
+    assert organization is not None, f"Organization not found [id: {organization_id}]"
     return Organization.from_orm(organization)
