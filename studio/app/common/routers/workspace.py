@@ -8,6 +8,7 @@ from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import get_current_user
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
+    is_workspace_owner,
 )
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
@@ -149,7 +150,7 @@ def create_workspace(
 @router.put(
     "/workspace/{workspace_id}",
     response_model=Workspace,
-    dependencies=[Depends(is_workspace_available)],
+    dependencies=[Depends(is_workspace_owner)],
     description="""
 - Workspace を更新する
 """,
@@ -185,7 +186,7 @@ def update_workspace(
 @router.delete(
     "/workspace/{workspace_id}",
     response_model=bool,
-    dependencies=[Depends(is_workspace_available)],
+    dependencies=[Depends(is_workspace_owner)],
     description="""
 - Workspace を削除する
 """,
@@ -214,7 +215,7 @@ def delete_workspace(
 @router.get(
     "/workspace/export/{workspace_id}",
     response_model=WorkspacesSetting,
-    dependencies=[Depends(is_workspace_available)],
+    dependencies=[Depends(is_workspace_owner)],
     description="""
 - Workspace 設定をExportする
 """,
@@ -278,7 +279,7 @@ def get_workspace_share_status(
 @router.post(
     "/workspace/share/{workspace_id}/status",
     response_model=bool,
-    dependencies=[Depends(is_workspace_available)],
+    dependencies=[Depends(is_workspace_owner)],
     description="""
 - Workspace の共有状態を更新する（総入れ替え）
 """,
