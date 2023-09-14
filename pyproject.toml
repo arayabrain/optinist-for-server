@@ -3,14 +3,14 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "optinist"
-description = "Calcium Imaging Pipeline Tool"
-version = "0.4.0"
+name = "studio"
+description = "analysis studio"
+version = "1.0.0"
 readme = "README.md"
 requires-python = "==3.8.*"
 license = {file = "LICENSE"}
 authors = [
-  {name = "OIST"},
+  {name = "Ohki Lab"},
 ]
 classifiers=[
   "Intended Audience :: Developers",
@@ -83,8 +83,7 @@ test = [
 ]
 
 [project.urls]
-Documentation = "https://optinist.readthedocs.io"
-Repository = "https://github.com/oist/optinist"
+Repository = "https://github.com/arayabrain/optinist-for-server"
 
 [project.scripts]
 run_optinist = "studio.__main__:main"
