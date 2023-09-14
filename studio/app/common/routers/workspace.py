@@ -6,6 +6,9 @@ from sqlmodel import Session, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import get_current_user
+from studio.app.common.core.workspace.workspace_dependencies import (
+    is_workspace_available,
+)
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.common.schemas.workspace import (
@@ -85,14 +88,15 @@ def search_workspaces(
 
 
 @router.get(
-    "/workspace/{id}",
+    "/workspace/{workspace_id}",
     response_model=Workspace,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspaceを検索し、結果を応答
 """,
 )
 def get_workspace(
-    id: int,
+    workspace_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -103,7 +107,7 @@ def get_workspace(
             common_model.Workspace.id == common_model.WorkspacesShareUser.workspace_id,
         )
         .filter(
-            common_model.Workspace.id == id,
+            common_model.Workspace.id == workspace_id,
             common_model.Workspace.deleted.is_(False),
             or_(
                 common_model.WorkspacesShareUser.user_id == current_user.id,
@@ -143,14 +147,15 @@ def create_workspace(
 
 
 @router.put(
-    "/workspace/{id}",
+    "/workspace/{workspace_id}",
     response_model=Workspace,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspace を更新する
 """,
 )
 def update_workspace(
-    id: int,
+    workspace_id: int,
     workspace: WorkspaceUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -158,7 +163,7 @@ def update_workspace(
     data = (
         db.query(common_model.Workspace, shared_count_subquery)
         .filter(
-            common_model.Workspace.id == id,
+            common_model.Workspace.id == workspace_id,
             common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
         )
@@ -178,21 +183,22 @@ def update_workspace(
 
 
 @router.delete(
-    "/workspace/{id}",
+    "/workspace/{workspace_id}",
     response_model=bool,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspace を削除する
 """,
 )
 def delete_workspace(
-    id: int,
+    workspace_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     ws = (
         db.query(common_model.Workspace)
         .filter(
-            common_model.Workspace.id == id,
+            common_model.Workspace.id == workspace_id,
             common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
         )
@@ -206,13 +212,14 @@ def delete_workspace(
 
 
 @router.get(
-    "/workspace/export/{id}",
+    "/workspace/export/{workspace_id}",
     response_model=WorkspacesSetting,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspace 設定をExportする
 """,
 )
-def export_workspace(id: int, db: Session = Depends(get_db)):
+def export_workspace(workspace_id: int, db: Session = Depends(get_db)):
     return {"todo_dummy": {}}
 
 
@@ -230,21 +237,22 @@ def import_workspace(
 
 
 @router.get(
-    "/workspace/share/{id}/status",
+    "/workspace/share/{workspace_id}/status",
     response_model=WorkspaceShareStatus,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspace の共有状態を取得する
 """,
 )
 def get_workspace_share_status(
-    id: int,
+    workspace_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     workspace = (
         db.query(common_model.Workspace)
         .filter(
-            common_model.Workspace.id == id,
+            common_model.Workspace.id == workspace_id,
             common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
         )
@@ -259,7 +267,7 @@ def get_workspace_share_status(
             common_model.WorkspacesShareUser.user_id == common_model.User.id,
         )
         .filter(
-            common_model.WorkspacesShareUser.workspace_id == id,
+            common_model.WorkspacesShareUser.workspace_id == workspace_id,
             common_model.User.active.is_(True),
         )
         .all()
@@ -268,14 +276,15 @@ def get_workspace_share_status(
 
 
 @router.post(
-    "/workspace/share/{id}/status",
+    "/workspace/share/{workspace_id}/status",
     response_model=bool,
+    dependencies=[Depends(is_workspace_available)],
     description="""
 - Workspace の共有状態を更新する（総入れ替え）
 """,
 )
 def update_workspace_share_status(
-    id: int,
+    workspace_id: int,
     data: WorkspaceSharePostStatus,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -283,7 +292,7 @@ def update_workspace_share_status(
     workspace = (
         db.query(common_model.Workspace)
         .filter(
-            common_model.Workspace.id == id,
+            common_model.Workspace.id == workspace_id,
             common_model.Workspace.user_id == current_user.id,
             common_model.Workspace.deleted.is_(False),
         )
@@ -294,11 +303,11 @@ def update_workspace_share_status(
 
     (
         db.query(common_model.WorkspacesShareUser)
-        .filter(common_model.WorkspacesShareUser.workspace_id == id)
+        .filter(common_model.WorkspacesShareUser.workspace_id == workspace_id)
         .delete(synchronize_session=False)
     )
     db.bulk_save_objects(
-        common_model.WorkspacesShareUser(workspace_id=id, user_id=user_id)
+        common_model.WorkspacesShareUser(workspace_id=workspace_id, user_id=user_id)
         for user_id in data.user_ids
     )
     db.commit()

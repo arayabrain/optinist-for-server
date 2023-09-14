@@ -12,6 +12,9 @@ from studio.app.common.core.auth.auth_dependencies import (
     get_admin_user,
     get_current_user,
 )
+from studio.app.common.core.workspace.workspace_dependencies import (
+    is_workspace_available,
+)
 from studio.app.common.routers import (
     algolist,
     auth,
@@ -36,11 +39,29 @@ add_pagination(app)
 # common routers
 app.include_router(algolist.router, dependencies=[Depends(get_current_user)])
 app.include_router(auth.router)
-app.include_router(experiment.router, dependencies=[Depends(get_current_user)])
-app.include_router(files.router, dependencies=[Depends(get_current_user)])
+app.include_router(
+    experiment.router,
+    dependencies=[
+        Depends(get_current_user),
+        Depends(is_workspace_available),
+    ],
+)
+app.include_router(
+    files.router,
+    dependencies=[
+        Depends(get_current_user),
+        Depends(is_workspace_available),
+    ],
+)
 app.include_router(outputs.router, dependencies=[Depends(get_current_user)])
 app.include_router(params.router, dependencies=[Depends(get_current_user)])
-app.include_router(run.router, dependencies=[Depends(get_current_user)])
+app.include_router(
+    run.router,
+    dependencies=[
+        Depends(get_current_user),
+        Depends(is_workspace_available),
+    ],
+)
 app.include_router(users_admin.router, dependencies=[Depends(get_admin_user)])
 app.include_router(users_me.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_search.router, dependencies=[Depends(get_current_user)])
