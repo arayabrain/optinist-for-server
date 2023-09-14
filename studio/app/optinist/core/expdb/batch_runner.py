@@ -151,9 +151,6 @@ class ExpDbBatchRunner:
         except lockfile.LockError as e:
             self.logger_.error("already running. - %s", e)
             raise e
-        except AssertionError as e:
-            self.logger_.error("organization with id %s not found.", self.org_id)
-            raise e
 
     def __process_postprocess(self):
         """
