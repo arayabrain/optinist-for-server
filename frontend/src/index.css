@@ -15,3 +15,7 @@ code {
 .toolbar .ctrl_btn {
   margin-left: 10px;
 }
+
+.MuiDataGrid-filterForm .MuiDataGrid-filterFormValueInput .MuiFormControl-root {
+  min-width: 100%;
+}

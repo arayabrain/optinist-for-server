@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'utils/axios'
 
 import { BASE_URL } from 'const/API'
 
@@ -8,6 +8,8 @@ export const FILE_TREE_TYPE_SET = {
   HDF5: 'hdf5',
   FLUO: 'fluo',
   BEHAVIOR: 'behavior',
+  MATLAB: 'matlab',
+  EXPDB: 'expdb',
   ALL: 'all',
 } as const
 
@@ -32,9 +34,10 @@ export interface FileNodeDTO extends NodeBaseDTO {
 }
 
 export async function getFilesTreeApi(
+  workspaceId: number,
   fileType: FILE_TREE_TYPE,
 ): Promise<TreeNodeTypeDTO[]> {
-  const response = await axios.get(`${BASE_URL}/files`, {
+  const response = await axios.get(`${BASE_URL}/files/${workspaceId}`, {
     params: {
       file_type: fileType,
     },
@@ -43,6 +46,7 @@ export async function getFilesTreeApi(
 }
 
 export async function uploadFileApi(
+  workspaceId: number,
   fileName: string,
   config: {
     onUploadProgress: (progressEvent: any) => void
@@ -50,7 +54,7 @@ export async function uploadFileApi(
   formData: FormData,
 ): Promise<{ file_path: string }> {
   const response = await axios.post(
-    `${BASE_URL}/files/upload/${fileName}`,
+    `${BASE_URL}/files/${workspaceId}/upload/${fileName}`,
     formData,
     config,
   )
