@@ -278,7 +278,7 @@ const DatabaseExperiments = ({
     }),
   )
 
-  const [newParams, setNewParams] = useState('')
+  const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })

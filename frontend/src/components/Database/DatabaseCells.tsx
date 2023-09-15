@@ -231,7 +231,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     }),
   )
 
-  const [newParams, setNewParams] = useState('')
+  const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data?: string | string[]
