@@ -261,7 +261,7 @@ const AccountManager = () => {
 
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
-  const [newParams, setNewParams] = useState( window.location.search.replace("?", ""))
+  const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
 
   const limit = searchParams.get('limit') || 50
   const offset = searchParams.get('offset') || 0
