@@ -198,6 +198,16 @@ export const inputNodeSlice = createSlice({
                   fileType: FILE_TYPE_SET.HDF5,
                   param: {},
                 }
+              } else if (node.data.fileType === FILE_TYPE_SET.MATLAB) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.MATLAB,
+                  param: node.data.param as MatlabInputParamType,
+                }
+              } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.EXPDB,
+                  param: {},
+                }
               }
             }
           })
