@@ -6,6 +6,8 @@ from studio.app.optinist.dataclass import RoiData
 def caiman_mc(
     image: ImageData, output_dir: str, params: dict = None
 ) -> dict(mc_images=ImageData):
+    from uuid import uuid4
+
     import numpy as np
     from caiman import load_memmap, save_memmap, stop_server
     from caiman.base.rois import extract_binary_masks_from_structural_channel
@@ -29,7 +31,7 @@ def caiman_mc(
 
     # memory mapping
     fname_new = save_memmap(
-        mc.mmap_file, base_name="memmap_", order="C", border_to_0=border_to_0
+        mc.mmap_file, base_name=uuid4().hex[:4], order="C", border_to_0=border_to_0
     )
 
     stop_server(dview=dview)
