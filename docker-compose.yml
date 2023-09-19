@@ -37,5 +37,20 @@ services:
       - db
     restart: always
 
+  db-cron:
+    build:
+      context: studio/
+      dockerfile: config/docker/Dockerfile.db-cron
+    env_file:
+      - studio/config.production/.env
+    volumes:
+      - ../optinist-docker-volumes/backups/:/root/backups
+    command: ash -c "rsyslogd && crond -f"
+    environment:
+      TZ: Asia/Tokyo
+    depends_on:
+      - db
+    restart: always
+
 volumes:
   db_data:
