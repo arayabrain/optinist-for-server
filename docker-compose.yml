@@ -44,7 +44,7 @@ services:
     env_file:
       - studio/config.production/.env
     volumes:
-      - ../optinist-docker-volumes/backups/:/root/backups
+      - ../optinist-docker-volumes/backups/db/:/root/backups-db
     command: ash -c "rsyslogd && crond -f"
     environment:
       TZ: Asia/Tokyo
