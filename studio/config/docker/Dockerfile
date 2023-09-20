@@ -1,4 +1,6 @@
 FROM --platform=linux/amd64 node:18.18-alpine AS builder
+# To assume .env.production file exists
+COPY frontend/.env.production /app/frontend/
 COPY frontend /app/frontend
 WORKDIR /app/frontend
 ENV NODE_OPTIONS="--max-old-space-size=4096"
