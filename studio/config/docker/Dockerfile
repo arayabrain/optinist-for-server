@@ -1,3 +1,9 @@
+FROM --platform=linux/amd64 node:18.18-alpine AS builder
+COPY frontend /app/frontend
+WORKDIR /app/frontend
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN yarn install && yarn build
+
 FROM --platform=linux/amd64 python:3.8.16-slim
 
 WORKDIR /app
@@ -18,7 +24,6 @@ RUN mkdir -p /root/miniconda3 && \
 
 ENV PATH $PATH:/root/miniconda3/bin
 
-COPY frontend/build /app/frontend/build
 COPY studio /app/studio
 COPY main.py pyproject.toml alembic.ini run_expdb_batch.py ./
 
@@ -28,6 +33,8 @@ RUN rm -rf /app/studio/config.production
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -e .
+
+COPY --from=builder /app/frontend/build /app/frontend/build
 
 # for cron settings.
 RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone
