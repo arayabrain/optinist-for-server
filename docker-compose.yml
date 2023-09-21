@@ -19,16 +19,23 @@ services:
       dockerfile: studio/config/docker/Dockerfile
     working_dir: /app
     volumes:
+      # optinist data outputs directories
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
       - ../optinist-docker-volumes/logs/:/app/logs
       - ../optinist-docker-volumes/studio_data/:/app/studio_data
 
-      # TODO: Paths need to be Fixed to meet production environment specifications.
+      # external datasets directories
       - ../experiments_datasets/:/app/experiments_datasets
       - ../experiments_public/:/app/experiments_public
     ports:
       - "8000:8000"
-    command: bash -c "sh init_docker_services.sh && alembic upgrade head && python main.py --host 0.0.0.0 --port 8000"
+    command: >
+        bash -c "
+          sh init_docker_services.sh &&
+          alembic upgrade head &&
+          python main.py --host 0.0.0.0 --port 8000
+        "
+    user: optinist
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
