@@ -208,12 +208,14 @@ async def search_public_cells(
             dialect_name="mysql",
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
-        .filter(
+    )
+
+    if options.experiment_id:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
         )
-    )
 
     query = query.order_by(*sa_sort_list)
     graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
@@ -299,18 +301,18 @@ async def search_db_experiments(
                 ),
             )
         )
-    query = (
-        query.filter(
+
+    if options.experiment_id:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            ),
-            optinist_model.Experiment.publish_status == publish_status
-            if publish_status is not None
-            else True,
+            )
         )
-        .group_by(optinist_model.Experiment.id)
-        .order_by(*sa_sort_list)
-    )
+
+    if publish_status:
+        query = query.filter(optinist_model.Experiment.publish_status == publish_status)
+
+    query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
 
@@ -388,18 +390,18 @@ async def search_db_cells(
                 ),
             )
         )
-    query = (
-        query.filter(
+
+    if options.experiment_id:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            ),
-            optinist_model.Experiment.publish_status == publish_status
-            if publish_status is not None
-            else True,
+            )
         )
-        .group_by(optinist_model.Cell.id)
-        .order_by(*sa_sort_list)
-    )
+
+    if publish_status:
+        query = query.filter(optinist_model.Experiment.publish_status == publish_status)
+
+    query = query.group_by(optinist_model.Cell.id).order_by(*sa_sort_list)
 
     graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
