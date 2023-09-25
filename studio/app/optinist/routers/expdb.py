@@ -192,9 +192,19 @@ async def search_public_cells(
             optinist_model.Experiment.experiment_id,
             optinist_model.Experiment.publish_status,
         )
+        .with_hint(
+            optinist_model.Cell,
+            text="USE INDEX (cells_id_created_at_updated_at_index)",
+            dialect_name="mysql",
+        )
         .join(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+        .with_hint(
+            optinist_model.Experiment,
+            text="FORCE INDEX FOR JOIN (experiments_id_experiment_id_publish_status_index)",  # noqa
+            dialect_name="mysql",
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
     )
