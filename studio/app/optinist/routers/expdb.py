@@ -220,6 +220,15 @@ async def search_public_cells(
     query = query.order_by(*sa_sort_list)
     graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
+    """
+    The two indexes are used to improve performance of fetching data query.
+    But in count query, it makes execution slower.
+
+    Since `fastapi-pagination` library is using the same base query
+    for both the purpose of fetching data and calculating the amount
+    of data and does not allow customization of the quantity calculation method,
+    pagination needs to be implement manually to improve performance,.
+    """
     return PageWithHeader[ExpDbCell](
         header=ExpDbExperimentHeader(graph_titles=graph_titles),
         items=expdbcell_transformer(
