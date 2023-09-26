@@ -210,8 +210,27 @@ async def search_public_cells(
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
     )
 
+    total_query = (
+        select(optinist_model.Cell.id)
+        .join(
+            optinist_model.Experiment,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+        .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
+        .filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+    )
+
     if options.experiment_id:
         query = query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+        total_query = total_query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
@@ -227,31 +246,14 @@ async def search_public_cells(
     Since `fastapi-pagination` library is using the same base query
     for both the purpose of fetching data and calculating the amount
     of data and does not allow customization of the quantity calculation method,
-    pagination needs to be implement manually to improve performance,.
+    pagination needs to be implement manually to improve performance.
     """
     return PageWithHeader[ExpDbCell](
         header=ExpDbExperimentHeader(graph_titles=graph_titles),
         items=expdbcell_transformer(
             db.execute(query.limit(limit).offset(offset)).all()
         ),
-        total=db.scalar(
-            select(func.count()).select_from(
-                select(optinist_model.Cell.id)
-                .join(
-                    optinist_model.Experiment,
-                    optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-                )
-                .filter(
-                    optinist_model.Experiment.publish_status == PublishStatus.on.value
-                )
-                .filter(
-                    optinist_model.Experiment.experiment_id.like(
-                        "%{0}%".format(options.experiment_id)
-                    )
-                )
-                .subquery()
-            )
-        ),
+        total=db.scalar(select(func.count()).select_from(total_query.subquery())),
         limit=limit,
         offset=offset,
     )
