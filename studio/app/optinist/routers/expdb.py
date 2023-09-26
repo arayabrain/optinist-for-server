@@ -2,7 +2,7 @@ import os
 from glob import glob
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
 from sqlmodel import Session, and_, func, or_, select
 
@@ -153,7 +153,6 @@ async def search_public_experiments(
                 "%{0}%".format(options.experiment_id)
             )
         )
-
     query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
 
     data = paginate(
@@ -174,6 +173,8 @@ async def search_public_experiments(
 )
 async def search_public_cells(
     options: ExpDbExperimentsSearchOptions = Depends(),
+    limit: int = Query(50, description="records limit"),
+    offset: int = Query(0, description="records offset"),
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -209,8 +210,27 @@ async def search_public_cells(
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
     )
 
+    total_query = (
+        select(optinist_model.Cell.id)
+        .join(
+            optinist_model.Experiment,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+        .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
+        .filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+    )
+
     if options.experiment_id:
         query = query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+        total_query = total_query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
@@ -219,12 +239,23 @@ async def search_public_cells(
     query = query.order_by(*sa_sort_list)
     graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
-    return paginate(
-        session=db,
-        query=query,
-        unique=False,
-        transformer=expdbcell_transformer,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
+    """
+    The two indexes are used to improve performance of fetching data query.
+    But in count query, it makes execution slower.
+
+    Since `fastapi-pagination` library is using the same base query
+    for both the purpose of fetching data and calculating the amount
+    of data and does not allow customization of the quantity calculation method,
+    pagination needs to be implement manually to improve performance.
+    """
+    return PageWithHeader[ExpDbCell](
+        header=ExpDbExperimentHeader(graph_titles=graph_titles),
+        items=expdbcell_transformer(
+            db.execute(query.limit(limit).offset(offset)).all()
+        ),
+        total=db.scalar(select(func.count()).select_from(total_query.subquery())),
+        limit=limit,
+        offset=offset,
     )
 
 
