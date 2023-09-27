@@ -15,7 +15,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortOptions
+from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -65,6 +65,15 @@ def experiment_transformer(items: Sequence) -> Sequence:
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
+
+
+def set_default_sort_options(sortOptions: SortOptions = Depends()) -> SortOptions:
+    # If SortOption is unspecified, set default value
+    # TODO: Performance issues with sql. Needs to be addressed.
+    if sortOptions.sort[0] is None:
+        sortOptions.sort = ('experiment_id', SortDirection.asc)
+
+    return sortOptions
 
 
 EXPERIMENT_GRAPHS = {
@@ -129,7 +138,7 @@ def get_cell_urls(source, exp_dir, index: int, params=None):
 )
 async def search_public_experiments(
     options: ExpDbExperimentsSearchOptions = Depends(),
-    sortOptions: SortOptions = Depends(),
+    sortOptions: SortOptions = Depends(set_default_sort_options),
     db: Session = Depends(get_db),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
@@ -175,7 +184,7 @@ async def search_public_cells(
     options: ExpDbExperimentsSearchOptions = Depends(),
     limit: int = Query(50, description="records limit"),
     offset: int = Query(0, description="records offset"),
-    sortOptions: SortOptions = Depends(),
+    sortOptions: SortOptions = Depends(set_default_sort_options),
     db: Session = Depends(get_db),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
@@ -217,11 +226,6 @@ async def search_public_cells(
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
-        .filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
     )
 
     if options.experiment_id:
@@ -270,7 +274,7 @@ async def search_db_experiments(
     db: Session = Depends(get_db),
     publish_status: Optional[bool] = None,
     options: ExpDbExperimentsSearchOptions = Depends(),
-    sortOptions: SortOptions = Depends(),
+    sortOptions: SortOptions = Depends(set_default_sort_options),
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
@@ -347,7 +351,7 @@ async def search_db_cells(
     db: Session = Depends(get_db),
     publish_status: Optional[bool] = None,
     options: ExpDbExperimentsSearchOptions = Depends(),
-    sortOptions: SortOptions = Depends(),
+    sortOptions: SortOptions = Depends(set_default_sort_options),
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
