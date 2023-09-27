@@ -217,11 +217,6 @@ async def search_public_cells(
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
-        .filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
     )
 
     if options.experiment_id:
