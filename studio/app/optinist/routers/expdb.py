@@ -15,7 +15,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortOptions
+from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -132,7 +132,9 @@ async def search_public_experiments(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+    )
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
     query = (
@@ -181,6 +183,7 @@ async def search_public_cells(
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Cell,
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+        default=["experiment_id", SortDirection.asc],
     )
     query = (
         select(
@@ -268,7 +271,9 @@ async def search_db_experiments(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+    )
     query = (
         select(
             optinist_model.Experiment,
@@ -351,6 +356,7 @@ async def search_db_cells(
             "experiment_id": optinist_model.Experiment.experiment_id,
             "publish_status": optinist_model.Experiment.publish_status,
         },
+        default=["experiment_id", SortDirection.asc],
     )
     query = (
         select(
