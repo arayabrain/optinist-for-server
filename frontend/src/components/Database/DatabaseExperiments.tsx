@@ -613,7 +613,7 @@ const DatabaseExperiments = ({
       navigate,
       !!user,
       readonly,
-        loading
+      loading
     ),
     ...getColumns,
   ].filter(Boolean) as any
