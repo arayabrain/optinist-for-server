@@ -373,10 +373,7 @@ const DatabaseExperiments = ({
         items: [
           {
             field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
-            operator: Object.keys(dataParamsFilter).find(key => {
-              console.log((dataParamsFilter as any)[key])
-              return ['publish_status', 'brain_area'].includes(key)
-            })  ? 'is' : 'contains',
+            operator: Object.keys(dataParamsFilter).find(key => ['publish_status', 'brain_area'].includes(key))  ? 'is' : 'contains',
             value: Object.values(dataParamsFilter).find(value => value) || null,
           },
         ],
