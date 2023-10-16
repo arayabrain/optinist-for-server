@@ -96,13 +96,14 @@ const columns = (
         InputComponent: ({ applyValue, item }: any) => {
           return (
             <Input
+              autoFocus
               sx={{ paddingTop: '16px' }}
               defaultValue={item.value || ''}
               onChange={(e) => {
                 if (timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({ ...item, value: e.target.value })
-                }, 300)
+                }, 500)
               }}
             />
           )

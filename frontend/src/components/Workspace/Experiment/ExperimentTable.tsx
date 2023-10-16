@@ -403,7 +403,7 @@ const RowItem = React.memo<{
     setTimeout(() => {
       setEdit(false)
       onSaveNewName()
-    }, 300)
+    }, 500)
   }
 
   const onEdit = (event: any) => {

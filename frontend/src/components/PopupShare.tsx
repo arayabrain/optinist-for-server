@@ -103,7 +103,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     }
     timeout.current = setTimeout(() => {
       dispatch(getListSearch({keyword: textSearch}))
-    }, 300)
+    }, 500)
     //eslint-disable-next-line
   }, [textSearch])
 

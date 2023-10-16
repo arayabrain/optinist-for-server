@@ -39,13 +39,19 @@ const columns = (user?: boolean) => [
       {
         label: 'Contains', value: 'contains',
         InputComponent: ({applyValue, item}: any) => {
-          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+          return (
+            <Input
+              autoFocus
+              sx={{paddingTop: "16px"}}
+              defaultValue={item.value || ''}
+              onChange={(e) => {
                 if(timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({...item, value: e.target.value})
-            }, 300)
-          }
-          } />
+                }, 500)
+              }}
+            />
+          )
         }
       },
     ],
