@@ -31,7 +31,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (user?: boolean) => [
+const columns = (user?: boolean, loading: boolean = false) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -41,7 +41,7 @@ const columns = (user?: boolean) => [
         InputComponent: ({applyValue, item}: any) => {
           return (
             <Input
-              autoFocus
+              autoFocus={!loading}
               sx={{paddingTop: "16px"}}
               defaultValue={item.value || ''}
               onChange={(e) => {
@@ -457,7 +457,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(!!user), ...getColumns, ...statistics()].filter(
+  const columnsTable = [...columns(!!user, loading), ...getColumns, ...statistics()].filter(
     Boolean,
   ) as any
 

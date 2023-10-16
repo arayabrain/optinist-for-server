@@ -84,6 +84,7 @@ const columns = (
   navigate: (path: string) => void,
   user: boolean,
   readonly?: boolean,
+  loading: boolean = false
 ) => [
   {
     field: 'experiment_id',
@@ -96,7 +97,7 @@ const columns = (
         InputComponent: ({ applyValue, item }: any) => {
           return (
             <Input
-              autoFocus
+              autoFocus={!loading}
               sx={{ paddingTop: '16px' }}
               defaultValue={item.value || ''}
               onChange={(e) => {
@@ -612,6 +613,7 @@ const DatabaseExperiments = ({
       navigate,
       !!user,
       readonly,
+        loading
     ),
     ...getColumns,
   ].filter(Boolean) as any

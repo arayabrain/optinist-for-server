@@ -534,7 +534,7 @@ const AccountManager = () => {
           InputComponent: ({applyValue, item}: any) => {
             return (
               <Input
-                autoFocus
+                autoFocus={!loading}
                 sx={{paddingTop: "16px"}}
                 defaultValue={item.value || ''}
                 onChange={(e) => {
@@ -588,7 +588,7 @@ const AccountManager = () => {
           InputComponent: ({applyValue, item}: any) => {
             return (
               <Input
-                autoFocus
+                autoFocus={!loading}
                 sx={{paddingTop: "16px"}}
                 defaultValue={item.value || ''}
                 onChange={(e) => {
