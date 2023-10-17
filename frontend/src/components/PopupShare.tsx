@@ -3,7 +3,7 @@ import {
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
-import { SHARE } from "../@types";
+import {SHARE, WAITING_TIME} from "../@types";
 import { ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
@@ -103,7 +103,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     }
     timeout.current = setTimeout(() => {
       dispatch(getListSearch({keyword: textSearch}))
-    }, 500)
+    }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch])
 

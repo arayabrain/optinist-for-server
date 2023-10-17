@@ -8,7 +8,7 @@ import {useNavigate, useSearchParams} from "react-router-dom";
 import {deleteUser, createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
-import {ROLE} from "../../@types";
+import {ROLE, WAITING_TIME} from "../../@types";
 import {DataGrid, GridFilterModel, GridSortDirection, GridSortItem, GridSortModel} from "@mui/x-data-grid";
 import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
@@ -319,6 +319,7 @@ const AccountManager = () => {
   }, [JSON.stringify(admin)])
 
   useEffect(() => {
+    if(Object.keys(filterParams).every(key => !(filterParams as any)[key])) return
     setModel({
       filter: {
         items: [
@@ -541,7 +542,7 @@ const AccountManager = () => {
                   if(timeout) clearTimeout(timeout)
                   timeout = setTimeout(() => {
                     applyValue({...item, value: e.target.value})
-                  }, 500)
+                  }, WAITING_TIME)
                 }}
               />
             )
@@ -595,7 +596,7 @@ const AccountManager = () => {
                   if(timeout) clearTimeout(timeout)
                   timeout = setTimeout(() => {
                     applyValue({...item, value: e.target.value})
-                  }, 500)
+                  }, WAITING_TIME)
                 }}
               />
             )

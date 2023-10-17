@@ -58,6 +58,7 @@ import {
   selectCurrentWorkspaceId,
   selectIsWorkspaceOwner,
 } from 'store/slice/Workspace/WorkspaceSelector'
+import {WAITING_TIME} from "../../../@types";
 
 export const ExperimentUidContext = React.createContext<string>('')
 
@@ -403,7 +404,7 @@ const RowItem = React.memo<{
     setTimeout(() => {
       setEdit(false)
       onSaveNewName()
-    }, 500)
+    }, WAITING_TIME)
   }
 
   const onEdit = (event: any) => {

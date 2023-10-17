@@ -24,6 +24,7 @@ import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import PaginationCustom from "../common/PaginationCustom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { WAITING_TIME } from "../../@types";
 
 type CellProps = {
   user?: Object
@@ -48,7 +49,7 @@ const columns = (user?: boolean, loading: boolean = false) => [
                 if(timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({...item, value: e.target.value})
-                }, 500)
+                }, WAITING_TIME)
               }}
             />
           )
@@ -316,6 +317,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
     setModel({
       filter: {
         items: [

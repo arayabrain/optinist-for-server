@@ -37,7 +37,7 @@ import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
-import { SHARE } from '@types'
+import {SHARE, WAITING_TIME} from '@types'
 import PopupShare from '../PopupShare'
 import PaginationCustom from '../common/PaginationCustom'
 
@@ -104,7 +104,7 @@ const columns = (
                 if (timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({ ...item, value: e.target.value })
-                }, 500)
+                }, WAITING_TIME)
               }}
             />
           )
@@ -368,6 +368,7 @@ const DatabaseExperiments = ({
   }
 
   useEffect(() => {
+    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
     setModel({
       filter: {
         items: [
