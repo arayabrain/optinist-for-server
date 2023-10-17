@@ -10,3 +10,5 @@ export const enum SHARE {
   ORGANIZATION = 2,
   USERS = 1,
 }
+
+export const WAITING_TIME = 500
