@@ -149,7 +149,7 @@ async def search_public_experiments(
         )
     )
 
-    if options.experiment_id:
+    if options.experiment_id is not None:
         query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
@@ -222,7 +222,7 @@ async def search_public_cells(
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
     )
 
-    if options.experiment_id:
+    if options.experiment_id is not None:
         query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
@@ -307,14 +307,14 @@ async def search_db_experiments(
             )
         )
 
-    if options.experiment_id:
+    if options.experiment_id is not None:
         query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
         )
 
-    if publish_status:
+    if publish_status is not None:
         query = query.filter(optinist_model.Experiment.publish_status == publish_status)
 
     query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
@@ -436,7 +436,7 @@ async def search_db_cells(
                 ),
             )
         )
-    if options.experiment_id:
+    if options.experiment_id is not None:
         query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
@@ -447,7 +447,7 @@ async def search_db_cells(
                 "%{0}%".format(options.experiment_id)
             )
         )
-    if publish_status:
+    if publish_status is not None:
         query = query.filter(
             optinist_model.Experiment.publish_status == publish_status
         ).group_by(optinist_model.Cell.id)
