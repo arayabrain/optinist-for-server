@@ -32,6 +32,7 @@ import {
   getExperimentsPublicDatabase,
   getListUserShare,
   postPublish,
+  postPublishAll,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
@@ -40,6 +41,11 @@ import { isAdminOrManager } from 'store/slice/User/UserSelector'
 import {SHARE, WAITING_TIME} from '@types'
 import PopupShare from '../PopupShare'
 import PaginationCustom from '../common/PaginationCustom'
+import PublicIcon from '@mui/icons-material/Public'
+import PublicOffIcon from '@mui/icons-material/PublicOff'
+import GroupAddIcon from '@mui/icons-material/GroupAdd'
+import PopupConfirm from "../common/PopupConfirm"
+import PopupShareGroup from "../PopupShareGroup";
 
 export type Data = {
   id: number
@@ -280,10 +286,16 @@ const DatabaseExperiments = ({
     }),
   )
 
+  const [openPublishAll, setOpenPublishAll] = useState<{ title: string, open: boolean, type: 'on' | 'off'}>({
+    title: '',
+    open: false,
+    type: 'on'
+  })
   const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
+  const [openShareGroup, setOpenShareGroup] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
     type?: string
     data?: string | string[]
@@ -305,6 +317,10 @@ const DatabaseExperiments = ({
 
   const { dataShare } = useSelector((state: RootState) => ({
     dataShare: state[DATABASE_SLICE_NAME].listShare,
+  }))
+
+  const { dataGroupShare } = useSelector((state: RootState) => ({
+    dataGroupShare: state[DATABASE_SLICE_NAME].listGroupsShare,
   }))
 
   const pagiFilter = useCallback(
@@ -523,6 +539,40 @@ const DatabaseExperiments = ({
     setNewParams(param)
   }
 
+  const handlePublishCancel = () => {
+    setOpenPublishAll({
+      ...openPublishAll,
+      open: false
+    })
+  }
+
+  const handleOpenPublishOk = (title: string, type: 'on' | 'off') => {
+    setOpenPublishAll({
+      title: title,
+      open: true,
+      type: type
+    })
+  }
+
+  const handlePublishOk = () => {
+    setOpenPublishAll({
+      ...openPublishAll,
+      open: false
+    })
+    try {
+      dispatch(postPublishAll({
+        status: openPublishAll.type,
+        params: {
+          ...dataParamsFilter,
+          ...dataParams,
+        }
+      }))
+    }
+    finally {
+
+    }
+  }
+
   const getColumns = useMemo(() => {
     return (dataExperiments.header?.graph_titles || []).map(
       (graphTitle, index) => ({
@@ -621,6 +671,14 @@ const DatabaseExperiments = ({
 
   return (
     <DatabaseExperimentsWrapper>
+      {
+        user ?
+          (<WrapperIcons>
+            <GroupAddIcon onClick={() => setOpenShareGroup(true)}/>
+            <PublicIcon onClick={() => handleOpenPublishOk('Publish ○○ records at once. Is this OK?', 'on')} />
+            <PublicOffIcon onClick={() => handleOpenPublishOk('Unpublish ○ records at once. Is this OK?', 'off')} />
+          </WrapperIcons>) : null
+      }
       <DataGrid
         columns={
           adminOrManager && user && !readonly
@@ -637,6 +695,7 @@ const DatabaseExperiments = ({
         filterModel={model.filter}
         onFilterModelChange={handleFilter as any}
         onRowClick={handleRowClick}
+        sx={{ height: 'calc(100% - 50px)'}}
       />
       {dataExperiments?.items.length > 0 ? (
         <PaginationCustom
@@ -662,7 +721,7 @@ const DatabaseExperiments = ({
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
-        <PopupShare
+        <PopupShareGroup
           id={openShare.id}
           open={openShare.open}
           data={dataDialog as { expId: string; shareType: number }}
@@ -673,6 +732,18 @@ const DatabaseExperiments = ({
           }}
         />
       ) : null}
+      <PopupShareGroup
+        usersShare={dataGroupShare}
+        open={openShareGroup}
+        data={dataDialog as { expId: string; shareType: number }}
+        handleClose={() => setOpenShareGroup(false)}
+      />
+      <PopupConfirm
+        open={openPublishAll.open}
+        title={openPublishAll.title}
+        handleClose={handlePublishCancel}
+        handleOk={handlePublishOk}
+      />
     </DatabaseExperimentsWrapper>
   )
 }
@@ -685,6 +756,16 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 const Content = styled('textarea')(() => ({
   width: 400,
   height: 'fit-content',
+}))
+
+const WrapperIcons = styled(Box)(() => ({
+  display: 'flex',
+  justifyContent: 'end',
+  gap: 10,
+  marginBottom: 10,
+  'svg: hover': {
+    cursor: 'pointer'
+  }
 }))
 
 export default DatabaseExperiments

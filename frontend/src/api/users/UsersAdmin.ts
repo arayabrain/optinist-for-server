@@ -38,7 +38,12 @@ export const deleteUserApi = async (id: number): Promise<string> => {
   return response.data
 }
 
-export const getListSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
+export const getListUserSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
   const response = await axios.get(`/users/search/share_users${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+  return response.data
+}
+
+export const getListGroupSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
+  const response = await axios.get(`/users/search/share_groups${data.keyword ? `?keyword=${data.keyword}` : ''}`)
   return response.data
 }

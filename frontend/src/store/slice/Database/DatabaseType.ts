@@ -59,6 +59,7 @@ export type DatabaseDTO = {
 export type ListShareDTO = {
   share_type: number
   users: ListShare[]
+  groups: ListShare[]
 }
 
 export type ListShare = {
