@@ -37,7 +37,7 @@ import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
-import { SHARE } from '@types'
+import {SHARE, WAITING_TIME} from '@types'
 import PopupShare from '../PopupShare'
 import PaginationCustom from '../common/PaginationCustom'
 
@@ -84,6 +84,7 @@ const columns = (
   navigate: (path: string) => void,
   user: boolean,
   readonly?: boolean,
+  loading: boolean = false
 ) => [
   {
     field: 'experiment_id',
@@ -96,13 +97,14 @@ const columns = (
         InputComponent: ({ applyValue, item }: any) => {
           return (
             <Input
+              autoFocus={!loading}
               sx={{ paddingTop: '16px' }}
               defaultValue={item.value || ''}
               onChange={(e) => {
                 if (timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({ ...item, value: e.target.value })
-                }, 300)
+                }, WAITING_TIME)
               }}
             />
           )
@@ -341,7 +343,7 @@ const DatabaseExperiments = ({
       items: [
         {
           field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
-          operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
+          operator: ['publish_status', 'brain_area'].includes(Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || 'publish_status') ? 'is' : 'contains',
           value: Object.values(dataParamsFilter).find(value => value) || null,
         },
       ],
@@ -366,12 +368,13 @@ const DatabaseExperiments = ({
   }
 
   useEffect(() => {
+    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
     setModel({
       filter: {
         items: [
           {
             field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
-            operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
+            operator: ['publish_status', 'brain_area'].includes(Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '') ? 'is' : 'contains',
             value: Object.values(dataParamsFilter).find(value => value) || null,
           },
         ],
@@ -611,6 +614,7 @@ const DatabaseExperiments = ({
       navigate,
       !!user,
       readonly,
+      loading
     ),
     ...getColumns,
   ].filter(Boolean) as any

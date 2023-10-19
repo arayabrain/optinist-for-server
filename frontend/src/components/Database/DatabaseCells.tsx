@@ -24,6 +24,7 @@ import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import PaginationCustom from "../common/PaginationCustom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { WAITING_TIME } from "../../@types";
 
 type CellProps = {
   user?: Object
@@ -31,7 +32,7 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (user?: boolean) => [
+const columns = (user?: boolean, loading: boolean = false) => [
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -39,13 +40,19 @@ const columns = (user?: boolean) => [
       {
         label: 'Contains', value: 'contains',
         InputComponent: ({applyValue, item}: any) => {
-          return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
+          return (
+            <Input
+              autoFocus={!loading}
+              sx={{paddingTop: "16px"}}
+              defaultValue={item.value || ''}
+              onChange={(e) => {
                 if(timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
                   applyValue({...item, value: e.target.value})
-            }, 300)
-          }
-          } />
+                }, WAITING_TIME)
+              }}
+            />
+          )
         }
       },
     ],
@@ -310,6 +317,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
     setModel({
       filter: {
         items: [
@@ -451,7 +459,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     )
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(!!user), ...getColumns, ...statistics()].filter(
+  const columnsTable = [...columns(!!user, loading), ...getColumns, ...statistics()].filter(
     Boolean,
   ) as any
 
