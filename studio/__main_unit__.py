@@ -17,6 +17,7 @@ from studio.app.common.routers import (
     auth,
     experiment,
     files,
+    group,
     outputs,
     params,
     run,
@@ -44,6 +45,7 @@ app.include_router(run.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_admin.router, dependencies=[Depends(get_admin_user)])
 app.include_router(users_me.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_search.router, dependencies=[Depends(get_current_user)])
+app.include_router(group.router, dependencies=[Depends(get_current_user)])
 app.include_router(workflow.router, dependencies=[Depends(get_current_user)])
 app.include_router(workspace.router, dependencies=[Depends(get_current_user)])
 
