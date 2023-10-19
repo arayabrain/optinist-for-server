@@ -8,6 +8,7 @@ from sqlmodel import (
     Column,
     Field,
     ForeignKey,
+    Index,
     Integer,
     Relationship,
     String,
@@ -42,9 +43,47 @@ class ExperimentShareUser(Base, table=True):
     )
 
 
+class ExperimentShareGroup(Base, table=True):
+    __tablename__ = "experiments_share_groups"
+    __table_args__ = (
+        UniqueConstraint(
+            "experiment_uid", "group_id", name="idx_experiment_uid_group_id"
+        ),
+    )
+
+    experiment_uid: int = Field(
+        sa_column=Column(
+            BIGINT(unsigned=True), ForeignKey("experiments.id"), nullable=False
+        ),
+    )
+    group_id: int = Field(
+        sa_column=Column(
+            BIGINT(unsigned=True), ForeignKey("groups.id"), nullable=False
+        ),
+    )
+    created_at: Optional[datetime] = Field(
+        sa_column_kwargs={"server_default": current_timestamp()},
+    )
+
+
 class Experiment(Base, TimestampMixin, table=True):
     __tablename__ = "experiments"
-    __table_args__ = (UniqueConstraint("experiment_id", name="idx_experiment_id"),)
+    __table_args__ = (
+        UniqueConstraint("experiment_id", name="idx_experiment_id"),
+        Index(
+            "experiments_id_experiment_id_publish_status_index",
+            "id",
+            "experiment_id",
+            "publish_status",
+        ),
+        Index(
+            "experiments_id_org_id_experiment_id_publish_status_index",
+            "organization_id",
+            "id",
+            "experiment_id",
+            "publish_status",
+        ),
+    )
 
     organization_id: int = Field(
         sa_column=Column(

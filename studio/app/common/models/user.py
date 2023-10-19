@@ -14,6 +14,7 @@ from sqlmodel import (
 )
 
 from studio.app.common.models.base import Base, TimestampMixin
+from studio.app.common.models.group import UserGroup
 from studio.app.common.models.workspace import WorkspacesShareUser
 from studio.app.optinist.models.expdb.experiment import ExperimentShareUser
 
@@ -64,6 +65,9 @@ class User(Base, TimestampMixin, table=True):
     )
     experiment_share: List["Experiment"] = Relationship(  # noqa: F821
         back_populates="user_share", link_model=ExperimentShareUser
+    )
+    groups: List["Group"] = Relationship(  # noqa: F821
+        back_populates="group_user", link_model=UserGroup
     )
 
 
