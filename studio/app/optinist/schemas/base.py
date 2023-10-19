@@ -14,7 +14,7 @@ class SortDirection(str, Enum):
 @dataclasses.dataclass
 class SortOptions:
     sort: List = Query(
-        default=("id", SortDirection.asc),
+        default=None,
         description="field-0: sort column<br/>field-1: order ('asc' or 'desc')",
     )
 
@@ -24,7 +24,11 @@ class SortOptions:
         mapping: Dict[str, Union[str, SQLModelMetaclass]] = None,
         default=["id", SortDirection.asc],
     ) -> List:
-        sort = self.sort if len(self.sort) >= 2 else default
+        sort = (
+            self.sort
+            if isinstance(self.sort, List) and len(self.sort) >= 2
+            else default
+        )
         sort_list = []
         for i in range(0, len(sort), 2):
             sort_field, sort_type = sort[i : i + 2]
