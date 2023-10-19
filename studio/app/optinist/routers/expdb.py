@@ -1,8 +1,10 @@
+import os
+from glob import glob
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
-from sqlmodel import Session, and_, or_, select
+from sqlmodel import Session, and_, func, or_, select
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import (
@@ -11,8 +13,9 @@ from studio.app.common.core.auth.auth_dependencies import (
 )
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
+from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.schemas.base import SortOptions
+from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
@@ -35,14 +38,16 @@ public_router = APIRouter(tags=["Experiment Database"])
 def expdbcell_transformer(items: Sequence) -> Sequence:
     expdbcells = []
     for item in items:
-        expdbcell = ExpDbCell.from_orm(item[0])
-        expdbcell.experiment_id = item[1]
-        expdbcell.publish_status = item[2]
-        expdbcell.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        expdbcell.cell_image_url = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS[0]
-        # TODO: set dummy data.
-        expdbcell.graph_urls = DUMMY_CELLS_GRAPH_URLS
+        expdbcell = ExpDbCell.from_orm(item)
+        subject_id = expdbcell.experiment_id.split("_")[0]
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
+        # TODO: set fields from real data
+        expdbcell.fields = ExpDbExperimentFields()
+        expdbcell.graph_urls = get_cell_urls(CELL_GRAPHS, exp_dir, item.cell_number)
+        expdbcell.statistics = {
+            k: "{:.4g}".format(v) if v else None
+            for k, v in expdbcell.statistics.items()
+        }
         expdbcells.append(expdbcell)
     return expdbcells
 
@@ -50,79 +55,69 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 def experiment_transformer(items: Sequence) -> Sequence:
     experiments = []
     for item in items:
-        exp = ExpDbExperiment.from_orm(item)
-        # TODO: set dummy data.
-        exp.fields = ExpDbExperimentFields(**DUMMY_EXPERIMENTS_FIELDS)
-        # TODO: set dummy data.
-        exp.cell_image_urls = DUMMY_EXPERIMENTS_CELL_IMAGE_URLS
-        # TODO: set dummy data.
-        exp.graph_urls = DUMMY_EXPERIMENTS_GRAPH_URLS
+        expdb, cell_count = item
+        exp = ExpDbExperiment.from_orm(expdb)
+        subject_id = exp.experiment_id.split("_")[0]
+        exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
+        # TODO: set fields from real data
+        exp.fields = ExpDbExperimentFields()
+        exp.cell_image_urls = get_pixelmap_urls(exp_dir)
+        exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
     return experiments
 
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_FIELDS = {
-    "brain_area": 13,
-    "cre_driver": 20,
-    "reporter_line": 30,
-    "imaging_depth": 40,
+EXPERIMENT_GRAPHS = {
+    "direction_responsivity_ratio": {
+        "title": "Direction Responsivity Ratio",
+        "dir": "plots",
+    },
+    "orientation_responsivity_ratio": {
+        "title": "Orientation Responsivity Ratio",
+        "dir": "plots",
+    },
+    "preferred_direction": {"title": "Preferred Direction", "dir": "plots"},
+    "preferred_orientation": {"title": "Preferred Orientation", "dir": "plots"},
+    "direction_selectivity": {"title": "Direction Selectivity", "dir": "plots"},
+    "orientation_selectivity": {"title": "Orientation Selectivity", "dir": "plots"},
+    "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
+    "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
+    "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
 }
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_GRAPH_TITLES = [
-    "Direction Responsivity Ratio",
-    "Orientation Responsivity Ratio",
-    "Preferred Direction",
-    "Preferred Orientation",
-    "Direction Selectivity",
-    "Orientation Selectivity",
-    "Best Responsivity",
-    "Direction Tuning Width",
-    "Orientation Tuning Width",
-]
 
-# TODO: set dummy data.
-DUMMY_CELLS_GRAPH_TITLES = [
-    "Responsivity Statistic",
-    "Preferred Direction",
-    "Preferred Orientation",
-    "Direction Selectivity",
-    "Orientation Selectivity",
-    "Best Responsivity",
-    "Direction Tuning Width",
-    "Orientation Tuning Width",
-    "Tuning Curve",
-    "Tuning Curve Poler",
-]
+def get_experiment_urls(source, exp_dir, params=None):
+    return [
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}.png", params=params)
+        for k, v in source.items()
+    ]
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_CELL_IMAGE_URLS = [
-    ImageInfo(
-        url="http://localhost:8000/static/sample_media/pixel_image.png",
-        thumb_url="http://localhost:8000/static/sample_media/pixel_image_thumb.png",
+
+def get_pixelmap_urls(exp_dir, params=None):
+    dirs = exp_dir.split("/")
+    pub_dir = f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pixelmaps/"
+    pixelmaps = sorted(
+        list(set(glob(f"{pub_dir}/*.png")) - set(glob(f"{pub_dir}/*.thumb.png")))
     )
-    for _ in range(5)
-]
 
-# TODO: set dummy data.
-DUMMY_EXPERIMENTS_GRAPH_URLS = [
-    ImageInfo(
-        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
-    )
-    for _, __ in enumerate(DUMMY_EXPERIMENTS_GRAPH_TITLES)
-]
+    return [
+        ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
+        for k in pixelmaps
+    ]
 
-# TODO: set dummy data.
-DUMMY_CELLS_GRAPH_URLS = [
-    ImageInfo(
-        url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",
-        thumb_url=f"http://localhost:8000/static/sample_media/bar_chart_{(_ % 3) + 1}.png",  # noqa: E501
-        params={"param1": 10, "param2": 20},
-    )
-    for _, __ in enumerate(DUMMY_CELLS_GRAPH_TITLES)
-]
+
+CELL_GRAPHS = {
+    "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
+    "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
+    "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
+}
+
+
+def get_cell_urls(source, exp_dir, index: int, params=None):
+    return [
+        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
+        for k, v in source.items()
+    ]
 
 
 @public_router.get(
@@ -137,22 +132,34 @@ async def search_public_experiments(
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
-    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+    )
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
-
-    data = paginate(
-        session=db,
-        query=select(optinist_model.Experiment)
+    graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
+    query = (
+        select(
+            optinist_model.Experiment,
+            func.count(optinist_model.Cell.id).label("cell_count"),
+        )
         .filter_by(publish_status=PublishStatus.on.value)
-        .filter(
+        .join(
+            optinist_model.Cell,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+    )
+
+    if options.experiment_id is not None:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
         )
-        .group_by(optinist_model.Experiment.id)
-        .order_by(*sa_sort_list),
+    query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
+
+    data = paginate(
+        session=db,
+        query=query,
         transformer=experiment_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
     )
@@ -168,42 +175,92 @@ async def search_public_experiments(
 )
 async def search_public_cells(
     options: ExpDbExperimentsSearchOptions = Depends(),
+    limit: int = Query(50, description="records limit"),
+    offset: int = Query(0, description="records offset"),
     sortOptions: SortOptions = Depends(),
     db: Session = Depends(get_db),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Cell,
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+        default=["experiment_id", SortDirection.asc],
     )
-    query = (
-        select(
+    query = select(
+        optinist_model.Cell.id,
+        optinist_model.Cell.statistics,
+        optinist_model.Cell.cell_number,
+        optinist_model.Cell.created_at,
+        optinist_model.Cell.updated_at,
+        optinist_model.Cell.experiment_uid,
+        optinist_model.Experiment.experiment_id,
+        optinist_model.Experiment.publish_status,
+    )
+
+    if any(
+        sort.element.table.name == optinist_model.Cell.__table__.name
+        for sort in sa_sort_list
+    ):
+        query = query.with_hint(
             optinist_model.Cell,
-            optinist_model.Experiment.experiment_id,
-            optinist_model.Experiment.publish_status,
+            text="USE INDEX (cells_id_created_at_updated_at_index)",
+            dialect_name="mysql",
         )
+
+    query = (
+        query.join(
+            optinist_model.Experiment,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+        .with_hint(
+            optinist_model.Experiment,
+            text="FORCE INDEX FOR JOIN (experiments_id_experiment_id_publish_status_index)",  # noqa
+            dialect_name="mysql",
+        )
+        .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
+    )
+
+    total_query = (
+        select(optinist_model.Cell.id)
         .join(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
-        .filter(
+    )
+
+    if options.experiment_id is not None:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
         )
-    )
-    query = query.group_by(optinist_model.Cell.id).order_by(*sa_sort_list)
+        total_query = total_query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+    query = query.order_by(*sa_sort_list)
+    graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
-    data = paginate(
-        session=db,
-        query=query,
-        transformer=expdbcell_transformer,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
+    """
+    The two indexes are used to improve performance of fetching data query.
+    But in count query, it makes execution slower.
+
+    Since `fastapi-pagination` library is using the same base query
+    for both the purpose of fetching data and calculating the amount
+    of data and does not allow customization of the quantity calculation method,
+    pagination needs to be implement manually to improve performance.
+    """
+    return PageWithHeader[ExpDbCell](
+        header=ExpDbExperimentHeader(graph_titles=graph_titles),
+        items=expdbcell_transformer(
+            db.execute(query.limit(limit).offset(offset)).all()
+        ),
+        total=db.scalar(select(func.count()).select_from(total_query.subquery())),
+        limit=limit,
+        offset=offset,
     )
-    return data
 
 
 @router.get(
@@ -220,14 +277,19 @@ async def search_db_experiments(
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    sa_sort_list = sortOptions.get_sa_sort_list(sa_table=optinist_model.Experiment)
-    query = select(optinist_model.Experiment).join(
-        common_model.Organization,
-        optinist_model.Experiment.organization_id == common_model.Organization.id,
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+    )
+    query = select(
+        optinist_model.Experiment,
+        func.count(optinist_model.Cell.id).label("cell_count"),
+    ).join(
+        optinist_model.Cell,
+        optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
     )
     if current_user.is_admin_data:
         query = query.filter(
-            common_model.Organization.id == current_user.organization.id
+            optinist_model.Experiment.organization_id == current_user.organization.id
         )
     else:
         query = query.join(
@@ -240,7 +302,8 @@ async def search_db_experiments(
                 and_(
                     optinist_model.Experiment.share_type
                     == ExperimentShareType.for_org.value,
-                    common_model.Organization.id == current_user.organization.id,
+                    optinist_model.Experiment.organization_id
+                    == current_user.organization.id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
@@ -249,21 +312,20 @@ async def search_db_experiments(
                 ),
             )
         )
-    query = (
-        query.filter(
+
+    if options.experiment_id is not None:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            ),
-            optinist_model.Experiment.publish_status == publish_status
-            if publish_status is not None
-            else True,
+            )
         )
-        .group_by(optinist_model.Experiment.id)
-        .order_by(*sa_sort_list)
-    )
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_EXPERIMENTS_GRAPH_TITLES
+    if publish_status is not None:
+        query = query.filter(optinist_model.Experiment.publish_status == publish_status)
+
+    query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
+
+    graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
 
     data = paginate(
         session=db,
@@ -284,6 +346,8 @@ async def search_db_experiments(
 async def search_db_cells(
     db: Session = Depends(get_db),
     publish_status: Optional[bool] = None,
+    limit: int = Query(50, description="records limit"),
+    offset: int = Query(0, description="records offset"),
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
@@ -294,26 +358,48 @@ async def search_db_cells(
             "experiment_id": optinist_model.Experiment.experiment_id,
             "publish_status": optinist_model.Experiment.publish_status,
         },
+        default=["experiment_id", SortDirection.asc],
     )
-    query = (
-        select(
+    query = select(
+        optinist_model.Cell.id,
+        optinist_model.Cell.statistics,
+        optinist_model.Cell.cell_number,
+        optinist_model.Cell.created_at,
+        optinist_model.Cell.updated_at,
+        optinist_model.Cell.experiment_uid,
+        optinist_model.Experiment.experiment_id,
+        optinist_model.Experiment.publish_status,
+    )
+    if any(
+        sort.element.table.name == optinist_model.Cell.__table__.name
+        for sort in sa_sort_list
+    ):
+        query = query.with_hint(
             optinist_model.Cell,
-            optinist_model.Experiment.experiment_id,
-            optinist_model.Experiment.publish_status,
+            text="USE INDEX (cells_id_created_at_updated_at_index)",
+            dialect_name="mysql",
         )
-        .join(
-            optinist_model.Experiment,
-            optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
-        )
-        .join(
-            common_model.Organization,
-            optinist_model.Experiment.organization_id == common_model.Organization.id,
-        )
+    query = query.join(
+        optinist_model.Experiment,
+        optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
+    ).with_hint(
+        optinist_model.Experiment,
+        text="FORCE INDEX FOR JOIN (experiments_id_org_id_experiment_id_publish_status_index)",  # noqa
+        dialect_name="mysql",
     )
+    total_query = select(optinist_model.Cell.id).join(
+        optinist_model.Experiment,
+        optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
+    )
+
     if current_user.is_admin_data:
         query = query.filter(
-            common_model.Organization.id == current_user.organization.id
+            optinist_model.Experiment.organization_id == current_user.organization.id
         )
+        total_query = total_query.filter(
+            optinist_model.Experiment.organization_id == current_user.organization.id
+        )
+
     else:
         query = query.join(
             optinist_model.ExperimentShareUser,
@@ -325,7 +411,8 @@ async def search_db_cells(
                 and_(
                     optinist_model.Experiment.share_type
                     == ExperimentShareType.for_org.value,
-                    common_model.Organization.id == current_user.organization.id,
+                    optinist_model.Experiment.organization_id
+                    == current_user.organization.id,
                 ),
                 and_(
                     optinist_model.Experiment.share_type
@@ -334,29 +421,59 @@ async def search_db_cells(
                 ),
             )
         )
-    query = (
-        query.filter(
+
+        total_query = total_query.join(
+            optinist_model.ExperimentShareUser,
+            optinist_model.ExperimentShareUser.experiment_uid
+            == optinist_model.Experiment.id,
+            isouter=True,
+        ).filter(
+            or_(
+                and_(
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.for_org.value,
+                    optinist_model.Experiment.organization_id
+                    == current_user.organization.id,
+                ),
+                and_(
+                    optinist_model.Experiment.share_type
+                    == ExperimentShareType.per_user.value,
+                    optinist_model.ExperimentShareUser.user_id == current_user.id,
+                ),
+            )
+        )
+    if options.experiment_id is not None:
+        query = query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
-            ),
-            optinist_model.Experiment.publish_status == publish_status
-            if publish_status is not None
-            else True,
+            )
         )
-        .group_by(optinist_model.Cell.id)
-        .order_by(*sa_sort_list)
-    )
+        total_query = total_query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+    if publish_status is not None:
+        query = query.filter(
+            optinist_model.Experiment.publish_status == publish_status
+        ).group_by(optinist_model.Cell.id)
+        total_query = total_query.filter(
+            optinist_model.Experiment.publish_status == publish_status
+        ).group_by(optinist_model.Cell.id)
 
-    # TODO: set dummy data.
-    graph_titles = DUMMY_CELLS_GRAPH_TITLES
+    query = query.order_by(*sa_sort_list)
 
-    data = paginate(
-        session=db,
-        query=query,
-        transformer=expdbcell_transformer,
-        additional_data={"header": ExpDbExperimentHeader(graph_titles=graph_titles)},
+    graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
+
+    return PageWithHeader[ExpDbCell](
+        header=ExpDbExperimentHeader(graph_titles=graph_titles),
+        items=expdbcell_transformer(
+            db.execute(query.limit(limit).offset(offset)).all()
+        ),
+        total=db.scalar(select(func.count()).select_from(total_query.subquery())),
+        limit=limit,
+        offset=offset,
     )
-    return data
 
 
 @router.post(

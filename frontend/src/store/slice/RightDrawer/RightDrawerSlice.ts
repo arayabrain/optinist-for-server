@@ -1,8 +1,9 @@
 import { createSlice, isAnyOf, PayloadAction } from '@reduxjs/toolkit'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 import {
-  fetchExperiment,
-  importExperimentByUid,
-} from '../Experiments/ExperimentsActions'
+  reproduceWorkflow,
+  importWorkflowConfig,
+} from 'store/slice/Workflow/WorkflowActions'
 import {
   deleteFlowNodes,
   deleteFlowNodeById,
@@ -91,11 +92,14 @@ export const rightDrawerSlice = createSlice({
           state.currendNodeId = null
         }
       })
-      .addCase(importExperimentByUid.fulfilled, () => {
-        return initialState
-      })
+
       .addMatcher(
-        isAnyOf(fetchExperiment.fulfilled, fetchExperiment.rejected),
+        isAnyOf(
+          reproduceWorkflow.fulfilled,
+          importWorkflowConfig.fulfilled,
+          fetchExperiment.fulfilled,
+          fetchExperiment.rejected,
+        ),
         () => initialState,
       )
   },

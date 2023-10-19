@@ -45,9 +45,10 @@ import { Experiment } from 'store/slice/Experiments/ExperimentsType'
 import { DeleteButton } from './Button/DeleteButton'
 import {
   NWBDownloadButton,
-  ConfigDownloadButton,
+  SnakemakeDownloadButton,
+  WorkflowDownloadButton,
 } from './Button/DownloadButton'
-import { ImportButton } from './Button/ImportButton'
+import { ReproduceButton } from './Button/ReproduceButton'
 import { useLocalStorage } from 'components/utils/LocalStorageUtil'
 import { styled } from '@mui/material/styles'
 import { renameExperiment } from 'api/experiments/Experiments'
@@ -57,6 +58,7 @@ import {
   selectCurrentWorkspaceId,
   selectIsWorkspaceOwner,
 } from 'store/slice/Workspace/WorkspaceSelector'
+import {WAITING_TIME} from "../../../@types";
 
 export const ExperimentUidContext = React.createContext<string>('')
 
@@ -369,7 +371,8 @@ const HeadItem = React.memo<{
           </TableCell>
           <TableCell>Success</TableCell>
           <TableCell>Reproduce</TableCell>
-          <TableCell>SnakeFile</TableCell>
+          <TableCell>Workflow</TableCell>
+          <TableCell>Snakemake</TableCell>
           <TableCell>NWB</TableCell>
           {isOwner && <TableCell>Delete</TableCell>}
         </TableRow>
@@ -401,7 +404,7 @@ const RowItem = React.memo<{
     setTimeout(() => {
       setEdit(false)
       onSaveNewName()
-    }, 300)
+    }, WAITING_TIME)
   }
 
   const onEdit = (event: any) => {
@@ -474,10 +477,13 @@ const RowItem = React.memo<{
           <ExperimentStatusIcon status={status} />
         </TableCell>
         <TableCell>
-          <ImportButton />
+          <ReproduceButton />
         </TableCell>
         <TableCell>
-          <ConfigDownloadButton />
+          <WorkflowDownloadButton />
+        </TableCell>
+        <TableCell>
+          <SnakemakeDownloadButton />
         </TableCell>
         <TableCell>
           <NWBDownloadButton name={uid} hasNWB={hasNWB} />

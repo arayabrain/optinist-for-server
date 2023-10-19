@@ -15,6 +15,10 @@ from sqlmodel import (
 )
 
 from studio.app.common.models.base import Base, TimestampMixin
+from studio.app.optinist.schemas.expdb.experiment import (
+    ExperimentShareType,
+    PublishStatus,
+)
 
 
 class ExperimentShareUser(Base, table=True):
@@ -53,11 +57,17 @@ class Experiment(Base, TimestampMixin, table=True):
         sa_column=Column(
             Integer(),
             nullable=False,
+            default=ExperimentShareType.no_share.value,
             comment="1: default(per users), 2: for organization",
         )
     )
     publish_status: int = Field(
-        sa_column=Column(Integer(), nullable=False, comment="0: private, 1: public")
+        sa_column=Column(
+            Integer(),
+            nullable=False,
+            default=PublishStatus.off.value,
+            comment="0: private, 1: public",
+        )
     )
 
     organization: "Organization" = Relationship(  # noqa: F821

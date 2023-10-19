@@ -59,8 +59,7 @@ export const updateMePassword = createAsyncThunk(
     `${USER_SLICE_NAME}/updateMePassword`,
     async (data: UpdateUserPasswordDTO, thunkAPI) => {
       try {
-        const responseData = await updateMePasswordApi(data)
-        return responseData
+        return await updateMePasswordApi(data)
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
       }
@@ -71,8 +70,7 @@ export const getListUser = createAsyncThunk(
     `${USER_SLICE_NAME}/getListUser`,
     async (params: ListUsersQueryDTO, thunkAPI) => {
       try {
-        const responseData = await listUsersApi(params)
-        return responseData
+        return await listUsersApi(params)
       } catch (e) {
         return thunkAPI.rejectWithValue(e)
       }
@@ -96,12 +94,14 @@ export const getListSearch = createAsyncThunk<
 
 export const createUser = createAsyncThunk<
     UserDTO,
-    AddUserDTO
+    {data: AddUserDTO, params : ListUsersQueryDTO}
 >(
     `${USER_SLICE_NAME}/createUser`,
-    async (params, thunkAPI) => {
+    async (props, thunkAPI) => {
       try {
-        const responseData = await createUserApi(params)
+        const { dispatch } = thunkAPI
+        const responseData = await createUserApi(props.data)
+        await dispatch(getListUser(props.params))
         return responseData
       } catch (e) {
         return thunkAPI.rejectWithValue(e)

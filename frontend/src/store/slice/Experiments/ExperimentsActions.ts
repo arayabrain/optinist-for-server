@@ -1,14 +1,12 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
-  ExperimentDTO,
   ExperimentsDTO,
+  FetchExperimentDTO,
   getExperimentsApi,
   deleteExperimentByUidApi,
-  importExperimentByUidApi,
   deleteExperimentByListApi,
   fetchExperimentApi,
 } from 'api/experiments/Experiments'
-import { RunPostData } from 'api/run/Run'
 import { EXPERIMENTS_SLICE_NAME } from './ExperimentsType'
 import { selectCurrentWorkspaceId } from '../Workspace/WorkspaceSelector'
 import { ThunkApiConfig } from 'store/store'
@@ -67,22 +65,7 @@ export const deleteExperimentByList = createAsyncThunk<
   }
 })
 
-export const importExperimentByUid = createAsyncThunk<
-  RunPostData,
-  { workspaceId: number; uid: string }
->(
-  `${EXPERIMENTS_SLICE_NAME}/importExperimentByUid`,
-  async ({ workspaceId, uid }, thunkAPI) => {
-    try {
-      const response = await importExperimentByUidApi(workspaceId, uid)
-      return response
-    } catch (e) {
-      return thunkAPI.rejectWithValue(e)
-    }
-  },
-)
-
-export const fetchExperiment = createAsyncThunk<ExperimentDTO, number>(
+export const fetchExperiment = createAsyncThunk<FetchExperimentDTO, number>(
   `${EXPERIMENTS_SLICE_NAME}/fetchExperiment`,
   async (workspaceId, thunkAPI) => {
     try {

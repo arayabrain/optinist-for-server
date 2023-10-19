@@ -1,0 +1,22 @@
+FROM alpine:3.11
+
+WORKDIR /root
+
+RUN apk update && \
+    apk add openrc rsyslog tzdata && \
+    apk add mysql-client && \
+    rm -rf /var/cache/apk/*
+
+RUN echo 'alias ll="ls -la --color=auto"' >> /root/.profile
+
+# set timezone
+RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone
+
+# set cron (db backup)
+ENV DB_BACKUP_SCRIPT "/root/optinist-db-backup.sh"
+ENV DB_BACKUP_DIR "/root/backups-db"
+RUN echo 'cd `dirname $0`; \
+    mysqldump -u $MYSQL_USER -h ${MYSQL_SERVER%:*} --password=$MYSQL_PASSWORD $MYSQL_DATABASE | \
+    gzip > $DB_BACKUP_DIR/optinist-dbdump-`date +%m%d`.sql.gz' \
+  > $DB_BACKUP_SCRIPT && \
+  echo "5 2 * * * sh $DB_BACKUP_SCRIPT /dev/null 2>&1" >> /var/spool/cron/crontabs/root

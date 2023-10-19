@@ -6,10 +6,11 @@ import {
   deleteFlowNodeById,
 } from '../FlowElement/FlowElementSlice'
 import { NODE_TYPE_SET } from '../FlowElement/FlowElementType'
+import { fetchExperiment } from '../Experiments/ExperimentsActions'
 import {
-  fetchExperiment,
-  importExperimentByUid,
-} from '../Experiments/ExperimentsActions'
+  reproduceWorkflow,
+  importWorkflowConfig,
+} from 'store/slice/Workflow/WorkflowActions'
 import { getAlgoParams } from './AlgorithmNodeActions'
 import { ALGORITHM_NODE_SLICE_NAME, AlgorithmNode } from './AlgorithmNodeType'
 import { isAlgorithmNodePostData } from 'api/run/RunUtils'
@@ -72,7 +73,11 @@ export const algorithmNodeSlice = createSlice({
         }
       })
       .addMatcher(
-        isAnyOf(importExperimentByUid.fulfilled, fetchExperiment.fulfilled),
+        isAnyOf(
+          reproduceWorkflow.fulfilled,
+          importWorkflowConfig.fulfilled,
+          fetchExperiment.fulfilled,
+        ),
         (_, action) => {
           const newState: AlgorithmNode = {}
           Object.values(action.payload.nodeDict)

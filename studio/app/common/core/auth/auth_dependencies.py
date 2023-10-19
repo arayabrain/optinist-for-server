@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Response, status
@@ -40,13 +41,15 @@ async def get_current_user(
             .filter(UserModel.uid == uid)
             .first()
         )
-        assert user_data is not None
+        assert user_data is not None, "Invalid user data"
         authed_user, role_id = user_data
         authed_user.__dict__["role_id"] = role_id
         return User.from_orm(authed_user)
     except ValidationError as e:
+        logging.getLogger().error(e)
         raise HTTPException(status_code=422, detail=f"Validator Error: {e}")
     except Exception as e:
+        logging.getLogger().error(e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             headers={"WWW-Authenticate": 'Bearer realm="auth_required"'},

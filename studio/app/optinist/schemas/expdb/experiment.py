@@ -26,10 +26,10 @@ class PublishStatus(int, Enum):
 
 
 class ExpDbExperimentFields(BaseModel):
-    brain_area: str
-    cre_driver: str
-    reporter_line: str
-    imaging_depth: int
+    brain_area: Optional[str]
+    cre_driver: Optional[str]
+    reporter_line: Optional[str]
+    imaging_depth: Optional[int]
 
 
 class ExpDbExperimentHeader(BaseModel):
@@ -38,8 +38,13 @@ class ExpDbExperimentHeader(BaseModel):
 
 class ImageInfo(BaseModel):
     url: str
-    thumb_url: str
+    thumb_url: Optional[str]
     params: Optional[dict]
+
+    def __init__(self, url, params=None, thumb_url=None):
+        super().__init__(url=url, thumb_url=thumb_url, params=params)
+        if thumb_url is None:
+            self.thumb_url = url.replace(".png", ".thumb.png")
 
 
 class ExpDbExperiment(BaseModel):
@@ -56,6 +61,20 @@ class ExpDbExperiment(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ExpDbExperimentCreate(BaseModel):
+    experiment_id: str
+    organization_id: int
+    attributes: Optional[dict] = {}
+
+
+class ExpDbExperimentUpdate(BaseModel):
+    experiment_id: Optional[str]
+    organization_id: Optional[int]
+    attributes: Optional[dict]
+    share_type: Optional[int]
+    publish_status: Optional[int]
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):

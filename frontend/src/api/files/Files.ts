@@ -8,6 +8,8 @@ export const FILE_TREE_TYPE_SET = {
   HDF5: 'hdf5',
   FLUO: 'fluo',
   BEHAVIOR: 'behavior',
+  MATLAB: 'matlab',
+  EXPDB: 'expdb',
   ALL: 'all',
 } as const
 

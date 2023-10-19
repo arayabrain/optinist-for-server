@@ -9,6 +9,7 @@ import { Button } from '@mui/material'
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos'
 import { useNavigate } from 'react-router-dom'
 import { IS_STANDALONE } from 'const/Mode'
+import { ImportWorkflowConfigButton } from './FlowChart/ImportWorkflowConfigButton'
 
 export const ToolBar = React.memo<UseRunPipelineReturnType>((props) => {
   const navigate = useNavigate()
@@ -33,6 +34,7 @@ export const ToolBar = React.memo<UseRunPipelineReturnType>((props) => {
           </Button>
         )
       }
+      <ImportWorkflowConfigButton />
       <SnakemakeButton />
       <NWBSettingButton />
       <RunButtons {...props} />

@@ -18,13 +18,15 @@ Pipfile.lock
 .snakemake
 .pytest_cache
 
-studio/config.yaml
 studio/test_data/output
-docs/_build
-
 studio/notebooks
+studio/config.production*
+
+docs/_build
 conda/envs/*
 tensorflow-2.4.1-py3-none-any.whl
 
 .env*
 !*.env.example
+
+process.lock

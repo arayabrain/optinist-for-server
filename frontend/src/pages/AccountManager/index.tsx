@@ -8,8 +8,8 @@ import {useNavigate, useSearchParams} from "react-router-dom";
 import {deleteUser, createUser, getListUser, updateUser} from "../../store/slice/User/UserActions";
 import Loading from "../../components/common/Loading";
 import {AddUserDTO, UserDTO} from "../../api/users/UsersApiDTO";
-import {ROLE} from "../../@types";
-import {DataGrid, GridFilterModel, GridSortDirection, GridSortModel} from "@mui/x-data-grid";
+import {ROLE, WAITING_TIME} from "../../@types";
+import {DataGrid, GridFilterModel, GridSortDirection, GridSortItem, GridSortModel} from "@mui/x-data-grid";
 import {regexEmail, regexIgnoreS, regexPassword} from "../../const/Auth";
 import InputError from "../../components/common/InputError";
 import {SelectChangeEvent} from "@mui/material/Select";
@@ -261,14 +261,51 @@ const AccountManager = () => {
 
   const [openModal, setOpenModal] = useState(false)
   const [dataEdit, setDataEdit] = useState({})
+  const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
 
   const limit = searchParams.get('limit') || 50
   const offset = searchParams.get('offset') || 0
   const name = searchParams.get('name') || undefined
   const email = searchParams.get('email') || undefined
   const sort = searchParams.getAll('sort') || []
-
   const [openDel, setOpenDel] = useState<{id?: number, name?: string, open: boolean}>()
+
+  const filterParams = useMemo(() => {
+    return {
+      name: name,
+      email: email
+    }
+  }, [name, email])
+
+  const sortParams = useMemo(() => {
+    return {
+      sort: sort
+    }
+    //eslint-disable-next-line
+  }, [JSON.stringify(sort)])
+
+  const params = useMemo(() => {
+    return {
+      limit: Number(limit),
+      offset: Number(offset)
+    }
+  }, [limit, offset])
+
+  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
+    filter : {
+      items: [
+        {
+          field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
+          operator: 'contains',
+          value: Object.values(filterParams).find(value => value) || null,
+        },
+      ],
+    },
+    sort: [{
+      field: sortParams.sort[0]?.replace('role', 'role_id') || '',
+      sort: sortParams.sort[1] as GridSortDirection
+    }]
+  })
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -281,43 +318,43 @@ const AccountManager = () => {
     //eslint-disable-next-line
   }, [JSON.stringify(admin)])
 
-  const sortParams = useMemo(() => {
-    return {
-      sort: sort
+  useEffect(() => {
+    if(Object.keys(filterParams).every(key => !(filterParams as any)[key])) return
+    setModel({
+      filter: {
+        items: [
+          {
+            field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '' ,
+            operator: 'contains',
+            value: Object.values(filterParams).find(value => value) || null,
+          },
+        ],
+      },
+      sort: [{
+        field: sortParams.sort[0]?.replace('role', 'role_id') || '',
+        sort: sortParams.sort[1] as GridSortDirection
+      }]
+    })
+    //eslint-disable-next-line
+  }, [sortParams, filterParams])
+
+  useEffect(() => {
+    if(newParams && newParams !== window.location.search.replace("?", "")){
+      setNewParams(window.location.search.replace("?", ""))
     }
     //eslint-disable-next-line
-  }, [JSON.stringify(sort)])
+  }, [searchParams])
 
-  const filterParams = useMemo(() => {
-    return {
-      name: name,
-      email: email
-    }
-  }, [name, email])
-
-  const params = useMemo(() => {
-    return {
-      limit: Number(limit),
-      offset: Number(offset)
-    }
-  }, [limit, offset])
+  useEffect(() => {
+    if(newParams === window.location.search.replace("?", "")) return;
+    setParams(newParams)
+    //eslint-disable-next-line
+  }, [newParams])
 
   useEffect(() => {
     dispatch(getListUser({...filterParams, ...sortParams, ...params}))
     //eslint-disable-next-line
   }, [limit, offset, email, name, JSON.stringify(sort)])
-
-  const handlePage = (event: ChangeEvent<unknown>, page: number) => {
-    if(!listUser) return
-    let filter = ''
-    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-      .map((item: any) => {
-        return `${item.field}=${item?.value}`
-      })
-      .join('&')
-    const { sort } = sortParams
-    setParams(`${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`)
-  }
 
   const getParamsData = () => {
     const dataFilter = Object.keys(filterParams)
@@ -330,7 +367,7 @@ const AccountManager = () => {
   const paramsManager = useCallback(
     (page?: number) => {
       return `limit=${limit}&offset=${
-          page ? page - 1 : offset
+        page ? page - 1 : offset
       }`
     },
     [limit, offset],
@@ -338,34 +375,34 @@ const AccountManager = () => {
 
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
+      setModel({
+        ...model, sort: rowSelectionModel
+      })
+      let param
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        setParams(`${filter}&${paramsManager()}`)
-        return
+        param = filter || sortParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${paramsManager()}` : ''
+      } else {
+        param = `${filter}${rowSelectionModel[0] ? `${filter ? `&` : ''}sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`
       }
-      setParams(
-        `${filter}&${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field.replace('_id', '')}&sort=${rowSelectionModel[0].sort}` : ''}&${paramsManager()}`,
-      )
-    },
-    //eslint-disable-next-line
-    [paramsManager, getParamsData],
-  )
+      setNewParams(param)
+      //eslint-disable-next-line
+    }, [paramsManager, getParamsData, model])
 
-  const handleFilter = (model: GridFilterModel) => {
-    setFilterModel(model)
+  const handleFilter = (modelFilter: GridFilterModel) => {
+    setModel({
+      ...model, filter: modelFilter
+    })
     let filter = ''
-    if (!!model.items[0]?.value) {
-      filter = model.items
+    if (!!modelFilter.items[0]?.value) {
+      filter = modelFilter.items
         .filter((item) => item.value)
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
+        .map((item: any) => `${item.field}=${item?.value}`)
         .join('&')
     }
     const { sort } = sortParams
-    setParams(
-      `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}`,
-    )
+    const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? "&": ""}sort=${sort[0]}&sort=${sort[1]}` : ''}&${paramsManager()}` : ''
+    setNewParams(param)
   }
 
   const handleOpenModal = () => {
@@ -415,7 +452,10 @@ const AccountManager = () => {
           handleClickVariant('success', 'Your account has been edited successfully!')
         }
     } else {
-      const data = await dispatch(createUser({...newData, role_id: newRole} as AddUserDTO))
+      const data = await dispatch(createUser({
+        data: {...newData, role_id: newRole} as AddUserDTO,
+        params: {...filterParams, ...sortParams, ...params}
+      }))
       if(!(data as any).error) {
         handleClickVariant('success', 'Your account has been created successfully!')
       }
@@ -454,157 +494,166 @@ const AccountManager = () => {
     setOpenDel({...openDel, open: false})
   }
 
-  const [filterModel, setFilterModel] = useState<GridFilterModel>({
-    items: [
-      {
-        field: Object.keys(filterParams).find(key => (filterParams as any)[key]) || '',
-        operator: 'contains',
-        value: Object.values(filterParams).find(value => value),
-      },
-    ],
-  });
-
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
     let filter = ''
     filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
-        .map((item: any) => {
-          return `${item.field}=${item?.value}`
-        })
-        .join('&')
+      .map((item: any) => `${item}=${(filterParams as any)[item]}`)
+      .join('&')
     const { sort } = sortParams
-    setParams(
-        `${filter}&${sort[0] ? `sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`,
-    )
+    const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`
+    setNewParams(param)
   }
 
-  const columns = useMemo(() =>
-    [
-      {
-        headerName: 'UID',
-        field: 'uid',
-        filterable: false,
-        minWidth: 100,
-        flex: 2
-      },
-      {
-        headerName: 'Name',
-        field: 'name',
-        minWidth: 100,
-        flex: 2,
-        filterOperators: [
-          {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
-            }
-          },
-        ],
-        type: "string",
-      },
-      {
-        headerName: 'Role',
-        field: 'role_id',
-        filterable: false,
-        minWidth: 100,
-        flex: 1,
-        renderCell: (params: {value: number}) => {
-          let role
-          switch (params.value) {
-            case ROLE.ADMIN:
-              role = "Admin";
-              break;
-            case ROLE.DATA_MANAGER:
-              role = "Data Manager";
-              break;
-            case ROLE.OPERATOR:
-              role = "Operator";
-              break;
-            case ROLE.GUEST_OPERATOR:
-              role = "Guest Operator";
-              break;
-          }
-          return (
-            <span>{role}</span>
-          )
-        }
-      },
-      {
-        headerName: 'Mail',
-        field: 'email',
-        minWidth: 100,
-        flex: 2,
-        filterOperators: [
-          {
-            label: 'Contains', value: 'contains',
-            InputComponent: ({applyValue, item}: any) => {
-              return <Input sx={{paddingTop: "16px"}} defaultValue={item.value || ''} onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
-                }, 300)
-              }
-              } />
-            }
-          },
-        ],
-        type: "string",
-      },
-      {
-        headerName: '',
-        field: 'action',
-        sortable: false,
-        filterable: false,
-        minWidth: 100,
-        flex: 1,
-        renderCell: (params: {row: UserDTO}) => {
-          const { id, role_id, name, email} = params.row
-          if(!id || !role_id || !name || !email) return null
-          let role: any
-          switch (role_id) {
-            case ROLE.ADMIN:
-              role = "ADMIN";
-              break;
-            case ROLE.DATA_MANAGER:
-              role = "DATA_MANAGER";
-              break;
-            case ROLE.OPERATOR:
-              role = "OPERATOR";
-              break;
-            case ROLE.GUEST_OPERATOR:
-              role = "GUEST_OPERATOR";
-              break;
-          }
+  const handlePage = (event: ChangeEvent<unknown>, page: number) => {
+    if(!listUser) return
+    let filter = ''
+    filter = Object.keys(filterParams).filter(key => (filterParams as any)[key])
+      .map((item: any) => `${item}=${(filterParams as any)[item]}`)
+      .join('&')
+    const { sort } = sortParams
+    const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${listUser.limit}&offset=${(page - 1) * Number(limit)}`
+    setNewParams(param)
+  }
 
-          return (
-            <>
-              <ALink
-                sx={{ color: 'red' }}
-                onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
-              >
-                <EditIcon sx={{ color: 'black' }} />
-              </ALink>
-              {
-                !(params.row?.id === user?.id) ?
-                <ALink
-                  sx={{ ml: 1.25 }}
-                  onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
-                >
-                  <DeleteIcon sx={{ color: 'red' }} />
-                </ALink> : null
-              }
-            </>
-          )
+  const columns = [
+    {
+      headerName: 'ID',
+      field: 'id',
+      filterable: false,
+      minWidth: 100,
+      flex: 1
+    },
+    {
+      headerName: 'Name',
+      field: 'name',
+      minWidth: 100,
+      flex: 2,
+      filterOperators: [
+        {
+          label: 'Contains',
+          value: 'contains',
+          InputComponent: ({applyValue, item}: any) => {
+            return (
+              <Input
+                autoFocus={!loading}
+                sx={{paddingTop: "16px"}}
+                defaultValue={item.value || ''}
+                onChange={(e) => {
+                  if(timeout) clearTimeout(timeout)
+                  timeout = setTimeout(() => {
+                    applyValue({...item, value: e.target.value})
+                  }, WAITING_TIME)
+                }}
+              />
+            )
+          }
         },
+      ],
+      type: "string",
+    },
+    {
+      headerName: 'Role',
+      field: 'role_id',
+      filterable: false,
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: {value: number}) => {
+        let role
+        switch (params.value) {
+          case ROLE.ADMIN:
+            role = "Admin";
+            break;
+          case ROLE.DATA_MANAGER:
+            role = "Data Manager";
+            break;
+          case ROLE.OPERATOR:
+            role = "Operator";
+            break;
+          case ROLE.GUEST_OPERATOR:
+            role = "Guest Operator";
+            break;
+        }
+        return (
+          <span>{role}</span>
+        )
+      }
+    },
+    {
+      headerName: 'Mail',
+      field: 'email',
+      minWidth: 100,
+      flex: 2,
+      filterOperators: [
+        {
+          label: 'Contains', value: 'contains',
+          InputComponent: ({applyValue, item}: any) => {
+            return (
+              <Input
+                autoFocus={!loading}
+                sx={{paddingTop: "16px"}}
+                defaultValue={item.value || ''}
+                onChange={(e) => {
+                  if(timeout) clearTimeout(timeout)
+                  timeout = setTimeout(() => {
+                    applyValue({...item, value: e.target.value})
+                  }, WAITING_TIME)
+                }}
+              />
+            )
+          }
+        },
+      ],
+      type: "string",
+    },
+    {
+      headerName: '',
+      field: 'action',
+      sortable: false,
+      filterable: false,
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: {row: UserDTO}) => {
+        const { id, role_id, name, email} = params.row
+        if(!id || !role_id || !name || !email) return null
+        let role: any
+        switch (role_id) {
+          case ROLE.ADMIN:
+            role = "ADMIN";
+            break;
+          case ROLE.DATA_MANAGER:
+            role = "DATA_MANAGER";
+            break;
+          case ROLE.OPERATOR:
+            role = "OPERATOR";
+            break;
+          case ROLE.GUEST_OPERATOR:
+            role = "GUEST_OPERATOR";
+            break;
+        }
+
+        return (
+          <>
+            <ALink
+              sx={{ color: 'red' }}
+              onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
+            >
+              <EditIcon sx={{ color: 'black' }} />
+            </ALink>
+            {
+              !(params.row?.id === user?.id) ?
+              <ALink
+                sx={{ ml: 1.25 }}
+                onClick={() => handleOpenPopupDel(params.row?.id, params.row?.name)}
+              >
+                <DeleteIcon sx={{ color: 'red' }} />
+              </ALink> : null
+            }
+          </>
+        )
       },
-    ],
-    [user?.id],
-  )
+    },
+  ];
+
   return (
     <AccountManagerWrapper>
       <Box
@@ -634,17 +683,8 @@ const AccountManager = () => {
         sortingMode={'server'}
         hideFooter
         onSortModelChange={handleSort}
-        filterModel={filterModel}
-        initialState={{
-          sorting: {
-            sortModel: [
-              {
-                field: sortParams.sort[0]?.replace('role', 'role_id'),
-                sort: sortParams.sort[1] as GridSortDirection,
-              },
-            ],
-          },
-        }}
+        filterModel={model.filter}
+        sortModel={model.sort as GridSortItem[]}
         onFilterModelChange={handleFilter as any}
       />
       {
@@ -684,7 +724,7 @@ const AccountManager = () => {
 
 const AccountManagerWrapper = styled(Box)(({ theme }) => ({
   width: '80%',
-  margin: theme.spacing(6.125, 'auto')
+  margin: theme.spacing(5, 'auto')
 }))
 
 const ALink = styled('a')({
