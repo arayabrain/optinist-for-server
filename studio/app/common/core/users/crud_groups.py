@@ -88,3 +88,11 @@ def group_search_share(db: Session, keyword) -> List[GroupModel]:
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+def group_search_user(db: Session, id):
+    group = group_get(db, id)
+    try:
+        return group.active_group_user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

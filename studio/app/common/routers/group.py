@@ -9,6 +9,7 @@ from studio.app.common.core.users.crud_groups import (
     group_delete,
     group_get,
     group_search_share,
+    group_search_user,
     group_set_users,
     group_update,
     list_group,
@@ -20,6 +21,7 @@ from studio.app.common.schemas.group import (
     GroupUpdate,
     GroupWithUserCount,
 )
+from studio.app.common.schemas.users import UserInfo
 from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(prefix="/group", tags=["group"])
@@ -88,6 +90,17 @@ def update_group(id: int, group: GroupUpdate, db=Depends(get_db)):
 )
 def delete_group(id: int, db=Depends(get_db)):
     return group_delete(db, id)
+
+
+@router.get(
+    "/users/search",
+    response_model=List[UserInfo],
+    description="""
+- Group への 登録User を検索する
+""",
+)
+def search_group_users(group_id: int, db=Depends(get_db)):
+    return group_search_user(db, group_id)
 
 
 @router.get(
