@@ -67,7 +67,12 @@ class User(Base, TimestampMixin, table=True):
         back_populates="user_share", link_model=ExperimentShareUser
     )
     groups: List["Group"] = Relationship(  # noqa: F821
-        back_populates="group_user", link_model=UserGroup
+        back_populates="active_group_user",
+        link_model=UserGroup,
+        sa_relationship_kwargs=dict(
+            primaryjoin="Group.id==UserGroup.group_id",
+            secondaryjoin="and_(UserGroup.user_id==User.id, User.active==1)",
+        ),
     )
 
 

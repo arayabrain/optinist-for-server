@@ -36,3 +36,17 @@ class Group(Base, table=True):
     group_user: List["User"] = Relationship(  # noqa: F821
         back_populates="groups", link_model=UserGroup
     )
+
+    active_group_user: List["User"] = Relationship(  # noqa: F821
+        back_populates="groups",
+        link_model=UserGroup,
+        sa_relationship_kwargs=dict(
+            primaryjoin="Group.id==UserGroup.group_id",
+            secondaryjoin="and_(UserGroup.user_id==User.id, User.active==1)",
+            viewonly=True,
+        ),
+    )
+
+    @property
+    def users_count(self):
+        return len(self.active_group_user) if self.active_group_user else 0
