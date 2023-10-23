@@ -7,14 +7,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Input, Tooltip, Typography,
+  Input,
+  Tooltip,
+  Typography,
 } from '@mui/material'
 import {
   GridEventListener,
   GridRenderCellParams,
   GridRowModes,
   GridValidRowModel,
-  DataGrid, GridSortModel, GridFilterModel, GridSortDirection, GridSortItem
+  DataGrid,
+  GridSortModel,
+  GridSortDirection,
+  GridSortItem
 } from '@mui/x-data-grid'
 import { useSearchParams } from 'react-router-dom'
 import Loading from '../../components/common/Loading'
@@ -69,6 +74,7 @@ const columns = (
     field: 'id',
     headerName: 'ID',
     filterable: false, // todo enable when api complete
+    sortable: false,
     flex: 1,
     minWidth: 70,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
@@ -142,6 +148,7 @@ const columns = (
     field: 'users_count',
     headerName: 'Users',
     filterable: false, // todo enable when api complete
+    sortable: false,
     flex: 2,
     minWidth: 100,
     renderCell: (
@@ -174,6 +181,7 @@ const columns = (
     flex: 1,
     minWidth: 70,
     filterable: false, // todo enable when api complete
+    sortable: false,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       params.row.users_count === 0 ? (
         <ButtonIcon onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
@@ -234,7 +242,6 @@ const PopupDelete = ({open, handleClose, handleOkDel, nameGroupManager}: PopupTy
     </Box>
   )
 }
-
 const GroupManager = () => {
   const dispatch = useDispatch()
   const admin = useSelector(isAdmin)
@@ -273,23 +280,7 @@ const GroupManager = () => {
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
 
-  const dataParamsFilter = useMemo(
-    () => ({
-      name: searchParams.get('name') || undefined
-    }),
-    [searchParams],
-  )
-
-  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
-    filter: {
-      items: [
-        {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '' ,
-          operator: 'contains',
-          value: Object.values(dataParamsFilter).find(value => value) || null,
-        },
-      ],
-    },
+  const [model, setModel] = useState<{sort: any}>({
     sort: [{
       field: dataParams.sort[0] || '',
       sort: dataParams.sort[1] as GridSortDirection
@@ -303,13 +294,9 @@ const GroupManager = () => {
   };
 
   useEffect(() => {
-    dispatch(getGroupsManager({...dataParams, ...dataParamsFilter}))
+    dispatch(getGroupsManager({...dataParams}))
     //eslint-disable-next-line
   }, [dataParams])
-
-  useEffect(() => {
-
-  }, [dataParamsFilter])
 
   useEffect(() => {
     let param = newParams
@@ -376,8 +363,7 @@ const GroupManager = () => {
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
-    const filter = getParamsData()
-    const param = `${filter}${dataParams.sort[0]? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
+    const param = `${dataParams.sort[0]? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
     setNewParams(param)
   }
 
@@ -437,14 +423,6 @@ const GroupManager = () => {
     })
   }
 
-  const getParamsData = () => {
-    const dataFilter = Object.keys(dataParamsFilter)
-      .filter((key) => (dataParamsFilter as any)[key])
-      .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
-      .join('&')
-    return dataFilter
-  }
-
   const pagiFilter = useCallback(
       (page?: number) => {
         return `limit=${limit}&offset=${
@@ -461,11 +439,10 @@ const GroupManager = () => {
           ...model, sort: rowSelectionModel
         })
         let param
-        const filter = getParamsData()
         if (!rowSelectionModel[0]) {
-          param = filter || dataParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${pagiFilter()}` : ''
+          param = dataParams.sort[0] || offset ? `${pagiFilter()}` : ''
         } else {
-          param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
+          param = `${rowSelectionModel[0] ? `sort=${rowSelectionModel[0].field}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
         }
         setNewParams(param)
       },
@@ -473,41 +450,15 @@ const GroupManager = () => {
       [pagiFilter, model],
   )
 
-  const handleFilter = (modelFilter: GridFilterModel) => {
-    setModel({
-      ...model, filter: modelFilter
-    })
-    let filter = ''
-    if (!!modelFilter.items[0]?.value) {
-      filter = modelFilter.items
-        .filter((item) => item.value)
-        .map((item: any) => `${item.field}=${item?.value}`)
-        .join('&')
-    }
-    const { sort } = dataParams
-    const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
-    setNewParams(param)
-  }
-
   useEffect(() => {
-    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
     setModel({
-      filter: {
-        items: [
-          {
-            field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) || '' ,
-            operator: 'contains',
-            value: Object.values(dataParamsFilter).find(value => value) || null,
-          },
-        ],
-      },
       sort: [{
         field: dataParams.sort[0] || '',
         sort: dataParams.sort[1] as GridSortDirection
       }]
     })
     //eslint-disable-next-line
-  }, [dataParams, dataParamsFilter])
+  }, [dataParams])
 
   return (
     <GroupManagerWrapper>
@@ -559,14 +510,12 @@ const GroupManager = () => {
                 ).filter(Boolean) as any
               }
               sortModel={model.sort as GridSortItem[]}
-              filterModel={model.filter}
               onSortModelChange={handleSort}
               onRowModesModelChange={handleRowModesModelChange}
               isCellEditable={(params) => admin}
               onProcessRowUpdateError={onProcessRowUpdateError}
               onRowEditStop={onRowEditStop}
               processRowUpdate={processRowUpdate as any}
-              onFilterModelChange={handleFilter as any}
               hideFooter={true}
             />
           </Box> : null

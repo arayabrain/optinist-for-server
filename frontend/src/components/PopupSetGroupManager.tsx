@@ -187,6 +187,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     else {
       setListSet(newArray)
     }
+    setListSearchAdd([])
   }
 
   const handleClosePopup = () => {
