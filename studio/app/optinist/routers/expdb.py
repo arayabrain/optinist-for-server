@@ -185,23 +185,29 @@ async def search_public_cells(
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
         default=["experiment_id", SortDirection.asc],
     )
-    query = (
-        select(
-            optinist_model.Cell.id,
-            optinist_model.Cell.statistics,
-            optinist_model.Cell.cell_number,
-            optinist_model.Cell.created_at,
-            optinist_model.Cell.updated_at,
-            optinist_model.Cell.experiment_uid,
-            optinist_model.Experiment.experiment_id,
-            optinist_model.Experiment.publish_status,
-        )
-        .with_hint(
+    query = select(
+        optinist_model.Cell.id,
+        optinist_model.Cell.statistics,
+        optinist_model.Cell.cell_number,
+        optinist_model.Cell.created_at,
+        optinist_model.Cell.updated_at,
+        optinist_model.Cell.experiment_uid,
+        optinist_model.Experiment.experiment_id,
+        optinist_model.Experiment.publish_status,
+    )
+
+    if any(
+        sort.element.table.name == optinist_model.Cell.__table__.name
+        for sort in sa_sort_list
+    ):
+        query = query.with_hint(
             optinist_model.Cell,
             text="USE INDEX (cells_id_created_at_updated_at_index)",
             dialect_name="mysql",
         )
-        .join(
+
+    query = (
+        query.join(
             optinist_model.Experiment,
             optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
         )
@@ -354,33 +360,33 @@ async def search_db_cells(
         },
         default=["experiment_id", SortDirection.asc],
     )
-    query = (
-        select(
-            optinist_model.Cell.id,
-            optinist_model.Cell.statistics,
-            optinist_model.Cell.cell_number,
-            optinist_model.Cell.created_at,
-            optinist_model.Cell.updated_at,
-            optinist_model.Cell.experiment_uid,
-            optinist_model.Experiment.experiment_id,
-            optinist_model.Experiment.publish_status,
-        )
-        .with_hint(
+    query = select(
+        optinist_model.Cell.id,
+        optinist_model.Cell.statistics,
+        optinist_model.Cell.cell_number,
+        optinist_model.Cell.created_at,
+        optinist_model.Cell.updated_at,
+        optinist_model.Cell.experiment_uid,
+        optinist_model.Experiment.experiment_id,
+        optinist_model.Experiment.publish_status,
+    )
+    if any(
+        sort.element.table.name == optinist_model.Cell.__table__.name
+        for sort in sa_sort_list
+    ):
+        query = query.with_hint(
             optinist_model.Cell,
             text="USE INDEX (cells_id_created_at_updated_at_index)",
             dialect_name="mysql",
         )
-        .join(
-            optinist_model.Experiment,
-            optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
-        )
-        .with_hint(
-            optinist_model.Experiment,
-            text="FORCE INDEX FOR JOIN (experiments_id_org_id_experiment_id_publish_status_index)",  # noqa
-            dialect_name="mysql",
-        )
+    query = query.join(
+        optinist_model.Experiment,
+        optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,
+    ).with_hint(
+        optinist_model.Experiment,
+        text="FORCE INDEX FOR JOIN (experiments_id_org_id_experiment_id_publish_status_index)",  # noqa
+        dialect_name="mysql",
     )
-
     total_query = select(optinist_model.Cell.id).join(
         optinist_model.Experiment,
         optinist_model.Experiment.id == optinist_model.Cell.experiment_uid,

@@ -63,8 +63,6 @@ COPY --chown=optinist studio/config.production/ /app/studio/config/
 RUN rm -rf /app/studio/config.production
 
 # set cron script.
-# - TODO: At the time of release, the setting will default to commented out. (manual activation)
-#   -> After confirming stable operation of the system, enable will be the default.
-RUN echo '# */5 * * * * optinist cd /app; /usr/local/bin/python run_expdb_batch.py -o 1 > /dev/null 2>&1' > /etc/cron.d/optinist-svr-expdb-batch
+RUN echo '*/5 * * * * optinist cd /app; /usr/local/bin/python run_expdb_batch.py -o 1 > /dev/null 2>&1' > /etc/cron.d/optinist-svr-expdb-batch
 
 EXPOSE 8000
