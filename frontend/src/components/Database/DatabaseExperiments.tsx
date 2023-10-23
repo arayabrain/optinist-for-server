@@ -112,9 +112,9 @@ const columns = (
       <Checkbox
         checked={listCheck.includes(params.row.id)}
         onChange={(e: any) => {
-
-        // if(!e.target.checked) setListCheck((pre: number[]) => pre.filter(id => id !== params.row.id))
-        //   else setListCheck([...listCheck, params.row.id])
+        const newData = listCheck.filter(id => id !== params.row.id)
+        if(!e.target.checked) setListCheck(newData)
+          else setListCheck([...listCheck, params.row.id])
       }
       }/>
     )
@@ -579,7 +579,7 @@ const DatabaseExperiments = ({
     })
   }
 
-  const handleOpenPublishOk = (title: string, type: 'on' | 'off') => {
+  const handleOpenPublishAll = (title: string, type: 'on' | 'off') => {
     setOpenPublishAll({
       title: title,
       open: true,
@@ -598,7 +598,8 @@ const DatabaseExperiments = ({
         params: {
           ...dataParamsFilter,
           ...dataParams,
-        }
+        },
+        listCheck
       }))
     }
     finally {
@@ -716,8 +717,8 @@ const DatabaseExperiments = ({
             {
               listCheck.length > 0 ? (
                 <>
-                  <PublicIcon onClick={() => handleOpenPublishOk('Publish ○○ records at once. Is this OK?', 'on')} />
-                  <PublicOffIcon onClick={() => handleOpenPublishOk('Unpublish ○ records at once. Is this OK?', 'off')} />
+                  <PublicIcon onClick={() => handleOpenPublishAll('Publish ○○ records at once. Is this OK?', 'on')} />
+                  <PublicOffIcon onClick={() => handleOpenPublishAll('Unpublish ○ records at once. Is this OK?', 'off')} />
                 </>
               ): null
             }

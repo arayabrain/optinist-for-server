@@ -41,7 +41,7 @@ export const postListUserShareApi = async (id: number, data: {share_type: number
   return response.data
 }
 
-export const postPublishAllApi = async (status: 'on' | 'off'): Promise<boolean> => {
-  const response = await axios.post(`expdb/experiment/publish/${status}`)
+export const postPublishAllApi = async (status: 'on' | 'off', data: number[]): Promise<boolean> => {
+  const response = await axios.post(`expdb/experiment/multiple/publish/${status}`, data)
   return response.data
 }

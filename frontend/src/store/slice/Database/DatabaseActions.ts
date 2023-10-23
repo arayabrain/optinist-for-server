@@ -116,12 +116,13 @@ export const postListUserShare = createAsyncThunk<
 
 export const postPublishAll = createAsyncThunk<
     boolean,
-    { status: 'on' | 'off' , params: DatabaseParams}
->(`${DATABASE_SLICE_NAME}/postPublishAll`, async (params, thunkAPI) => {
+    { status: 'on' | 'off' , params: DatabaseParams, listCheck: number[]}
+>(`${DATABASE_SLICE_NAME}/postPublishAll`, async (data, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
+  const { status, listCheck, params } = data
   try {
-    const response = await postPublishAllApi(params.status)
-    await dispatch(getExperimentsDatabase(params.params))
+    const response = await postPublishAllApi(status, listCheck)
+    await dispatch(getExperimentsDatabase(params))
     return response
   } catch (e) {
     return rejectWithValue(e)
