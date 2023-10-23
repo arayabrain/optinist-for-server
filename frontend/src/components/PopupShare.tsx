@@ -55,9 +55,7 @@ export const TableListSearch = ({usersSuggest, onClose, handleAddListUser, state
   const onMouseDown = (event: MouseEvent) => {
     if(
         ref.current?.contains((event as any).target) ||
-        (event as any).target.id === 'inputSearch' ||
-        (event as any).target.id === 'inputSearchSet' ||
-        (event as any).target.id === 'inputSearchAdd'
+        ['inputSearch', 'inputSearchSet', 'inputSearchAdd'].includes((event as any).target.id)
     )
     {
       return;

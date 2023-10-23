@@ -82,28 +82,26 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
                 <ListItemText primary="Workspaces" />
               </ListItemButton>
             </ListItem>
+            <ListItem key="group-manager" disablePadding>
+              <ListItemButton onClick={onClickGroupManager}>
+                <ListItemIcon>
+                  <ManageAccountsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Group Manager" />
+              </ListItemButton>
+            </ListItem>
             {
               admin ? (
-                <>
-                  <ListItem key="group-manager" disablePadding>
-                    <ListItemButton onClick={onClickGroupManager}>
-                      <ListItemIcon>
-                        <ManageAccountsIcon />
-                      </ListItemIcon>
-                      <ListItemText primary="Group Manager" />
-                    </ListItemButton>
-                  </ListItem>
-                  <ListItem key="account-manager" disablePadding>
-                    <ListItemButton onClick={onClickAccountManager}>
-                      <ListItemIcon>
-                        <ManageAccountsIcon />
-                      </ListItemIcon>
-                      <ListItemText primary="Account Manager" />
-                    </ListItemButton>
-                  </ListItem>
-                </>
+                <ListItem key="account-manager" disablePadding>
+                  <ListItemButton onClick={onClickAccountManager}>
+                    <ListItemIcon>
+                      <ManageAccountsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Account Manager" />
+                  </ListItemButton>
+                </ListItem>
               )
-                 : null
+               : null
             }
             <ListItem key="site" disablePadding>
               <ListItemButton onClick={onClickOpenSite}>
