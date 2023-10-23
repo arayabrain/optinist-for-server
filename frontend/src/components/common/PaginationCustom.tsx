@@ -3,9 +3,10 @@ import {DatabaseDTO} from "../../store/slice/Database/DatabaseType";
 import {WorkspaceDataDTO} from "../../store/slice/Workspace/WorkspaceType";
 import {ChangeEvent} from "react";
 import {UserListDTO} from "../../api/users/UsersApiDTO";
+import {GroupManagerDTO} from "../../store/slice/GroupManager/GroupManagerType";
 
 type PagiProps = {
-  data: DatabaseDTO | WorkspaceDataDTO | UserListDTO
+  data: DatabaseDTO | WorkspaceDataDTO | UserListDTO | GroupManagerDTO
   handlePage: (e: ChangeEvent<unknown>, page: number) => void
   handleLimit: (e: ChangeEvent<HTMLSelectElement>) => void
   limit: number | null

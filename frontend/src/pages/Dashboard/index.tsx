@@ -40,15 +40,25 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {
-            admin ?
-              <LinkWrapper to="/console/account-manager">
-                <BoxMenu>
-                  <Box>
-                    <ManageAccountsIcon fontSize="large" />
-                    <TitleMenu>Account Manager</TitleMenu>
-                  </Box>
-                </BoxMenu>
-              </LinkWrapper>: null
+            admin ? (
+              <>
+                <LinkWrapper to="/console/group-manager">
+                  <BoxMenu>
+                    <Box>
+                      <ManageAccountsIcon fontSize="large" />
+                      <TitleMenu>Group Manager</TitleMenu>
+                    </Box>
+                  </BoxMenu>
+                </LinkWrapper>
+                <LinkWrapper to="/console/account-manager">
+                  <BoxMenu>
+                    <Box>
+                      <ManageAccountsIcon fontSize="large" />
+                      <TitleMenu>Account Manager</TitleMenu>
+                    </Box>
+                  </BoxMenu>
+                </LinkWrapper>
+              </>): null
           }
         </DashboardContent>
       </DashboardWrapper>

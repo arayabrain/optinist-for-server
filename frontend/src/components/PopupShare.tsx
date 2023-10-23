@@ -35,11 +35,12 @@ type PopupType = {
 type TableSearch = {
   usersSuggest: UserDTO[]
   onClose: () => void
-  handleAddListUser: (user: UserDTO) => void
-  stateUserShare: UserDTO[]
+  handleAddListUser?: (user: UserDTO) => void
+  stateUserShare?: UserDTO[]
+  listSearchAdd?: UserDTO[]
 }
 
-const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserShare}: TableSearch) => {
+export const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserShare, listSearchAdd}: TableSearch) => {
 
   const ref = useRef<HTMLLIElement | null>(null)
 
@@ -52,17 +53,25 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
   }, [])
 
   const onMouseDown = (event: MouseEvent) => {
-    if(ref.current?.contains((event as any).target) || (event as any).target.id === 'inputSearch') return;
+    if(
+        ref.current?.contains((event as any).target) ||
+        (event as any).target.id === 'inputSearch' ||
+        (event as any).target.id === 'inputSearchSet' ||
+        (event as any).target.id === 'inputSearchAdd'
+    )
+    {
+      return;
+    }
     onClose?.()
   }
 
   return (
-    <TableListSearchWrapper ref={ref} onBlur={() => console.log(123)}>
+    <TableListSearchWrapper ref={ref}>
       <UlCustom>
         {usersSuggest.map(item => {
-          const isSelected = stateUserShare.some(i => i.id === item.id)
+          const isSelected = (stateUserShare || listSearchAdd)?.some(i => i.id === item.id)
           return (
-            <LiCustom key={item.id} onClick={() => handleAddListUser(item)} style={{
+            <LiCustom key={item.id} onClick={() => handleAddListUser?.(item)} style={{
               cursor: isSelected ? 'not-allowed' : 'pointer'
             }}
             >
@@ -92,10 +101,6 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
   }, [usersShare])
 
   useEffect(() => {
-
-  }, [data])
-
-  useEffect(() => {
     if(timeout.current) clearTimeout(timeout.current)
     if(!textSearch) {
       dispatch(resetUserSearch())
@@ -106,7 +111,6 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch])
-
   const handleShareFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
     e.preventDefault()
     e.stopPropagation()
@@ -252,7 +256,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                 {
                   stateUserShare &&
                   <DataGrid
-                    sx={{minHeight: 400}}
+                    sx={{ minHeight: 400 }}
                     // onRowClick={handleShareTrue}
                     rows={stateUserShare?.users.map((user: any) => ({...user, share: true}))}
                     columns={columnsShare(handleShareFalse)}
@@ -268,9 +272,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
           <Button onClick={handleOke}>Ok</Button>
         </DialogActions>
       </DialogCustom>
-      {
-        loading ? <Loading /> : null
-      }
+      { loading ? <Loading /> : null }
     </Box>
   )
 }
