@@ -1,4 +1,4 @@
-import { Box, Input, styled } from '@mui/material'
+import {Box, Checkbox, Input, styled} from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch'
@@ -39,7 +39,6 @@ import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
 import {SHARE, WAITING_TIME} from '@types'
-import PopupShare from '../PopupShare'
 import PaginationCustom from '../common/PaginationCustom'
 import PublicIcon from '@mui/icons-material/Public'
 import PublicOffIcon from '@mui/icons-material/PublicOff'
@@ -84,6 +83,11 @@ type DatabaseProps = {
 let timeout: NodeJS.Timeout | undefined = undefined
 
 const columns = (
+  setListCheck: (value: number[]) => void,
+  listCheck: number[],
+  dataExperiments: DatabaseType[],
+  checkBoxAll: boolean,
+  setCheckBoxAll: (value: boolean) => void,
   handleOpenAttributes: (value: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
@@ -92,6 +96,29 @@ const columns = (
   readonly?: boolean,
   loading: boolean = false
 ) => [
+  {
+    field: 'checkbox',
+    headerName: <Checkbox checked={checkBoxAll} onChange={(e: any) => {
+      setCheckBoxAll(e.target.checked)
+      if(!e.target.checked) setListCheck([])
+      else setListCheck(dataExperiments.map(item => item.id))
+    }}
+    />,
+    sortable: false,
+    filterable: false,
+    width: 160,
+    type: 'Component',
+    renderCell: (params: { row: DatabaseType }) => (
+      <Checkbox
+        checked={listCheck.includes(params.row.id)}
+        onChange={(e: any) => {
+
+        // if(!e.target.checked) setListCheck((pre: number[]) => pre.filter(id => id !== params.row.id))
+        //   else setListCheck([...listCheck, params.row.id])
+      }
+      }/>
+    )
+  },
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -295,6 +322,8 @@ const DatabaseExperiments = ({
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
+  const [listCheck, setListCheck] = useState<number[]>([])
+  const [checkBoxAll, setCheckBoxAll] = useState(false)
   const [openShareGroup, setOpenShareGroup] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
     type?: string
@@ -421,6 +450,10 @@ const DatabaseExperiments = ({
     dispatch(getListUserShare({ id: openShare.id }))
     //eslint-disable-next-line
   }, [openShare])
+
+  useEffect(() => {
+    setCheckBoxAll(false)
+  }, [offset, limit])
 
   const handleOpenDialog = (
     data: ImageUrls[] | ImageUrls,
@@ -658,6 +691,11 @@ const DatabaseExperiments = ({
 
   const columnsTable = [
     ...columns(
+      setListCheck,
+      listCheck,
+      dataExperiments?.items,
+      checkBoxAll,
+      setCheckBoxAll,
       handleOpenAttributes,
       handleOpenDialog,
       cellPath,
@@ -675,8 +713,14 @@ const DatabaseExperiments = ({
         user ?
           (<WrapperIcons>
             <GroupAddIcon onClick={() => setOpenShareGroup(true)}/>
-            <PublicIcon onClick={() => handleOpenPublishOk('Publish ○○ records at once. Is this OK?', 'on')} />
-            <PublicOffIcon onClick={() => handleOpenPublishOk('Unpublish ○ records at once. Is this OK?', 'off')} />
+            {
+              listCheck.length > 0 ? (
+                <>
+                  <PublicIcon onClick={() => handleOpenPublishOk('Publish ○○ records at once. Is this OK?', 'on')} />
+                  <PublicOffIcon onClick={() => handleOpenPublishOk('Unpublish ○ records at once. Is this OK?', 'off')} />
+                </>
+              ): null
+            }
           </WrapperIcons>) : null
       }
       <DataGrid
