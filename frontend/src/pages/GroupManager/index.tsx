@@ -332,6 +332,7 @@ const GroupManager = () => {
   }
 
   const handleClosePopupNew = () => {
+    setNewGroupManager('')
     setOpen({ ...open, new: false })
     setError('')
   }
