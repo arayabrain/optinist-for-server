@@ -6,9 +6,9 @@ import { SxProps, Theme } from '@mui/material/styles'
 const PublicHeader: FC = () => {
   return (
     <AppBar position="fixed">
-      <Container>
+      <Container maxWidth={false}>
         <Toolbar>
-          <PublicNavMenu displayName="PUB STUDIO" navLink="/" sx={{ fontWeight: 600, fontSize: 22, mr: 2 }} />
+          <PublicNavMenu displayName="Digital Marmoset Brain" navLink="/" sx={{ fontWeight: 600, fontSize: 22, mr: 2 }} />
           <PublicNavMenu displayName="Console" navLink="/console" />
         </Toolbar>
       </Container>
