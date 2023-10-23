@@ -8,12 +8,13 @@ import {
 import { FC, FocusEvent } from 'react'
 
 type SelectErrorProps = {
-  value?: string
+  value?: string | string[]
   onChange?: (value: SelectChangeEvent, child: React.ReactNode) => void
   onBlur?: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   errorMessage: string
   name?: string
   options: string[]
+  multiple?: boolean
 }
 
 const SelectError: FC<SelectErrorProps> =
@@ -24,10 +25,12 @@ const SelectError: FC<SelectErrorProps> =
      errorMessage,
      options,
      name,
+     multiple = false
    }) => {
   return (
     <>
       <SelectModal
+        multiple={multiple}
         name={name}
         value={value}
         onChange={

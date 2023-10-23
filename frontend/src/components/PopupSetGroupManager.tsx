@@ -248,8 +248,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                       hideFooter
                       columnHeaderHeight={0}
                       sx={{ marginTop: 2}}
-                    />
-                  ) : null
+                    />):<p>No data</p>
                 }
               </Box>
               <KeyboardBackspaceIcon

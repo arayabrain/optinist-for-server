@@ -1,7 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
-import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled} from "@mui/material";
+import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled, Tooltip} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -16,18 +16,30 @@ import {SelectChangeEvent} from "@mui/material/Select";
 import SelectError from "../../components/common/SelectError";
 import PaginationCustom from "../../components/common/PaginationCustom";
 import {useSnackbar, VariantType} from "notistack";
+import {getGroupsManager} from "../../store/slice/GroupManager/GroupActions";
+import {selectGroupManager} from "../../store/slice/GroupManager/GroupManagerSelectors";
+import {ItemGroupManage} from "../../store/slice/GroupManager/GroupManagerType";
 
 let timeout: NodeJS.Timeout | undefined = undefined
+
+export type FormDataType = {
+  id?: string
+  uid?: string
+  email?: string
+  password?: string
+  role_id?: string
+  name?: string
+  confirmPassword?: string
+  group?: string[] | string | number[]
+}
 
 type ModalComponentProps = {
   onSubmitEdit: (
     id: number | string | undefined,
-    data: { [key: string]: string },
+    data: FormDataType,
   ) => void
   setOpenModal: (v: boolean) => void
-  dataEdit?: {
-    [key: string]: string
-  }
+  dataEdit?: FormDataType
 }
 
 type PopupType = {
@@ -43,6 +55,7 @@ const initState = {
   role_id: '',
   name: '',
   confirmPassword: '',
+  group: []
 }
 
 const ModalComponent =
@@ -51,11 +64,36 @@ const ModalComponent =
     setOpenModal,
     dataEdit,
   }: ModalComponentProps) => {
-  const [formData, setFormData] = useState<{ [key: string]: string }>(
+
+  const dispatch = useDispatch()
+
+  const listGroupData = useSelector(selectGroupManager)
+
+  const [formData, setFormData] = useState<FormDataType>(
       dataEdit || initState,
   )
   const [isDisabled, setIsDisabled] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>(initState)
+  const [errors, setErrors] = useState<{ [key: string]: string }>({ ...initState, group: ''})
+  const [listGroup, setListGroup] = useState<ItemGroupManage[]>([])
+  const [optionsGroup, setOptionsGroup] = useState<{ label: string, value: number }[]>([])
+
+  useEffect(() => {
+    dispatch(getGroupsManager({
+      offset: 0,
+      limit: 50
+    }))
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
+    setListGroup(listGroupData.items)
+    //eslint-disable-next-line
+  }, [JSON.stringify(listGroupData)])
+
+  useEffect(() => {
+    const newOptions = listGroup.map(item => ({ label: item.name, value: item.id}))
+    setOptionsGroup(newOptions)
+  }, [listGroup])
 
   const validateEmail = (value: string): string => {
     const error = validateField('email', 255, value)
@@ -69,7 +107,7 @@ const ModalComponent =
   const validatePassword = (
       value: string,
       isConfirm: boolean = false,
-      values?: { [key: string]: string },
+      values?: FormDataType,
   ): string => {
     if (!value && !dataEdit?.uid) return 'This field is required'
     const errorLength = validateLength('password', 255, value)
@@ -97,7 +135,7 @@ const ModalComponent =
   const validateLength = (name: string, length: number, value?: string) => {
     if (value && value.length > length)
       return `The text may not be longer than ${length} characters`
-    if (formData[name]?.length && value && value.length > length) {
+    if (formData[name as keyof FormDataType]?.length && value && value.length > length) {
       return `The text may not be longer than ${length} characters`
     }
     return ''
@@ -105,11 +143,12 @@ const ModalComponent =
 
   const validateForm = (): { [key: string]: string } => {
     const errorName = validateField('name', 100, formData.name)
-    const errorEmail = validateEmail(formData.email)
+    const errorEmail = validateEmail(formData.email as string)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password)
+    const errorGroup = validateField('group', 50, formData.group as string | undefined)
+    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password as string)
     const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
-      formData.confirmPassword,
+      formData.confirmPassword as string,
       true,
     )
     return {
@@ -118,6 +157,7 @@ const ModalComponent =
       confirmPassword: errorConfirmPassword,
       name: errorName,
       role_id: errorRole,
+      group: errorGroup
     }
   }
 
@@ -137,7 +177,7 @@ const ModalComponent =
       error = validatePassword(value, name === 'confirmPassword', newDatas)
       if (name !== 'confirmPassword' && formData.confirmPassword) {
         errorConfirm = validatePassword(
-          newDatas.confirmPassword,
+          newDatas.confirmPassword as string,
           true,
           newDatas,
         )
@@ -156,7 +196,11 @@ const ModalComponent =
       return
     }
     try {
-      await onSubmitEdit(dataEdit?.id, formData)
+      const newGroup = optionsGroup.map(option => {
+        if((formData.group as string[])?.includes(option.label)) return option.value
+        return undefined
+      })
+      await onSubmitEdit(dataEdit?.id, { ...formData, group: newGroup.filter(Boolean) as number[]})
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
@@ -169,62 +213,78 @@ const ModalComponent =
   return (
     <Modal>
       <ModalBox>
-        <TitleModal>{dataEdit?.id ? 'Edit' : 'Add'} Account</TitleModal>
-        <BoxData>
-          <LabelModal>Name: </LabelModal>
-          <InputError
-            name="name"
-            value={formData?.name || ''}
-            onChange={(e) => onChangeData(e, 100)}
-            onBlur={(e) => onChangeData(e, 100)}
-            errorMessage={errors.name}
-          />
-          <LabelModal>Role: </LabelModal>
-          <SelectError
-            value={formData?.role_id || ''}
-            options={Object.keys(ROLE).filter(key => !Number(key))}
-            name="role_id"
-            onChange={(e) => onChangeData(e, 50)}
-            onBlur={(e) => onChangeData(e, 50)}
-            errorMessage={errors.role_id}
-          />
-          <LabelModal>e-mail: </LabelModal>
-          <InputError
-            name="email"
-            value={formData?.email || ''}
-            onChange={(e) => onChangeData(e, 255)}
-            onBlur={(e) => onChangeData(e, 255)}
-            errorMessage={errors.email}
-          />
-          {!dataEdit?.id ? (
-            <>
-              <LabelModal>Password: </LabelModal>
-              <InputError
-                name="password"
-                value={formData?.password || ''}
-                onChange={(e) => onChangeData(e, 255)}
-                onBlur={(e) => onChangeData(e, 255)}
-                type={'password'}
-                errorMessage={errors.password}
-              />
-              <LabelModal>Confirm Password: </LabelModal>
-              <InputError
-                name="confirmPassword"
-                value={formData?.confirmPassword || ''}
-                onChange={(e) => onChangeData(e, 255)}
-                onBlur={(e) => onChangeData(e, 255)}
-                type={'password'}
-                errorMessage={errors.confirmPassword}
-              />
-            </>
-          ) : null}
-        </BoxData>
-        <ButtonModal>
-          <Button onClick={() => onCancel()}>Cancel</Button>
-          <Button disabled={isDisabled} onClick={(e) => onSubmit(e)}>
-            Ok
-          </Button>
-        </ButtonModal>
+        <form>
+          <TitleModal>{dataEdit?.id ? 'Edit' : 'Add'} Account</TitleModal>
+          <BoxData>
+            <LabelModal>Name: </LabelModal>
+            <InputError
+              name="name"
+              value={formData?.name || ''}
+              onChange={(e) => onChangeData(e, 100)}
+              onBlur={(e) => onChangeData(e, 100)}
+              errorMessage={errors.name}
+            />
+            <LabelModal>Role: </LabelModal>
+            <SelectError
+              value={formData?.role_id || ''}
+              options={Object.keys(ROLE).filter(key => !Number(key))}
+              name="role_id"
+              onChange={(e) => onChangeData(e, 50)}
+              onBlur={(e) => onChangeData(e, 50)}
+              errorMessage={errors.role_id}
+            />
+            <LabelModal>e-mail: </LabelModal>
+            <InputError
+              name="email"
+              value={formData?.email || ''}
+              onChange={(e) => onChangeData(e, 255)}
+              onBlur={(e) => onChangeData(e, 255)}
+              errorMessage={errors.email}
+            />
+            <LabelModal>Group: </LabelModal>
+              <Tooltip title={(formData?.group as string[])?.join(', ') || ''} placement="top">
+                <Box display={'inline'}>
+                  <SelectError
+                      multiple={true}
+                      value={(formData?.group as string | string[] | undefined) || []}
+                      options={optionsGroup.map(item => item.label)}
+                      name="group"
+                      onChange={(e) => onChangeData(e, 50)}
+                      onBlur={(e) => onChangeData(e, 50)}
+                      errorMessage={errors.group}
+                  />
+                </Box>
+              </Tooltip>
+            {!dataEdit?.id ? (
+              <>
+                <LabelModal>Password: </LabelModal>
+                <InputError
+                  name="password"
+                  value={formData?.password || ''}
+                  onChange={(e) => onChangeData(e, 255)}
+                  onBlur={(e) => onChangeData(e, 255)}
+                  type={'password'}
+                  errorMessage={errors.password}
+                />
+                <LabelModal>Confirm Password: </LabelModal>
+                <InputError
+                  name="confirmPassword"
+                  value={formData?.confirmPassword || ''}
+                  onChange={(e) => onChangeData(e, 255)}
+                  onBlur={(e) => onChangeData(e, 255)}
+                  type={'password'}
+                  errorMessage={errors.confirmPassword}
+                />
+              </>
+            ) : null}
+          </BoxData>
+          <ButtonModal>
+            <Button onClick={() => onCancel()}>Cancel</Button>
+            <Button disabled={isDisabled} onClick={(e) => onSubmit(e)}>
+              Ok
+            </Button>
+          </ButtonModal>
+        </form>
       </ModalBox>
       {isDisabled ? <Loading /> : null}
     </Modal>
@@ -234,15 +294,15 @@ const ModalComponent =
 const PopupDelete = ({open, handleClose, handleOkDel, name}: PopupType) => {
   if(!open) return null
   return (
-      <Box>
-        <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-          <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleOkDel}>Ok</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+    <Box>
+      <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
+        <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleOkDel}>Ok</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
@@ -416,7 +476,7 @@ const AccountManager = () => {
 
   const onSubmitEdit = async (
     id: number | string | undefined,
-    data: { [key: string]: string },
+    data: FormDataType,
   ) => {
     const {confirmPassword, role_id, ...newData} = data
     let newRole
@@ -438,7 +498,7 @@ const AccountManager = () => {
       const data = await dispatch(updateUser(
         {
           id: id as number,
-          data: {name: newData.name, email: newData.email, role_id: newRole},
+          data: {name: newData.name as string, email: newData.email as string, role_id: newRole},
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
