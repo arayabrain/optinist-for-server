@@ -115,3 +115,15 @@ class Experiment(Base, TimestampMixin, table=True):
     user_share: List["User"] = Relationship(  # noqa: F821
         back_populates="experiment_share", link_model=ExperimentShareUser
     )
+    active_user_share: List["User"] = Relationship(  # noqa: F821
+        back_populates="experiment_share",
+        link_model=ExperimentShareUser,
+        sa_relationship_kwargs=dict(
+            primaryjoin="Experiment.id==ExperimentShareUser.experiment_uid",
+            secondaryjoin="and_(ExperimentShareUser.user_id==User.id, User.active==1)",
+            viewonly=True,
+        ),
+    )
+    group_share: List["Group"] = Relationship(  # noqa: F821
+        back_populates="experiment_share", link_model=ExperimentShareGroup
+    )

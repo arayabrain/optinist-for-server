@@ -6,6 +6,7 @@ from sqlalchemy.sql.functions import current_timestamp
 from sqlmodel import Column, Field, ForeignKey, Relationship, String, UniqueConstraint
 
 from studio.app.common.models.base import Base
+from studio.app.optinist.models.expdb.experiment import ExperimentShareGroup
 
 
 class UserGroup(Base, table=True):
@@ -45,6 +46,9 @@ class Group(Base, table=True):
             secondaryjoin="and_(UserGroup.user_id==User.id, User.active==1)",
             viewonly=True,
         ),
+    )
+    experiment_share: List["Experiment"] = Relationship(  # noqa: F821
+        back_populates="group_share", link_model=ExperimentShareGroup
     )
 
     @property
