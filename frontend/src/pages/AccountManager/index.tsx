@@ -245,13 +245,13 @@ const ModalComponent =
               <Tooltip title={(formData?.group as string[])?.join(', ') || ''} placement="top">
                 <Box display={'inline'}>
                   <SelectError
-                      multiple={true}
-                      value={(formData?.group as string | string[] | undefined) || []}
-                      options={optionsGroup.map(item => item.label)}
-                      name="group"
-                      onChange={(e) => onChangeData(e, 50)}
-                      onBlur={(e) => onChangeData(e, 50)}
-                      errorMessage={errors.group}
+                    multiple={true}
+                    value={(formData?.group as string | string[] | undefined) || []}
+                    options={optionsGroup.map(item => item.label)}
+                    name="group"
+                    onChange={(e) => onChangeData(e, 50)}
+                    onBlur={(e) => onChangeData(e, 50)}
+                    errorMessage={errors.group}
                   />
                 </Box>
               </Tooltip>

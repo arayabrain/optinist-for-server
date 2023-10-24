@@ -1,8 +1,10 @@
 import {
+  Box,
   MenuItem,
   Select,
   SelectChangeEvent,
   styled,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { FC, FocusEvent } from 'react'
@@ -16,6 +18,8 @@ type SelectErrorProps = {
   options: string[]
   multiple?: boolean
 }
+
+
 
 const SelectError: FC<SelectErrorProps> =
    ({
@@ -42,13 +46,17 @@ const SelectError: FC<SelectErrorProps> =
         onBlur={onBlur}
         error={!!errorMessage}
       >
-        {options.map((item: string) => {
-          return (
-            <MenuItem key={item} value={item}>
-              {item}
-            </MenuItem>
-          )
-        })}
+        <Box sx={{ height: multiple ? 200 : 'auto' }}>
+          {options.map((item: string) => {
+            return (
+              <Tooltip title={item} placement={'top'}>
+                <MenuItem sx={{ maxWidth: 270 }} key={item} value={item}>
+                  <SpanCustom>{item}</SpanCustom>
+                </MenuItem>
+              </Tooltip>
+            )
+          })}
+        </Box>
       </SelectModal>
       <TextError>{errorMessage}</TextError>
     </>
@@ -73,4 +81,14 @@ const TextError = styled(Typography)({
   margin: '-14px 0px 0px 305px',
   wordBreak: 'break-word',
 })
+
+const SpanCustom = styled('span')({
+  display: 'inline-block',
+  width: '95%',
+  margin: 'auto',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+
 export default SelectError
