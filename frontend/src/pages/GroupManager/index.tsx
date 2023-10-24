@@ -24,7 +24,6 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import Loading from '../../components/common/Loading'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { exportWorkspace } from 'store/slice/Workspace/WorkspacesActions'
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from "@mui/icons-material/Delete";
 import {isAdmin, selectCurrentUser} from 'store/slice/User/UserSelector'
@@ -64,7 +63,6 @@ let timeout: NodeJS.Timeout | undefined = undefined
 const columns = (
     admin: boolean,
     handleOpenPopupDel: (id: number, nameGroupManager: string) => void,
-    handleDownload: (id: number) => void,
     user?: UserDTO,
     onEdit?: (id: number) => void,
     setOpenSetGroup?: ({open, name, id} : {open: boolean, name: string, id?: number}) => void,
@@ -212,7 +210,7 @@ const PopupNew = (
         <DialogContent sx={{ minWidth: 300 }}>
           <Input
             sx={{ width: '80%' }}
-            placeholder={'Group Manager Name'}
+            placeholder={'Group Name'}
             value={value || ''}
             onChange={handleName}
           />
@@ -233,7 +231,7 @@ const PopupDelete = ({open, handleClose, handleOkDel, nameGroupManager}: PopupTy
   return (
     <Box>
       <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-        <DialogTitle>Do you want delete Group "{nameGroupManager}"?</DialogTitle>
+        <DialogTitle sx={{ wordWrap: 'break-word'}}>Do you want delete Group "{nameGroupManager}"?</DialogTitle>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleOkDel}>Ok</Button>
@@ -343,15 +341,15 @@ const GroupManager = () => {
 
   const handleOkNew = async () => {
     if (!newGroupManager) {
-      setError("Group Manager Name cann't empty")
+      setError("Group Name cann't empty")
       return
     }
     const data = await dispatch(postGroupManager(newGroupManager))
     if((data as any).error) {
-      handleClickVariant('error', 'Group manager creation failed!')
+      handleClickVariant('error', 'Group creation failed!')
     }
     else {
-      handleClickVariant('success', 'Group manager has been created successfully!')
+      handleClickVariant('success', 'Group has been created successfully!')
     }
     await dispatch(getGroupsManager(dataParams))
     setOpen({ ...open, new: false })
@@ -366,10 +364,6 @@ const GroupManager = () => {
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
     const param = `${dataParams.sort[0]? `sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
     setNewParams(param)
-  }
-
-  const handleDownload = async (id: number) => {
-    dispatch(exportWorkspace(id))
   }
 
   const handleRowModesModelChange = (newRowModesModel: any) => {
@@ -395,16 +389,16 @@ const GroupManager = () => {
 
   const processRowUpdate = async (newRow: any) => {
     if (!newRow.name) {
-      handleClickVariant('error', "Group manager Name cann't empty")
+      handleClickVariant('error', "Group Name cann't empty")
       return { ...newRow, name: initName }
     }
     if (newRow.name === initName) return newRow
     const data = await dispatch(changeNameGroupManager({ name: newRow.name, id: newRow.id }))
     if((data as any).error) {
-      handleClickVariant('error', 'Group manager name edit failed!')
+      handleClickVariant('error', 'Group name edit failed!')
     }
     else {
-      handleClickVariant('success', 'Group manager name edited successfully!')
+      handleClickVariant('success', 'Group name edited successfully!')
     }
     await dispatch(getGroupsManager(dataParams))
     return newRow
@@ -503,7 +497,6 @@ const GroupManager = () => {
                 columns(
                   admin,
                   handleOpenPopupDel,
-                  handleDownload,
                   user,
                   onEditName,
                   setOpenSetGroup,
