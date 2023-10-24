@@ -38,7 +38,8 @@ type PopupSetGroupManagerProps = {
 }
 
 const columns = (
-  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, parmas: GridRenderCellParams<GridValidRowModel>) => void,
+  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>,
+  parmas: GridRenderCellParams<GridValidRowModel>) => void,
   hide: boolean = true
 ) => ([
   {
@@ -48,7 +49,7 @@ const columns = (
     sortable: false,
     flex: 1,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-        <span>{params.row.name}</span>
+      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>{params.row.name}</span>
     ),
   },
   {
@@ -261,7 +262,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 sx={{ cursor: 'pointer' }}
                 onClick={handleAddListSet}
               />
-              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start' }}>
+              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%' }}>
                 <Input
                   autoComplete={'Off'}
                   id="inputSearchAdd"

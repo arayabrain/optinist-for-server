@@ -11,7 +11,7 @@ import {
   Input,
   Radio,
   RadioGroup,
-  styled
+  styled, Typography
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {SHARE, WAITING_TIME} from "../@types";
@@ -98,7 +98,7 @@ export const TableListSearch =
               cursor: (isSelected) ? 'not-allowed' : 'pointer'
             }}
             >
-              {`${item.name} (${item.email})`}
+              <span style={{ flex: 1, wordWrap: 'break-word', maxWidth: 250}}>{`${item.name} (${item.email})`}</span>
               {(isSelected) ? <CheckIcon style={{fontSize: 14}}/> : null}
             </LiCustom>
           )
