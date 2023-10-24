@@ -11,7 +11,7 @@ import {
   Input,
   Radio,
   RadioGroup,
-  styled, Typography
+  styled
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {SHARE, WAITING_TIME} from "../@types";
