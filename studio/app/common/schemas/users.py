@@ -1,9 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import Query
 from pydantic import BaseModel, EmailStr, Field
+
+from studio.app.common.schemas.group import Group
 
 password_regex = r"^(?=.*\d)(?=.*[!#$%&()*+,-./@_|])(?=.*[a-zA-Z]).{6,255}$"
 
@@ -35,6 +37,7 @@ class User(BaseModel):
     email: EmailStr
     organization: Organization
     role_id: Optional[int]
+    groups: List[Group]
 
     @property
     def is_admin(self) -> bool:
@@ -53,6 +56,7 @@ class UserCreate(BaseModel):
     password: str = Field(max_length=255, regex=password_regex)
     name: str
     role_id: int
+    group_ids: List[int]
 
     class Config:
         anystr_strip_whitespace = True
@@ -62,6 +66,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr]
     name: str
     role_id: int
+    group_ids: List[int]
 
 
 class SelfUserUpdate(BaseModel):

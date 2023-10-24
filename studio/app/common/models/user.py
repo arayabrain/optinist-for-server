@@ -67,9 +67,13 @@ class User(Base, TimestampMixin, table=True):
         back_populates="user_share", link_model=ExperimentShareUser
     )
     groups: List["Group"] = Relationship(  # noqa: F821
-        back_populates="active_group_user",
+        back_populates="group_user",
         link_model=UserGroup,
     )
+
+    @property
+    def role_id(self):
+        return self.role.id if self.role else None
 
 
 class Role(Base, table=True):
