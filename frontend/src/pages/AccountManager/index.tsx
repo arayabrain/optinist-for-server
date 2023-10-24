@@ -30,7 +30,7 @@ export type FormDataType = {
   role_id?: string
   name?: string
   confirmPassword?: string
-  group?: string[] | string | number[]
+  group_ids?: string[] | number[] | string
 }
 
 type ModalComponentProps = {
@@ -55,7 +55,7 @@ const initState = {
   role_id: '',
   name: '',
   confirmPassword: '',
-  group: []
+  group_ids: []
 }
 
 const ModalComponent =
@@ -73,9 +73,9 @@ const ModalComponent =
       dataEdit || initState,
   )
   const [isDisabled, setIsDisabled] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({ ...initState, group: ''})
+  const [errors, setErrors] = useState<{ [key: string]: string }>({ ...initState, group_ids: ''})
   const [listGroup, setListGroup] = useState<ItemGroupManage[]>([])
-  const [optionsGroup, setOptionsGroup] = useState<{ label: string, value: number }[]>([])
+  const [optionsGroup, setOptionsGroup] = useState<{ name: string, id: number }[]>([])
 
   useEffect(() => {
     dispatch(getGroupsManager({
@@ -91,7 +91,7 @@ const ModalComponent =
   }, [JSON.stringify(listGroupData)])
 
   useEffect(() => {
-    const newOptions = listGroup.map(item => ({ label: item.name, value: item.id}))
+    const newOptions = listGroup.map(item => ({ name: item.name, id: item.id}))
     setOptionsGroup(newOptions)
   }, [listGroup])
 
@@ -132,6 +132,11 @@ const ModalComponent =
     return validateLength(name, length, value)
   }
 
+  const validateGroup = (name: string, value?: string[]) => {
+    if (!value || value.length === 0) return 'This field is required'
+    return ''
+  }
+
   const validateLength = (name: string, length: number, value?: string) => {
     if (value && value.length > length)
       return `The text may not be longer than ${length} characters`
@@ -145,7 +150,7 @@ const ModalComponent =
     const errorName = validateField('name', 100, formData.name)
     const errorEmail = validateEmail(formData.email as string)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorGroup = validateField('group', 50, formData.group as string | undefined)
+    const errorGroup = validateGroup('group_ids', formData.group_ids as string[] | undefined)
     const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password as string)
     const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
       formData.confirmPassword as string,
@@ -157,24 +162,24 @@ const ModalComponent =
       confirmPassword: errorConfirmPassword,
       name: errorName,
       role_id: errorRole,
-      group: errorGroup
+      group_ids: errorGroup
     }
   }
 
   const onChangeData = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement> | SelectChangeEvent,
+    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement> | SelectChangeEvent | ChangeEvent<{ value: unknown[], name: string }>,
     length: number,
   ) => {
     const { value, name } = e.target
     const newDatas = { ...formData, [name]: value }
     setFormData(newDatas)
-    let error: string =
-      name === 'email'
-        ? validateEmail(value)
-        : validateField(name, length, value)
+    let error: string
+    if(name === 'email') error = validateEmail(value as string)
+    else if(name === 'group_ids') error = validateGroup(name, value as string[])
+    else error = validateField(name, length, value as string)
     let errorConfirm = errors.confirmPassword
     if (name.toLowerCase().includes('password')) {
-      error = validatePassword(value, name === 'confirmPassword', newDatas)
+      error = validatePassword(value as string, name === 'confirmPassword', newDatas)
       if (name !== 'confirmPassword' && formData.confirmPassword) {
         errorConfirm = validatePassword(
           newDatas.confirmPassword as string,
@@ -197,10 +202,10 @@ const ModalComponent =
     }
     try {
       const newGroup = optionsGroup.map(option => {
-        if((formData.group as string[])?.includes(option.label)) return option.value
+        if((formData.group_ids as string[])?.includes(option.name)) return option.id
         return undefined
       })
-      await onSubmitEdit(dataEdit?.id, { ...formData, group: newGroup.filter(Boolean) as number[]})
+      await onSubmitEdit(dataEdit?.id, { ...formData, group_ids: newGroup.filter(Boolean) as number[]})
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
@@ -242,16 +247,16 @@ const ModalComponent =
               errorMessage={errors.email}
             />
             <LabelModal>Group: </LabelModal>
-              <Tooltip title={(formData?.group as string[])?.join(', ') || ''} placement="top">
+              <Tooltip title={(formData?.group_ids as string[])?.join(', ') || ''} placement="top">
                 <Box display={'inline'}>
                   <SelectError
                     multiple={true}
-                    value={(formData?.group as string | string[] | undefined) || []}
-                    options={optionsGroup.map(item => item.label)}
-                    name="group"
+                    value={(formData?.group_ids as string[]) || []}
+                    options={optionsGroup.map(item => item.name)}
+                    name="group_ids"
                     onChange={(e) => onChangeData(e, 50)}
                     onBlur={(e) => onChangeData(e, 50)}
-                    errorMessage={errors.group}
+                    errorMessage={errors.group_ids}
                   />
                 </Box>
               </Tooltip>
@@ -470,15 +475,16 @@ const AccountManager = () => {
   }
 
   const handleEdit = (dataEdit: UserDTO) => {
+    if(!dataEdit) return
     setOpenModal(true)
-    setDataEdit(dataEdit)
+    setDataEdit({ ...dataEdit, group_ids: dataEdit.groups?.map(item => item.name)})
   }
 
   const onSubmitEdit = async (
     id: number | string | undefined,
     data: FormDataType,
   ) => {
-    const {confirmPassword, role_id, ...newData} = data
+    const {confirmPassword, role_id, group_ids, ...newData} = data
     let newRole
     switch (role_id) {
       case "ADMIN":
@@ -498,7 +504,7 @@ const AccountManager = () => {
       const data = await dispatch(updateUser(
         {
           id: id as number,
-          data: {name: newData.name as string, email: newData.email as string, role_id: newRole},
+          data: {name: newData.name as string, email: newData.email as string, role_id: newRole, group_ids: group_ids as number[]},
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
@@ -513,7 +519,7 @@ const AccountManager = () => {
         }
     } else {
       const data = await dispatch(createUser({
-        data: {...newData, role_id: newRole} as AddUserDTO,
+        data: {...newData, role_id: newRole, group_ids: group_ids} as AddUserDTO,
         params: {...filterParams, ...sortParams, ...params}
       }))
       if(!(data as any).error) {
@@ -673,7 +679,7 @@ const AccountManager = () => {
       minWidth: 100,
       flex: 1,
       renderCell: (params: {row: UserDTO}) => {
-        const { id, role_id, name, email} = params.row
+        const { id, role_id, name, email, groups } = params.row
         if(!id || !role_id || !name || !email) return null
         let role: any
         switch (role_id) {
@@ -695,7 +701,7 @@ const AccountManager = () => {
           <>
             <ALink
               sx={{ color: 'red' }}
-              onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
+              onClick={() => handleEdit({id, role_id: role, name, email, groups} as UserDTO)}
             >
               <EditIcon sx={{ color: 'black' }} />
             </ALink>

@@ -1,10 +1,8 @@
 import {
-  Box,
   MenuItem,
   Select,
   SelectChangeEvent,
   styled,
-  Tooltip,
   Typography,
 } from '@mui/material'
 import { FC, FocusEvent } from 'react'
@@ -19,10 +17,8 @@ type SelectErrorProps = {
   multiple?: boolean
 }
 
-
-
 const SelectError: FC<SelectErrorProps> =
-   ({
+  ({
      value,
      onChange,
      onBlur,
@@ -31,37 +27,55 @@ const SelectError: FC<SelectErrorProps> =
      name,
      multiple = false
    }) => {
-  return (
-    <>
-      <SelectModal
-        multiple={multiple}
-        name={name}
-        value={value}
-        onChange={
-          onChange as (
-            value: SelectChangeEvent<unknown>,
-            child: React.ReactNode,
-          ) => void
-        }
-        onBlur={onBlur}
-        error={!!errorMessage}
-      >
-        <Box sx={{ height: multiple ? 200 : 'auto' }}>
-          {options.map((item: string) => {
+    return (
+      <>
+        <SelectModal
+          name={name}
+          value={value}
+          onChange={
+            onChange as (
+              value: SelectChangeEvent<unknown>,
+              child: React.ReactNode,
+            ) => void
+          }
+          onBlur={onBlur}
+          error={!!errorMessage}
+          multiple={multiple}
+          MenuProps={{
+            anchorOrigin: {
+              vertical: 'bottom',
+              horizontal: 'left',
+            },
+            transformOrigin: {
+              vertical: 'top',
+              horizontal: 'left',
+            },
+            PaperProps: {
+              style: {
+                maxHeight: '200px',
+                width: '200px',
+                marginTop: '8px',
+              },
+            },
+          }}
+          renderValue={(selected: any) => (
+            <div style={{ width: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {multiple ? selected?.join(', ') : selected}
+            </div>
+          )}
+        >
+          {options.map((item: string, index) => {
             return (
-              <Tooltip title={item} placement={'top'}>
-                <MenuItem sx={{ maxWidth: 270 }} key={item} value={item}>
-                  <SpanCustom>{item}</SpanCustom>
-                </MenuItem>
-              </Tooltip>
+              <MenuItem key={index} value={item} sx={{ maxWidth: 270, width: '95%' }}>
+                <SpanCustom>{item}</SpanCustom>
+              </MenuItem>
             )
           })}
-        </Box>
-      </SelectModal>
-      <TextError>{errorMessage}</TextError>
-    </>
-  )
-}
+        </SelectModal>
+        <TextError>{errorMessage}</TextError>
+      </>
+    )
+  }
 
 const SelectModal = styled(Select, {
   shouldForwardProp: (props) => props !== 'error',
@@ -71,6 +85,7 @@ const SelectModal = styled(Select, {
   border: '1px solid #d9d9d9',
   borderColor: error ? 'red' : '#d9d9d9',
   borderRadius: 4,
+  textOverflow: 'unset'
 }))
 
 const TextError = styled(Typography)({
@@ -84,11 +99,8 @@ const TextError = styled(Typography)({
 
 const SpanCustom = styled('span')({
   display: 'inline-block',
-  width: '95%',
-  margin: 'auto',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  textOverflow: 'ellipsis',
 })
 
 export default SelectError
