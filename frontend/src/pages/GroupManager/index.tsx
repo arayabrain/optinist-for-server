@@ -118,7 +118,7 @@ const columns = (
             alignItems: 'center',
             gap: 2,
             justifyContent: 'space-between',
-            width: '100%'
+            width: '70%'
           }}
         >
           <Tooltip title={value} placement="top">
@@ -127,7 +127,7 @@ const columns = (
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              width: '100%'
+              width: '70%'
             }}
           >
           {value}
