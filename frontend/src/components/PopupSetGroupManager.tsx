@@ -20,7 +20,7 @@ import {getListUserGroup, postListSet} from "../store/slice/GroupManager/GroupAc
 import {GroupManagerParams} from "../store/slice/GroupManager/GroupManagerType";
 import {selectListUserGroup} from "../store/slice/GroupManager/GroupManagerSelectors";
 
-type UserAdd = {
+export type UserAdd = {
   id: number
   name: string
   email: string
@@ -38,7 +38,8 @@ type PopupSetGroupManagerProps = {
 }
 
 const columns = (
-  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, parmas: GridRenderCellParams<GridValidRowModel>) => void,
+  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>,
+  parmas: GridRenderCellParams<GridValidRowModel>) => void,
   hide: boolean = true
 ) => ([
   {
@@ -48,7 +49,7 @@ const columns = (
     sortable: false,
     flex: 1,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-        <span>{params.row.name}</span>
+      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>{params.row.name}</span>
     ),
   },
   {
@@ -99,6 +100,10 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
   useEffect(() => {
     if(!infoGroup.open) {
       setListSearchAdd([])
+      setTextSearch({
+        setGroup: '',
+        searchAdd: ''
+      })
       return
     }
     if(!infoGroup.id) return
@@ -224,7 +229,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
+        <DialogTitle id="alert-dialog-title" sx={{ fontSize: 24, fontWeight: 'bold'}}>
           Set Group
         </DialogTitle>
         <DialogContent>
@@ -234,6 +239,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
             <WrapperSet>
               <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%'}}>
                 <Input
+                  autoComplete={'Off'}
                   id="inputSearchSet"
                   placeholder={"Search"}
                   value={textSearch.setGroup}
@@ -241,22 +247,24 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                   sx={{ width: '100%'}}
                 />
                 {
-                  newListSetSearch && newListSetSearch.length > 0 ? (
+                  newListSetSearch?.length > 0 ? (
                     <DataGrid
                       columns={columns(handleShareFalse).filter(Boolean) as any}
                       rows={newListSetSearch}
                       hideFooter
                       columnHeaderHeight={0}
                       sx={{ marginTop: 2}}
-                    />):<p>No data</p>
+                    />
+                  ) : <p>No data</p>
                 }
               </Box>
               <KeyboardBackspaceIcon
                 sx={{ cursor: 'pointer' }}
                 onClick={handleAddListSet}
               />
-              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start' }}>
+              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%' }}>
                 <Input
+                  autoComplete={'Off'}
                   id="inputSearchAdd"
                   placeholder={"Search"}
                   value={textSearch.searchAdd}
@@ -270,6 +278,9 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                       usersSuggest={usersSuggest}
                       handleAddListUser={handleAddListUser}
                       listSearchAdd={listSearchAdd}
+                      width={'80%'}
+                      listSet={listSet}
+                      listIdNoAdd={listIdNoAdd}
                     />
                   ) : null
                 }

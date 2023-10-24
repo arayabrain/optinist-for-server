@@ -1,6 +1,17 @@
 import {
-  Box, Button,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  Input,
+  Radio,
+  RadioGroup,
+  styled
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {SHARE, WAITING_TIME} from "../@types";
@@ -15,6 +26,7 @@ import Loading from "./common/Loading";
 import { UserDTO } from "../api/users/UsersApiDTO";
 import CheckIcon from '@mui/icons-material/Check';
 import { resetUserSearch } from "../store/slice/User/UserSlice";
+import {UserAdd} from "./PopupSetGroupManager";
 
 type PopupType = {
   open: boolean
@@ -38,10 +50,22 @@ type TableSearch = {
   handleAddListUser?: (user: UserDTO) => void
   stateUserShare?: UserDTO[]
   listSearchAdd?: UserDTO[]
+  width?: string
+  listSet?: UserAdd[]
+  listIdNoAdd?: number[]
 }
 
-export const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserShare, listSearchAdd}: TableSearch) => {
-
+export const TableListSearch =
+  ({
+    usersSuggest,
+    onClose,
+    handleAddListUser,
+    stateUserShare,
+    listSearchAdd,
+    width = '60%',
+    listSet,
+    listIdNoAdd
+  }: TableSearch) => {
   const ref = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
@@ -54,8 +78,8 @@ export const TableListSearch = ({usersSuggest, onClose, handleAddListUser, state
 
   const onMouseDown = (event: MouseEvent) => {
     if(
-        ref.current?.contains((event as any).target) ||
-        ['inputSearch', 'inputSearchSet', 'inputSearchAdd'].includes((event as any).target.id)
+      ref.current?.contains((event as any).target) ||
+      ['inputSearch', 'inputSearchSet', 'inputSearchAdd'].includes((event as any).target.id)
     )
     {
       return;
@@ -64,17 +88,18 @@ export const TableListSearch = ({usersSuggest, onClose, handleAddListUser, state
   }
 
   return (
-    <TableListSearchWrapper ref={ref}>
+    <TableListSearchWrapper sx={{ width: width }} ref={ref}>
       <UlCustom>
         {usersSuggest.map(item => {
-          const isSelected = (stateUserShare || listSearchAdd)?.some(i => i.id === item.id)
+          let isSelected = (stateUserShare || listSearchAdd)?.some(i => i.id === item.id)
+              || (listSet?.filter(item => !listIdNoAdd?.includes(item.id as number)).map(item => item.id))?.some(i => i === item.id)
           return (
-            <LiCustom key={item.id} onClick={() => handleAddListUser?.(item)} style={{
-              cursor: isSelected ? 'not-allowed' : 'pointer'
+            <LiCustom key={item.id} onClick={() => (!isSelected) && handleAddListUser?.(item)} style={{
+              cursor: (isSelected) ? 'not-allowed' : 'pointer'
             }}
             >
-              {`${item.name} (${item.email})`}
-              {isSelected ? <CheckIcon style={{fontSize: 14}}/> : null}
+              <span style={{ flex: 1, wordWrap: 'break-word', maxWidth: 250}}>{`${item.name} (${item.email})`}</span>
+              {(isSelected) ? <CheckIcon style={{fontSize: 14}}/> : null}
             </LiCustom>
           )
         })}
@@ -288,11 +313,9 @@ const TableListSearchWrapper = styled(Box)(({ theme }) => ({
   position: 'absolute',
   background: "#fff",
   zIndex: 100,
-  width: "60%",
   boxShadow: '0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)',
   borderBottomLeftRadius: 8,
   borderBottomRightRadius: 8,
-  maxHeight: 200,
   overflow: 'auto'
 }))
 
