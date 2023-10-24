@@ -233,7 +233,7 @@ const PopupDelete = ({open, handleClose, handleOkDel, nameGroupManager}: PopupTy
   return (
     <Box>
       <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-        <DialogTitle>Do you want delete Workspace "{nameGroupManager}"?</DialogTitle>
+        <DialogTitle>Do you want delete Group "{nameGroupManager}"?</DialogTitle>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleOkDel}>Ok</Button>
