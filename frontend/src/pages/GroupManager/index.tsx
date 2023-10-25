@@ -313,10 +313,10 @@ const GroupManager = () => {
     if (!groupManagerDel) return
     const data = await dispatch(deleteGroupManager({ id: groupManagerDel.id, params: dataParams }))
     if((data as any).error) {
-      handleClickVariant('error', 'Group Manager deletion failed!')
+      handleClickVariant('error', 'Group deletion failed!')
     }
     else {
-      handleClickVariant('success', 'Group Manager has been deleted successfully!')
+      handleClickVariant('success', 'Group has been deleted successfully!')
     }
     setOpen({ ...open, del: false })
   }
@@ -346,7 +346,7 @@ const GroupManager = () => {
     }
     const data = await dispatch(postGroupManager(newGroupManager))
     if((data as any).error) {
-      handleClickVariant('error', 'Group creation failed!')
+      handleClickVariant('error', 'Group names cannot be duplicated!')
     }
     else {
       handleClickVariant('success', 'Group has been created successfully!')
