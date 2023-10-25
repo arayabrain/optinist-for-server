@@ -94,14 +94,17 @@ const columns = (
   navigate: (path: string) => void,
   user: boolean,
   readonly?: boolean,
-  loading: boolean = false
+  loading: boolean = false,
 ) => [
   {
     field: 'checkbox',
     headerName: <Checkbox checked={checkBoxAll} onChange={(e: any) => {
       setCheckBoxAll(e.target.checked)
       if(!e.target.checked) setListCheck([])
-      else setListCheck(dataExperiments.map(item => item.id))
+      else {
+        const newList = dataExperiments.map(item => item.id)
+        setListCheck([...listCheck, ...newList.filter(item => !listCheck.includes(item))])
+      }
     }}
     />,
     sortable: false,
@@ -451,6 +454,12 @@ const DatabaseExperiments = ({
     setCheckBoxAll(false)
   }, [offset, limit])
 
+  useEffect(() => {
+    if(checkBoxAll) {
+      dispatch(getExperimentsDatabase({limit: dataExperiments.total, offset: 0}))
+    }
+  }, [checkBoxAll])
+
   const handleOpenDialog = (
     data: ImageUrls[] | ImageUrls,
     expId?: string,
@@ -500,7 +509,6 @@ const DatabaseExperiments = ({
     setNewParams(param)
   }
 
-  //eslint-disable-next-line
   const handlePublish = async (id: number, status: 'on' | 'off') => {
     let newPublish: number | undefined
     if (!dataParamsFilter.publish_status) newPublish = undefined
@@ -699,7 +707,7 @@ const DatabaseExperiments = ({
       navigate,
       !!user,
       readonly,
-      loading
+      loading,
     ),
     ...getColumns,
   ].filter(Boolean) as any
@@ -709,12 +717,15 @@ const DatabaseExperiments = ({
       {
         user ?
           (<WrapperIcons>
-            <GroupAddIcon onClick={() => setOpenShareGroup(true)}/>
+              <GroupAddIcon
+                sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
+                onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
+              />
             {
               listCheck.length > 0 ? (
                 <>
-                  <PublicIcon onClick={() => handleOpenPublishAll('Publish ○○ records at once. Is this OK?', 'on')} />
-                  <PublicOffIcon onClick={() => handleOpenPublishAll('Unpublish ○ records at once. Is this OK?', 'off')} />
+                  <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
+                  <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
                 </>
               ): null
             }
@@ -763,6 +774,7 @@ const DatabaseExperiments = ({
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
         <PopupShareGroup
+          type={'share'}
           listCheck={listCheck}
           id={openShare.id}
           open={openShare.open}
@@ -774,12 +786,15 @@ const DatabaseExperiments = ({
           }}
         />
       ) : null}
-      <PopupShareGroup
-        usersShare={dataShare}
-        open={openShareGroup}
-        data={dataDialog as { expId: string; shareType: number }}
-        handleClose={() => setOpenShareGroup(false)}
-      />
+      {openShareGroup &&
+        <PopupShareGroup
+          type={'multiShare'}
+          usersShare={dataShare}
+          open={openShareGroup}
+          data={dataDialog as { expId: string; shareType: number }}
+          handleClose={() => setOpenShareGroup(false)}
+        />
+      }
       <PopupConfirm
         open={openPublishAll.open}
         title={openPublishAll.title}

@@ -76,4 +76,13 @@ export type ListShareGroup = {
   users_count: number
 }
 
+export type MultiShareType = {
+  ids: number[]
+  data: {
+    share_type: number,
+    user_ids: number[],
+    group_ids: number[]
+  }
+}
+
 export type DatabaseParams = { [key: string]: number | string | string[] | undefined }

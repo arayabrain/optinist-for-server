@@ -7,7 +7,7 @@ import {
   getListShare,
   postListUserShare,
   postPublish,
-  postPublishAll,
+  postPublishAll, postMultiShare,
 } from './DatabaseActions'
 import {DATABASE_SLICE_NAME, DatabaseDTO, ListShareGroup, ListShareUser} from './DatabaseType'
 
@@ -91,22 +91,13 @@ export const databaseSlice = createSlice({
       })
       .addMatcher(
         isAnyOf(
+          postMultiShare.pending,
           postListUserShare.pending,
           postPublish.pending,
           postPublishAll.pending
         ),
         (state, action) => {
           state.loading = true
-        },
-      )
-      .addMatcher(
-        isAnyOf(
-          postPublish.fulfilled,
-          postPublish.rejected,
-          postPublishAll.pending
-        ),
-        (state, _action) => {
-          state.loading = false
         },
       )
       .addMatcher(
@@ -146,7 +137,11 @@ export const databaseSlice = createSlice({
           getCellsPublicDatabase.rejected,
           getListShare.rejected,
           postListUserShare.rejected,
-          postListUserShare.fulfilled
+          postListUserShare.fulfilled,
+          postPublish.fulfilled,
+          postPublish.rejected,
+          postPublishAll.rejected,
+          postMultiShare.rejected
         ),
         (state) => {
           state.loading = false

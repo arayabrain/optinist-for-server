@@ -3,7 +3,7 @@ import {
   DATABASE_SLICE_NAME,
   DatabaseDTO,
   DatabaseParams,
-  ListShareDTO,
+  ListShareDTO, MultiShareType,
 } from './DatabaseType'
 import {
   getCellsApi,
@@ -11,7 +11,7 @@ import {
   getExperimentsApi,
   getExperimentsPublicApi,
   getListShareApi,
-  postListUserShareApi,
+  postListUserShareApi, postMultiShareApi,
   postPublishAllApi,
   postPublishApi,
 } from 'api/database'
@@ -102,7 +102,7 @@ export const postListUserShare = createAsyncThunk<
   boolean,
   {
     id: number
-    data: { share_type: number; user_ids: number[]}
+    data: { share_type: number, group_ids?: number[], user_ids: number[]}
   }
 >(`${DATABASE_SLICE_NAME}/postListUserShare`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
@@ -124,6 +124,19 @@ export const postPublishAll = createAsyncThunk<
   try {
     const response = await postPublishAllApi(status, listCheck)
     await dispatch(getExperimentsDatabase(params))
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+
+export const postMultiShare = createAsyncThunk<
+    boolean,
+    MultiShareType
+>(`${DATABASE_SLICE_NAME}/postMultiShare`, async (data, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI
+  try {
+    const response = await postMultiShareApi(data)
     return response
   } catch (e) {
     return rejectWithValue(e)
