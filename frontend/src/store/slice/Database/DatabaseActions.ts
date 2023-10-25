@@ -132,11 +132,12 @@ export const postPublishAll = createAsyncThunk<
 
 export const postMultiShare = createAsyncThunk<
     boolean,
-    MultiShareType
+    { params: DatabaseParams, dataPost: MultiShareType }
 >(`${DATABASE_SLICE_NAME}/postMultiShare`, async (data, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
+  const { rejectWithValue, dispatch } = thunkAPI
   try {
-    const response = await postMultiShareApi(data)
+    const response = await postMultiShareApi(data.dataPost)
+    await dispatch(getExperimentsDatabase(data.params))
     return response
   } catch (e) {
     return rejectWithValue(e)

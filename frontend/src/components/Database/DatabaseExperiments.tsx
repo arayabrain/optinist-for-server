@@ -793,6 +793,7 @@ const DatabaseExperiments = ({
           open={openShareGroup}
           data={dataDialog as { expId: string; shareType: number }}
           handleClose={() => setOpenShareGroup(false)}
+          paramsUrl={{ ...dataParams, ...dataParamsFilter}}
         />
       }
       <PopupConfirm

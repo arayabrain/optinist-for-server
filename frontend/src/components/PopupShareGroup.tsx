@@ -11,23 +11,19 @@ import {
   Input,
   Radio,
   RadioGroup,
-  styled
+  styled, Tooltip
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {SHARE, WAITING_TIME} from "../@types";
-import { ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import {ChangeEvent, MouseEvent as MouseEventReact, useCallback, useEffect, useRef, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import CancelIcon from '@mui/icons-material/Cancel'
-import {
-  selectListGroupSearch,
-  selectListUserSearch,
-  selectLoading
-} from "../store/slice/User/UserSelector";
-import { getListUserSearch, getListGroupSearch } from "../store/slice/User/UserActions";
+import {selectListGroupSearch, selectListUserSearch, selectLoading} from "../store/slice/User/UserSelector";
+import {getListGroupSearch, getListUserSearch} from "../store/slice/User/UserActions";
 import Loading from "./common/Loading";
-import { UserDTO } from "../api/users/UsersApiDTO";
+import {UserDTO} from "../api/users/UsersApiDTO";
 import CheckIcon from '@mui/icons-material/Check';
-import { resetUserSearch } from "../store/slice/User/UserSlice";
+import {resetUserSearch} from "../store/slice/User/UserSlice";
 import {ListShareGroup, ListShareUser} from "../store/slice/Database/DatabaseType";
 import {postListUserShare, postMultiShare} from "../store/slice/Database/DatabaseActions";
 import PopupConfirm from "./common/PopupConfirm";
@@ -48,13 +44,14 @@ type PopupType = {
   }
   listCheck?: number[],
   type: string
+  paramsUrl?: { [key: string]: number | string | string[] | undefined }
 }
 
 type TableSearch = {
   usersSuggest: UserDTO[]
   onClose: () => void
   handleAddListUser: (user: UserDTO, type: 'groups' | 'users') => void
-  stateUserShare: UserDTO[]
+  stateUserShare: ListShareUser[] | ListShareGroup[]
   type: 'groups' | 'users'
 }
 
@@ -87,11 +84,18 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
         {usersSuggest?.map(item => {
           const isSelected = stateUserShare.some(i => i.id === item.id)
           return (
-            <LiCustom key={item.id} onClick={() => !isSelected && handleAddListUser(item, type)} style={{
-              cursor: isSelected ? 'not-allowed' : 'pointer'
+            <LiCustom key={item.id} onClick={() => !isSelected && handleAddListUser(item, type)}
+              style={{
+                cursor: isSelected ? 'not-allowed' : 'pointer',
+                display: 'flex',
             }}
             >
-              {`${item.name} (${item.email})`}
+              <Tooltip title={`${item.name} ${type === 'users' ? item.email : ''}`} placement={'right-start'}>
+                <Box sx={{ width: '90%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {`${item.name} `}
+                  {type === 'users' ? <span style={{ paddingLeft: 20 }}>{item.email}</span> : ''}
+                </Box>
+              </Tooltip>
               {isSelected ? <CheckIcon style={{ fontSize: 14 }}/> : null}
             </LiCustom>
           )
@@ -101,8 +105,8 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
   )
 }
 
-const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, listCheck, type}: PopupType) => {
-  const [shareType, setShareType] = useState(data?.shareType || 0)
+const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, listCheck, type, paramsUrl}: PopupType) => {
+  const [shareType, setShareType] = useState(type === 'multiShare' ? SHARE.USERS : data?.shareType || 0)
   const [openConfirm, setOpenConfirm] = useState(false)
   const usersSuggest = useSelector(selectListUserSearch)
   const groupsSuggest = useSelector(selectListGroupSearch)
@@ -148,13 +152,22 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
     //eslint-disable-next-line
   }, [textSearch])
 
-  const handleShareFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
+  const handleShareUsersFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
     e.preventDefault()
     e.stopPropagation()
     if(!stateUserShare) return
     const indexCheck = stateUserShare.users.findIndex(user => user.id === params.id)
     const newStateUserShare = stateUserShare.users.filter((user, index) => index !== indexCheck)
     setStateUserShare({...stateUserShare, users: newStateUserShare})
+  }
+
+  const handleShareGroupsFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if(!stateUserShare) return
+    const indexCheck = stateUserShare.groups.findIndex(group => group.id === params.id)
+    const newStateUserShare = stateUserShare.groups.filter((group, index) => index !== indexCheck)
+    setStateUserShare({...stateUserShare, groups: newStateUserShare})
   }
 
   const handleValue = (event: ChangeEvent<HTMLInputElement>) => {
@@ -168,9 +181,9 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
     {
       field: "name",
       headerName: type === 'group' ? "Name Group" : "Name User",
-      flex: 5,
+      flex: type === 'group' ? 15 : 5,
       renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
-        <span>{params.row.name}</span>
+        <span style={{ width: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{params.row.name}</span>
       ),
     },
       type === 'user' && {
@@ -228,8 +241,8 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
     handleClose(true);
   }
 
-  const handleOkShareMulti = () => {
-    if(!listCheck || listCheck.length === 0) return
+  const handleOkShareMulti = async () => {
+    if(!listCheck || listCheck.length === 0 || !paramsUrl) return
     const { users, groups } = stateUserShare
     let share_type_multi: number
     if(shareType === SHARE.ORGANIZATION) {
@@ -241,22 +254,22 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
       }
       else share_type_multi = SHARE.USERS
     }
+    await dispatch(postMultiShare({
+      params: paramsUrl,
+      dataPost: {
+      ids: listCheck,
+      data: {
+        share_type: share_type_multi,
+        user_ids: shareType === SHARE.ORGANIZATION ? [] : users.map(user => user.id),
+        group_ids: shareType === SHARE.ORGANIZATION ? [] : groups.map(group => group.id)
+      },
+      }}))
     setStateUserShare({
       share_type: undefined,
       users: [],
       groups: []
     })
-    dispatch(postMultiShare(
-      {
-        ids: listCheck,
-        data: {
-          share_type: share_type_multi,
-          user_ids: users.map(user => user.id),
-          group_ids: groups.map(group => group.id)
-        }
-      }
-      )
-    )
+    handleClose(true);
   }
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>, type: 'groups' | 'users') => {
@@ -277,11 +290,6 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
 
   const handleAddListUser = (user: any, type: 'groups' | 'users') => {
     setStateUserShare({...stateUserShare, [type]: [...stateUserShare[type], user]})
-    // if(!usersSuggest || !stateUserShare) return
-    // console.log(stateUserShare)
-    // if(!stateUserShare[type]?.find(item => item.id === user.id)) {
-    //   setStateUserShare({...stateUserShare, [type]: [...stateUserShare[type], user]})
-    // }
   }
 
   const handleClosePopup = (event: any) => {
@@ -289,8 +297,6 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
       handleClose(false)
     }
   }
-
-  // if(!data || !usersShare) return null;
 
   return (
     <Box>
@@ -324,7 +330,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         )}
         <DialogContent>
           {
-            (shareType !== SHARE.ORGANIZATION || isWorkspace) ?
+            (shareType !== SHARE.ORGANIZATION) ?
               <WrapperPermitted>
                 <Box style={{position: 'relative'}}>
                   <TitleCustom>Groups</TitleCustom>
@@ -342,7 +348,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
                       <TableListSearch
                         onClose={handleCloseSearch}
                         usersSuggest={groupsSuggest as UserDTO[]}
-                        stateUserShare={stateUserShare?.users || []}
+                        stateUserShare={stateUserShare?.groups || []}
                         handleAddListUser={handleAddListUser}
                         type={'groups'}
                       /> : null
@@ -354,7 +360,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
                   <DataGrid
                     sx={{ height: 159 }}
                     rows={stateUserShare?.groups.map((user: any) => ({...user, share: true}))}
-                    columns={columnsShare(handleShareFalse, 'group').filter(Boolean) as any}
+                    columns={columnsShare(handleShareGroupsFalse, 'group').filter(Boolean) as any}
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
@@ -393,9 +399,8 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
                   (stateUserShare && stateUserShare?.users?.length > 0) ?
                   <DataGrid
                     sx={{ height: 159 }}
-                    // onRowClick={handleShareTrue}
                     rows={stateUserShare?.users.map((user: any) => ({...user, share: true}))}
-                    columns={columnsShare(handleShareFalse, 'user').filter(Boolean) as any}
+                    columns={columnsShare(handleShareUsersFalse, 'user').filter(Boolean) as any}
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
