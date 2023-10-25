@@ -541,6 +541,7 @@ const DatabaseExperiments = ({
         param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published')}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
       }
       setNewParams(param.replace('publish_status', 'published'))
+      setCheckBoxAll(false)
     },
     //eslint-disable-next-line
     [pagiFilter, model],
@@ -561,6 +562,7 @@ const DatabaseExperiments = ({
     const { sort } = dataParams
     const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
     setNewParams(param.replace('publish_status', 'published'))
+    setCheckBoxAll(false)
   }
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
