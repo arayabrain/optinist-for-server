@@ -28,6 +28,9 @@ class UserGroup(Base, table=True):
 
 class Group(Base, table=True):
     __tablename__ = "groups"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="idx_name_org_id"),
+    )
 
     name: str = Field(sa_column=Column(String(100), nullable=False))
     organization_id: int = Field(
