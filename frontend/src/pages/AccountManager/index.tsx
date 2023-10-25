@@ -664,6 +664,23 @@ const AccountManager = () => {
       type: "string",
     },
     {
+      headerName: 'Groups',
+      field: 'groups',
+      filterable: false,
+      sortable: false,
+      minWidth: 100,
+      flex: 3,
+      renderCell: (params: {row: UserDTO}) => {
+        if(!params) return null
+        return(
+          <Tooltip title={params?.row?.groups?.map(item => item.name).join(', ') || ''} placement={'top'}>
+            <div style={{ textOverflow: 'ellipsis', width: '100%', overflow: 'hidden' }}>{params?.row?.groups?.map(item => item.name).join(', ')}</div>
+          </Tooltip>
+        )
+      },
+      type: "string",
+    },
+    {
       headerName: '',
       field: 'action',
       sortable: false,
