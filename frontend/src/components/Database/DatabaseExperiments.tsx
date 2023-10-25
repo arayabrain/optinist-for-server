@@ -98,15 +98,17 @@ const columns = (
 ) => [
   {
     field: 'checkbox',
-    headerName: <Checkbox checked={checkBoxAll} onChange={(e: any) => {
-      setCheckBoxAll(e.target.checked)
-      if(!e.target.checked) setListCheck([])
-      else {
-        const newList = dataExperiments.map(item => item.id)
-        setListCheck([...listCheck, ...newList.filter(item => !listCheck.includes(item))])
-      }
-    }}
-    />,
+    renderHeader: () => (
+      <Checkbox checked={checkBoxAll} onChange={(e: any) => {
+        setCheckBoxAll(e.target.checked)
+        if(!e.target.checked) setListCheck([])
+        else {
+          const newList = dataExperiments.map(item => item.id)
+          setListCheck([...listCheck, ...newList.filter(item => !listCheck.includes(item))])
+        }
+      }}
+      />
+    ),
     sortable: false,
     filterable: false,
     width: 160,
@@ -116,7 +118,10 @@ const columns = (
         checked={listCheck.includes(params.row.id)}
         onChange={(e: any) => {
         const newData = listCheck.filter(id => id !== params.row.id)
-        if(!e.target.checked) setListCheck(newData)
+        if(!e.target.checked) {
+          setCheckBoxAll(false)
+          setListCheck(newData)
+        }
           else setListCheck([...listCheck, params.row.id])
       }
       }/>
@@ -452,13 +457,7 @@ const DatabaseExperiments = ({
 
   useEffect(() => {
     setCheckBoxAll(false)
-  }, [offset, limit])
-
-  useEffect(() => {
-    if(checkBoxAll) {
-      dispatch(getExperimentsDatabase({limit: dataExperiments.total, offset: 0}))
-    }
-  }, [checkBoxAll])
+  }, [offset, limit, JSON.stringify(dataParamsFilter)])
 
   const handleOpenDialog = (
     data: ImageUrls[] | ImageUrls,
@@ -789,6 +788,7 @@ const DatabaseExperiments = ({
       {openShareGroup &&
         <PopupShareGroup
           type={'multiShare'}
+          listCheck={listCheck}
           usersShare={dataShare}
           open={openShareGroup}
           data={dataDialog as { expId: string; shareType: number }}

@@ -141,7 +141,8 @@ export const databaseSlice = createSlice({
           postPublish.fulfilled,
           postPublish.rejected,
           postPublishAll.rejected,
-          postMultiShare.rejected
+          postMultiShare.rejected,
+          postMultiShare.fulfilled
         ),
         (state) => {
           state.loading = false

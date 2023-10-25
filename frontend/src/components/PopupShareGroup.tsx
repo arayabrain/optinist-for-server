@@ -230,7 +230,17 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
 
   const handleOkShareMulti = () => {
     if(!listCheck || listCheck.length === 0) return
-    const { users, share_type, groups } = stateUserShare
+    const { users, groups } = stateUserShare
+    let share_type_multi: number
+    if(shareType === SHARE.ORGANIZATION) {
+      share_type_multi = SHARE.ORGANIZATION
+    }
+    else {
+      if(users.length === 0 && groups.length === 0) {
+        share_type_multi = SHARE.NOSHARE
+      }
+      else share_type_multi = SHARE.USERS
+    }
     setStateUserShare({
       share_type: undefined,
       users: [],
@@ -240,7 +250,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
       {
         ids: listCheck,
         data: {
-          share_type: share_type as number,
+          share_type: share_type_multi,
           user_ids: users.map(user => user.id),
           group_ids: groups.map(group => group.id)
         }
@@ -293,7 +303,9 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         <DialogTitle>{`Share Database Record${id ? '' : ' (bulk)'}`}</DialogTitle>
         {isWorkspace ? null : (
           <DialogContent>
-            <DialogContentText sx={{fontSize: 16, fontWeight: 400}}><ul><li>Experiment ID: {id}</li></ul></DialogContentText>
+            <DialogContentText sx={{fontSize: 16, fontWeight: 400}}>
+              <ul><li>{type === 'share' ? `Experiment ID: ${id}` : `Experiment ${listCheck?.length}`}</li></ul>
+            </DialogContentText>
             <DialogContentText>
               <FormControl>
                 <RadioGroup
@@ -406,7 +418,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         loading ? <Loading /> : null
       }
       <PopupConfirm
-        title={'Update the share settings of ○ records at once. Is this OK?'}
+        title={`Update the share settings of ${listCheck?.length} records at once. Is this OK?`}
         open={openConfirm}
         handleClose={() => setOpenConfirm(false)}
         handleOk={handleOkShareMulti}
