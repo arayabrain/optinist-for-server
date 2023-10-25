@@ -132,11 +132,6 @@ const ModalComponent =
     return validateLength(name, length, value)
   }
 
-  const validateGroup = (name: string, value?: string[]) => {
-    if (!value || value.length === 0) return 'This field is required'
-    return ''
-  }
-
   const validateLength = (name: string, length: number, value?: string) => {
     if (value && value.length > length)
       return `The text may not be longer than ${length} characters`
@@ -150,7 +145,6 @@ const ModalComponent =
     const errorName = validateField('name', 100, formData.name)
     const errorEmail = validateEmail(formData.email as string)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorGroup = validateGroup('group_ids', formData.group_ids as string[] | undefined)
     const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password as string)
     const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
       formData.confirmPassword as string,
@@ -162,7 +156,6 @@ const ModalComponent =
       confirmPassword: errorConfirmPassword,
       name: errorName,
       role_id: errorRole,
-      group_ids: errorGroup
     }
   }
 
@@ -175,7 +168,6 @@ const ModalComponent =
     setFormData(newDatas)
     let error: string
     if(name === 'email') error = validateEmail(value as string)
-    else if(name === 'group_ids') error = validateGroup(name, value as string[])
     else error = validateField(name, length, value as string)
     let errorConfirm = errors.confirmPassword
     if (name.toLowerCase().includes('password')) {
