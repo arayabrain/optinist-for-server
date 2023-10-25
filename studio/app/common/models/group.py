@@ -30,6 +30,14 @@ class Group(Base, table=True):
     __tablename__ = "groups"
 
     name: str = Field(sa_column=Column(String(100), nullable=False))
+    organization_id: int = Field(
+        sa_column=Column(
+            BIGINT(unsigned=True),
+            ForeignKey("organization.id"),
+            nullable=False,
+            index=True,
+        ),
+    )
     created_at: Optional[datetime] = Field(
         sa_column_kwargs={"server_default": current_timestamp()},
     )
@@ -37,7 +45,6 @@ class Group(Base, table=True):
     group_user: List["User"] = Relationship(  # noqa: F821
         back_populates="groups", link_model=UserGroup
     )
-
     active_group_user: List["User"] = Relationship(  # noqa: F821
         back_populates="groups",
         link_model=UserGroup,
@@ -49,6 +56,9 @@ class Group(Base, table=True):
     )
     experiment_share: List["Experiment"] = Relationship(  # noqa: F821
         back_populates="group_share", link_model=ExperimentShareGroup
+    )
+    organization: "Organization" = Relationship(  # noqa: F821
+        back_populates="groups", sa_relationship_kwargs={"uselist": False}
     )
 
     @property

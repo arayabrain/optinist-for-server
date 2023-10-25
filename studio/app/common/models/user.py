@@ -97,3 +97,6 @@ class Organization(Base, table=True):
     users: List["User"] = Relationship(
         back_populates="organization", sa_relationship_kwargs={"uselist": True}
     )
+    groups: List["Group"] = Relationship(  # noqa
+        back_populates="organization", sa_relationship_kwargs={"uselist": True}
+    )
