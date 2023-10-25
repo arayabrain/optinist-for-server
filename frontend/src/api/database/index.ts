@@ -31,7 +31,7 @@ export const postPublishApi = async (id: number, status: 'on' | 'off'): Promise<
   return response.data
 }
 
-export const getListUserShareApi = async (id: number): Promise<ListShareDTO> => {
+export const getListShareApi = async (id: number): Promise<ListShareDTO> => {
   const response = await axios.get(`/expdb/share/${id}/status`)
   return response.data
 }

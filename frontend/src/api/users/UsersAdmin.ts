@@ -44,6 +44,6 @@ export const getListUserSearchApi = async (data: {keyword: string | null}): Prom
 }
 
 export const getListGroupSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
-  const response = await axios.get(`/users/search/share_groups${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+  const response = await axios.get(`/group/search/share_groups${data.keyword ? `?keyword=${data.keyword}` : ''}`)
   return response.data
 }

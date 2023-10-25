@@ -30,7 +30,7 @@ import { RootState } from '../../store/store'
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
-  getListUserShare,
+  getListShare,
   postPublish,
   postPublishAll,
 } from '../../store/slice/Database/DatabaseActions'
@@ -107,7 +107,7 @@ const columns = (
     sortable: false,
     filterable: false,
     width: 160,
-    type: 'Component',
+    type: 'string',
     renderCell: (params: { row: DatabaseType }) => (
       <Checkbox
         checked={listCheck.includes(params.row.id)}
@@ -348,10 +348,6 @@ const DatabaseExperiments = ({
     dataShare: state[DATABASE_SLICE_NAME].listShare,
   }))
 
-  const { dataGroupShare } = useSelector((state: RootState) => ({
-    dataGroupShare: state[DATABASE_SLICE_NAME].listGroupsShare,
-  }))
-
   const pagiFilter = useCallback(
     (page?: number) => {
       return `limit=${limit}&offset=${
@@ -447,7 +443,7 @@ const DatabaseExperiments = ({
 
   useEffect(() => {
     if (!openShare.open || !openShare.id) return
-    dispatch(getListUserShare({ id: openShare.id }))
+    dispatch(getListShare({ id: openShare.id }))
     //eslint-disable-next-line
   }, [openShare])
 
@@ -767,6 +763,7 @@ const DatabaseExperiments = ({
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
         <PopupShareGroup
+          listCheck={listCheck}
           id={openShare.id}
           open={openShare.open}
           data={dataDialog as { expId: string; shareType: number }}
@@ -778,7 +775,7 @@ const DatabaseExperiments = ({
         />
       ) : null}
       <PopupShareGroup
-        usersShare={dataGroupShare}
+        usersShare={dataShare}
         open={openShareGroup}
         data={dataDialog as { expId: string; shareType: number }}
         handleClose={() => setOpenShareGroup(false)}

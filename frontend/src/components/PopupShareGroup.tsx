@@ -28,6 +28,7 @@ import Loading from "./common/Loading";
 import { UserDTO } from "../api/users/UsersApiDTO";
 import CheckIcon from '@mui/icons-material/Check';
 import { resetUserSearch } from "../store/slice/User/UserSlice";
+import {ListShareGroup, ListShareUser} from "../store/slice/Database/DatabaseType";
 
 type PopupType = {
   id?: number
@@ -40,9 +41,10 @@ type PopupType = {
   }
   usersShare?: {
     share_type?: number
-    users: UserDTO[]
-    groups: UserDTO[]
+    users: ListShareUser[]
+    groups: ListShareGroup[]
   }
+  listCheck?: number[]
 }
 
 type TableSearch = {
@@ -95,7 +97,7 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
   )
 }
 
-const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}: PopupType) => {
+const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, listCheck}: PopupType) => {
   const [shareType, setShareType] = useState(data?.shareType || 0)
   const usersSuggest = useSelector(selectListUserSearch)
   const groupsSuggest = useSelector(selectListGroupSearch)
@@ -104,7 +106,11 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
     groups: '',
     users: ''
   })
-  const [stateUserShare, setStateUserShare] = useState(usersShare || undefined)
+  const [stateUserShare, setStateUserShare] = useState(usersShare || {
+    share_type: undefined,
+    users: [],
+    groups: []
+  })
   const [check, setCheck] = useState({
     groups: false,
     users: false
@@ -210,11 +216,13 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
   }
 
   const handleAddListUser = (user: any, type: 'groups' | 'users') => {
-    if(!usersSuggest || !stateUserShare) return
-    if(!stateUserShare[type]?.find(item => item.id === user.id)) {
-      console.log(stateUserShare)
-      setStateUserShare({...stateUserShare, [type]: [...stateUserShare[type], user]})
-    }
+    console.log(user)
+    setStateUserShare({...stateUserShare, [type]: [...stateUserShare[type], user]})
+    // if(!usersSuggest || !stateUserShare) return
+    // console.log(stateUserShare)
+    // if(!stateUserShare[type]?.find(item => item.id === user.id)) {
+    //   setStateUserShare({...stateUserShare, [type]: [...stateUserShare[type], user]})
+    // }
   }
 
   const handleClosePopup = (event: any) => {
@@ -268,10 +276,10 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
                     onChange={(event: ChangeEvent<HTMLInputElement>) => handleSearch(event, 'groups')}
                   />
                   {
-                    textSearch.groups && usersSuggest && check.groups ?
+                    textSearch.groups && groupsSuggest && check.groups ?
                       <TableListSearch
                         onClose={handleCloseSearch}
-                        usersSuggest={usersSuggest}
+                        usersSuggest={groupsSuggest as UserDTO[]}
                         stateUserShare={stateUserShare?.users || []}
                         handleAddListUser={handleAddListUser}
                         type={'groups'}
@@ -280,7 +288,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
                 </Box>
                 <p>Permitted groups</p>
                 {
-                    (stateUserShare && stateUserShare.groups?.length > 0) &&
+                  (stateUserShare && stateUserShare.groups?.length > 0) ?
                   <DataGrid
                     sx={{ height: 150 }}
                     // onRowClick={handleShareTrue}
@@ -289,7 +297,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
-                  />
+                  />: <p>No data</p>
                 }
               </WrapperPermitted>
               : null
@@ -320,7 +328,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
                 </Box>
                 <p>Permitted users</p>
                 {
-                  (stateUserShare && stateUserShare?.users?.length > 0) &&
+                  (stateUserShare && stateUserShare?.users?.length > 0) ?
                   <DataGrid
                     sx={{ height: 150 }}
                     // onRowClick={handleShareTrue}
@@ -329,7 +337,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace}:
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
-                  />
+                  />: <p>No data</p>
                 }
               </WrapperPermitted>
               : null

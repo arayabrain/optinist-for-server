@@ -10,8 +10,9 @@ import {
   getCellsPublicApi,
   getExperimentsApi,
   getExperimentsPublicApi,
-  getListUserShareApi,
-  postListUserShareApi, postPublishAllApi,
+  getListShareApi,
+  postListUserShareApi,
+  postPublishAllApi,
   postPublishApi,
 } from 'api/database'
 
@@ -84,12 +85,12 @@ export const postPublish = createAsyncThunk<
   }
 })
 
-export const getListUserShare = createAsyncThunk<ListShareDTO, { id: number }>(
+export const getListShare = createAsyncThunk<ListShareDTO, { id: number }>(
   `${DATABASE_SLICE_NAME}/getListUserShare`,
   async (params, thunkAPI) => {
     const { rejectWithValue } = thunkAPI
     try {
-      const response = await getListUserShareApi(params.id)
+      const response = await getListShareApi(params.id)
       return response
     } catch (e) {
       return rejectWithValue(e)
@@ -101,7 +102,7 @@ export const postListUserShare = createAsyncThunk<
   boolean,
   {
     id: number
-    data: { share_type: number; user_ids: number[] }
+    data: { share_type: number; user_ids: number[]}
   }
 >(`${DATABASE_SLICE_NAME}/postListUserShare`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
