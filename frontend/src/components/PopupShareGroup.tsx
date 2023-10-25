@@ -134,6 +134,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
     if(usersShare && type === 'share') {
       setStateUserShare(usersShare)
     }
+    //eslint-disable-next-line
   }, [usersShare])
 
   useEffect(() => {

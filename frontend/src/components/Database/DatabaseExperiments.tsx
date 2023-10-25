@@ -457,6 +457,7 @@ const DatabaseExperiments = ({
 
   useEffect(() => {
     setCheckBoxAll(false)
+    //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(dataParamsFilter)])
 
   const handleOpenDialog = (
@@ -645,7 +646,7 @@ const DatabaseExperiments = ({
     )
   }, [dataExperiments.header?.graph_titles])
 
-  const ColumnPrivate = useMemo(() => {
+  const ColumnPrivate = () => {
     return [
       {
         field: 'share_type',
@@ -692,8 +693,7 @@ const DatabaseExperiments = ({
         ),
       },
     ]
-    //eslint-disable-next-line
-  }, [handlePublish])
+  }
 
   const columnsTable = [
     ...columns(
@@ -735,7 +735,7 @@ const DatabaseExperiments = ({
       <DataGrid
         columns={
           adminOrManager && user && !readonly
-            ? ([...columnsTable, ...ColumnPrivate] as any)
+            ? ([...columnsTable, ...ColumnPrivate()] as any)
             : (columnsTable as any)
         }
         sortModel={model.sort as GridSortItem[]}
