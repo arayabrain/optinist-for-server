@@ -7,7 +7,8 @@ import {
   getListShare,
   postListUserShare,
   postPublish,
-  postPublishAll, postMultiShare,
+  postPublishAll,
+  postMultiShare,
 } from './DatabaseActions'
 import {DATABASE_SLICE_NAME, DatabaseDTO, ListShareGroup, ListShareUser} from './DatabaseType'
 

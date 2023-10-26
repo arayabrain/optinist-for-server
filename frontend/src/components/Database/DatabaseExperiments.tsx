@@ -608,9 +608,7 @@ const DatabaseExperiments = ({
         listCheck
       }))
     }
-    finally {
-
-    }
+    finally {}
   }
 
   const getColumns = useMemo(() => {
@@ -748,7 +746,7 @@ const DatabaseExperiments = ({
         filterModel={model.filter}
         onFilterModelChange={handleFilter as any}
         onRowClick={handleRowClick}
-        sx={{ height: 'calc(100% - 50px)'}}
+        sx={{ height: 'calc(100% - 50px)' }}
       />
       {dataExperiments?.items.length > 0 ? (
         <PaginationCustom

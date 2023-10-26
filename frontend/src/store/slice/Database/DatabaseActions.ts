@@ -3,7 +3,8 @@ import {
   DATABASE_SLICE_NAME,
   DatabaseDTO,
   DatabaseParams,
-  ListShareDTO, MultiShareType,
+  ListShareDTO,
+  MultiShareType,
 } from './DatabaseType'
 import {
   getCellsApi,
@@ -11,7 +12,8 @@ import {
   getExperimentsApi,
   getExperimentsPublicApi,
   getListShareApi,
-  postListUserShareApi, postMultiShareApi,
+  postListUserShareApi,
+  postMultiShareApi,
   postPublishAllApi,
   postPublishApi,
 } from 'api/database'
