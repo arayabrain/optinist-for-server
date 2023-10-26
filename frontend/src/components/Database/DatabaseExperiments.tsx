@@ -93,10 +93,11 @@ const columns = (
   cellPath: string,
   navigate: (path: string) => void,
   user: boolean,
+  adminOrManager: boolean,
   readonly?: boolean,
   loading: boolean = false,
 ) => [
-  {
+  adminOrManager && user && {
     field: 'checkbox',
     renderHeader: () => (
       <Checkbox checked={checkBoxAll} onChange={(e: any) => {
@@ -705,6 +706,7 @@ const DatabaseExperiments = ({
       cellPath,
       navigate,
       !!user,
+      !!adminOrManager,
       readonly,
       loading,
     ),
@@ -714,7 +716,7 @@ const DatabaseExperiments = ({
   return (
     <DatabaseExperimentsWrapper>
       {
-        user ?
+        adminOrManager ?
           (<WrapperIcons>
               <GroupAddIcon
                 sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
@@ -819,8 +821,12 @@ const Content = styled('textarea')(() => ({
 const WrapperIcons = styled(Box)(() => ({
   display: 'flex',
   justifyContent: 'end',
-  gap: 10,
+  gap: 30,
   marginBottom: 10,
+  'svg': {
+    width: 40,
+    height: 40,
+  },
   'svg: hover': {
     cursor: 'pointer'
   }
