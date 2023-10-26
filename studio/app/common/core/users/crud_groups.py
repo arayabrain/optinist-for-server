@@ -92,11 +92,10 @@ def group_set_users(
 def group_search_share(db: Session, keyword, organization_id: int) -> List[GroupModel]:
     MAX_RESPONSE_COUNT = 10
     try:
-        condition = UserModel.name.like("%{0}%".format(keyword))
         return (
             db.query(GroupModel)
             .filter(
-                GroupModel.group_user.any(condition),
+                GroupModel.name.like("%{0}%".format(keyword)),
                 GroupModel.organization_id == organization_id,
             )
             .limit(MAX_RESPONSE_COUNT)

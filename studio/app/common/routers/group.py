@@ -129,12 +129,12 @@ def search_group_users(
     "/search/share_groups",
     response_model=List[Group],
     description="""
-- Get a list of groups with whom content is shared.
+- Get a list of groups with name.
 - Note: Maximum of 10 responses. (security considerations)
 """,
 )
 def search_share_groups(
-    keyword: str = Query(default=None, description="partial match (user.name)"),
+    keyword: str = Query(default=None, description="partial match (group.name)"),
     db=Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
