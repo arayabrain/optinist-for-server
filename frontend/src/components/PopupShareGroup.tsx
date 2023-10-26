@@ -93,7 +93,7 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
               <Tooltip title={`${item.name} ${type === 'users' ? item.email : ''}`} placement={'right-start'}>
                 <Box sx={{ width: '90%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {`${item.name} `}
-                  {type === 'users' ? <span style={{ paddingLeft: 20 }}>{item.email}</span> : ''}
+                  {type === 'users' ? <span>{`(${item.email})`}</span> : ''}
                 </Box>
               </Tooltip>
               {isSelected ? <CheckIcon style={{ fontSize: 14 }}/> : null}
@@ -311,7 +311,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         {isWorkspace ? null : (
           <DialogContent>
             <DialogContentText sx={{fontSize: 16, fontWeight: 400}}>
-              <ul><li>{type === 'share' ? `Experiment ID: ${id}` : `Experiment ${listCheck?.length}`}</li></ul>
+              <ul><li>{type === 'share' ? `Experiment ID: ${data?.expId}` : `Experiment ${listCheck?.length}`}</li></ul>
             </DialogContentText>
             <DialogContentText>
               <FormControl>
@@ -365,7 +365,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
-                  />: <p>No data</p>
+                  />: <p>No share</p>
                 }
               </WrapperPermitted>
               : null
@@ -405,7 +405,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
                     hideFooterPagination
                     hideFooter
                     columnHeaderHeight={0}
-                  />: <p>No data</p>
+                  />: <p>No share</p>
                 }
               </WrapperPermitted>
               : null

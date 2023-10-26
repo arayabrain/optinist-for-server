@@ -821,7 +821,7 @@ const Content = styled('textarea')(() => ({
 const WrapperIcons = styled(Box)(() => ({
   display: 'flex',
   justifyContent: 'end',
-  gap: 30,
+  gap: 20,
   marginBottom: 10,
   'svg': {
     width: 40,
