@@ -20,8 +20,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
 import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
-import { selectListSearch, selectLoading } from "../store/slice/User/UserSelector";
-import { getListSearch } from "../store/slice/User/UserActions";
+import { selectListUserSearch, selectLoading } from "../store/slice/User/UserSelector";
+import { getListUserSearch } from "../store/slice/User/UserActions";
 import Loading from "./common/Loading";
 import { UserDTO } from "../api/users/UsersApiDTO";
 import CheckIcon from '@mui/icons-material/Check';
@@ -109,7 +109,7 @@ export const TableListSearch =
 }
 const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title}: PopupType) => {
   const [shareType, setShareType] = useState(data?.shareType || 0)
-  const usersSuggest = useSelector(selectListSearch)
+  const usersSuggest = useSelector(selectListUserSearch)
   const loading = useSelector(selectLoading)
   const [textSearch, setTextSearch] = useState('')
   const [stateUserShare, setStateUserShare] = useState(usersShare || undefined)
@@ -118,7 +118,6 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
 
   useEffect(() => {
     if(usersShare) {
-      // setUserIdsSelected(usersShare.users.map(user => user.id));
       setStateUserShare(usersShare)
     }
   }, [usersShare])
@@ -130,7 +129,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       return
     }
     timeout.current = setTimeout(() => {
-      dispatch(getListSearch({keyword: textSearch}))
+      dispatch(getListUserSearch({keyword: textSearch}))
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch])
