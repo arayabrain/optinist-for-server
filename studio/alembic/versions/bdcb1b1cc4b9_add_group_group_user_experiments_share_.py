@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision = "bdcb1b1cc4b9"
+revision = "c933537b9064"
 down_revision = "84296a33ffd2"
 branch_labels = None
 depends_on = None
@@ -22,6 +22,7 @@ def upgrade() -> None:
         "groups",
         sa.Column("id", mysql.BIGINT(unsigned=True), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=False),
+        sa.Column("organization_id", mysql.BIGINT(unsigned=True), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(),
@@ -29,6 +30,11 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.ForeignKeyConstraint(
+            ["organization_id"],
+            ["organization.id"],
+        ),
+        sa.UniqueConstraint("organization_id", "name", name="idx_name_org_id"),
     )
     op.create_table(
         "experiments_share_groups",
