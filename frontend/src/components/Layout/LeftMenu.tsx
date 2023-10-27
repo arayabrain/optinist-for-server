@@ -38,14 +38,9 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
     navigate('/console/workspaces')
   }
 
-  const onClickAccountManager = () => {
+  const onClickAdministration = () => {
     handleDrawerClose()
-    navigate('/console/account-manager')
-  }
-
-  const onClickGroupManager = () => {
-    handleDrawerClose()
-    navigate('/console/group-manager')
+    navigate('/console/administration')
   }
 
   const onClickOpenSite = () => {
@@ -85,20 +80,12 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             {
               admin ? (
                 <>
-                  <ListItem key="account-manager" disablePadding>
-                    <ListItemButton onClick={onClickAccountManager}>
+                  <ListItem key="administration" disablePadding>
+                    <ListItemButton onClick={onClickAdministration}>
                       <ListItemIcon>
                         <ManageAccountsIcon />
                       </ListItemIcon>
-                      <ListItemText primary="Account Manager" />
-                    </ListItemButton>
-                  </ListItem>
-                  <ListItem key="group-manager" disablePadding>
-                    <ListItemButton onClick={onClickGroupManager}>
-                      <ListItemIcon>
-                        <ManageAccountsIcon />
-                      </ListItemIcon>
-                      <ListItemText primary="Group Manager" />
+                      <ListItemText primary="Administration" />
                     </ListItemButton>
                   </ListItem>
                 </>

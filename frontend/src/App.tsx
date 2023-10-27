@@ -18,6 +18,7 @@ import PublicCells from 'pages/PublicDatabase/PublicCells'
 import Cells from 'pages/Database/Cells'
 import AccountManager from "./pages/AccountManager";
 import GroupManager from "./pages/GroupManager";
+import Administration from "./pages/Administration";
 
 const App: React.FC = () => {
   return (
@@ -50,6 +51,7 @@ const App: React.FC = () => {
               <Route path="/console/account-manager" element={<AccountManager />} />
               <Route path="/console/experiments" element={<Experiments />} />
               <Route path="/console/group-manager" element={<GroupManager />} />
+              <Route path="/console/administration" element={<Administration />} />
               <Route path="/console/cells" element={<Cells />} />
               <Route path="/console/workspaces">
                 <Route path="" element={<Workspaces />} />
