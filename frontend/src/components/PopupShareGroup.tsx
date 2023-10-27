@@ -228,10 +228,10 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         newUserIds = []
         newListGroups = []
       }
-      else if(shareType === SHARE.USERS && newUserIds.length < 1 && newListGroups.length < 1) {
-        newType = 0
+      else if(newUserIds.length < 1 && newListGroups.length < 1) {
+        newType = SHARE.NOSHARE
       }
-      else if(newUserIds.length > 0) newType = SHARE.USERS
+      else if(newUserIds.length > 0 || newListGroups.length > 1) newType = SHARE.USERS
       await dispatch(postListUserShare({id: id as number , data: {user_ids: newUserIds as number[], group_ids: newListGroups, share_type: newType }}))
     }
     setStateUserShare({
@@ -311,7 +311,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         {isWorkspace ? null : (
           <DialogContent>
             <DialogContentText sx={{fontSize: 16, fontWeight: 400}}>
-              <ul><li>{type === 'share' ? `Experiment ID: ${data?.expId}` : `Experiment ${listCheck?.length}`}</li></ul>
+              <ul><li>{type === 'share' ? `Experiment ID: ${data?.expId}` : `Experiments ${listCheck?.length}`}</li></ul>
             </DialogContentText>
             <DialogContentText>
               <FormControl>
@@ -371,7 +371,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
               : null
           }
           {
-            (shareType !== SHARE.ORGANIZATION || isWorkspace) ?
+            (shareType !== SHARE.ORGANIZATION) ?
               <WrapperPermitted>
                 <Box style={{position: 'relative'}}>
                   <TitleCustom>Users</TitleCustom>
