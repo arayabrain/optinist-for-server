@@ -13,8 +13,8 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import {TableListSearch} from "./PopupShare";
 import {useDispatch, useSelector} from "react-redux";
 import {resetUserSearch} from "../store/slice/User/UserSlice";
-import {selectListSearch} from "../store/slice/User/UserSelector";
-import {getListSearch} from "../store/slice/User/UserActions";
+import {selectListUserSearch} from "../store/slice/User/UserSelector";
+import {getListUserSearch} from "../store/slice/User/UserActions";
 import {WAITING_TIME} from "../@types";
 import {getListUserGroup, postListSet} from "../store/slice/GroupManager/GroupActions";
 import {GroupManagerParams} from "../store/slice/GroupManager/GroupManagerType";
@@ -86,7 +86,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
   const dispatch = useDispatch()
 
   const listUserInit  = useSelector(selectListUserGroup)
-  const usersSuggest = useSelector(selectListSearch)
+  const usersSuggest = useSelector(selectListUserSearch)
 
   const [textSearch, setTextSearch] = useState({
     setGroup: '',
@@ -126,7 +126,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
       return
     }
     timeout.current = setTimeout(() => {
-      dispatch(getListSearch({keyword: textSearch.searchAdd}))
+      dispatch(getListUserSearch({keyword: textSearch.searchAdd}))
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch.searchAdd, infoGroup.open])
