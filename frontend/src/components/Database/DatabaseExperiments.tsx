@@ -715,25 +715,29 @@ const DatabaseExperiments = ({
 
   return (
     <DatabaseExperimentsWrapper>
-      <Box sx={{ height: 40 }}>
-        {
-          adminOrManager ?
-            (<WrapperIcons>
-              {
-                listCheck.length > 0 ? (
-                  <>
-                    <GroupAddIcon
-                      sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
-                      onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
-                    />
-                    <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
-                    <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
-                  </>
-                ): null
-              }
-            </WrapperIcons>) : null
-        }
-      </Box>
+      {
+        user ? (
+          <Box sx={{ height: 40 }}>
+            {
+              adminOrManager ?
+                (<WrapperIcons>
+                  {
+                    listCheck.length > 0 ? (
+                      <>
+                        <GroupAddIcon
+                          sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
+                          onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
+                        />
+                        <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
+                        <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
+                      </>
+                    ): null
+                  }
+                </WrapperIcons>) : null
+            }
+          </Box>
+        ): null
+      }
       <DataGrid
         columns={
           adminOrManager && user && !readonly
