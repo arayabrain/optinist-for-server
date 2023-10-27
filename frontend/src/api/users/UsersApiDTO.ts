@@ -7,6 +7,10 @@ export type UserDTO = {
     id: number
     name: string
   }
+  groups?: {
+    id: number
+    name: string
+  }[]
   role_id?: number
   created_at?: string
   updated_at?: string
@@ -38,6 +42,7 @@ export type UpdateUserDTO = {
   role_id?: number,
   name: string,
   email: string
+  group_ids?: number[]
 }
 
 export type UpdateUserPasswordDTO = {
