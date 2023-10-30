@@ -560,26 +560,15 @@ def multiple_publish_db_experiment(
     db: Session = Depends(get_db),
     current_admin_user: User = Depends(get_admin_data_user),
 ):
-    exps = (
-        db.query(optinist_model.Experiment)
-        .filter(
-            optinist_model.Experiment.id.in_(ids),
-        )
-        .join(
-            common_model.Organization,
-            common_model.Organization.id == optinist_model.Experiment.organization_id,
-        )
-        .join(
-            common_model.User,
-            common_model.User.organization_id == common_model.Organization.id,
-        )
-        .filter(
-            common_model.User.uid == current_admin_user.uid,
-        )
-        .all()
+    db.query(optinist_model.Experiment).filter(
+        optinist_model.Experiment.id.in_(ids),
+        common_model.Organization.id == optinist_model.Experiment.organization_id,
+        common_model.User.organization_id == common_model.Organization.id,
+        common_model.User.uid == current_admin_user.uid,
+    ).update(
+        {optinist_model.Experiment.publish_status: int(flag == PublishFlags.on)},
+        synchronize_session=False,
     )
-    for exp in exps:
-        exp.publish_status = int(flag == PublishFlags.on)
     db.commit()
     return True
 
