@@ -728,11 +728,10 @@ const DatabaseExperiments = ({
           <Box sx={{ height: 40 }}>
             {
               adminOrManager ?
-                (<WrapperIcons>
+                (<WrapperIcons check={!!(listCheck.length > 0)}>
                   <Tooltip title={'bulk share'} placement={'top'}>
                     <Button
                       size={'large'}
-                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
                       onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
                     >
@@ -742,7 +741,6 @@ const DatabaseExperiments = ({
                   <Tooltip title={'bulk publish'} placement={'top'}>
                     <Button
                       size={'large'}
-                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
                       onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
                     >
@@ -752,7 +750,6 @@ const DatabaseExperiments = ({
                   <Tooltip title={'bulk unpublish'} placement={'top'}>
                     <Button
                       size={'large'}
-                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
                       onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
                     >
@@ -851,12 +848,15 @@ const Content = styled('textarea')(() => ({
   height: 'fit-content',
 }))
 
-const WrapperIcons = styled(Box)(() => ({
+const WrapperIcons = styled(Box, {
+  shouldForwardProp: (props) => props !== 'check',
+  })<{ check: boolean }>(( { check }) => ({
   display: 'flex',
   justifyContent: 'end',
   gap: 10,
   height: 40,
   'svg': {
+    color: check ? 'primary' : '#b0a6a6',
     width: 35,
     height: 35,
   },
