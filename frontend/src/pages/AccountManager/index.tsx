@@ -30,7 +30,7 @@ export type FormDataType = {
   role_id?: string
   name?: string
   confirmPassword?: string
-  group_ids?: string[] | number[] | string
+  group_ids?: string[] | number[] | string | null
 }
 
 type ModalComponentProps = {
@@ -200,17 +200,24 @@ const ModalComponent =
       })
       let newForm = { ...formData}
       Object.keys(formData).map(key => {
-        if(!(formData as any)[key]) {
-          (newForm as any)[key] = null
+        if(!(formData as any)[key] || (formData as any)[key] === (dataEdit as any)[key]) {
+          if(key === 'name') (newForm as any)[key] = ''
+          else (newForm as any)[key] = null
         }
         return undefined
       })
-      await onSubmitEdit(dataEdit?.id, { ...newForm, group_ids: newGroup.filter(Boolean) as number[]})
+      await onSubmitEdit(
+          dataEdit?.id,
+          {
+            ...newForm,
+            group_ids: JSON.stringify(formData.group_ids) === JSON.stringify(dataEdit?.group_ids) ? null : newGroup.filter(Boolean) as number[]
+          })
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
     }
   }
+
   const onCancel = () => {
     setOpenModal(false)
   }
@@ -504,7 +511,7 @@ const AccountManager = () => {
       const data = await dispatch(updateUser(
         {
           id: id as number,
-          data: {name: newData.name as string, email: newData.email as string, role_id: newRole, group_ids: group_ids as number[]},
+          data: {name: newData.name as string, email: newData.email as string, role_id: !role_id ? null : newRole, group_ids: group_ids as number[]},
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
