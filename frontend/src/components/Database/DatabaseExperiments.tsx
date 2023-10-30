@@ -750,7 +750,7 @@ const DatabaseExperiments = ({
                           <Button
                             size={'large'}
                             color={'primary'}
-                            onClick={() => handleOpenPublishAll('Bulk Unpublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
+                            onClick={() => handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
                           >
                             <PublicOffIcon />
                           </Button>
