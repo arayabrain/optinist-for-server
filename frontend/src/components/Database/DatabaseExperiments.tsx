@@ -734,6 +734,7 @@ const DatabaseExperiments = ({
                       size={'large'}
                       onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                      disabled={!!(listCheck.length === 0)}
                     >
                       <GroupAddIcon sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }} />
                     </Button>
@@ -743,6 +744,7 @@ const DatabaseExperiments = ({
                       size={'large'}
                       onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                      disabled={!!(listCheck.length === 0)}
                     >
                       <PublicIcon />
                     </Button>
@@ -752,6 +754,7 @@ const DatabaseExperiments = ({
                       size={'large'}
                       onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                      disabled={!!(listCheck.length === 0)}
                     >
                       <PublicOffIcon />
                     </Button>
