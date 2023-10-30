@@ -10,7 +10,6 @@ import {DataGrid, GridCellParams, GridRenderCellParams, GridValidRowModel} from 
 import {ChangeEvent, MouseEvent as MouseEventReact, useEffect, useRef, useState} from "react";
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import CancelIcon from "@mui/icons-material/Cancel";
-import {TableListSearch} from "./PopupShare";
 import {useDispatch, useSelector} from "react-redux";
 import {resetUserSearch} from "../store/slice/User/UserSlice";
 import {selectListUserSearch} from "../store/slice/User/UserSelector";
@@ -94,13 +93,11 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     searchAdd: ''
   })
   const [listSet, setListSet] = useState<UserAdd[]>([])
-  const [listSearchAdd, setListSearchAdd] = useState<UserAdd[]>([])
   const [newListSetSearch, setNewListSetSearch] = useState<UserAdd[]>([])
   const [listIdNoAdd, setListIdNoAdd] = useState<number[]>([])
 
   useEffect(() => {
     if(!infoGroup.open) {
-      setListSearchAdd([])
       setTextSearch({
         setGroup: '',
         searchAdd: ''
@@ -148,21 +145,12 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     //eslint-disable-next-line
   }, [textSearch.setGroup])
 
-  const handleCloseSearch = (type: 'setGroup' | 'searchAdd') => {
-    setTextSearch({ ...textSearch, [type]: ''})
-    dispatch(resetUserSearch())
-  }
   const handleSearchSet = (event: ChangeEvent<HTMLInputElement>) => {
     setTextSearch({ ...textSearch, setGroup: event.target.value})
   }
 
   const handleSearchAdd = (event: ChangeEvent<HTMLInputElement>) => {
     setTextSearch({ ...textSearch, searchAdd: event.target.value})
-  }
-
-  const handleAddListUser = (user: any) => {
-    if(listSearchAdd.find(item => item.id === user.id)) return
-    setListSearchAdd([...listSearchAdd, user])
   }
 
   const handleShareFalse = (e: MouseEventReact<HTMLButtonElement>, params: GridRenderCellParams<GridValidRowModel>) => {
@@ -197,7 +185,6 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     else {
       setListSet(newArray)
     }
-    setListSearchAdd(pre => pre.filter(user => user.id !== userSet[0].id))
   }
 
   const handleClosePopup = () => {
@@ -279,10 +266,10 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
               />
               {
                 usersSuggest &&
-                usersSuggest.filter(user => !newListSetSearch.find(item => item.name === user.name || item.email === user.email)).length > 0 ? (
+                usersSuggest.filter(user => !newListSetSearch.find(item => (item.name === user.name || item.email === user.email) && item.id === user.id)).length > 0 ? (
                   <DataGrid
                     columns={columns(handleShareFalse, false).filter(Boolean) as any}
-                    rows={usersSuggest.filter(user => !newListSetSearch.find(item => (item.name === user.name || item.email === user.email) &&  item.id === user.id))}
+                    rows={usersSuggest.filter(user => !listSet.find(item => (item.name === user.name || item.email === user.email) && item.id === user.id))}
                     hideFooter
                     columnHeaderHeight={0}
                     sx={{ marginTop: 2}}
