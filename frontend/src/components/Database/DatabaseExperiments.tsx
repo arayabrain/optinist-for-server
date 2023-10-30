@@ -1,4 +1,4 @@
-import {Box, Checkbox, Input, styled} from '@mui/material'
+import {Box, Checkbox, Input, styled, Tooltip} from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch'
@@ -83,6 +83,7 @@ type DatabaseProps = {
 let timeout: NodeJS.Timeout | undefined = undefined
 
 const columns = (
+  listIdData: number[],
   setListCheck: (value: number[]) => void,
   listCheck: number[],
   dataExperiments: DatabaseType[],
@@ -99,10 +100,14 @@ const columns = (
 ) => [
   adminOrManager && user && {
     field: 'checkbox',
-    renderHeader: () => (
+    renderHeader: (params: any) => (
       <Checkbox checked={checkBoxAll} onChange={(e: any) => {
         setCheckBoxAll(e.target.checked)
-        if(!e.target.checked) setListCheck([])
+        if(!e.target.checked) {
+          let newListId: number[]
+          newListId = listCheck.filter(item => !listIdData.includes(item))
+          setListCheck([...newListId])
+        }
         else {
           const newList = dataExperiments.map(item => item.id)
           setListCheck([...listCheck, ...newList.filter(item => !listCheck.includes(item))])
@@ -322,7 +327,8 @@ const DatabaseExperiments = ({
     }),
   )
 
-  const [openPublishAll, setOpenPublishAll] = useState<{ title: string, open: boolean, type: 'on' | 'off'}>({
+  const [openPublishAll, setOpenPublishAll] = useState<{ title: string, open: boolean, type: 'on' | 'off', content: string}>({
+    content: '',
     title: '',
     open: false,
     type: 'on'
@@ -586,9 +592,10 @@ const DatabaseExperiments = ({
     })
   }
 
-  const handleOpenPublishAll = (title: string, type: 'on' | 'off') => {
+  const handleOpenPublishAll = (title: string, content: string, type: 'on' | 'off') => {
     setOpenPublishAll({
       title: title,
+      content: content,
       open: true,
       type: type
     })
@@ -696,6 +703,7 @@ const DatabaseExperiments = ({
 
   const columnsTable = [
     ...columns(
+      dataExperiments.items.map(item => item.id),
       setListCheck,
       listCheck,
       dataExperiments?.items,
@@ -724,18 +732,29 @@ const DatabaseExperiments = ({
                   {
                     listCheck.length > 0 ? (
                       <>
-                        <Button size={'large'} color={'primary'}>
-                          <GroupAddIcon
-                              sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
-                              onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
-                          />
-                        </Button>
-                        <Button size={'large'} color={'primary'}>
-                          <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
-                        </Button>
-                        <Button size={'large'} color={'primary'}>
-                          <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
-                        </Button>
+                        <Tooltip title={'bulk share'} placement={'top'}>
+                          <Button size={'large'} color={'primary'} onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}>
+                            <GroupAddIcon sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }} />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title={'bulk publish'} placement={'top'}>
+                          <Button
+                            size={'large'}
+                            color={'primary'}
+                            onClick={() => handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
+                          >
+                            <PublicIcon />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title={'bulk unpublish'} placement={'top'}>
+                          <Button
+                            size={'large'}
+                            color={'primary'}
+                            onClick={() => handleOpenPublishAll('Bulk Unpublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
+                          >
+                            <PublicOffIcon />
+                          </Button>
+                        </Tooltip>
                       </>
                     ): null
                   }
@@ -813,6 +832,7 @@ const DatabaseExperiments = ({
       <PopupConfirm
         open={openPublishAll.open}
         title={openPublishAll.title}
+        content={openPublishAll.content}
         handleClose={handlePublishCancel}
         handleOk={handlePublishOk}
       />

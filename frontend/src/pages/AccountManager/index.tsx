@@ -731,6 +731,7 @@ const AccountManager = () => {
 
   return (
     <AccountManagerWrapper>
+      <AccountManagerTitle>Group Manager</AccountManagerTitle>
       <Box
         sx={{
           display: 'flex',
@@ -851,5 +852,7 @@ const ButtonModal = styled(Box)(({ theme }) => ({
   justifyContent: 'end',
   margin: theme.spacing(5),
 }))
+
+const AccountManagerTitle = styled('h1')(({ theme }) => ({}))
 
 export default AccountManager

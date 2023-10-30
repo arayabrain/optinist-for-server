@@ -424,7 +424,8 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         loading ? <Loading /> : null
       }
       <PopupConfirm
-        title={`Update the share settings of ${listCheck?.length} records at once. Is this OK?`}
+        title={'Bulk Update'}
+        content={`Update the share settings of ${listCheck?.length} records at once. Is this OK?`}
         open={openConfirm}
         handleClose={() => setOpenConfirm(false)}
         handleOk={handleOkShareMulti}

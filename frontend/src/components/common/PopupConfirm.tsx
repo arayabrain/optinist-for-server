@@ -3,14 +3,16 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import {DialogContent, DialogContentText} from "@mui/material";
+import DialogTitle from "@mui/material/DialogTitle";
 
 type ConfirmProps = {
-  title: string
+  title?: string
+  content: string
   open: boolean
   handleClose: () => void
   handleOk: () => void
 }
-const PopupConfirm = ({ title, open, handleClose, handleOk }: ConfirmProps) => {
+const PopupConfirm = ({ title, content, open, handleClose, handleOk }: ConfirmProps) => {
 
   return (
     <Dialog
@@ -19,9 +21,16 @@ const PopupConfirm = ({ title, open, handleClose, handleOk }: ConfirmProps) => {
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
     >
+      {
+        title ? (
+          <DialogTitle>
+            {title}
+          </DialogTitle>
+        ): null
+      }
       <DialogContent>
         <DialogContentText>
-          {title}
+          {content}
         </DialogContentText>
       </DialogContent>
       <DialogActions>

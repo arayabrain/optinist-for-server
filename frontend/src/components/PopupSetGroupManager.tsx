@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import {Box, Input, styled} from "@mui/material";
-import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
+import {DataGrid, GridCellParams, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {ChangeEvent, MouseEvent as MouseEventReact, useEffect, useRef, useState} from "react";
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -87,6 +87,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
 
   const listUserInit  = useSelector(selectListUserGroup)
   const usersSuggest = useSelector(selectListUserSearch)
+  const [userSet, setUserSet] = useState<UserAdd[]>([])
 
   const [textSearch, setTextSearch] = useState({
     setGroup: '',
@@ -179,20 +180,24 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     }).concat(newList)
   }
 
+  const onCellClick = (params: GridCellParams) => {
+    setUserSet([{ ...params.row}])
+  }
   const handleAddListSet = () => {
-    const newList: UserAdd[] = listSearchAdd.map(item => ({...item, share: true}))
+    if(userSet.length === 0) return
+    const newList: UserAdd[] = userSet.map(item => ({...item, share: true}))
     setListIdNoAdd(pre => pre.filter(item => !newList.map(user => user.id).includes(item)))
     let newArray = checkDuplicate(newList, newListSetSearch)
 
     if(textSearch.setGroup) {
       setNewListSetSearch([...newArray])
-       newArray = checkDuplicate(newList, listSet)
+      newArray = checkDuplicate(newList, listSet)
       setListSet([...newArray])
     }
     else {
       setListSet(newArray)
     }
-    setListSearchAdd([])
+    setListSearchAdd(pre => pre.filter(user => user.id !== userSet[0].id))
   }
 
   const handleClosePopup = () => {
@@ -201,6 +206,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
       searchAdd: '',
       setGroup: ''
     })
+    setUserSet([])
     handleClose()
   }
 
@@ -218,6 +224,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
       searchAdd: '',
       setGroup: ''
     })
+    setUserSet([])
     handleClose()
   }
 
@@ -230,73 +237,73 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title" sx={{ fontSize: 24, fontWeight: 'bold'}}>
-          Set Group
+          Edit Group Users ({infoGroup.name})
         </DialogTitle>
         <DialogContent>
-          <Typography variant={'h5'}>
-            Group: {infoGroup.name}
-          </Typography>
-            <WrapperSet>
-              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%'}}>
-                <Input
-                  autoComplete={'Off'}
-                  id="inputSearchSet"
-                  placeholder={"Search"}
-                  value={textSearch.setGroup}
-                  onChange={handleSearchSet}
-                  sx={{ width: '100%'}}
-                />
-                {
-                  newListSetSearch?.length > 0 ? (
-                    <DataGrid
-                      columns={columns(handleShareFalse).filter(Boolean) as any}
-                      rows={newListSetSearch}
-                      hideFooter
-                      columnHeaderHeight={0}
-                      sx={{ marginTop: 2}}
-                    />
-                  ) : <p>No data</p>
-                }
-              </Box>
-              <KeyboardBackspaceIcon
-                sx={{ cursor: 'pointer' }}
-                onClick={handleAddListSet}
+          <WrapperSet>
+            <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%'}}>
+              <Typography variant={'h6'}>Current users</Typography>
+              <Input
+                autoComplete={'Off'}
+                id="inputSearchSet"
+                placeholder={"Search"}
+                value={textSearch.setGroup}
+                onChange={handleSearchSet}
+                sx={{ width: '100%'}}
               />
-              <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%' }}>
-                <Input
-                  autoComplete={'Off'}
-                  id="inputSearchAdd"
-                  placeholder={"Search"}
-                  value={textSearch.searchAdd}
-                  onChange={handleSearchAdd}
-                  sx={{ width: '100%'}}
-                />
-                {
-                  textSearch.searchAdd && usersSuggest ? (
-                    <TableListSearch
-                      onClose={() => handleCloseSearch('searchAdd')}
-                      usersSuggest={usersSuggest}
-                      handleAddListUser={handleAddListUser}
-                      listSearchAdd={listSearchAdd}
-                      width={'80%'}
-                      listSet={listSet}
-                      listIdNoAdd={listIdNoAdd}
-                    />
-                  ) : null
-                }
-                {
-                  listSearchAdd.length > 0 ? (
-                    <DataGrid
-                      columns={columns(handleShareFalse, false).filter(Boolean) as any}
-                      rows={listSearchAdd || []}
-                      hideFooter
-                      columnHeaderHeight={0}
-                      sx={{ marginTop: 2}}
-                      />
-                  ) : null
-                }
-              </Box>
-            </WrapperSet>
+              {
+                newListSetSearch?.length > 0 ? (
+                  <DataGrid
+                    columns={columns(handleShareFalse).filter(Boolean) as any}
+                    rows={newListSetSearch}
+                    hideFooter
+                    columnHeaderHeight={0}
+                    sx={{ marginTop: 2}}
+                  />
+                ) : <p>No data</p>
+              }
+            </Box>
+            <KeyboardBackspaceIcon
+              sx={{ cursor: userSet.length === 0 ? 'default' : 'pointer' }}
+              onClick={handleAddListSet}
+            />
+            <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%' }}>
+              <Typography variant={'h6'}>Search users</Typography>
+              <Input
+                autoComplete={'Off'}
+                id="inputSearchAdd"
+                placeholder={"Search"}
+                value={textSearch.searchAdd}
+                onChange={handleSearchAdd}
+                sx={{ width: '100%'}}
+              />
+              {
+                textSearch.searchAdd && usersSuggest ? (
+                  <TableListSearch
+                    onClose={() => handleCloseSearch('searchAdd')}
+                    usersSuggest={usersSuggest}
+                    handleAddListUser={handleAddListUser}
+                    listSearchAdd={listSearchAdd}
+                    width={'80%'}
+                    listSet={listSet}
+                    listIdNoAdd={listIdNoAdd}
+                  />
+                ) : null
+              }
+              {
+                listSearchAdd.length > 0 ? (
+                  <DataGrid
+                    columns={columns(handleShareFalse, false).filter(Boolean) as any}
+                    rows={listSearchAdd || []}
+                    hideFooter
+                    columnHeaderHeight={0}
+                    sx={{ marginTop: 2}}
+                    onCellClick={onCellClick}
+                  />
+                ) : null
+              }
+            </Box>
+          </WrapperSet>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePopup}>Cancel</Button>

@@ -458,28 +458,22 @@ const GroupManager = () => {
   return (
     <GroupManagerWrapper>
       <GroupManagerTitle>Group Manager</GroupManagerTitle>
-      {
-        admin ? (
-          <Box
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 2,
+            marginBottom: 2,
+          }}
+        >
+          <Button
             sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 2,
-              marginBottom: 2,
+              background: '#000000c4',
+              '&:hover': { backgroundColor: '#00000090' },
             }}
-          >
-            <Button
-              sx={{
-                background: '#000000c4',
-                '&:hover': { backgroundColor: '#00000090' },
-              }}
-              variant="contained"
-              onClick={handleOpenPopupNew}>Add</Button>
-          </Box>
-        ) : null
-      }
-      {
-        user ?
+            variant="contained"
+            onClick={handleOpenPopupNew}>Add</Button>
+        </Box>
           <Box
             sx={{
               minHeight: 500,
@@ -512,8 +506,7 @@ const GroupManager = () => {
               processRowUpdate={processRowUpdate as any}
               hideFooter={true}
             />
-          </Box> : null
-      }
+          </Box>
       {
         data && data?.items?.length > 0 ?
           <PaginationCustom
