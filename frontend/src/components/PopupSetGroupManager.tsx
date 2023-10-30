@@ -255,7 +255,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 newListSetSearch?.length > 0 ? (
                   <DataGrid
                     columns={columns(handleShareFalse).filter(Boolean) as any}
-                    rows={newListSetSearch}
+                    rows={newListSetSearch.filter(user => user.name.includes(textSearch.setGroup) || user.email.includes(textSearch.setGroup))}
                     hideFooter
                     columnHeaderHeight={0}
                     sx={{ marginTop: 2}}

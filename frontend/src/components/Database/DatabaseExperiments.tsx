@@ -743,7 +743,7 @@ const DatabaseExperiments = ({
                     <Button
                       size={'large'}
                       color={ listCheck.length > 0 ? 'primary' : 'inherit'}
-                      onClick={() => handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
+                      onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
                     >
                       <PublicIcon />
@@ -753,7 +753,7 @@ const DatabaseExperiments = ({
                     <Button
                       size={'large'}
                       color={ listCheck.length > 0 ? 'primary' : 'inherit'}
-                      onClick={() => handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
+                      onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
                       sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
                     >
                       <PublicOffIcon />
