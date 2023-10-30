@@ -252,7 +252,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 sx={{ width: '100%'}}
               />
               {
-                newListSetSearch?.length > 0 ? (
+                newListSetSearch?.filter(user => user.name.includes(textSearch.setGroup) || user.email.includes(textSearch.setGroup)).length > 0 ? (
                   <DataGrid
                     columns={columns(handleShareFalse).filter(Boolean) as any}
                     rows={newListSetSearch.filter(user => user.name.includes(textSearch.setGroup) || user.email.includes(textSearch.setGroup))}
@@ -278,23 +278,11 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 sx={{ width: '100%'}}
               />
               {
-                textSearch.searchAdd && usersSuggest ? (
-                  <TableListSearch
-                    onClose={() => handleCloseSearch('searchAdd')}
-                    usersSuggest={usersSuggest}
-                    handleAddListUser={handleAddListUser}
-                    listSearchAdd={listSearchAdd}
-                    width={'80%'}
-                    listSet={listSet}
-                    listIdNoAdd={listIdNoAdd}
-                  />
-                ) : null
-              }
-              {
-                listSearchAdd.length > 0 ? (
+                usersSuggest &&
+                usersSuggest.filter(user => !newListSetSearch.find(item => item.name === user.name || item.email === user.email)).length > 0 ? (
                   <DataGrid
                     columns={columns(handleShareFalse, false).filter(Boolean) as any}
-                    rows={listSearchAdd || []}
+                    rows={usersSuggest.filter(user => !newListSetSearch.find(item => item.name === user.name || item.email === user.email))}
                     hideFooter
                     columnHeaderHeight={0}
                     sx={{ marginTop: 2}}
