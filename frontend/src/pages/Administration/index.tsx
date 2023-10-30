@@ -1,6 +1,6 @@
 import {Box} from "@mui/material";
-import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import {BoxMenu, BoxWrapper, DashboardContent, DashboardWrapper, LinkWrapper, TitleMenu} from "../Dashboard";
+import {Group, Person} from "@mui/icons-material";
 
 const Administration = () => {
   return (
@@ -11,7 +11,7 @@ const Administration = () => {
           <LinkWrapper to="/console/account-manager">
             <BoxMenu>
               <Box>
-                <ManageAccountsIcon fontSize="large" />
+                <Person fontSize="large" />
                 <TitleMenu>Account Manager</TitleMenu>
               </Box>
             </BoxMenu>
@@ -19,7 +19,7 @@ const Administration = () => {
           <LinkWrapper to="/console/group-manager">
             <BoxMenu>
               <Box>
-                <ManageAccountsIcon fontSize="large" />
+                <Group fontSize="large" />
                 <TitleMenu>Group Manager</TitleMenu>
               </Box>
             </BoxMenu>

@@ -112,7 +112,7 @@ const columns = (
     ),
     sortable: false,
     filterable: false,
-    width: 160,
+    width: 70,
     type: 'string',
     renderCell: (params: { row: DatabaseType }) => (
       <Checkbox
@@ -724,12 +724,18 @@ const DatabaseExperiments = ({
                   {
                     listCheck.length > 0 ? (
                       <>
-                        <GroupAddIcon
-                          sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
-                          onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
-                        />
-                        <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
-                        <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
+                        <Button size={'large'} color={'primary'}>
+                          <GroupAddIcon
+                              sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }}
+                              onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
+                          />
+                        </Button>
+                        <Button size={'large'} color={'primary'}>
+                          <PublicIcon onClick={() => handleOpenPublishAll(`Publish ${listCheck.length} records at once. Is this OK?`, 'on')} />
+                        </Button>
+                        <Button size={'large'} color={'primary'}>
+                          <PublicOffIcon onClick={() => handleOpenPublishAll(`Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')} />
+                        </Button>
                       </>
                     ): null
                   }
@@ -827,14 +833,14 @@ const Content = styled('textarea')(() => ({
 const WrapperIcons = styled(Box)(() => ({
   display: 'flex',
   justifyContent: 'end',
-  gap: 20,
-  marginBottom: 10,
+  gap: 10,
+  height: 40,
   'svg': {
-    width: 40,
-    height: 40,
+    width: 35,
+    height: 35,
   },
-  'svg: hover': {
-    cursor: 'pointer'
+  'button: hover': {
+    backgroundColor: '#1976d257'
   }
 }))
 

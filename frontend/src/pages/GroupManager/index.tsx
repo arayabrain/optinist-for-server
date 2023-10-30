@@ -556,18 +556,14 @@ const GroupManagerWrapper = styled(Box)(({ theme }) => ({
 
 const GroupManagerTitle = styled('h1')(({ theme }) => ({}))
 
-const ButtonIcon = styled('button')(({ theme }) => ({
-  minWidth: '32px',
-  minHeight: '32px',
-  width: '32px',
-  height: '32px',
+const ButtonIcon = styled(Button)(({ theme }) => ({
+  minWidth: 32,
+  minHeight: 32,
+  width: 32,
+  height: 32,
   color: '#444',
   border: 'none',
   borderRadius: '50%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
   background: 'transparent',
   '&:hover': {
     background: 'rgb(239 239 239)',

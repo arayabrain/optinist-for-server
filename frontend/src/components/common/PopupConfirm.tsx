@@ -2,7 +2,7 @@ import * as React from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
+import {DialogContent, DialogContentText} from "@mui/material";
 
 type ConfirmProps = {
   title: string
@@ -19,9 +19,11 @@ const PopupConfirm = ({ title, open, handleClose, handleOk }: ConfirmProps) => {
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
     >
-      <DialogTitle id="alert-dialog-title">
-        {title}
-      </DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          {title}
+        </DialogContentText>
+      </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button onClick={handleOk} autoFocus variant="contained">

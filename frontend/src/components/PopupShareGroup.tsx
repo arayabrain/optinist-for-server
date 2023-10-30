@@ -213,7 +213,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
     //eslint-disable-next-line
   ], [JSON.stringify(stateUserShare?.users)])
 
-  const handleOke = async () => {
+  const handleOk = async () => {
     if(!stateUserShare) return
     if(type === 'multiShare') {
       setOpenConfirm(true)
@@ -231,7 +231,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
       else if(newUserIds.length < 1 && newListGroups.length < 1) {
         newType = SHARE.NOSHARE
       }
-      else if(newUserIds.length > 0 || newListGroups.length > 1) newType = SHARE.USERS
+      else if(newUserIds.length > 0 || newListGroups.length > 0) newType = SHARE.USERS
       await dispatch(postListUserShare({id: id as number , data: {user_ids: newUserIds as number[], group_ids: newListGroups, share_type: newType }}))
     }
     setStateUserShare({
@@ -417,7 +417,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
           }}>
             Cancel
           </Button>
-          <Button onClick={handleOke}>Ok</Button>
+          <Button onClick={handleOk}>Ok</Button>
         </DialogActions>
       </DialogCustom>
       {
