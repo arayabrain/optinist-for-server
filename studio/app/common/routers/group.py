@@ -134,7 +134,7 @@ def search_group_users(
 """,
 )
 def search_share_groups(
-    keyword: str = Query(default=None, description="partial match (group.name)"),
+    keyword: str = Query(default="", description="partial match (group.name)"),
     db=Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
