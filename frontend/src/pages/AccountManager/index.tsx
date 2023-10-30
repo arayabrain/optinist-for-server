@@ -731,7 +731,7 @@ const AccountManager = () => {
 
   return (
     <AccountManagerWrapper>
-      <AccountManagerTitle>Group Manager</AccountManagerTitle>
+      <AccountManagerTitle>Account Manager</AccountManagerTitle>
       <Box
         sx={{
           display: 'flex',

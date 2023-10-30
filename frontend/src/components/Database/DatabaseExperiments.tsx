@@ -729,35 +729,36 @@ const DatabaseExperiments = ({
             {
               adminOrManager ?
                 (<WrapperIcons>
-                  {
-                    listCheck.length > 0 ? (
-                      <>
-                        <Tooltip title={'bulk share'} placement={'top'}>
-                          <Button size={'large'} color={'primary'} onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}>
-                            <GroupAddIcon sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }} />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip title={'bulk publish'} placement={'top'}>
-                          <Button
-                            size={'large'}
-                            color={'primary'}
-                            onClick={() => handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
-                          >
-                            <PublicIcon />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip title={'bulk unpublish'} placement={'top'}>
-                          <Button
-                            size={'large'}
-                            color={'primary'}
-                            onClick={() => handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
-                          >
-                            <PublicOffIcon />
-                          </Button>
-                        </Tooltip>
-                      </>
-                    ): null
-                  }
+                  <Tooltip title={'bulk share'} placement={'top'}>
+                    <Button
+                      size={'large'}
+                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
+                      onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
+                      sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <GroupAddIcon sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }} />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title={'bulk publish'} placement={'top'}>
+                    <Button
+                      size={'large'}
+                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
+                      onClick={() => handleOpenPublishAll('Bulk Publish', `Publish ${listCheck.length} records at once. Is this OK?`, 'on')}
+                      sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <PublicIcon />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title={'bulk unpublish'} placement={'top'}>
+                    <Button
+                      size={'large'}
+                      color={ listCheck.length > 0 ? 'primary' : 'inherit'}
+                      onClick={() => handleOpenPublishAll('Bulk UnPublish', `Unpublish ${listCheck.length} records at once. Is this OK?`, 'off')}
+                      sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <PublicOffIcon />
+                    </Button>
+                  </Tooltip>
                 </WrapperIcons>) : null
             }
           </Box>
