@@ -319,8 +319,7 @@ async def search_db_experiments(
                         or_(
                             optinist_model.ExperimentShareUser.user_id
                             == current_user.id,
-                            optinist_model.ExperimentShareGroup.group_id
-                            == common_model.UserGroup.group_id,
+                            common_model.UserGroup.user_id == current_user.id,
                         ),
                     ),
                 )
@@ -448,8 +447,7 @@ async def search_db_cells(
                         or_(
                             optinist_model.ExperimentShareUser.user_id
                             == current_user.id,
-                            optinist_model.ExperimentShareGroup.group_id
-                            == common_model.UserGroup.group_id,
+                            common_model.UserGroup.user_id == current_user.id,
                         ),
                     ),
                 )
