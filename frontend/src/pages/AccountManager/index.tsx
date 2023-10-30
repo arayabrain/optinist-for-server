@@ -96,6 +96,7 @@ const ModalComponent =
   }, [listGroup])
 
   const validateEmail = (value: string): string => {
+    if(dataEdit) return ''
     const error = validateField('email', 255, value)
     if (error) return error
     if (!regexEmail.test(value)) {
@@ -109,7 +110,7 @@ const ModalComponent =
       isConfirm: boolean = false,
       values?: FormDataType,
   ): string => {
-    if (!value && !dataEdit?.uid) return 'This field is required'
+    if (!value && !dataEdit?.uid) return dataEdit ? '' : 'This field is required'
     const errorLength = validateLength('password', 255, value)
     if (errorLength) {
       return errorLength
@@ -128,7 +129,7 @@ const ModalComponent =
   }
 
   const validateField = (name: string, length: number, value?: string) => {
-    if (!value) return 'This field is required'
+    if (!value) return dataEdit ? '' : 'This field is required'
     return validateLength(name, length, value)
   }
 
