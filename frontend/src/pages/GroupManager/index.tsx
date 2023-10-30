@@ -477,7 +477,7 @@ const GroupManager = () => {
           <Box
             sx={{
               minHeight: 500,
-              height: 'calc(100vh - 350px)',
+              height: 'calc(100vh - 360px)',
             }}
           >
             <DataGrid

@@ -1,4 +1,5 @@
 import {
+  Box,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -6,6 +7,7 @@ import {
   Typography,
 } from '@mui/material'
 import { FC, FocusEvent } from 'react'
+import CheckIcon from "@mui/icons-material/Check";
 
 type SelectErrorProps = {
   value?: string | string[]
@@ -67,7 +69,12 @@ const SelectError: FC<SelectErrorProps> =
           {options.map((item: string, index) => {
             return (
               <MenuItem key={index} value={item} sx={{ maxWidth: 270, width: '95%' }}>
-                <SpanCustom>{item}</SpanCustom>
+                <SpanCustom>
+                  <Box sx={{ width: '90%' }}>{item}</Box>
+                  {
+                    value && value.includes(item) ? <CheckIcon /> : null
+                  }
+                </SpanCustom>
               </MenuItem>
             )
           })}
@@ -98,7 +105,8 @@ const TextError = styled(Typography)({
 })
 
 const SpanCustom = styled('span')({
-  display: 'inline-block',
+  width: '100%',
+  display: 'flex',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
 })

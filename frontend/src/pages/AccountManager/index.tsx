@@ -752,7 +752,7 @@ const AccountManager = () => {
         </Button>
       </Box>
       <DataGrid
-        sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
+        sx={{ minHeight: 400, height: 'calc(100vh - 360px)'}}
         columns={columns as any}
         rows={listUser?.items || []}
         filterMode={'server'}
@@ -811,6 +811,7 @@ const ALink = styled('a')({
 })
 
 const Modal = styled(Box)(({ theme }) => ({
+  overflow: 'hidden',
   position: 'fixed',
   top: 0,
   left: 0,
