@@ -1,4 +1,4 @@
-import {Box, Checkbox, Input, styled, Tooltip} from '@mui/material'
+import {Box, Checkbox, IconButton, Input, styled, Tooltip} from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch'
@@ -731,38 +731,47 @@ const DatabaseExperiments = ({
                 (<WrapperIcons check={!!(listCheck.length > 0)}>
                   <Tooltip title={'bulk share'} placement={'top'}>
                     <span>
-                      <Button
+                      <IconButton
                         size={'large'}
                         onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
-                        sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
                         disabled={!!(listCheck.length === 0)}
                       >
-                        <GroupAddIcon sx={{ cursor: listCheck.length === 0 ? 'default !important' : 'pointer' }} />
-                      </Button>
+                        <GroupAddIcon />
+                      </IconButton>
                     </span>
                   </Tooltip>
                   <Tooltip title={'bulk publish'} placement={'top'}>
                     <span>
-                      <Button
+                      <IconButton
                         size={'large'}
                         onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk Publish', `Publish "${listCheck.length} records" at once. Is this OK?`, 'on')}
-                        sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
                         disabled={!!(listCheck.length === 0)}
                       >
                         <PublicIcon />
-                      </Button>
+                      </IconButton>
                     </span>
                   </Tooltip>
                   <Tooltip title={'bulk unpublish'} placement={'top'}>
                     <span>
-                      <Button
+                      <IconButton
                         size={'large'}
                         onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk UnPublish', `Unpublish "${listCheck.length} records" at once. Is this OK?`, 'off')}
-                        sx={{ cursor: listCheck.length > 0 ? 'pointer' : 'default' }}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
                         disabled={!!(listCheck.length === 0)}
                       >
                         <PublicOffIcon />
-                      </Button>
+                      </IconButton>
                     </span>
                   </Tooltip>
                 </WrapperIcons>) : null
@@ -863,11 +872,14 @@ const WrapperIcons = styled(Box, {
   display: 'flex',
   justifyContent: 'end',
   gap: 10,
-  height: 40,
+  height: 50,
   'svg': {
-    color: check ? 'primary' : '#d0d0d0',
     width: 35,
     height: 35,
+  },
+  'button': {
+    height: 50,
+    width: 50,
   },
   'button: hover': {
     backgroundColor: '#1976d257'
