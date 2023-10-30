@@ -282,7 +282,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 usersSuggest.filter(user => !newListSetSearch.find(item => item.name === user.name || item.email === user.email)).length > 0 ? (
                   <DataGrid
                     columns={columns(handleShareFalse, false).filter(Boolean) as any}
-                    rows={usersSuggest.filter(user => !newListSetSearch.find(item => item.name === user.name || item.email === user.email))}
+                    rows={usersSuggest.filter(user => !newListSetSearch.find(item => (item.name === user.name || item.email === user.email) &&  item.id === user.id))}
                     hideFooter
                     columnHeaderHeight={0}
                     sx={{ marginTop: 2}}
