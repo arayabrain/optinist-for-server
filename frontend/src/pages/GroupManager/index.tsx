@@ -86,7 +86,7 @@ const columns = (
     flex: 2,
     minWidth: 100,
     editable: true,
-    filterable: true,
+    filterable: false,
     filterOperators: [
       {
         label: 'Contains',
