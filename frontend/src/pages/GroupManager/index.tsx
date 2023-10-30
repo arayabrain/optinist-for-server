@@ -10,6 +10,7 @@ import {
   Input,
   Tooltip,
   Typography,
+  IconButton,
 } from '@mui/material'
 import {
   GridEventListener,
@@ -133,9 +134,9 @@ const columns = (
           </Tooltip>
           {
             admin ? (
-              <ButtonIcon onClick={() => onEdit?.(row.id)}>
+              <IconButton onClick={() => onEdit?.(row.id)}>
                 <EditIcon style={{ fontSize: 16 }} />
-              </ButtonIcon>
+              </IconButton>
             ): null
           }
         </Box>
@@ -182,9 +183,9 @@ const columns = (
     sortable: false,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
       params.row.users_count === 0 ? (
-        <ButtonIcon onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
+        <IconButton onClick={() => handleOpenPopupDel(params.row.id, params.row.name)}>
           <DeleteIcon color='error' />
-        </ButtonIcon>
+        </IconButton>
       ) : null
   },
 ]
@@ -548,19 +549,5 @@ const GroupManagerWrapper = styled(Box)(({ theme }) => ({
 }))
 
 const GroupManagerTitle = styled('h1')(({ theme }) => ({}))
-
-const ButtonIcon = styled(Button)(({ theme }) => ({
-  minWidth: 32,
-  minHeight: 32,
-  width: 32,
-  height: 32,
-  color: '#444',
-  border: 'none',
-  borderRadius: '50%',
-  background: 'transparent',
-  '&:hover': {
-    background: 'rgb(239 239 239)',
-  },
-}))
 
 export default GroupManager
