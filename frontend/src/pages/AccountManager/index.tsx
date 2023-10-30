@@ -197,7 +197,14 @@ const ModalComponent =
         if((formData.group_ids as string[])?.includes(option.name)) return option.id
         return undefined
       })
-      await onSubmitEdit(dataEdit?.id, { ...formData, group_ids: newGroup.filter(Boolean) as number[]})
+      let newForm = { ...formData}
+      Object.keys(formData).map(key => {
+        if(!(formData as any)[key]) {
+          (newForm as any)[key] = null
+        }
+        return undefined
+      })
+      await onSubmitEdit(dataEdit?.id, { ...newForm, group_ids: newGroup.filter(Boolean) as number[]})
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
