@@ -210,7 +210,7 @@ const ModalComponent =
           dataEdit?.id,
           {
             ...newForm,
-            group_ids: JSON.stringify(formData.group_ids) === JSON.stringify(dataEdit?.group_ids) ? null : newGroup.filter(Boolean) as number[]
+            group_ids: JSON.stringify([ ...formData.group_ids as number[]]?.sort()) === JSON.stringify([...dataEdit?.group_ids as number[]]?.sort()) ? null : newGroup.filter(Boolean) as number[]
           })
       setOpenModal(false)
     } finally {
