@@ -96,7 +96,7 @@ const ModalComponent =
   }, [listGroup])
 
   const validateEmail = (value: string): string => {
-    if(dataEdit?.uid) return ''
+    if(dataEdit?.id) return ''
     const error = validateField('email', 255, value)
     if (error) return error
     if (!regexEmail.test(value)) {
