@@ -19,6 +19,7 @@ import {getListUserGroup, postListSet} from "../store/slice/GroupManager/GroupAc
 import {GroupManagerParams} from "../store/slice/GroupManager/GroupManagerType";
 import {selectListUserGroup} from "../store/slice/GroupManager/GroupManagerSelectors";
 import Loading from "./common/Loading";
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 export type UserAdd = {
   id: number
@@ -38,9 +39,9 @@ type PopupSetGroupManagerProps = {
 }
 
 const columns = (
-  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>,
-  parmas: GridRenderCellParams<GridValidRowModel>) => void,
-  hide: boolean = true
+  handleShareFalse: (e: MouseEventReact<HTMLButtonElement>, params: GridRenderCellParams<GridValidRowModel>) => void,
+  set: boolean = true,
+  listSet: UserAdd[] = []
 ) => ([
   {
     field: "name",
@@ -62,18 +63,17 @@ const columns = (
         <span>{params.row.email}</span>
     ),
   },
-  hide && {
+  {
     field: "share",
     headerName: "",
     filterable: false,
     sortable: false,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
-      if(!params.row.share) return ''
       return (
         <Button
-          onClick={(e) => handleShareFalse(e, params)}
+          onClick={(e) => set && handleShareFalse(e, params)}
         >
-          <CancelIcon color={"error"}/>
+          {set ? <CancelIcon color={"error"}/> : listSet.find(user => user.id === params.row.id) ? <CheckCircleOutlineIcon color={'success'}/> : null}
         </Button>
       )
     }
@@ -175,6 +175,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
   }
   const handleAddListSet = () => {
     if(userSet.length === 0) return
+    if(newListSetSearch.find(user => user.id === userSet[0].id)) return
     const newList: UserAdd[] = userSet.map(item => ({...item, share: true}))
     setListIdNoAdd(pre => pre.filter(item => !newList.map(user => user.id).includes(item)))
     let newArray = checkDuplicate(newList, newListSetSearch)
@@ -187,6 +188,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
     else {
       setListSet(newArray)
     }
+    setUserSet([])
   }
 
   const handleClosePopup = () => {
@@ -243,20 +245,20 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
               {
                 newListSetSearch?.filter(user => user.name.includes(textSearch.setGroup) || user.email.includes(textSearch.setGroup)).length > 0 ? (
                   <DataGrid
-                    columns={columns(handleShareFalse).filter(Boolean) as any}
+                    columns={columns(handleShareFalse)}
                     rows={newListSetSearch.filter(user => user.name.includes(textSearch.setGroup) || user.email.includes(textSearch.setGroup))}
                     hideFooter
                     columnHeaderHeight={0}
-                    sx={{ marginTop: 2}}
+                    sx={{ marginTop: 2, height: 523 }}
                   />
                 ) : <p>No data</p>
               }
             </Box>
             <KeyboardBackspaceIcon
-              sx={{ cursor: userSet.length === 0 ? 'default' : 'pointer' }}
+              sx={{ cursor: userSet.length === 0 || newListSetSearch.find(user => user.id === userSet[0].id) ? 'default' : 'pointer' }}
               onClick={handleAddListSet}
             />
-            <Box style={{position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start', height: '100%' }}>
+            <Box style={{ position: 'relative', flex: 1, maxWidth: '45%', alignSelf: 'start' }}>
               <Typography variant={'h6'}>Search users</Typography>
               <Input
                 autoComplete={'Off'}
@@ -267,15 +269,14 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
                 sx={{ width: '100%'}}
               />
               {
-                usersSuggest &&
-                usersSuggest.filter(user => !newListSetSearch.find(item => (item.name === user.name || item.email === user.email) && item.id === user.id)).length > 0 ? (
+                usersSuggest && usersSuggest.length > 0 ? (
                   <DataGrid
-                    columns={columns(handleShareFalse, false).filter(Boolean) as any}
-                    rows={usersSuggest.filter(user => !listSet.find(item => (item.name === user.name || item.email === user.email) && item.id === user.id))}
+                    columns={columns(handleShareFalse, false, listSet.filter(item => !listIdNoAdd.includes(item.id)))}
+                    rows={usersSuggest}
                     hideFooter
                     columnHeaderHeight={0}
-                    sx={{ marginTop: 2}}
                     onCellClick={onCellClick}
+                    sx={{ marginTop: 2, height: 523 }}
                   />
                 ) : null
               }
@@ -306,7 +307,7 @@ const DiaLogCustom = styled(Dialog)(() => ({
 const WrapperSet = styled(Box)(() => ({
   display: 'flex',
   gap: 50,
-  marginTop: 40,
+  marginTop: 30,
   height: '80%',
   alignItems: 'center'
 }))
