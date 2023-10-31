@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
@@ -292,24 +292,43 @@ async def search_db_experiments(
             optinist_model.Experiment.organization_id == current_user.organization.id
         )
     else:
-        query = query.join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_uid
-            == optinist_model.Experiment.id,
-            isouter=True,
-        ).filter(
-            or_(
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.for_org.value,
-                    optinist_model.Experiment.organization_id
-                    == current_user.organization.id,
-                ),
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user.value,
-                    optinist_model.ExperimentShareUser.user_id == current_user.id,
-                ),
+        query = (
+            query.join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                optinist_model.ExperimentShareGroup,
+                optinist_model.ExperimentShareGroup.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                common_model.UserGroup,
+                common_model.UserGroup.group_id
+                == optinist_model.ExperimentShareGroup.group_id,
+                isouter=True,
+            )
+            .filter(
+                or_(
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.for_org.value,
+                        optinist_model.Experiment.organization_id
+                        == current_user.organization.id,
+                    ),
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.per_user_or_group.value,
+                        or_(
+                            optinist_model.ExperimentShareUser.user_id
+                            == current_user.id,
+                            common_model.UserGroup.user_id == current_user.id,
+                        ),
+                    ),
+                )
             )
         )
 
@@ -401,45 +420,83 @@ async def search_db_cells(
         )
 
     else:
-        query = query.join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_uid
-            == optinist_model.Experiment.id,
-            isouter=True,
-        ).filter(
-            or_(
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.for_org.value,
-                    optinist_model.Experiment.organization_id
-                    == current_user.organization.id,
-                ),
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user.value,
-                    optinist_model.ExperimentShareUser.user_id == current_user.id,
-                ),
+        query = (
+            query.join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                optinist_model.ExperimentShareGroup,
+                optinist_model.ExperimentShareGroup.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                common_model.UserGroup,
+                common_model.UserGroup.group_id
+                == optinist_model.ExperimentShareGroup.group_id,
+                isouter=True,
+            )
+            .filter(
+                or_(
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.for_org.value,
+                        optinist_model.Experiment.organization_id
+                        == current_user.organization.id,
+                    ),
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.per_user_or_group.value,
+                        or_(
+                            optinist_model.ExperimentShareUser.user_id
+                            == current_user.id,
+                            common_model.UserGroup.user_id == current_user.id,
+                        ),
+                    ),
+                )
             )
         )
 
-        total_query = total_query.join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_uid
-            == optinist_model.Experiment.id,
-            isouter=True,
-        ).filter(
-            or_(
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.for_org.value,
-                    optinist_model.Experiment.organization_id
-                    == current_user.organization.id,
-                ),
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user.value,
-                    optinist_model.ExperimentShareUser.user_id == current_user.id,
-                ),
+        total_query = (
+            total_query.join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                optinist_model.ExperimentShareGroup,
+                optinist_model.ExperimentShareGroup.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                common_model.UserGroup,
+                common_model.UserGroup.group_id
+                == optinist_model.ExperimentShareGroup.group_id,
+                isouter=True,
+            )
+            .filter(
+                or_(
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.for_org.value,
+                        optinist_model.Experiment.organization_id
+                        == current_user.organization.id,
+                    ),
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.per_user_or_group.value,
+                        or_(
+                            optinist_model.ExperimentShareUser.user_id
+                            == current_user.id,
+                            common_model.UserGroup.user_id == current_user.id,
+                        ),
+                    ),
+                )
             )
         )
     if options.experiment_id is not None:
@@ -514,6 +571,33 @@ async def publish_db_experiment(
     return True
 
 
+@router.post(
+    "/expdb/experiment/multiple/publish/{flag}",
+    response_model=bool,
+    description="""
+- Experiments を一括公開する
+
+""",
+)
+def multiple_publish_db_experiment(
+    ids: List[int],
+    flag: PublishFlags,
+    db: Session = Depends(get_db),
+    current_admin_user: User = Depends(get_admin_data_user),
+):
+    db.query(optinist_model.Experiment).filter(
+        optinist_model.Experiment.id.in_(ids),
+        common_model.Organization.id == optinist_model.Experiment.organization_id,
+        common_model.User.organization_id == common_model.Organization.id,
+        common_model.User.uid == current_admin_user.uid,
+    ).update(
+        {optinist_model.Experiment.publish_status: int(flag == PublishFlags.on)},
+        synchronize_session=False,
+    )
+    db.commit()
+    return True
+
+
 @router.get(
     "/expdb/share/{id}/status",
     response_model=ExpDbExperimentShareStatus,
@@ -547,20 +631,9 @@ def get_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
-    if exp.share_type == ExperimentShareType.per_user:
-        users = (
-            db.query(common_model.User)
-            .filter(common_model.User.active.is_(True))
-            .join(
-                optinist_model.ExperimentShareUser,
-                optinist_model.ExperimentShareUser.user_id == common_model.User.id,
-            )
-            .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
-            .all()
-        )
-    else:
-        users = []
-    return ExpDbExperimentShareStatus(share_type=exp.share_type, users=users)
+    return ExpDbExperimentShareStatus(
+        share_type=exp.share_type, users=exp.active_user_share, groups=exp.group_share
+    )
 
 
 @router.post(
@@ -595,19 +668,79 @@ def update_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
-    (
-        db.query(optinist_model.ExperimentShareUser)
-        .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
-        .delete(synchronize_session=False)
+    if data.share_type == ExperimentShareType.per_user_or_group:
+        exp.user_share = (
+            db.query(common_model.User)
+            .filter(
+                common_model.User.id.in_(data.user_ids),
+                common_model.User.active.is_(True),
+            )
+            .all()
+        )
+        exp.group_share = (
+            db.query(common_model.Group)
+            .filter(common_model.Group.id.in_(data.group_ids))
+            .all()
+        )
+    else:
+        exp.user_share = []
+        exp.group_share = []
+    exp.share_type = data.share_type
+
+    db.commit()
+
+    return True
+
+
+@router.post(
+    "/expdb/multiple/share/status",
+    response_model=bool,
+    description="""
+- Experiment Database の共有状態を一括更新する（総入れ替え）
+""",
+)
+def update_multiple_experiment_database_share_status(
+    ids: List[int],
+    data: ExpDbExperimentSharePostStatus,
+    db: Session = Depends(get_db),
+    current_admin_user: User = Depends(get_admin_data_user),
+):
+    exps = (
+        db.query(optinist_model.Experiment)
+        .join(
+            common_model.Organization,
+            common_model.Organization.id == optinist_model.Experiment.organization_id,
+        )
+        .join(
+            common_model.User,
+            common_model.User.organization_id == common_model.Organization.id,
+        )
+        .filter(
+            common_model.User.uid == current_admin_user.uid,
+            optinist_model.Experiment.id.in_(ids),
+        )
+        .all()
     )
 
-    if data.share_type == ExperimentShareType.per_user:
-        db.bulk_save_objects(
-            optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id)
-            for user_id in data.user_ids
-        )
-
-    exp.share_type = data.share_type
+    for exp in exps:
+        exp.share_type = data.share_type
+        if data.share_type == ExperimentShareType.per_user_or_group:
+            exp.user_share = (
+                db.query(common_model.User)
+                .filter(
+                    common_model.User.id.in_(data.user_ids),
+                    common_model.User.active.is_(True),
+                )
+                .all()
+            )
+            exp.group_share = (
+                db.query(common_model.Group)
+                .filter(common_model.Group.id.in_(data.group_ids))
+                .all()
+            )
+        else:
+            exp.user_share = []
+            exp.group_share = []
 
     db.commit()
 

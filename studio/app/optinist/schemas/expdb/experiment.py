@@ -6,6 +6,7 @@ from fastapi import Query
 from fastapi_pagination import LimitOffsetPage
 from pydantic import BaseModel, Field
 
+from studio.app.common.schemas.group import GroupWithUserCount
 from studio.app.common.schemas.users import UserInfo
 
 T = TypeVar("T")
@@ -98,6 +99,7 @@ class ExpDbExperimentShareStatus(BaseModel):
         description="0: no share, 1: default(per users), 2: for organization"
     )
     users: Optional[List[UserInfo]]
+    groups: Optional[List[GroupWithUserCount]]
 
 
 class ExpDbExperimentSharePostStatus(BaseModel):
@@ -105,9 +107,10 @@ class ExpDbExperimentSharePostStatus(BaseModel):
         description="0: no share, 1: default(per users), 2: for organization"
     )
     user_ids: Optional[List[int]]
+    group_ids: Optional[List[int]]
 
 
 class ExperimentShareType(int, Enum):
     no_share = 0
-    per_user = 1
+    per_user_or_group = 1
     for_org = 2
