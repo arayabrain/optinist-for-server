@@ -96,7 +96,7 @@ const ModalComponent =
   }, [listGroup])
 
   const validateEmail = (value: string): string => {
-    if(dataEdit) return ''
+    if(dataEdit?.id) return ''
     const error = validateField('email', 255, value)
     if (error) return error
     if (!regexEmail.test(value)) {
@@ -110,7 +110,7 @@ const ModalComponent =
       isConfirm: boolean = false,
       values?: FormDataType,
   ): string => {
-    if (!value && !dataEdit?.uid) return dataEdit ? '' : 'This field is required'
+    if (!value && !dataEdit?.id) return 'This field is required'
     const errorLength = validateLength('password', 255, value)
     if (errorLength) {
       return errorLength
@@ -129,7 +129,7 @@ const ModalComponent =
   }
 
   const validateField = (name: string, length: number, value?: string) => {
-    if (!value) return dataEdit ? '' : 'This field is required'
+    if (!value) return dataEdit?.id ? '' : 'This field is required'
     return validateLength(name, length, value)
   }
 
@@ -207,11 +207,11 @@ const ModalComponent =
         return undefined
       })
       await onSubmitEdit(
-          dataEdit?.id,
-          {
-            ...newForm,
-            group_ids: JSON.stringify([ ...formData.group_ids as number[]]?.sort()) === JSON.stringify([...dataEdit?.group_ids as number[]]?.sort()) ? null : newGroup.filter(Boolean) as number[]
-          })
+        dataEdit?.id,
+        {
+          ...newForm,
+          group_ids: dataEdit?.id && JSON.stringify([...formData.group_ids as number[]]?.sort()) === JSON.stringify([...dataEdit?.group_ids as number[]]?.sort()) ? null : newGroup.filter(Boolean) as number[]
+        })
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
