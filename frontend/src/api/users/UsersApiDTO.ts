@@ -39,7 +39,7 @@ export type UserListDTO = {
 }
 
 export type UpdateUserDTO = {
-  role_id?: number,
+  role_id?: number | null,
   name: string,
   email: string
   group_ids?: number[]
