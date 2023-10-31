@@ -12,12 +12,13 @@ import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import CancelIcon from "@mui/icons-material/Cancel";
 import {useDispatch, useSelector} from "react-redux";
 import {resetUserSearch} from "../store/slice/User/UserSlice";
-import {selectListUserSearch} from "../store/slice/User/UserSelector";
+import {selectListUserSearch, selectLoading} from "../store/slice/User/UserSelector";
 import {getListUserSearch} from "../store/slice/User/UserActions";
 import {WAITING_TIME} from "../@types";
 import {getListUserGroup, postListSet} from "../store/slice/GroupManager/GroupActions";
 import {GroupManagerParams} from "../store/slice/GroupManager/GroupManagerType";
 import {selectListUserGroup} from "../store/slice/GroupManager/GroupManagerSelectors";
+import Loading from "./common/Loading";
 
 export type UserAdd = {
   id: number
@@ -86,6 +87,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
 
   const listUserInit  = useSelector(selectListUserGroup)
   const usersSuggest = useSelector(selectListUserSearch)
+  const loading = useSelector(selectLoading)
   const [userSet, setUserSet] = useState<UserAdd[]>([])
 
   const [textSearch, setTextSearch] = useState({
@@ -287,6 +289,7 @@ const PopupSetGroupManager = ({infoGroup, handleClose, dataParams}: PopupSetGrou
           </Button>
         </DialogActions>
       </DiaLogCustom>
+      { loading ? <Loading /> : null}
     </div>
   );
 }

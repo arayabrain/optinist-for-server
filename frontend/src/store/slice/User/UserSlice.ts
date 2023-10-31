@@ -59,6 +59,7 @@ export const userSlice = createSlice({
       })
       .addCase(getListUserSearch.fulfilled, (state, action) => {
         state.listUserSearch = action.payload
+        state.loading = false
       })
       .addCase(getListGroupSearch.fulfilled, (state, action) => {
         state.listGroupSearch = action.payload
@@ -91,6 +92,7 @@ export const userSlice = createSlice({
           updateMe.pending,
           deleteMe.pending,
           updateUser.pending,
+          getListUserSearch.pending,
           updateMePassword.pending),
         (state) => {
           state.loading = true
