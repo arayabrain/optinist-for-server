@@ -1,4 +1,4 @@
-import { DatabaseDTO, DatabaseParams, ListShareDTO } from 'store/slice/Database/DatabaseType'
+import {DatabaseDTO, DatabaseParams, ListShareDTO, MultiShareType} from 'store/slice/Database/DatabaseType'
 import axios from 'utils/axios'
 import qs from 'qs'
 
@@ -31,12 +31,22 @@ export const postPublishApi = async (id: number, status: 'on' | 'off'): Promise<
   return response.data
 }
 
-export const getListUserShareApi = async (id: number): Promise<ListShareDTO> => {
+export const getListShareApi = async (id: number): Promise<ListShareDTO> => {
   const response = await axios.get(`/expdb/share/${id}/status`)
   return response.data
 }
 
-export const postListUserShareApi = async (id: number, data: {share_type: number; user_ids: number[]}): Promise<boolean> => {
+export const postListUserShareApi = async (id: number, data: {share_type: number; user_ids: number[], group_ids?: number[]}): Promise<boolean> => {
   const response = await axios.post(`/expdb/share/${id}/status`, data)
+  return response.data
+}
+
+export const postPublishAllApi = async (status: 'on' | 'off', data: number[]): Promise<boolean> => {
+  const response = await axios.post(`expdb/experiment/multiple/publish/${status}`, data)
+  return response.data
+}
+
+export const postMultiShareApi = async (data: MultiShareType) : Promise<boolean> => {
+  const response = await axios.post(`expdb/multiple/share/status`, data)
   return response.data
 }

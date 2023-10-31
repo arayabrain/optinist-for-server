@@ -58,15 +58,31 @@ export type DatabaseDTO = {
 
 export type ListShareDTO = {
   share_type: number
-  users: ListShare[]
+  users: ListShareUser[]
+  groups: ListShareGroup[]
 }
 
-export type ListShare = {
+export type ListShareUser = {
   id: number,
   name: string
   email: string
   created_at: string
   updated_at: string
+}
+
+export type ListShareGroup = {
+  id: number
+  name: string
+  users_count: number
+}
+
+export type MultiShareType = {
+  ids: number[]
+  data: {
+    share_type: number,
+    user_ids: number[],
+    group_ids: number[]
+  }
 }
 
 export type DatabaseParams = { [key: string]: number | string | string[] | undefined }

@@ -22,7 +22,7 @@ import {
   experimentsReducer,
   workspaceReducer,
   userReducer,
-  databaseReducer,
+  databaseReducer, groupManagerReducer,
 } from './slice'
 import { DATABASE_SLICE_NAME } from './slice/Database/DatabaseType'
 
@@ -44,6 +44,7 @@ export const rootReducer = combineReducers({
   experiments: experimentsReducer,
   workspace: workspaceReducer,
   user: userReducer,
+  groupManager: groupManagerReducer,
   [DATABASE_SLICE_NAME]: databaseReducer,
 })
 
