@@ -38,9 +38,9 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
     navigate('/console/workspaces')
   }
 
-  const onClickAccountManager = () => {
+  const onClickAdministration = () => {
     handleDrawerClose()
-    navigate('/console/account-manager')
+    navigate('/console/administration')
   }
 
   const onClickOpenSite = () => {
@@ -78,15 +78,19 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
               </ListItemButton>
             </ListItem>
             {
-              admin ?
-                <ListItem key="account-manager" disablePadding>
-                  <ListItemButton onClick={onClickAccountManager}>
-                    <ListItemIcon>
-                      <ManageAccountsIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Account Manager" />
-                  </ListItemButton>
-                </ListItem> : null
+              admin ? (
+                <>
+                  <ListItem key="administration" disablePadding>
+                    <ListItemButton onClick={onClickAdministration}>
+                      <ListItemIcon>
+                        <ManageAccountsIcon />
+                      </ListItemIcon>
+                      <ListItemText primary="Administration" />
+                    </ListItemButton>
+                  </ListItem>
+                </>
+              )
+               : null
             }
             <ListItem key="site" disablePadding>
               <ListItemButton onClick={onClickOpenSite}>

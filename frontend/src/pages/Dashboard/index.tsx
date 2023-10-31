@@ -40,15 +40,18 @@ const Dashboard = () => {
             </BoxMenu>
           </LinkWrapper>
           {
-            admin ?
-              <LinkWrapper to="/console/account-manager">
-                <BoxMenu>
-                  <Box>
-                    <ManageAccountsIcon fontSize="large" />
-                    <TitleMenu>Account Manager</TitleMenu>
-                  </Box>
-                </BoxMenu>
-              </LinkWrapper>: null
+            admin ? (
+              <>
+                <LinkWrapper to="/console/administration">
+                  <BoxMenu>
+                    <Box>
+                      <ManageAccountsIcon fontSize="large" />
+                      <TitleMenu>Administration</TitleMenu>
+                    </Box>
+                  </BoxMenu>
+                </LinkWrapper>
+              </>
+            ): null
           }
         </DashboardContent>
       </DashboardWrapper>
@@ -56,16 +59,16 @@ const Dashboard = () => {
   )
 }
 
-const BoxWrapper = styled(Box)({
+export const BoxWrapper = styled(Box)({
   width: '100%',
   height: '100%',
 })
 
-const LinkWrapper = styled(Link)(() => ({
+export const LinkWrapper = styled(Link)(() => ({
   textDecoration: 'none',
 }))
 
-const DashboardWrapper = styled(Box)(() => ({
+export const DashboardWrapper = styled(Box)(() => ({
   width: '100%',
   height: 'calc(100% - 90px)',
   display: 'flex',
@@ -73,7 +76,7 @@ const DashboardWrapper = styled(Box)(() => ({
   justifyContent: 'center',
 }))
 
-const DashboardContent = styled(Box)(() => ({
+export const DashboardContent = styled(Box)(() => ({
   padding: 30,
   display: 'flex',
   justifyContent: 'center',
@@ -81,7 +84,7 @@ const DashboardContent = styled(Box)(() => ({
   gap: 32,
 }))
 
-const BoxMenu = styled(Box)(() => ({
+export const BoxMenu = styled(Box)(() => ({
   width: 170,
   height: 150,
   backgroundColor: '#283237',
@@ -100,7 +103,7 @@ const BoxMenu = styled(Box)(() => ({
   },
 }))
 
-const TitleMenu = styled(Typography)(() => ({
+export const TitleMenu = styled(Typography)(() => ({
   fontSize: 24,
   marginTop: 30,
 }))

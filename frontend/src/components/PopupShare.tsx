@@ -1,6 +1,17 @@
 import {
-  Box, Button,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, Input, Radio, RadioGroup, styled
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  Input,
+  Radio,
+  RadioGroup,
+  styled
 } from "@mui/material";
 import {DataGrid, GridRenderCellParams, GridValidRowModel} from "@mui/x-data-grid";
 import {SHARE, WAITING_TIME} from "../@types";
@@ -9,12 +20,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { postListUserShare } from "../store/slice/Database/DatabaseActions";
 import CancelIcon from '@mui/icons-material/Cancel'
 import { postListUserShareWorkspaces } from "store/slice/Workspace/WorkspacesActions";
-import { selectListSearch, selectLoading } from "../store/slice/User/UserSelector";
-import { getListSearch } from "../store/slice/User/UserActions";
+import { selectListUserSearch, selectLoading } from "../store/slice/User/UserSelector";
+import { getListUserSearch } from "../store/slice/User/UserActions";
 import Loading from "./common/Loading";
 import { UserDTO } from "../api/users/UsersApiDTO";
 import CheckIcon from '@mui/icons-material/Check';
 import { resetUserSearch } from "../store/slice/User/UserSlice";
+import {UserAdd} from "./PopupSetGroupManager";
 
 type PopupType = {
   open: boolean
@@ -35,12 +47,25 @@ type PopupType = {
 type TableSearch = {
   usersSuggest: UserDTO[]
   onClose: () => void
-  handleAddListUser: (user: UserDTO) => void
-  stateUserShare: UserDTO[]
+  handleAddListUser?: (user: UserDTO) => void
+  stateUserShare?: UserDTO[]
+  listSearchAdd?: UserDTO[]
+  width?: string
+  listSet?: UserAdd[]
+  listIdNoAdd?: number[]
 }
 
-const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserShare}: TableSearch) => {
-
+export const TableListSearch =
+  ({
+    usersSuggest,
+    onClose,
+    handleAddListUser,
+    stateUserShare,
+    listSearchAdd,
+    width = '60%',
+    listSet,
+    listIdNoAdd
+  }: TableSearch) => {
   const ref = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
@@ -52,22 +77,29 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
   }, [])
 
   const onMouseDown = (event: MouseEvent) => {
-    if(ref.current?.contains((event as any).target) || (event as any).target.id === 'inputSearch') return;
+    if(
+      ref.current?.contains((event as any).target) ||
+      ['inputSearch', 'inputSearchSet', 'inputSearchAdd'].includes((event as any).target.id)
+    )
+    {
+      return;
+    }
     onClose?.()
   }
 
   return (
-    <TableListSearchWrapper ref={ref} onBlur={() => console.log(123)}>
+    <TableListSearchWrapper sx={{ width: width }} ref={ref}>
       <UlCustom>
         {usersSuggest.map(item => {
-          const isSelected = stateUserShare.some(i => i.id === item.id)
+          let isSelected = (stateUserShare || listSearchAdd)?.some(i => i.id === item.id)
+              || (listSet?.filter(item => !listIdNoAdd?.includes(item.id as number)).map(item => item.id))?.some(i => i === item.id)
           return (
-            <LiCustom key={item.id} onClick={() => handleAddListUser(item)} style={{
-              cursor: isSelected ? 'not-allowed' : 'pointer'
+            <LiCustom key={item.id} onClick={() => (!isSelected) && handleAddListUser?.(item)} style={{
+              cursor: (isSelected) ? 'not-allowed' : 'pointer'
             }}
             >
-              {`${item.name} (${item.email})`}
-              {isSelected ? <CheckIcon style={{fontSize: 14}}/> : null}
+              <span style={{ flex: 1, wordWrap: 'break-word', maxWidth: 250}}>{`${item.name} (${item.email})`}</span>
+              {(isSelected) ? <CheckIcon style={{fontSize: 14}}/> : null}
             </LiCustom>
           )
         })}
@@ -77,7 +109,7 @@ const TableListSearch = ({usersSuggest, onClose, handleAddListUser, stateUserSha
 }
 const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title}: PopupType) => {
   const [shareType, setShareType] = useState(data?.shareType || 0)
-  const usersSuggest = useSelector(selectListSearch)
+  const usersSuggest = useSelector(selectListUserSearch)
   const loading = useSelector(selectLoading)
   const [textSearch, setTextSearch] = useState('')
   const [stateUserShare, setStateUserShare] = useState(usersShare || undefined)
@@ -86,14 +118,9 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
 
   useEffect(() => {
     if(usersShare) {
-      // setUserIdsSelected(usersShare.users.map(user => user.id));
       setStateUserShare(usersShare)
     }
   }, [usersShare])
-
-  useEffect(() => {
-
-  }, [data])
 
   useEffect(() => {
     if(timeout.current) clearTimeout(timeout.current)
@@ -102,11 +129,10 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
       return
     }
     timeout.current = setTimeout(() => {
-      dispatch(getListSearch({keyword: textSearch}))
+      dispatch(getListUserSearch({keyword: textSearch}))
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch])
-
   const handleShareFalse = (e: any, params: GridRenderCellParams<GridValidRowModel>) => {
     e.preventDefault()
     e.stopPropagation()
@@ -252,7 +278,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
                 {
                   stateUserShare &&
                   <DataGrid
-                    sx={{minHeight: 400}}
+                    sx={{ minHeight: 400 }}
                     // onRowClick={handleShareTrue}
                     rows={stateUserShare?.users.map((user: any) => ({...user, share: true}))}
                     columns={columnsShare(handleShareFalse)}
@@ -268,9 +294,7 @@ const PopupShare = ({open, handleClose, data, usersShare, id, isWorkspace, title
           <Button onClick={handleOke}>Ok</Button>
         </DialogActions>
       </DialogCustom>
-      {
-        loading ? <Loading /> : null
-      }
+      { loading ? <Loading /> : null }
     </Box>
   )
 }
@@ -288,11 +312,9 @@ const TableListSearchWrapper = styled(Box)(({ theme }) => ({
   position: 'absolute',
   background: "#fff",
   zIndex: 100,
-  width: "60%",
   boxShadow: '0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)',
   borderBottomLeftRadius: 8,
   borderBottomRightRadius: 8,
-  maxHeight: 200,
   overflow: 'auto'
 }))
 

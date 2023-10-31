@@ -1,4 +1,4 @@
-import { Box, Input, styled } from '@mui/material'
+import {Box, Checkbox, IconButton, Input, styled, Tooltip} from '@mui/material'
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch'
@@ -30,16 +30,21 @@ import { RootState } from '../../store/store'
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
-  getListUserShare,
+  getListShare,
   postPublish,
+  postPublishAll,
 } from '../../store/slice/Database/DatabaseActions'
 import Loading from 'components/common/Loading'
 import { TypeData } from 'store/slice/Database/DatabaseSlice'
 import { UserDTO } from 'api/users/UsersApiDTO'
 import { isAdminOrManager } from 'store/slice/User/UserSelector'
 import {SHARE, WAITING_TIME} from '@types'
-import PopupShare from '../PopupShare'
 import PaginationCustom from '../common/PaginationCustom'
+import PublicIcon from '@mui/icons-material/Public'
+import PublicOffIcon from '@mui/icons-material/PublicOff'
+import GroupAddIcon from '@mui/icons-material/GroupAdd'
+import PopupConfirm from "../common/PopupConfirm"
+import PopupShareGroup from "../PopupShareGroup";
 
 export type Data = {
   id: number
@@ -78,14 +83,56 @@ type DatabaseProps = {
 let timeout: NodeJS.Timeout | undefined = undefined
 
 const columns = (
+  listIdData: number[],
+  setListCheck: (value: number[]) => void,
+  listCheck: number[],
+  dataExperiments: DatabaseType[],
+  checkBoxAll: boolean,
+  setCheckBoxAll: (value: boolean) => void,
   handleOpenAttributes: (value: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
   user: boolean,
+  adminOrManager: boolean,
   readonly?: boolean,
-  loading: boolean = false
+  loading: boolean = false,
 ) => [
+  adminOrManager && user && {
+    field: 'checkbox',
+    renderHeader: (params: any) => (
+      <Checkbox checked={checkBoxAll} onChange={(e: any) => {
+        setCheckBoxAll(e.target.checked)
+        if(!e.target.checked) {
+          let newListId: number[]
+          newListId = listCheck.filter(item => !listIdData.includes(item))
+          setListCheck([...newListId])
+        }
+        else {
+          const newList = dataExperiments.map(item => item.id)
+          setListCheck([...listCheck, ...newList.filter(item => !listCheck.includes(item))])
+        }
+      }}
+      />
+    ),
+    sortable: false,
+    filterable: false,
+    width: 70,
+    type: 'string',
+    renderCell: (params: { row: DatabaseType }) => (
+      <Checkbox
+        checked={listCheck.includes(params.row.id)}
+        onChange={(e: any) => {
+        const newData = listCheck.filter(id => id !== params.row.id)
+        if(!e.target.checked) {
+          setCheckBoxAll(false)
+          setListCheck(newData)
+        }
+          else setListCheck([...listCheck, params.row.id])
+      }
+      }/>
+    )
+  },
   {
     field: 'experiment_id',
     headerName: 'Experiment ID',
@@ -280,10 +327,19 @@ const DatabaseExperiments = ({
     }),
   )
 
+  const [openPublishAll, setOpenPublishAll] = useState<{ title: string, open: boolean, type: 'on' | 'off', content: string}>({
+    content: '',
+    title: '',
+    open: false,
+    type: 'on'
+  })
   const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
+  const [listCheck, setListCheck] = useState<number[]>([])
+  const [checkBoxAll, setCheckBoxAll] = useState(false)
+  const [openShareGroup, setOpenShareGroup] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
     type?: string
     data?: string | string[]
@@ -402,9 +458,14 @@ const DatabaseExperiments = ({
 
   useEffect(() => {
     if (!openShare.open || !openShare.id) return
-    dispatch(getListUserShare({ id: openShare.id }))
+    dispatch(getListShare({ id: openShare.id }))
     //eslint-disable-next-line
   }, [openShare])
+
+  useEffect(() => {
+    setCheckBoxAll(false)
+    //eslint-disable-next-line
+  }, [offset, limit, JSON.stringify(dataParamsFilter)])
 
   const handleOpenDialog = (
     data: ImageUrls[] | ImageUrls,
@@ -455,7 +516,6 @@ const DatabaseExperiments = ({
     setNewParams(param)
   }
 
-  //eslint-disable-next-line
   const handlePublish = async (id: number, status: 'on' | 'off') => {
     let newPublish: number | undefined
     if (!dataParamsFilter.publish_status) newPublish = undefined
@@ -489,6 +549,7 @@ const DatabaseExperiments = ({
         param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replace('publish_status','published')}&sort=${rowSelectionModel[0].sort}` : ''}&${pagiFilter()}`
       }
       setNewParams(param.replace('publish_status', 'published'))
+      setCheckBoxAll(false)
     },
     //eslint-disable-next-line
     [pagiFilter, model],
@@ -509,6 +570,7 @@ const DatabaseExperiments = ({
     const { sort } = dataParams
     const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
     setNewParams(param.replace('publish_status', 'published'))
+    setCheckBoxAll(false)
   }
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -521,6 +583,40 @@ const DatabaseExperiments = ({
     const { sort } = dataParams
     const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`
     setNewParams(param)
+  }
+
+  const handlePublishCancel = () => {
+    setOpenPublishAll({
+      ...openPublishAll,
+      open: false
+    })
+  }
+
+  const handleOpenPublishAll = (title: string, content: string, type: 'on' | 'off') => {
+    setOpenPublishAll({
+      title: title,
+      content: content,
+      open: true,
+      type: type
+    })
+  }
+
+  const handlePublishOk = () => {
+    setOpenPublishAll({
+      ...openPublishAll,
+      open: false
+    })
+    try {
+      dispatch(postPublishAll({
+        status: openPublishAll.type,
+        params: {
+          ...dataParamsFilter,
+          ...dataParams,
+        },
+        listCheck
+      }))
+    }
+    finally {}
   }
 
   const getColumns = useMemo(() => {
@@ -556,7 +652,7 @@ const DatabaseExperiments = ({
     )
   }, [dataExperiments.header?.graph_titles])
 
-  const ColumnPrivate = useMemo(() => {
+  const ColumnPrivate = () => {
     return [
       {
         field: 'share_type',
@@ -603,28 +699,90 @@ const DatabaseExperiments = ({
         ),
       },
     ]
-    //eslint-disable-next-line
-  }, [handlePublish])
+  }
 
   const columnsTable = [
     ...columns(
+      dataExperiments.items.map(item => item.id),
+      setListCheck,
+      listCheck,
+      dataExperiments?.items,
+      checkBoxAll,
+      setCheckBoxAll,
       handleOpenAttributes,
       handleOpenDialog,
       cellPath,
       navigate,
       !!user,
+      !!adminOrManager,
       readonly,
-      loading
+      loading,
     ),
     ...getColumns,
   ].filter(Boolean) as any
 
   return (
     <DatabaseExperimentsWrapper>
+      {
+        user ? (
+          <Box sx={{ height: 40, margin: "0 0 0.5rem 0" }}>
+            {
+              adminOrManager ?
+                (<WrapperIcons check={!!(listCheck.length > 0)}>
+                  <Tooltip title={'bulk share'} placement={'top'}>
+                    <span>
+                      <IconButton
+                        size={'large'}
+                        onClick={() => listCheck.length !== 0 && setOpenShareGroup(true)}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
+                        disabled={!!(listCheck.length === 0)}
+                      >
+                        <GroupAddIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={'bulk publish'} placement={'top'}>
+                    <span>
+                      <IconButton
+                        size={'large'}
+                        onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk Publish', `Publish "${listCheck.length} records" at once. Is this OK?`, 'on')}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
+                        disabled={!!(listCheck.length === 0)}
+                      >
+                        <PublicIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={'bulk unpublish'} placement={'top'}>
+                    <span>
+                      <IconButton
+                        size={'large'}
+                        onClick={() => listCheck.length !== 0 && handleOpenPublishAll('Bulk UnPublish', `Unpublish "${listCheck.length} records" at once. Is this OK?`, 'off')}
+                        sx={{
+                          cursor: listCheck.length > 0 ? 'pointer' : 'default',
+                          color: (theme) => (listCheck.length > 0 ? theme.palette.primary.main : '#d0d0d0'),
+                        }}
+                        disabled={!!(listCheck.length === 0)}
+                      >
+                        <PublicOffIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </WrapperIcons>) : null
+            }
+          </Box>
+        ): null
+      }
       <DataGrid
         columns={
           adminOrManager && user && !readonly
-            ? ([...columnsTable, ...ColumnPrivate] as any)
+            ? ([...columnsTable, ...ColumnPrivate()] as any)
             : (columnsTable as any)
         }
         sortModel={model.sort as GridSortItem[]}
@@ -637,6 +795,7 @@ const DatabaseExperiments = ({
         filterModel={model.filter}
         onFilterModelChange={handleFilter as any}
         onRowClick={handleRowClick}
+        sx={{ height: 'calc(100% - 50px)' }}
       />
       {dataExperiments?.items.length > 0 ? (
         <PaginationCustom
@@ -662,7 +821,9 @@ const DatabaseExperiments = ({
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
-        <PopupShare
+        <PopupShareGroup
+          type={'share'}
+          listCheck={listCheck}
           id={openShare.id}
           open={openShare.open}
           data={dataDialog as { expId: string; shareType: number }}
@@ -673,6 +834,24 @@ const DatabaseExperiments = ({
           }}
         />
       ) : null}
+      {openShareGroup &&
+        <PopupShareGroup
+          type={'multiShare'}
+          listCheck={listCheck}
+          usersShare={dataShare}
+          open={openShareGroup}
+          data={dataDialog as { expId: string; shareType: number }}
+          handleClose={() => setOpenShareGroup(false)}
+          paramsUrl={{ ...dataParams, ...dataParamsFilter}}
+        />
+      }
+      <PopupConfirm
+        open={openPublishAll.open}
+        title={openPublishAll.title}
+        content={openPublishAll.content}
+        handleClose={handlePublishCancel}
+        handleOk={handlePublishOk}
+      />
     </DatabaseExperimentsWrapper>
   )
 }
@@ -685,6 +864,26 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 const Content = styled('textarea')(() => ({
   width: 400,
   height: 'fit-content',
+}))
+
+const WrapperIcons = styled(Box, {
+  shouldForwardProp: (props) => props !== 'check',
+  })<{ check: boolean }>(( { check }) => ({
+  display: 'flex',
+  justifyContent: 'end',
+  gap: 10,
+  height: 50,
+  'svg': {
+    width: 35,
+    height: 35,
+  },
+  'button': {
+    height: 50,
+    width: 50,
+  },
+  'button: hover': {
+    backgroundColor: '#1976d257'
+  }
 }))
 
 export default DatabaseExperiments

@@ -1,7 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {ChangeEvent, useCallback, useEffect, useMemo, useState, MouseEvent} from "react";
-import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled} from "@mui/material";
+import {Box, Button, Dialog, DialogActions, DialogTitle, Input, styled, Tooltip} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {isAdmin, selectCurrentUser, selectListUser, selectLoading} from "../../store/slice/User/UserSelector";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -16,18 +16,30 @@ import {SelectChangeEvent} from "@mui/material/Select";
 import SelectError from "../../components/common/SelectError";
 import PaginationCustom from "../../components/common/PaginationCustom";
 import {useSnackbar, VariantType} from "notistack";
+import {getGroupsManager} from "../../store/slice/GroupManager/GroupActions";
+import {selectGroupManager} from "../../store/slice/GroupManager/GroupManagerSelectors";
+import {ItemGroupManage} from "../../store/slice/GroupManager/GroupManagerType";
 
 let timeout: NodeJS.Timeout | undefined = undefined
+
+export type FormDataType = {
+  id?: string
+  uid?: string
+  email?: string
+  password?: string
+  role_id?: string
+  name?: string
+  confirmPassword?: string
+  group_ids?: string[] | number[] | string | null
+}
 
 type ModalComponentProps = {
   onSubmitEdit: (
     id: number | string | undefined,
-    data: { [key: string]: string },
+    data: FormDataType,
   ) => void
   setOpenModal: (v: boolean) => void
-  dataEdit?: {
-    [key: string]: string
-  }
+  dataEdit?: FormDataType
 }
 
 type PopupType = {
@@ -43,6 +55,7 @@ const initState = {
   role_id: '',
   name: '',
   confirmPassword: '',
+  group_ids: []
 }
 
 const ModalComponent =
@@ -51,13 +64,39 @@ const ModalComponent =
     setOpenModal,
     dataEdit,
   }: ModalComponentProps) => {
-  const [formData, setFormData] = useState<{ [key: string]: string }>(
+
+  const dispatch = useDispatch()
+
+  const listGroupData = useSelector(selectGroupManager)
+
+  const [formData, setFormData] = useState<FormDataType>(
       dataEdit || initState,
   )
   const [isDisabled, setIsDisabled] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>(initState)
+  const [errors, setErrors] = useState<{ [key: string]: string }>({ ...initState, group_ids: ''})
+  const [listGroup, setListGroup] = useState<ItemGroupManage[]>([])
+  const [optionsGroup, setOptionsGroup] = useState<{ name: string, id: number }[]>([])
+
+  useEffect(() => {
+    dispatch(getGroupsManager({
+      offset: 0,
+      limit: 50
+    }))
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
+    setListGroup(listGroupData.items)
+    //eslint-disable-next-line
+  }, [JSON.stringify(listGroupData)])
+
+  useEffect(() => {
+    const newOptions = listGroup.map(item => ({ name: item.name, id: item.id}))
+    setOptionsGroup(newOptions)
+  }, [listGroup])
 
   const validateEmail = (value: string): string => {
+    if(dataEdit?.id) return ''
     const error = validateField('email', 255, value)
     if (error) return error
     if (!regexEmail.test(value)) {
@@ -69,9 +108,9 @@ const ModalComponent =
   const validatePassword = (
       value: string,
       isConfirm: boolean = false,
-      values?: { [key: string]: string },
+      values?: FormDataType,
   ): string => {
-    if (!value && !dataEdit?.uid) return 'This field is required'
+    if (!value && !dataEdit?.id) return 'This field is required'
     const errorLength = validateLength('password', 255, value)
     if (errorLength) {
       return errorLength
@@ -90,14 +129,14 @@ const ModalComponent =
   }
 
   const validateField = (name: string, length: number, value?: string) => {
-    if (!value) return 'This field is required'
+    if (!value) return dataEdit?.id ? '' : 'This field is required'
     return validateLength(name, length, value)
   }
 
   const validateLength = (name: string, length: number, value?: string) => {
     if (value && value.length > length)
       return `The text may not be longer than ${length} characters`
-    if (formData[name]?.length && value && value.length > length) {
+    if (formData[name as keyof FormDataType]?.length && value && value.length > length) {
       return `The text may not be longer than ${length} characters`
     }
     return ''
@@ -105,11 +144,11 @@ const ModalComponent =
 
   const validateForm = (): { [key: string]: string } => {
     const errorName = validateField('name', 100, formData.name)
-    const errorEmail = validateEmail(formData.email)
+    const errorEmail = validateEmail(formData.email as string)
     const errorRole = validateField('role_id', 50, formData.role_id)
-    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password)
+    const errorPassword = dataEdit?.id ? '' : validatePassword(formData.password as string)
     const errorConfirmPassword = dataEdit?.id ? '' : validatePassword(
-      formData.confirmPassword,
+      formData.confirmPassword as string,
       true,
     )
     return {
@@ -122,22 +161,21 @@ const ModalComponent =
   }
 
   const onChangeData = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement> | SelectChangeEvent,
+    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement> | SelectChangeEvent | ChangeEvent<{ value: unknown[], name: string }>,
     length: number,
   ) => {
     const { value, name } = e.target
     const newDatas = { ...formData, [name]: value }
     setFormData(newDatas)
-    let error: string =
-      name === 'email'
-        ? validateEmail(value)
-        : validateField(name, length, value)
+    let error: string
+    if(name === 'email') error = validateEmail(value as string)
+    else error = validateField(name, length, value as string)
     let errorConfirm = errors.confirmPassword
     if (name.toLowerCase().includes('password')) {
-      error = validatePassword(value, name === 'confirmPassword', newDatas)
+      error = validatePassword(value as string, name === 'confirmPassword', newDatas)
       if (name !== 'confirmPassword' && formData.confirmPassword) {
         errorConfirm = validatePassword(
-          newDatas.confirmPassword,
+          newDatas.confirmPassword as string,
           true,
           newDatas,
         )
@@ -156,12 +194,30 @@ const ModalComponent =
       return
     }
     try {
-      await onSubmitEdit(dataEdit?.id, formData)
+      const newGroup = optionsGroup.map(option => {
+        if((formData.group_ids as string[])?.includes(option.name)) return option.id
+        return undefined
+      })
+      let newForm = { ...formData}
+      Object.keys(formData).map(key => {
+        if(!(formData as any)[key] || (formData as any)[key] === (dataEdit as any)[key]) {
+          if(key === 'name') (newForm as any)[key] = ''
+          else (newForm as any)[key] = null
+        }
+        return undefined
+      })
+      await onSubmitEdit(
+        dataEdit?.id,
+        {
+          ...newForm,
+          group_ids: dataEdit?.id && JSON.stringify([...formData.group_ids as number[]]?.sort()) === JSON.stringify([...dataEdit?.group_ids as number[]]?.sort()) ? null : newGroup.filter(Boolean) as number[]
+        })
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
     }
   }
+
   const onCancel = () => {
     setOpenModal(false)
   }
@@ -169,62 +225,78 @@ const ModalComponent =
   return (
     <Modal>
       <ModalBox>
-        <TitleModal>{dataEdit?.id ? 'Edit' : 'Add'} Account</TitleModal>
-        <BoxData>
-          <LabelModal>Name: </LabelModal>
-          <InputError
-            name="name"
-            value={formData?.name || ''}
-            onChange={(e) => onChangeData(e, 100)}
-            onBlur={(e) => onChangeData(e, 100)}
-            errorMessage={errors.name}
-          />
-          <LabelModal>Role: </LabelModal>
-          <SelectError
-            value={formData?.role_id || ''}
-            options={Object.keys(ROLE).filter(key => !Number(key))}
-            name="role_id"
-            onChange={(e) => onChangeData(e, 50)}
-            onBlur={(e) => onChangeData(e, 50)}
-            errorMessage={errors.role_id}
-          />
-          <LabelModal>e-mail: </LabelModal>
-          <InputError
-            name="email"
-            value={formData?.email || ''}
-            onChange={(e) => onChangeData(e, 255)}
-            onBlur={(e) => onChangeData(e, 255)}
-            errorMessage={errors.email}
-          />
-          {!dataEdit?.id ? (
-            <>
-              <LabelModal>Password: </LabelModal>
-              <InputError
-                name="password"
-                value={formData?.password || ''}
-                onChange={(e) => onChangeData(e, 255)}
-                onBlur={(e) => onChangeData(e, 255)}
-                type={'password'}
-                errorMessage={errors.password}
-              />
-              <LabelModal>Confirm Password: </LabelModal>
-              <InputError
-                name="confirmPassword"
-                value={formData?.confirmPassword || ''}
-                onChange={(e) => onChangeData(e, 255)}
-                onBlur={(e) => onChangeData(e, 255)}
-                type={'password'}
-                errorMessage={errors.confirmPassword}
-              />
-            </>
-          ) : null}
-        </BoxData>
-        <ButtonModal>
-          <Button onClick={() => onCancel()}>Cancel</Button>
-          <Button disabled={isDisabled} onClick={(e) => onSubmit(e)}>
-            Ok
-          </Button>
-        </ButtonModal>
+        <form>
+          <TitleModal>{dataEdit?.id ? 'Edit' : 'Add'} Account</TitleModal>
+          <BoxData>
+            <LabelModal>Name: </LabelModal>
+            <InputError
+              name="name"
+              value={formData?.name || ''}
+              onChange={(e) => onChangeData(e, 100)}
+              onBlur={(e) => onChangeData(e, 100)}
+              errorMessage={errors.name}
+            />
+            <LabelModal>Role: </LabelModal>
+            <SelectError
+              value={formData?.role_id || ''}
+              options={Object.keys(ROLE).filter(key => !Number(key))}
+              name="role_id"
+              onChange={(e) => onChangeData(e, 50)}
+              onBlur={(e) => onChangeData(e, 50)}
+              errorMessage={errors.role_id}
+            />
+            <LabelModal>e-mail: </LabelModal>
+            <InputError
+              name="email"
+              value={formData?.email || ''}
+              onChange={(e) => onChangeData(e, 255)}
+              onBlur={(e) => onChangeData(e, 255)}
+              errorMessage={errors.email}
+            />
+            <LabelModal>Group: </LabelModal>
+              <Tooltip title={(formData?.group_ids as string[])?.join(', ') || ''} placement="top">
+                <Box display={'inline'}>
+                  <SelectError
+                    multiple={true}
+                    value={(formData?.group_ids as string[]) || []}
+                    options={optionsGroup.map(item => item.name)}
+                    name="group_ids"
+                    onChange={(e) => onChangeData(e, 50)}
+                    onBlur={(e) => onChangeData(e, 50)}
+                    errorMessage={errors.group_ids}
+                  />
+                </Box>
+              </Tooltip>
+            {!dataEdit?.id ? (
+              <>
+                <LabelModal>Password: </LabelModal>
+                <InputError
+                  name="password"
+                  value={formData?.password || ''}
+                  onChange={(e) => onChangeData(e, 255)}
+                  onBlur={(e) => onChangeData(e, 255)}
+                  type={'password'}
+                  errorMessage={errors.password}
+                />
+                <LabelModal>Confirm Password: </LabelModal>
+                <InputError
+                  name="confirmPassword"
+                  value={formData?.confirmPassword || ''}
+                  onChange={(e) => onChangeData(e, 255)}
+                  onBlur={(e) => onChangeData(e, 255)}
+                  type={'password'}
+                  errorMessage={errors.confirmPassword}
+                />
+              </>
+            ) : null}
+          </BoxData>
+          <ButtonModal>
+            <Button onClick={() => onCancel()}>Cancel</Button>
+            <Button disabled={isDisabled} onClick={(e) => onSubmit(e)}>
+              Ok
+            </Button>
+          </ButtonModal>
+        </form>
       </ModalBox>
       {isDisabled ? <Loading /> : null}
     </Modal>
@@ -234,15 +306,15 @@ const ModalComponent =
 const PopupDelete = ({open, handleClose, handleOkDel, name}: PopupType) => {
   if(!open) return null
   return (
-      <Box>
-        <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
-          <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleOkDel}>Ok</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+    <Box>
+      <Dialog open={open} onClose={handleClose} sx={{ margin: 0 }}>
+        <DialogTitle>Do you want delete User "{name}"?</DialogTitle>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleOkDel}>Ok</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
@@ -410,15 +482,16 @@ const AccountManager = () => {
   }
 
   const handleEdit = (dataEdit: UserDTO) => {
+    if(!dataEdit) return
     setOpenModal(true)
-    setDataEdit(dataEdit)
+    setDataEdit({ ...dataEdit, group_ids: dataEdit.groups?.map(item => item.name)})
   }
 
   const onSubmitEdit = async (
     id: number | string | undefined,
-    data: { [key: string]: string },
+    data: FormDataType,
   ) => {
-    const {confirmPassword, role_id, ...newData} = data
+    const {confirmPassword, role_id, group_ids, ...newData} = data
     let newRole
     switch (role_id) {
       case "ADMIN":
@@ -438,7 +511,7 @@ const AccountManager = () => {
       const data = await dispatch(updateUser(
         {
           id: id as number,
-          data: {name: newData.name, email: newData.email, role_id: newRole},
+          data: {name: newData.name as string, email: newData.email as string, role_id: !role_id ? null : newRole, group_ids: group_ids as number[]},
           params: {...filterParams, ...sortParams, ...params}
         }))
         if((data as any).error) {
@@ -453,7 +526,7 @@ const AccountManager = () => {
         }
     } else {
       const data = await dispatch(createUser({
-        data: {...newData, role_id: newRole} as AddUserDTO,
+        data: {...newData, role_id: newRole, group_ids: group_ids} as AddUserDTO,
         params: {...filterParams, ...sortParams, ...params}
       }))
       if(!(data as any).error) {
@@ -606,6 +679,23 @@ const AccountManager = () => {
       type: "string",
     },
     {
+      headerName: 'Groups',
+      field: 'groups',
+      filterable: false,
+      sortable: false,
+      minWidth: 100,
+      flex: 3,
+      renderCell: (params: {row: UserDTO}) => {
+        if(!params) return null
+        return(
+          <Tooltip title={params?.row?.groups?.map(item => item.name).join(', ') || ''} placement={'top'}>
+            <div style={{ textOverflow: 'ellipsis', width: '100%', overflow: 'hidden' }}>{params?.row?.groups?.map(item => item.name).join(', ')}</div>
+          </Tooltip>
+        )
+      },
+      type: "string",
+    },
+    {
       headerName: '',
       field: 'action',
       sortable: false,
@@ -613,7 +703,7 @@ const AccountManager = () => {
       minWidth: 100,
       flex: 1,
       renderCell: (params: {row: UserDTO}) => {
-        const { id, role_id, name, email} = params.row
+        const { id, role_id, name, email, groups } = params.row
         if(!id || !role_id || !name || !email) return null
         let role: any
         switch (role_id) {
@@ -635,7 +725,7 @@ const AccountManager = () => {
           <>
             <ALink
               sx={{ color: 'red' }}
-              onClick={() => handleEdit({id, role_id: role, name, email} as UserDTO)}
+              onClick={() => handleEdit({id, role_id: role, name, email, groups} as UserDTO)}
             >
               <EditIcon sx={{ color: 'black' }} />
             </ALink>
@@ -656,6 +746,7 @@ const AccountManager = () => {
 
   return (
     <AccountManagerWrapper>
+      <AccountManagerTitle>Account Manager</AccountManagerTitle>
       <Box
         sx={{
           display: 'flex',
@@ -676,7 +767,7 @@ const AccountManager = () => {
         </Button>
       </Box>
       <DataGrid
-        sx={{ minHeight: 400, height: 'calc(100vh - 300px)'}}
+        sx={{ minHeight: 400, height: 'calc(100vh - 360px)'}}
         columns={columns as any}
         rows={listUser?.items || []}
         filterMode={'server'}
@@ -735,6 +826,7 @@ const ALink = styled('a')({
 })
 
 const Modal = styled(Box)(({ theme }) => ({
+  overflow: 'hidden',
   position: 'fixed',
   top: 0,
   left: 0,
@@ -776,5 +868,7 @@ const ButtonModal = styled(Box)(({ theme }) => ({
   justifyContent: 'end',
   margin: theme.spacing(5),
 }))
+
+const AccountManagerTitle = styled('h1')(({ theme }) => ({}))
 
 export default AccountManager
