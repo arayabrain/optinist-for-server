@@ -311,7 +311,7 @@ const PopupShareGroup = ({id, open, handleClose, data, usersShare, isWorkspace, 
         {isWorkspace ? null : (
           <DialogContent>
             <DialogContentText sx={{fontSize: 16, fontWeight: 400}}>
-              <ul><li>{type === 'share' ? `Experiment ID: ${data?.expId}` : `Experiments ${listCheck?.length}`}</li></ul>
+              <ul><li>{type === 'share' ? `Experiment ID: ${data?.expId}` : `Experiments: ${listCheck?.length}`} records</li></ul>
             </DialogContentText>
             <DialogContentText>
               <FormControl>
