@@ -64,9 +64,9 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr]
-    name: str
-    role_id: int
-    group_ids: List[int]
+    name: Optional[str] = Field("")
+    role_id: Optional[int]
+    group_ids: Optional[List[int]]
 
 
 class SelfUserUpdate(BaseModel):

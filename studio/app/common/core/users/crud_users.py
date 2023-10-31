@@ -111,16 +111,20 @@ async def update_user(
             .first()
         )
         assert user_db is not None, "User not found"
-        user_data = data.dict(exclude_unset=True)
+        user_data = data.dict(exclude_unset=True, exclude_defaults=True)
         role_id = user_data.pop("role_id", None)
-        group_ids = user_data.pop("group_ids", [])
+        group_ids = user_data.pop("group_ids", None)
 
         for key, value in user_data.items():
             setattr(user_db, key, value)
         if role_id is not None:
             user_db.role = db.query(RoleModel).get(role_id)
-        user_db.groups = db.query(GroupModel).filter(GroupModel.id.in_(group_ids)).all()
-        firebase_auth.update_user(user_db.uid, email=data.email)
+        if group_ids is not None:
+            user_db.groups = (
+                db.query(GroupModel).filter(GroupModel.id.in_(group_ids)).all()
+            )
+        if data.email is not None:
+            firebase_auth.update_user(user_db.uid, email=data.email)
         db.commit()
         db.refresh(user_db)
         return User.from_orm(user_db)
