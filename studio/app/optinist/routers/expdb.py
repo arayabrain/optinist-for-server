@@ -454,24 +454,43 @@ async def search_db_cells(
             )
         )
 
-        total_query = total_query.join(
-            optinist_model.ExperimentShareUser,
-            optinist_model.ExperimentShareUser.experiment_uid
-            == optinist_model.Experiment.id,
-            isouter=True,
-        ).filter(
-            or_(
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.for_org.value,
-                    optinist_model.Experiment.organization_id
-                    == current_user.organization.id,
-                ),
-                and_(
-                    optinist_model.Experiment.share_type
-                    == ExperimentShareType.per_user_or_group.value,
-                    optinist_model.ExperimentShareUser.user_id == current_user.id,
-                ),
+        total_query = (
+            total_query.join(
+                optinist_model.ExperimentShareUser,
+                optinist_model.ExperimentShareUser.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                optinist_model.ExperimentShareGroup,
+                optinist_model.ExperimentShareGroup.experiment_uid
+                == optinist_model.Experiment.id,
+                isouter=True,
+            )
+            .join(
+                common_model.UserGroup,
+                common_model.UserGroup.group_id
+                == optinist_model.ExperimentShareGroup.group_id,
+                isouter=True,
+            )
+            .filter(
+                or_(
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.for_org.value,
+                        optinist_model.Experiment.organization_id
+                        == current_user.organization.id,
+                    ),
+                    and_(
+                        optinist_model.Experiment.share_type
+                        == ExperimentShareType.per_user_or_group.value,
+                        or_(
+                            optinist_model.ExperimentShareUser.user_id
+                            == current_user.id,
+                            common_model.UserGroup.user_id == current_user.id,
+                        ),
+                    ),
+                )
             )
         )
     if options.experiment_id is not None:
