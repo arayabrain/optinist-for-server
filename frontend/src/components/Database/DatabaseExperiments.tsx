@@ -98,7 +98,7 @@ const columns = (
   readonly?: boolean,
   loading: boolean = false,
 ) => [
-  adminOrManager && user && {
+  adminOrManager && user && !readonly && {
     field: 'checkbox',
     renderHeader: (params: any) => (
       <Checkbox checked={checkBoxAll} onChange={(e: any) => {
@@ -727,7 +727,7 @@ const DatabaseExperiments = ({
         user ? (
           <Box sx={{ height: 40, margin: "0 0 0.5rem 0" }}>
             {
-              adminOrManager ?
+              !readonly && adminOrManager ?
                 (<WrapperIcons check={!!(listCheck.length > 0)}>
                   <Tooltip title={'bulk share'} placement={'top'}>
                     <span>
