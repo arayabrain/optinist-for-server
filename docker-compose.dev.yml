@@ -19,6 +19,9 @@ services:
     working_dir: /app
     volumes:
       - .:/app
+      # external datasets directories
+      - ../experiments_datasets/:/data/experiments_datasets
+      - ../experiments_public/:/data/experiments_public
     ports:
       - "127.0.0.1:8000:8000"
     command: >

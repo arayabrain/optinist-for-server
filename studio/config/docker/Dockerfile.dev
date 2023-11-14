@@ -10,7 +10,7 @@ RUN apt-get --allow-releaseinfo-change update && \
     apt-get install --no-install-recommends -y sudo procps iproute2 iputils-ping less vim
 
 # ----------------------------------------
-# add operatinal user
+# add operational user
 # ----------------------------------------
 
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
