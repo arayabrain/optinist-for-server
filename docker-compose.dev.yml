@@ -1,5 +1,13 @@
 version: "3"
 
+# Note:
+# - Before running docker compose (dev) for the first time, prepare the following directory for studio-dev-be.
+#   ```
+#   cd {APP_SRC_DIR}
+#   mkdir .snakemake ../experiments_datasets ../experiments_public
+#   chmod 777 ./ logs/ logs/* .snakemake/ ../experiments_datasets/ ../experiments_public/
+#   ```
+
 services:
   db:
     image: mariadb:10.11
