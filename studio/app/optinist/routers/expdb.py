@@ -55,7 +55,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 def experiment_transformer(items: Sequence) -> Sequence:
     experiments = []
     for item in items:
-        expdb, cell_count = item
+        expdb = item
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
@@ -137,16 +137,8 @@ async def search_public_experiments(
     )
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
-    query = (
-        select(
-            optinist_model.Experiment,
-            func.count(optinist_model.Cell.id).label("cell_count"),
-        )
-        .filter_by(publish_status=PublishStatus.on.value)
-        .join(
-            optinist_model.Cell,
-            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-        )
+    query = select(optinist_model.Experiment).filter_by(
+        publish_status=PublishStatus.on.value
     )
 
     if options.experiment_id is not None:
@@ -259,13 +251,7 @@ async def search_db_experiments(
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
     )
-    query = select(
-        optinist_model.Experiment,
-        func.count(optinist_model.Cell.id).label("cell_count"),
-    ).join(
-        optinist_model.Cell,
-        optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-    )
+    query = select(optinist_model.Experiment)
     if current_user.is_admin_data:
         query = query.filter(
             optinist_model.Experiment.organization_id == current_user.organization.id
