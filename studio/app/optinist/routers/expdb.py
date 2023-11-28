@@ -55,7 +55,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 def experiment_transformer(items: Sequence) -> Sequence:
     experiments = []
     for item in items:
-        expdb, cell_count = item
+        expdb = item
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
@@ -137,16 +137,8 @@ async def search_public_experiments(
     )
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
-    query = (
-        select(
-            optinist_model.Experiment,
-            func.count(optinist_model.Cell.id).label("cell_count"),
-        )
-        .filter_by(publish_status=PublishStatus.on.value)
-        .join(
-            optinist_model.Cell,
-            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-        )
+    query = select(optinist_model.Experiment).filter_by(
+        publish_status=PublishStatus.on.value
     )
 
     if options.experiment_id is not None:
@@ -185,41 +177,7 @@ async def search_public_cells(
         mapping={"experiment_id": optinist_model.Experiment.experiment_id},
         default=["experiment_id", SortDirection.asc],
     )
-    query = select(
-        optinist_model.Cell.id,
-        optinist_model.Cell.statistics,
-        optinist_model.Cell.cell_number,
-        optinist_model.Cell.created_at,
-        optinist_model.Cell.updated_at,
-        optinist_model.Cell.experiment_uid,
-        optinist_model.Experiment.experiment_id,
-        optinist_model.Experiment.publish_status,
-    )
-
-    if any(
-        sort.element.table.name == optinist_model.Cell.__table__.name
-        for sort in sa_sort_list
-    ):
-        query = query.with_hint(
-            optinist_model.Cell,
-            text="USE INDEX (cells_id_created_at_updated_at_index)",
-            dialect_name="mysql",
-        )
-
-    query = (
-        query.join(
-            optinist_model.Experiment,
-            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-        )
-        .with_hint(
-            optinist_model.Experiment,
-            text="FORCE INDEX FOR JOIN (experiments_id_experiment_id_publish_status_index)",  # noqa
-            dialect_name="mysql",
-        )
-        .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
-    )
-
-    total_query = (
+    base_query = (
         select(optinist_model.Cell.id)
         .join(
             optinist_model.Experiment,
@@ -229,18 +187,33 @@ async def search_public_cells(
     )
 
     if options.experiment_id is not None:
-        query = query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
-        total_query = total_query.filter(
+        base_query = base_query.filter(
             optinist_model.Experiment.experiment_id.like(
                 "%{0}%".format(options.experiment_id)
             )
         )
 
-    query = query.order_by(*sa_sort_list)
+    sub_query = (
+        base_query.order_by(*sa_sort_list).limit(limit).offset(offset).subquery()
+    )
+    query = (
+        select(
+            optinist_model.Cell.id,
+            optinist_model.Cell.statistics,
+            optinist_model.Cell.cell_number,
+            optinist_model.Cell.created_at,
+            optinist_model.Cell.updated_at,
+            optinist_model.Cell.experiment_uid,
+            optinist_model.Experiment.experiment_id,
+            optinist_model.Experiment.publish_status,
+        )
+        .join(
+            optinist_model.Experiment,
+            optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
+        )
+        .join(sub_query, sub_query.c.id == optinist_model.Cell.id)
+        .order_by(*sa_sort_list)
+    )
     graph_titles = [v["title"] for v in CELL_GRAPHS.values()]
 
     """
@@ -254,10 +227,8 @@ async def search_public_cells(
     """
     return PageWithHeader[ExpDbCell](
         header=ExpDbExperimentHeader(graph_titles=graph_titles),
-        items=expdbcell_transformer(
-            db.execute(query.limit(limit).offset(offset)).all()
-        ),
-        total=db.scalar(select(func.count()).select_from(total_query.subquery())),
+        items=expdbcell_transformer(db.execute(query).all()),
+        total=db.scalar(select(func.count()).select_from(base_query.subquery())),
         limit=limit,
         offset=offset,
     )
@@ -280,13 +251,7 @@ async def search_db_experiments(
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
     )
-    query = select(
-        optinist_model.Experiment,
-        func.count(optinist_model.Cell.id).label("cell_count"),
-    ).join(
-        optinist_model.Cell,
-        optinist_model.Cell.experiment_uid == optinist_model.Experiment.id,
-    )
+    query = select(optinist_model.Experiment)
     if current_user.is_admin_data:
         query = query.filter(
             optinist_model.Experiment.organization_id == current_user.organization.id
