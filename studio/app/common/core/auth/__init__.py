@@ -3,20 +3,19 @@ import logging
 
 import pyrebase
 
+from studio.app.common.core.mode import MODE
 from studio.app.dir_path import DIRPATH
 
 try:
     pyrebase_app = pyrebase.initialize_app(
         json.load(open(DIRPATH.FIREBASE_CONFIG_PATH))
     )
-
-    if pyrebase_app is None:
-        logging.getLogger().error(
-            "Invalid pyrebase_app: config_path: %s", DIRPATH.FIREBASE_CONFIG_PATH
-        )
+except FileNotFoundError as e:
+    if MODE.IS_STANDALONE:
+        pyrebase_app = None
     else:
-        logging.getLogger().info("Init pyrebase_app success.")
-
+        logging.getLogger().error("Firebase config file not found.")
+        raise e
 except Exception as e:
     logging.getLogger().error(e)
-    pyrebase_app = None
+    raise e

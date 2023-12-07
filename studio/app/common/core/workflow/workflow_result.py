@@ -86,7 +86,6 @@ class WorkflowResult:
 
     def cancel(self):
         """
-
         The algorithm function of this workflow is being executed at the line:
         https://github.com/snakemake/snakemake/blob/27b224ed12448df8aebc7d1ff8f25e3bf7622232/snakemake/shell.py#L258
         ```
@@ -110,10 +109,8 @@ class WorkflowResult:
         ```
         Interrupt the conda activate at the beginning of the process is impossible
         because it is only called when each algorithm function executes.
-
         This workflow is cancelled by killing process via PID of algorithm function
         saved in pid.json file
-
         Raises:
             HTTPException: if pid_filepath or last_script_file does not exist
         """

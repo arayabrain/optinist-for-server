@@ -1,10 +1,16 @@
+import shutil
+
+from studio.app.common.core.utils.filepath_creater import (
+    create_directory,
+    join_filepath,
+)
 from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import RoiData
 
 
 def caiman_mc(
-    image: ImageData, output_dir: str, params: dict = None
+    image: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(mc_images=ImageData):
     import numpy as np
     from caiman import load_memmap, save_memmap, stop_server
@@ -12,6 +18,9 @@ def caiman_mc(
     from caiman.cluster import setup_cluster
     from caiman.motion_correction import MotionCorrect
     from caiman.source_extraction.cnmf.params import CNMFParams
+
+    function_id = output_dir.split("/")[-1]
+    print("start caiman motion_correction:", function_id)
 
     opts = CNMFParams()
 
@@ -29,7 +38,7 @@ def caiman_mc(
 
     # memory mapping
     fname_new = save_memmap(
-        mc.mmap_file, base_name="memmap_", order="C", border_to_0=border_to_0
+        mc.mmap_file, base_name=function_id, order="C", border_to_0=border_to_0
     )
 
     stop_server(dview=dview)
@@ -55,6 +64,7 @@ def caiman_mc(
 
     rois = np.nanmax(rois, axis=0)
     rois[rois == 0] = np.nan
+    rois -= 1
 
     xy_trans_data = (
         (np.array(mc.x_shifts_els), np.array(mc.y_shifts_els))
@@ -66,7 +76,7 @@ def caiman_mc(
 
     nwbfile = {}
     nwbfile[NWBDATASET.MOTION_CORRECTION] = {
-        "caiman_mc": {
+        function_id: {
             "mc_data": mc_images,
             "xy_trans_data": xy_trans_data,
         }
@@ -78,5 +88,12 @@ def caiman_mc(
         "rois": RoiData(rois, output_dir=output_dir, file_name="rois"),
         "nwbfile": nwbfile,
     }
+
+    # Clean up temporary files
+    mmap_output_dir = join_filepath([output_dir, "mmap"])
+    create_directory(mmap_output_dir)
+    for mmap_file in mc.mmap_file:
+        shutil.move(mmap_file, mmap_output_dir)
+    shutil.move(fname_new, mmap_output_dir)
 
     return info

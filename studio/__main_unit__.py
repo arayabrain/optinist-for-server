@@ -12,6 +12,11 @@ from studio.app.common.core.auth.auth_dependencies import (
     get_admin_user,
     get_current_user,
 )
+from studio.app.common.core.mode import MODE
+from studio.app.common.core.workspace.workspace_dependencies import (
+    is_workspace_available,
+    is_workspace_owner,
+)
 from studio.app.common.routers import (
     algolist,
     auth,
@@ -57,6 +62,16 @@ app.include_router(expdb.public_router)
 app.include_router(expdb.router, dependencies=[Depends(get_current_user)])
 
 
+def skip_dependencies():
+    pass
+
+
+if MODE.IS_STANDALONE:
+    app.dependency_overrides[get_current_user] = skip_dependencies
+    app.dependency_overrides[get_admin_user] = skip_dependencies
+    app.dependency_overrides[is_workspace_owner] = skip_dependencies
+    app.dependency_overrides[is_workspace_available] = skip_dependencies
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -85,7 +100,13 @@ templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
 
 @app.on_event("startup")
 async def startup_event():
-    logging.info('"Studio" application startup complete.')
+    mode = "standalone" if MODE.IS_STANDALONE else "multiuser"
+    logging.info(f'"Studio" application startup complete. [mode: {mode}]')
+
+
+@app.get("/is_standalone", response_model=bool, tags=["others"])
+async def is_standalone():
+    return MODE.IS_STANDALONE
 
 
 @app.get("/")
@@ -105,13 +126,19 @@ def main(develop_mode: bool = False):
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
 
+    log_config_file = (
+        f"{DIRPATH.CONFIG_DIR}/standalone-logging.yaml"
+        if MODE.IS_STANDALONE
+        else f"{DIRPATH.CONFIG_DIR}/logging.yaml"
+    )
+
     if develop_mode:
         reload_options = {"reload_dirs": ["studio"]} if args.reload else {}
         uvicorn.run(
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=f"{DIRPATH.CONFIG_DIR}/logging.yaml",
+            log_config=log_config_file,
             reload=args.reload,
             **reload_options,
         )
@@ -120,6 +147,6 @@ def main(develop_mode: bool = False):
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=f"{DIRPATH.CONFIG_DIR}/logging.yaml",
+            log_config=log_config_file,
             reload=False,
         )

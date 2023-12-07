@@ -1,20 +1,22 @@
-import { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Drawer from '@mui/material/Drawer'
-import List from '@mui/material/List'
-import ListItem from '@mui/material/ListItem'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import WebIcon from '@mui/icons-material/Web';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import StorageIcon from '@mui/icons-material/Storage'
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import AnalyticsIcon from '@mui/icons-material/Analytics'
-import { DRAWER_WIDTH } from 'const/Layout'
-import { Box } from '@mui/material'
-import {useSelector} from "react-redux";
-import {isAdmin} from "../../store/slice/User/UserSelector";
+import { FC } from "react"
+import { useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
+
+import AnalyticsIcon from "@mui/icons-material/Analytics"
+import DashboardIcon from "@mui/icons-material/Dashboard"
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts"
+import StorageIcon from "@mui/icons-material/Storage"
+import WebIcon from "@mui/icons-material/Web"
+import { Box } from "@mui/material"
+import Drawer from "@mui/material/Drawer"
+import List from "@mui/material/List"
+import ListItem from "@mui/material/ListItem"
+import ListItemButton from "@mui/material/ListItemButton"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import ListItemText from "@mui/material/ListItemText"
+
+import { DRAWER_WIDTH } from "const/Layout"
+import { isAdmin } from "store/slice/User/UserSelector"
 
 const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
   open,
@@ -25,27 +27,27 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
 
   const onClickDashboard = () => {
     handleDrawerClose()
-    navigate('/console')
+    navigate("/console")
   }
 
   const onClickDatabase = () => {
     handleDrawerClose()
-    navigate('/console/experiments')
+    navigate("/console/experiments")
   }
 
   const onClickWorkspaces = () => {
     handleDrawerClose()
-    navigate('/console/workspaces')
+    navigate("/console/workspaces")
   }
 
   const onClickAdministration = () => {
     handleDrawerClose()
-    navigate('/console/administration')
+    navigate("/console/administration")
   }
 
   const onClickOpenSite = () => {
     handleDrawerClose()
-    navigate('/')
+    navigate("/")
   }
 
   return (
@@ -56,6 +58,7 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="dashboard" disablePadding>
               <ListItemButton onClick={onClickDashboard}>
                 <ListItemIcon>
+                  <DashboardIcon />
                   <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
@@ -73,25 +76,23 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
               <ListItemButton onClick={onClickWorkspaces}>
                 <ListItemIcon>
                   <AnalyticsIcon />
+                  <AnalyticsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Workspaces" />
               </ListItemButton>
             </ListItem>
-            {
-              admin ? (
-                <>
-                  <ListItem key="administration" disablePadding>
-                    <ListItemButton onClick={onClickAdministration}>
-                      <ListItemIcon>
-                        <ManageAccountsIcon />
-                      </ListItemIcon>
-                      <ListItemText primary="Administration" />
-                    </ListItemButton>
-                  </ListItem>
-                </>
-              )
-               : null
-            }
+            {admin ? (
+              <>
+                <ListItem key="administration" disablePadding>
+                  <ListItemButton onClick={onClickAdministration}>
+                    <ListItemIcon>
+                      <ManageAccountsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Administration" />
+                  </ListItemButton>
+                </ListItem>
+              </>
+            ) : null}
             <ListItem key="site" disablePadding>
               <ListItemButton onClick={onClickOpenSite}>
                 <ListItemIcon>

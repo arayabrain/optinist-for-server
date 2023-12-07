@@ -11,16 +11,15 @@ from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_owner,
 )
 from studio.app.common.db.database import get_db
+from studio.app.common.schemas.base import SortOptions
 from studio.app.common.schemas.users import User
 from studio.app.common.schemas.workspace import (
     Workspace,
     WorkspaceCreate,
     WorkspaceSharePostStatus,
     WorkspaceShareStatus,
-    WorkspacesSetting,
     WorkspaceUpdate,
 )
-from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(tags=["Workspace"])
 
@@ -45,7 +44,7 @@ shared_count_subquery = (
     "/workspaces",
     response_model=LimitOffsetPage[Workspace],
     description="""
-- Workspacesを検索し、結果を応答
+- search workspaces
 """,
 )
 def search_workspaces(
@@ -93,7 +92,7 @@ def search_workspaces(
     response_model=Workspace,
     dependencies=[Depends(is_workspace_available)],
     description="""
-- Workspaceを検索し、結果を応答
+- get workspace by id
 """,
 )
 def get_workspace(
@@ -128,7 +127,7 @@ def get_workspace(
     "/workspace",
     response_model=Workspace,
     description="""
-- Workspace を作成する
+- create workspace
 """,
 )
 def create_workspace(
@@ -152,7 +151,7 @@ def create_workspace(
     response_model=Workspace,
     dependencies=[Depends(is_workspace_owner)],
     description="""
-- Workspace を更新する
+- update workspace
 """,
 )
 def update_workspace(
@@ -188,7 +187,7 @@ def update_workspace(
     response_model=bool,
     dependencies=[Depends(is_workspace_owner)],
     description="""
-- Workspace を削除する
+- delete workspace
 """,
 )
 def delete_workspace(
@@ -213,36 +212,11 @@ def delete_workspace(
 
 
 @router.get(
-    "/workspace/export/{workspace_id}",
-    response_model=WorkspacesSetting,
-    dependencies=[Depends(is_workspace_owner)],
-    description="""
-- Workspace 設定をExportする
-""",
-)
-def export_workspace(workspace_id: int, db: Session = Depends(get_db)):
-    return {"todo_dummy": {}}
-
-
-@router.post(
-    "/workspace/import",
-    response_model=bool,
-    description="""
-- Workspace 設定をImportする
-""",
-)
-def import_workspace(
-    setting: WorkspacesSetting,
-):
-    return True
-
-
-@router.get(
     "/workspace/share/{workspace_id}/status",
     response_model=WorkspaceShareStatus,
     dependencies=[Depends(is_workspace_available)],
     description="""
-- Workspace の共有状態を取得する
+- get workspace share status
 """,
 )
 def get_workspace_share_status(
@@ -281,7 +255,7 @@ def get_workspace_share_status(
     response_model=bool,
     dependencies=[Depends(is_workspace_owner)],
     description="""
-- Workspace の共有状態を更新する（総入れ替え）
+- update workspace share status
 """,
 )
 def update_workspace_share_status(

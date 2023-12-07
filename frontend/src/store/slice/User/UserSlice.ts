@@ -1,9 +1,9 @@
-import { createSlice, isAnyOf } from '@reduxjs/toolkit'
-import { USER_SLICE_NAME } from './UserType'
-import { User } from './UserType'
+import { createSlice, isAnyOf } from "@reduxjs/toolkit"
+
 import {
   deleteMe,
   getListUser,
+  getListGroupSearch,
   getListUserSearch,
   getMe,
   login,
@@ -12,36 +12,36 @@ import {
   deleteUser,
   createUser,
   updateUser,
-  getListGroupSearch
-} from './UserActions'
+} from "store/slice/User/UserActions"
+import { USER_SLICE_NAME, User } from "store/slice/User/UserType"
 import {
   removeExToken,
   removeToken,
   saveExToken,
   saveRefreshToken,
   saveToken,
-} from 'utils/auth/AuthUtils'
+} from "utils/auth/AuthUtils"
 
 const initialState: User = {
   currentUser: undefined,
   listUserSearch: undefined,
   listGroupSearch: undefined,
   listUser: undefined,
-  loading: false
+  loading: false,
 }
 
 export const userSlice = createSlice({
   name: USER_SLICE_NAME,
   initialState,
   reducers: {
-    logout: (state) => {
+    logout: () => {
       removeToken()
       removeExToken()
-      state = initialState
+      return initialState
     },
     resetUserSearch: (state) => {
       state.listUserSearch = []
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -79,7 +79,8 @@ export const userSlice = createSlice({
           deleteMe.fulfilled,
           updateMe.rejected,
           updateMe.fulfilled,
-          createUser.fulfilled),
+          createUser.fulfilled,
+        ),
         (state) => {
           state.loading = false
         },
@@ -93,17 +94,18 @@ export const userSlice = createSlice({
           deleteMe.pending,
           updateUser.pending,
           getListUserSearch.pending,
-          updateMePassword.pending),
+          updateMePassword.pending,
+        ),
         (state) => {
           state.loading = true
         },
       )
       .addMatcher(
         isAnyOf(login.rejected, getMe.rejected, deleteMe.fulfilled),
-        (state) => {
+        () => {
           removeToken()
           removeExToken()
-          state = initialState
+          return initialState
         },
       )
   },

@@ -10,6 +10,7 @@ from studio.app.common.models import Role as RoleModel
 from studio.app.common.models import User as UserModel
 from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.auth import UserAuth
+from studio.app.common.schemas.base import SortOptions
 from studio.app.common.schemas.users import (
     User,
     UserCreate,
@@ -17,7 +18,6 @@ from studio.app.common.schemas.users import (
     UserSearchOptions,
     UserUpdate,
 )
-from studio.app.optinist.schemas.base import SortOptions
 
 
 async def get_user(db: Session, user_id: int, organization_id: int) -> User:

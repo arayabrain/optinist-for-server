@@ -3,7 +3,8 @@ import {
   ThunkAction,
   Action,
   combineReducers,
-} from '@reduxjs/toolkit'
+} from "@reduxjs/toolkit"
+
 import {
   algorithmListReducer,
   algorithmNodeReducer,
@@ -22,9 +23,11 @@ import {
   experimentsReducer,
   workspaceReducer,
   userReducer,
-  databaseReducer, groupManagerReducer,
-} from './slice'
-import { DATABASE_SLICE_NAME } from './slice/Database/DatabaseType'
+  modeStandalone,
+  databaseReducer,
+  groupManagerReducer,
+} from "store/slice"
+import { DATABASE_SLICE_NAME } from "store/slice/Database/DatabaseType"
 
 export const rootReducer = combineReducers({
   algorithmList: algorithmListReducer,
@@ -44,12 +47,19 @@ export const rootReducer = combineReducers({
   experiments: experimentsReducer,
   workspace: workspaceReducer,
   user: userReducer,
+  mode: modeStandalone,
   groupManager: groupManagerReducer,
   [DATABASE_SLICE_NAME]: databaseReducer,
 })
 
 export const store = configureStore({
   reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      // Ignore serializable checks because serializing fails
+      // on rejectedWith value
+      serializableCheck: false,
+    }),
 })
 
 export type AppDispatch = typeof store.dispatch

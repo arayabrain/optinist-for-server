@@ -1,11 +1,11 @@
-import { RootState } from 'store/store'
 import {
   isHDF5InputNode,
   isCsvInputNode,
   isImageInputNode,
   isMatlabInputNode,
   isExpDbInputNode,
-} from './InputNodeUtils'
+} from "store/slice/InputNode/InputNodeUtils"
+import { RootState } from "store/store"
 
 export const selectInputNode = (state: RootState) => state.inputNode
 
@@ -28,7 +28,7 @@ export const selectCsvInputNodeSelectedFilePath =
     if (isCsvInputNode(node)) {
       return node.selectedFilePath
     } else {
-      throw new Error('invaid input node type')
+      throw new Error("invalid input node type")
     }
   }
 
@@ -38,7 +38,7 @@ export const selectImageInputNodeSelectedFilePath =
     if (isImageInputNode(node)) {
       return node.selectedFilePath
     } else {
-      throw new Error('invaid input node type')
+      throw new Error("invalid input node type")
     }
   }
 
@@ -48,7 +48,7 @@ export const selectHDF5InputNodeSelectedFilePath =
     if (isHDF5InputNode(node)) {
       return node.selectedFilePath
     } else {
-      throw new Error('invaid input node type')
+      throw new Error("invalid input node type")
     }
   }
 
@@ -107,7 +107,7 @@ export const selectMatlabInputNodeSelectedFilePath =
     if (isMatlabInputNode(node)) {
       return node.selectedFilePath
     } else {
-      throw new Error('invaid input node type')
+      throw new Error("invaid input node type")
     }
   }
 
@@ -134,6 +134,6 @@ export const selectExpDbInputNodeSelectedFilePath =
     if (isExpDbInputNode(inputNode)) {
       return inputNode.selectedFilePath
     } else {
-      throw new Error('invaid input node type')
+      throw new Error("invaid input node type")
     }
   }

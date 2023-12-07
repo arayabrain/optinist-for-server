@@ -52,7 +52,7 @@ class EditROI:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         return algo
 
-    def excute(self):
+    def execute(self):
         snakemake(
             DIRPATH.SNAKEMAKE_FILEPATH,
             use_conda=True,
@@ -79,7 +79,7 @@ class EditRoiUtils:
         return None
 
     @classmethod
-    def excute(cls, config):
+    def execute(cls, config):
         algo = config["algo"]
         node_dirpath = config["node_dirpath"]
         action = config["action"]
@@ -107,10 +107,7 @@ class EditRoiUtils:
                 last_output_info = cls.__update_pickle_for_roi_edition(
                     last_output_path, func_name, output_info
                 )
-                rule_type = os.path.splitext(os.path.basename(last_output_path))[0]
-                whole_nwb_path = join_filepath(
-                    [workflow_dirpath, f"whole_{rule_type}.nwb"]
-                )
+                whole_nwb_path = join_filepath([workflow_dirpath, "whole.nwb"])
 
                 Runner.save_all_nwb(whole_nwb_path, last_output_info["nwbfile"])
 
@@ -122,7 +119,7 @@ class EditRoiUtils:
                 v.save_json(node_dirpath)
 
             if k == "nwbfile":
-                nwb_files = glob(join_filepath([node_dirpath, "*.nwb"]))
+                nwb_files = glob(join_filepath([node_dirpath, "[!tmp_]*.nwb"]))
                 if len(nwb_files) > 0:
                     overwrite_nwb(v, node_dirpath, os.path.basename(nwb_files[0]))
 

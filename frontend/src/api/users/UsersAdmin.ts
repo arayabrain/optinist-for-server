@@ -1,14 +1,16 @@
-import axios from 'utils/axios'
+import { stringify } from "qs"
+
 import {
   AddUserDTO,
   UserDTO,
   ListUsersQueryDTO,
-  UpdateUserDTO, UserListDTO,
-} from './UsersApiDTO'
-import qs from "qs";
+  UpdateUserDTO,
+  UserListDTO,
+} from "api/users/UsersApiDTO"
+import axios from "utils/axios"
 
 export const createUserApi = async (data: AddUserDTO): Promise<UserDTO> => {
-  const response = await axios.post('/admin/users', data)
+  const response = await axios.post("/admin/users", data)
   return response.data
 }
 
@@ -20,7 +22,7 @@ export const getUserApi = async (uid: string): Promise<UserDTO> => {
 export const listUsersApi = async (
   data: ListUsersQueryDTO,
 ): Promise<UserListDTO> => {
-  const paramsNew = qs.stringify(data, { indices: false })
+  const paramsNew = stringify(data, { indices: false })
   const response = await axios.get(`/admin/users?${paramsNew}`)
   return response.data
 }
@@ -38,12 +40,24 @@ export const deleteUserApi = async (id: number): Promise<string> => {
   return response.data
 }
 
-export const getListUserSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
-  const response = await axios.get(`/users/search/share_users${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+export const getListUserSearchApi = async (data: {
+  keyword: string | null
+}): Promise<UserDTO[]> => {
+  const response = await axios.get(
+    `/users/search/share_users${
+      data.keyword ? `?keyword=${data.keyword}` : ""
+    }`,
+  )
   return response.data
 }
 
-export const getListGroupSearchApi = async (data: {keyword: string | null}): Promise<UserDTO[]> => {
-  const response = await axios.get(`/group/search/share_groups${data.keyword ? `?keyword=${data.keyword}` : ''}`)
+export const getListGroupSearchApi = async (data: {
+  keyword: string | null
+}): Promise<UserDTO[]> => {
+  const response = await axios.get(
+    `/group/search/share_groups${
+      data.keyword ? `?keyword=${data.keyword}` : ""
+    }`,
+  )
   return response.data
 }

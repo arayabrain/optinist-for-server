@@ -6,6 +6,9 @@ from studio.app.optinist.dataclass import CaimanCnmfData, FluoData, RoiData
 def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
     import numpy as np
 
+    function_id = node_dirpath.split("/")[-1]
+    print("start caiman add_roi:", function_id)
+
     # load data
     cnmf_data = np.load(f"{node_dirpath}/caiman_cnmf.npy", allow_pickle=True).item()
     is_cell = cnmf_data.get("is_cell")
@@ -31,7 +34,8 @@ def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
     num_rois = im.shape[0]
     for i in range(num_rois):
         cell_roi[i, :, :] = np.where(im[i, :, :] != 0, i + 1, np.nan)
-    add_roi.append(num_rois)
+    cell_roi -= 1
+    add_roi.append(num_rois - 1)
 
     # save data
     cnmf_data["im"] = im
@@ -47,7 +51,7 @@ def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
             file_name="cell_roi",
         ),
         "cnmf_data": CaimanCnmfData(cnmf_data),
-        "nwbfile": set_nwbfile(cnmf_data),
+        "nwbfile": set_nwbfile(cnmf_data, function_id),
     }
 
     return info

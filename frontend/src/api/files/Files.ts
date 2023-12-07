@@ -1,20 +1,21 @@
-import axios from 'utils/axios'
+import { AxiosProgressEvent } from "axios"
 
-import { BASE_URL } from 'const/API'
+import { BASE_URL } from "const/API"
+import axios from "utils/axios"
 
 export const FILE_TREE_TYPE_SET = {
-  IMAGE: 'image',
-  CSV: 'csv',
-  HDF5: 'hdf5',
-  FLUO: 'fluo',
-  BEHAVIOR: 'behavior',
-  MATLAB: 'matlab',
-  EXPDB: 'expdb',
-  ALL: 'all',
+  IMAGE: "image",
+  CSV: "csv",
+  HDF5: "hdf5",
+  FLUO: "fluo",
+  BEHAVIOR: "behavior",
+  MATLAB: "matlab",
+  EXPDB: "expdb",
+  ALL: "all",
 } as const
 
 export type FILE_TREE_TYPE =
-  typeof FILE_TREE_TYPE_SET[keyof typeof FILE_TREE_TYPE_SET]
+  (typeof FILE_TREE_TYPE_SET)[keyof typeof FILE_TREE_TYPE_SET]
 
 export type TreeNodeTypeDTO = DirNodeDTO | FileNodeDTO
 
@@ -49,7 +50,7 @@ export async function uploadFileApi(
   workspaceId: number,
   fileName: string,
   config: {
-    onUploadProgress: (progressEvent: any) => void
+    onUploadProgress: (progressEvent: AxiosProgressEvent) => void
   },
   formData: FormData,
 ): Promise<{ file_path: string }> {

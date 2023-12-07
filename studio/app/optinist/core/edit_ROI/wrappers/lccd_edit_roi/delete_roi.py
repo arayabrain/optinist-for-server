@@ -7,6 +7,9 @@ from studio.app.optinist.dataclass import FluoData, LccdData, RoiData
 def excute_delete_roi(node_dirpath, ids):
     import numpy as np
 
+    function_id = node_dirpath.split("/")[-1]
+    print("start lccd delete_roi:", function_id)
+
     lccd_data = np.load(
         os.path.join(node_dirpath, "lccd.npy"), allow_pickle=True
     ).item()
@@ -23,7 +26,7 @@ def excute_delete_roi(node_dirpath, ids):
 
     # delete ROI
     is_cell[ids] = False
-    delete_roi += [(id + 1) for id in ids]
+    delete_roi += ids
 
     num_cell = roi.shape[1]
     images = images.reshape([images.shape[0] * images.shape[1], images.shape[2]])
@@ -39,6 +42,7 @@ def excute_delete_roi(node_dirpath, ids):
     else:
         im = np.stack(im)
     im[im == 0] = np.nan
+    im -= 1
 
     # Get DFF
     timeseries_dff = np.ones([num_cell, num_frames]) * np.nan
@@ -66,7 +70,7 @@ def excute_delete_roi(node_dirpath, ids):
         ),
         "fluorescence": FluoData(timeseries, file_name="fluorescence"),
         "dff": FluoData(timeseries_dff, file_name="dff"),
-        "nwbfile": set_nwbfile(lccd_data, roi_list),
+        "nwbfile": set_nwbfile(lccd_data, roi_list, function_id),
     }
 
     return info

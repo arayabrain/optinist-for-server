@@ -1,10 +1,18 @@
-import React from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import PlotlyChart from 'react-plotlyjs-ts'
-import { LegendClickEvent } from 'plotly.js'
-import { LinearProgress, Typography } from '@mui/material'
+import { memo, useContext, useEffect, useMemo, useState } from "react"
+import PlotlyChart from "react-plotlyjs-ts"
+import { useSelector, useDispatch } from "react-redux"
 
-import { DisplayDataContext } from '../DataContext'
+import createColormap from "colormap"
+import { LegendClickEvent } from "plotly.js"
+
+import { LinearProgress, Typography } from "@mui/material"
+
+import { TimeSeriesData } from "api/outputs/Outputs"
+import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
+import {
+  getTimeSeriesDataById,
+  getTimeSeriesInitData,
+} from "store/slice/DisplayData/DisplayDataActions"
 import {
   selectTimeSeriesData,
   selectTimeSeriesDataError,
@@ -13,12 +21,10 @@ import {
   selectTimeSeriesDataIsPending,
   selectTimeSeriesStd,
   selectTimeSeriesXrange,
-} from 'store/slice/DisplayData/DisplayDataSelectors'
-import {
-  getTimeSeriesDataById,
-  getTimeSeriesInitData,
-} from 'store/slice/DisplayData/DisplayDataActions'
-import { TimeSeriesData } from 'api/outputs/Outputs'
+  selectTimesSeriesMeta,
+} from "store/slice/DisplayData/DisplayDataSelectors"
+import { selectFrameRate } from "store/slice/Experiments/ExperimentsSelectors"
+import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
 import {
   selectTimeSeriesItemDrawOrderList,
   selectTimeSeriesItemOffset,
@@ -33,19 +39,20 @@ import {
   selectTimeSeriesItemKeys,
   selectVisualizeSaveFilename,
   selectVisualizeSaveFormat,
-} from 'store/slice/VisualizeItem/VisualizeItemSelectors'
-import createColormap from 'colormap'
-import { setTimeSeriesItemDrawOrderList } from 'store/slice/VisualizeItem/VisualizeItemSlice'
+  selectImageItemRangeUnit,
+} from "store/slice/VisualizeItem/VisualizeItemSelectors"
+import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
+import { AppDispatch } from "store/store"
 
-export const TimeSeriesPlot = React.memo(() => {
-  const { itemId, filePath: path } = React.useContext(DisplayDataContext)
-  const dispatch = useDispatch()
+export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
+  const { itemId, filePath: path } = useContext(DisplayDataContext)
+  const dispatch = useDispatch<AppDispatch>()
   const isPending = useSelector(selectTimeSeriesDataIsPending(path))
   const isInitialized = useSelector(selectTimeSeriesDataIsInitialized(path))
   const error = useSelector(selectTimeSeriesDataError(path))
   const isFulfilled = useSelector(selectTimeSeriesDataIsFulfilled(path))
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isInitialized) {
       dispatch(getTimeSeriesInitData({ path, itemId }))
     }
@@ -62,19 +69,20 @@ export const TimeSeriesPlot = React.memo(() => {
   }
 })
 
-const TimeSeriesPlotImple = React.memo(() => {
-  const { filePath: path, itemId } = React.useContext(DisplayDataContext)
+const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
+  const { filePath: path, itemId } = useContext(DisplayDataContext)
 
   // 0番のデータとkeysだけをとってくる
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const timeSeriesData = useSelector(
     selectTimeSeriesData(path),
     timeSeriesDataEqualityFn,
   )
 
+  const meta = useSelector(selectTimesSeriesMeta(path))
   const dataXrange = useSelector(selectTimeSeriesXrange(path))
   const dataStd = useSelector(selectTimeSeriesStd(path))
-
+  const rangeUnit = useSelector(selectImageItemRangeUnit(itemId))
   const offset = useSelector(selectTimeSeriesItemOffset(itemId))
   const span = useSelector(selectTimeSeriesItemSpan(itemId))
   const showgrid = useSelector(selectTimeSeriesItemShowGrid(itemId))
@@ -87,18 +95,52 @@ const TimeSeriesPlotImple = React.memo(() => {
   const height = useSelector(selectVisualizeItemHeight(itemId))
   const dataKeys = useSelector(selectTimeSeriesItemKeys(itemId))
 
+  const [newDataXrange, setNewDataXrange] = useState<string[]>(dataXrange)
+  const [newTimeSeriesData, setNewTimeSeriesData] = useState(timeSeriesData)
+  const currentPipelineUid = useSelector(selectPipelineLatestUid)
+  const frameRate = useSelector(selectFrameRate(currentPipelineUid))
+
+  useEffect(() => {
+    const seriesData: TimeSeriesData = {}
+    drawOrderList.forEach((key) => {
+      seriesData[key] = timeSeriesData[key]
+    })
+    if (
+      rangeUnit === "time" &&
+      timeSeriesData &&
+      Object.keys(timeSeriesData).length > 0
+    ) {
+      const newSeriesData: TimeSeriesData = {}
+      Object.keys(seriesData).forEach((key) => {
+        newSeriesData[key] = {}
+        Object.keys(seriesData[key]).forEach((keyTime) => {
+          const newKeyTime = Number(keyTime) / frameRate
+          newSeriesData[key][newKeyTime] = seriesData[key][keyTime]
+        })
+      })
+      setNewDataXrange(
+        dataXrange.map((data) => String(Number(data) / frameRate)),
+      )
+      setNewTimeSeriesData(newSeriesData)
+    } else {
+      setNewDataXrange(dataXrange)
+      setNewTimeSeriesData(seriesData)
+    }
+    //eslint-disable-next-line
+  }, [rangeUnit, dataXrange, timeSeriesData, drawOrderList])
+
   const colorScale = createColormap({
-    colormap: 'jet',
+    colormap: "jet",
     nshades: 100, //maxIndex >= 6 ? maxIndex : 6,
-    format: 'hex',
+    format: "hex",
     alpha: 1,
   })
 
-  const data = React.useMemo(() => {
+  const data = useMemo(() => {
     return Object.fromEntries(
       dataKeys.map((key) => {
-        let y = dataXrange.map((x) => timeSeriesData[key][x])
-        const i = Number(key) - 1
+        let y = newDataXrange.map((x) => newTimeSeriesData[key]?.[x])
+        const i = Number(key)
         const new_i = Math.floor((i % 10) * 10 + i / 10) % 100
         if (drawOrderList.includes(key) && offset) {
           const activeIdx: number = drawOrderList.findIndex((v) => v === key)
@@ -113,12 +155,12 @@ const TimeSeriesPlotImple = React.memo(() => {
           key,
           {
             name: key,
-            x: dataXrange,
+            x: newDataXrange,
             y: y,
-            visible: drawOrderList.includes(key) ? true : 'legendonly',
+            visible: drawOrderList.includes(key) ? true : "legendonly",
             line: { color: colorScale[new_i] },
             error_y: {
-              type: 'data',
+              type: "data",
               array:
                 !offset && Object.keys(dataStd).includes(key)
                   ? Object.values(dataStd[key])
@@ -130,50 +172,79 @@ const TimeSeriesPlotImple = React.memo(() => {
       }),
     )
   }, [
-    timeSeriesData,
     drawOrderList,
     offset,
     span,
     colorScale,
     dataStd,
-    dataXrange,
     dataKeys,
+    newDataXrange,
+    newTimeSeriesData,
   ])
 
-  const annotations = React.useMemo(() => {
+  const annotations = useMemo(() => {
+    const range = rangeUnit === "time" ? frameRate : 1
     return drawOrderList.map((value) => {
       return {
-        x: Number(dataXrange[dataXrange.length - 1]) + dataXrange.length / 10,
-        y: data[value].y[dataXrange.length - 1],
-        xref: 'x',
-        yref: 'y',
+        x:
+          Number((newDataXrange.length - 1) / range) +
+          newDataXrange.length / (10 * range),
+        y: data[value].y[newDataXrange.length - 1],
+        xref: "x",
+        yref: "y",
         text: `cell: ${value}`,
         arrowhead: 1,
         ax: 0,
         ay: -10,
       }
     })
-  }, [data, drawOrderList, dataXrange])
+  }, [data, drawOrderList, newDataXrange, rangeUnit, frameRate])
 
-  const layout = React.useMemo(
+  const layout = useMemo(
     () => ({
+      title: {
+        text: meta?.title,
+        x: 0.1,
+      },
       margin: {
         t: 60, // top
         l: 50, // left
         b: 30, // bottom
       },
-      dragmode: 'pan',
+      dragmode: "pan",
       autosize: true,
       width: width,
       height: height - 50,
       xaxis: {
-        range: [xrange.left, xrange.right],
+        title: {
+          text: meta?.xlabel ?? rangeUnit,
+        },
+        titlefont: {
+          size: 12,
+          color: "black",
+        },
+        tickfont: {
+          size: 10,
+          color: "black",
+        },
+        range:
+          rangeUnit === "frames"
+            ? [xrange.left, xrange.right]
+            : [
+                typeof xrange.left !== "undefined"
+                  ? xrange.left / frameRate
+                  : -2.5,
+                typeof xrange.right !== "undefined"
+                  ? xrange.right / frameRate
+                  : dataXrange.length / frameRate + 6.8,
+              ],
         showgrid: showgrid,
         showline: showline,
         showticklabels: showticklabels,
         zeroline: zeroline,
       },
       yaxis: {
+        title: meta?.ylabel,
         showgrid: showgrid,
         showline: showline,
         showticklabels: showticklabels,
@@ -182,6 +253,7 @@ const TimeSeriesPlotImple = React.memo(() => {
       annotations: annotations,
     }),
     [
+      meta,
       xrange,
       showgrid,
       showline,
@@ -190,6 +262,9 @@ const TimeSeriesPlotImple = React.memo(() => {
       annotations,
       width,
       height,
+      rangeUnit,
+      dataXrange,
+      frameRate,
     ],
   )
 

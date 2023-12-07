@@ -34,6 +34,7 @@ RUN mkdir -p /opt/miniconda3 && \
     conda upgrade -y --all && \
     conda config --set channel_priority strict && \
     conda clean -y --tarballs
+ENV PATH $PATH:/opt/miniconda3/bin
 
 ENV PATH $PATH:/opt/miniconda3/bin
 
@@ -51,6 +52,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
 # * copy only minimal files to enable docker run cache.
 COPY --chown=optinist pyproject.toml ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir -e '.[dev]'
+    pip3 install poetry
+RUN poetry install --no-root --with dev
 
 EXPOSE 8000

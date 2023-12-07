@@ -45,6 +45,7 @@ async def get_current_user(
         authed_user, role_id = user_data
         authed_user.__dict__["role_id"] = role_id
         return User.from_orm(authed_user)
+
     except ValidationError as e:
         logging.getLogger().error(e)
         raise HTTPException(status_code=422, detail=f"Validator Error: {e}")

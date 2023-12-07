@@ -8,6 +8,9 @@ from studio.app.optinist.dataclass import FluoData, LccdData, RoiData
 def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
     import numpy as np
 
+    function_id = node_dirpath.split("/")[-1]
+    print("start lccd add_roi:", function_id)
+
     lccd_data = np.load(
         os.path.join(node_dirpath, "lccd.npy"), allow_pickle=True
     ).item()
@@ -30,7 +33,7 @@ def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
     images = images.reshape([images.shape[0] * images.shape[1], images.shape[2]])
     timeseries = np.zeros([num_cell, num_frames])
 
-    add_roi.append(num_cell)
+    add_roi.append(num_cell - 1)
 
     # Get ROI list and extract Fluor
     im = []
@@ -39,6 +42,7 @@ def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
         timeseries[i, :] = np.mean(images[roi[:, i] > 0, :], axis=0)
     im = np.stack(im)
     im[im == 0] = np.nan
+    im -= 1
 
     # Get DFF
     timeseries_dff = np.ones([num_cell, num_frames]) * np.nan
@@ -66,7 +70,9 @@ def execute_add_ROI(node_dirpath, posx, posy, sizex, sizey):
         ),
         "fluorescence": FluoData(timeseries, file_name="fluorescence"),
         "dff": FluoData(timeseries_dff, file_name="dff"),
-        "nwbfile": set_nwbfile(lccd_data, roi_list, fluorescence=timeseries),
+        "nwbfile": set_nwbfile(
+            lccd_data, roi_list, function_id, fluorescence=timeseries
+        ),
     }
 
     return info

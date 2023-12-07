@@ -1,3 +1,4 @@
+(each-platforms-for-developer)=
 Each Platforms for Developer
 =================
 
@@ -25,6 +26,18 @@ Please follow instructions below.
 - Windows
     - [Install Tools](windows.md#install-tools)
 
+#### Install Node.js
+
+Get node with version 20
+- [Node.js Official](https://nodejs.org)
+
+You can also install node via [nvm](https://github.com/nvm-sh/nvm)
+
+After install node, install yarn.
+```bash
+npm install -g yarn
+```
+
 ### Clone repository
 
 ```
@@ -35,7 +48,7 @@ cd ./optinist
 ### Create anaconda environment
 
 ```
-conda create -n optinist_dev python=3.8
+conda create -n optinist_dev python=3.8 poetry
 conda activate optinist_dev
 ```
 
@@ -46,21 +59,17 @@ conda config --set channel_priority strict
 ### Install requirements
 
 ```
-pip install -e '.[dev]'
+poetry install --no-root --with dev
 ```
+
+If you will make PRs, please see the [](for_developers) section.
 
 ### Set saving directory
 
-Optinist default saving directory is `/tmp/optinist`. If you reboot your PC, this repogitory content is deleted. And setting the saving directory in environment path.
+Optinist default saving directory is `/tmp/studio`. If you reboot your PC, this repogitory content is deleted. And setting the saving directory in environment path.
 ```
 export OPTINIST_DIR="your_saving_dir"
 ```
-
-<!--
-### 2. Create virtualenv
-
-Under maintenance...
--->
 
 ## 2. Run backend
 
@@ -77,7 +86,31 @@ INFO:     Started server process [6557]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
-- Launch browser, and go to http://localhost:8000
+
+- If you won't develop the frontend code, launch browser and go to http://localhost:8000
+
+## 3. Run frontend
+
+Open new terminal window, and go to `frontend` directory.
+
+```
+# from optinist root directory
+cd frontend
+```
+
+Then install packages and run.
+```
+yarn install
+yarn start
+```
+
+- Launch browser, and go to http://localhost:3000
+
+```{eval-rst}
+.. note::
+    frontend in development environment uses port 3000,
+    while production optinist uses 8000.
+```
 
 It opens correctly!
 
