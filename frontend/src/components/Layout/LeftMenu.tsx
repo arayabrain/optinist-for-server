@@ -59,7 +59,6 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
               <ListItemButton onClick={onClickDashboard}>
                 <ListItemIcon>
                   <DashboardIcon />
-                  <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
               </ListItemButton>
@@ -75,7 +74,6 @@ const LeftMenu: FC<{ open: boolean; handleDrawerClose: () => void }> = ({
             <ListItem key="workspaces" disablePadding>
               <ListItemButton onClick={onClickWorkspaces}>
                 <ListItemIcon>
-                  <AnalyticsIcon />
                   <AnalyticsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Workspaces" />
