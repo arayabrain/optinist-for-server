@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import create_engine
 
@@ -10,6 +12,19 @@ engine = create_engine(
 SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
 )
+
+
+@contextmanager
+def session_scope():
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except:  # noqa
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def get_db():
