@@ -389,7 +389,7 @@ const GroupManager = () => {
 
   const handleOkNew = async () => {
     if (!newGroupManager) {
-      setError("Group Name cann't empty")
+      setError("Group Name can't be empty")
       return
     }
     const data = await dispatch(postGroupManager(newGroupManager))
@@ -443,7 +443,7 @@ const GroupManager = () => {
 
   const processRowUpdate = async (newRow: ItemGroupManage) => {
     if (!newRow.name) {
-      handleClickVariant("error", "Group Name cann't empty")
+      handleClickVariant("error", "Group Name can't be empty")
       return { ...newRow, name: initName }
     }
     if (newRow.name === initName) return newRow

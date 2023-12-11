@@ -255,7 +255,7 @@ const PopupShareGroup = ({
     (
       handleShareFalse: (
         e: MouseEventReact<HTMLButtonElement>,
-        parmas: GridRenderCellParams<GridValidRowModel>,
+        params: GridRenderCellParams<GridValidRowModel>,
       ) => void,
       type: "group" | "user",
     ) => [

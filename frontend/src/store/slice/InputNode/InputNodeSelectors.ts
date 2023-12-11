@@ -107,7 +107,7 @@ export const selectMatlabInputNodeSelectedFilePath =
     if (isMatlabInputNode(node)) {
       return node.selectedFilePath
     } else {
-      throw new Error("invaid input node type")
+      throw new Error("invalid input node type")
     }
   }
 
@@ -134,6 +134,6 @@ export const selectExpDbInputNodeSelectedFilePath =
     if (isExpDbInputNode(inputNode)) {
       return inputNode.selectedFilePath
     } else {
-      throw new Error("invaid input node type")
+      throw new Error("invalid input node type")
     }
   }

@@ -69,7 +69,7 @@ const DialogImage = ({
                     }}
                   >
                     <DialogImageTitle>{nameCol}</DialogImageTitle>
-                    <DialogImageLabel>Expriment ID: {expId}</DialogImageLabel>
+                    <DialogImageLabel>Experiment ID: {expId}</DialogImageLabel>
                     <DialogImageLabel>{data}</DialogImageLabel>
 
                     <img src={data} alt={""} width={"100%"} height={"100%"} />
