@@ -114,7 +114,12 @@ profile = "black"
 
 [tool.pytest.ini_options]
 pythonpath = "."
-env = ["OPTINIST_DIR=studio/test_data"]
+env = [
+  "OPTINIST_DIR=studio/test_data",
+  "EXPDB_DIR=studio/test_data/dataset",
+  "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
+  "GRAPH_HOST=http://localhost:8000/datasets",
+]
 
 [tool.codespell]
 skip = './frontend/build,./frontend/node_modules,./docs/_build,*.lock,*log,*.egg-info'
