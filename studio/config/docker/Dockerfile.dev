@@ -36,8 +36,6 @@ RUN mkdir -p /opt/miniconda3 && \
     conda clean -y --tarballs
 ENV PATH $PATH:/opt/miniconda3/bin
 
-ENV PATH $PATH:/opt/miniconda3/bin
-
 # setup cron
 RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone && \
     apt-get install --no-install-recommends -y cron rsyslog && \
@@ -50,9 +48,10 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
 
 # pip install
 # * copy only minimal files to enable docker run cache.
-COPY --chown=optinist pyproject.toml ./
+COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry
+    pip3 install poetry && \
+    poetry config virtualenvs.create false
 RUN poetry install --no-root --with dev
 
 EXPOSE 8000

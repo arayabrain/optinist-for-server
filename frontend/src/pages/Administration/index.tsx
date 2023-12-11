@@ -1,6 +1,14 @@
-import {Box} from "@mui/material";
-import {BoxMenu, BoxWrapper, DashboardContent, DashboardWrapper, LinkWrapper, TitleMenu} from "../Dashboard";
-import {Group, Person} from "@mui/icons-material";
+import { Group, Person } from "@mui/icons-material"
+import { Box } from "@mui/material"
+
+import {
+  BoxMenu,
+  BoxWrapper,
+  DashboardContent,
+  DashboardWrapper,
+  LinkWrapper,
+  TitleMenu,
+} from "pages/Dashboard"
 
 const Administration = () => {
   return (
@@ -26,9 +34,8 @@ const Administration = () => {
           </LinkWrapper>
         </DashboardContent>
       </DashboardWrapper>
-
     </BoxWrapper>
   )
 }
 
-export default Administration;
+export default Administration

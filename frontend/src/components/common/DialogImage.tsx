@@ -1,102 +1,109 @@
-import CloseIcon from "@mui/icons-material/Close";
-import {Box, styled} from "@mui/material";
-import {useEffect} from "react";
+import { useEffect, MouseEvent } from "react"
+
+import CloseIcon from "@mui/icons-material/Close"
+import { Box, styled } from "@mui/material"
 
 type DialogImageProps = {
   open: boolean
-  data?: string | (string[])
+  data?: string | string[]
   handleCloseDialog: () => void
   expId?: string
   nameCol?: string
 }
 
-const DialogImage = ({data, handleCloseDialog, open, expId, nameCol}: DialogImageProps) => {
+const DialogImage = ({
+  data,
+  handleCloseDialog,
+  open,
+  expId,
+  nameCol,
+}: DialogImageProps) => {
   useEffect(() => {
-    const handleClosePopup = (event: any) => {
-      if(event.key === 'Escape') {
+    const handleClosePopup = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         handleCloseDialog()
         return
       }
     }
 
-    document.addEventListener('keydown', handleClosePopup);
+    document.addEventListener("keydown", handleClosePopup)
     return () => {
-      document.removeEventListener('keydown', handleClosePopup);
-    };
+      document.removeEventListener("keydown", handleClosePopup)
+    }
     //eslint-disable-next-line
-  }, []);
+  }, [])
 
-  const handleClose = (event: any) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if(event.target === event.currentTarget) handleCloseDialog()
+  const handleClose = (event: MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.target === event.currentTarget) handleCloseDialog()
     return
   }
 
-  if(!data) return null
+  if (!data) return null
   return (
     <Box>
-    {
-      open ?
-      <DialogImageWrapper sx={{position: 'absolute', zIndex: 1}} onClick={handleClose} >
-        <DialogImageContentWrapper sx={{position: 'absolute', zIndex: 10000}}>
-          <DialogImageContent>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                flexWrap: "wrap",
-                gap: 3,
-                margin: "80px 50px"
-              }}
-            >
-              {
-                !Array.isArray(data) ?
-                  <Box sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                  }}>
+      {open ? (
+        <DialogImageWrapper
+          sx={{ position: "absolute", zIndex: 1 }}
+          onClick={handleClose}
+        >
+          <DialogImageContentWrapper
+            sx={{ position: "absolute", zIndex: 10000 }}
+          >
+            <DialogImageContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                  gap: 3,
+                  margin: "80px 50px",
+                }}
+              >
+                {!Array.isArray(data) ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
                     <DialogImageTitle>{nameCol}</DialogImageTitle>
                     <DialogImageLabel>Expriment ID: {expId}</DialogImageLabel>
                     <DialogImageLabel>{data}</DialogImageLabel>
 
-                    <img
-                      src={data}
-                      alt={""}
-                      width={"100%"}
-                      height={"100%"}
-                    />
-                  </Box> :
-                Array.isArray(data) ?
-                data.filter(Boolean).map((item, index) => (
-                  <Box
-                    key={`${item}_${index}`}
-                    sx={{ display: "flex", flexDirection: "column" }}
-                  >
-                    <img
-                      key={index}
-                      src={item}
-                      alt={""}
-                      width={"100%"}
-                      height={"100%"}
-                    />
-                    <span>{item}</span>
+                    <img src={data} alt={""} width={"100%"} height={"100%"} />
                   </Box>
-                )) : null
-              }
-            </Box>
-          </DialogImageContent>
-          <ButtonClose onClick={handleCloseDialog}>
-            <CloseIcon />
-          </ButtonClose>
-        </DialogImageContentWrapper>
-      </DialogImageWrapper> : null
-    }
+                ) : Array.isArray(data) ? (
+                  data.filter(Boolean).map((item, index) => (
+                    <Box
+                      key={`${item}_${index}`}
+                      sx={{ display: "flex", flexDirection: "column" }}
+                    >
+                      <img
+                        key={index}
+                        src={item}
+                        alt={""}
+                        width={"100%"}
+                        height={"100%"}
+                      />
+                      <span>{item}</span>
+                    </Box>
+                  ))
+                ) : null}
+              </Box>
+            </DialogImageContent>
+            <ButtonClose onClick={handleCloseDialog}>
+              <CloseIcon />
+            </ButtonClose>
+          </DialogImageContentWrapper>
+        </DialogImageWrapper>
+      ) : null}
     </Box>
   )
 }
 
-const DialogImageWrapper = styled(Box)(({theme}) => ({
+const DialogImageWrapper = styled(Box)(() => ({
   position: "fixed",
   top: 0,
   left: 0,
@@ -108,7 +115,7 @@ const DialogImageWrapper = styled(Box)(({theme}) => ({
   alignItems: "center",
 }))
 
-const DialogImageContentWrapper = styled(Box)(({theme}) => ({
+const DialogImageContentWrapper = styled(Box)(() => ({
   position: "relative",
   display: "flex",
   background: "#FFF",
@@ -120,19 +127,19 @@ const DialogImageContentWrapper = styled(Box)(({theme}) => ({
   color: "#333333",
 }))
 
-const DialogImageTitle = styled(Box)(({theme}) => ({
+const DialogImageTitle = styled(Box)(() => ({
   margin: "0 0 0.5em 0",
   textAlign: "center",
   fontSize: "1.75em",
 }))
 
-const DialogImageLabel = styled(Box)(({theme}) => ({
+const DialogImageLabel = styled(Box)(() => ({
   margin: "0.5em 0 0.5em 0",
   textAlign: "center",
   fontSize: "1.1em",
 }))
 
-const DialogImageContent = styled(Box)(({theme}) => ({
+const DialogImageContent = styled(Box)(() => ({
   overflow: "scroll",
   position: "relative",
   flexWrap: "wrap",
@@ -144,7 +151,7 @@ const DialogImageContent = styled(Box)(({theme}) => ({
   height: "100%",
 }))
 
-const ButtonClose = styled("button")(({theme}) => ({
+const ButtonClose = styled("button")(() => ({
   border: "1px solid #000",
   position: "absolute",
   display: "block",
@@ -155,8 +162,8 @@ const ButtonClose = styled("button")(({theme}) => ({
   cursor: "pointer",
   borderRadius: 50,
   "&:hover": {
-    background: "#8f8a8a"
-  }
+    background: "#8f8a8a",
+  },
 }))
 
-export default DialogImage;
+export default DialogImage

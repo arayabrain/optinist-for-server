@@ -24,7 +24,7 @@ def multi_compare(data):
 
 
 def anova1_mult(
-    stat: StatData, output_dir: str, params: dict = None
+    stat: StatData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     stat.p_value_threshold = params["p_value_threshold"]
     stat.r_best_threshold = params["r_best_threshold"]

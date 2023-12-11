@@ -1,15 +1,9 @@
-import React from 'react'
-import { CSSProperties } from 'react'
-import { Handle, NodeProps, Position } from 'react-flow-renderer'
-import { useDispatch, useSelector } from 'react-redux'
-import { alpha, useTheme } from '@mui/material/styles'
-import { setInputNodeFilePath } from 'store/slice/InputNode/InputNodeActions'
-import {
-  selectExpDbInputNodeSelectedFilePath,
-  selectInputNodeDefined,
-} from 'store/slice/InputNode/InputNodeSelectors'
-import { deleteFlowNodeById } from 'store/slice/FlowElement/FlowElementSlice'
-import { toHandleId } from './FlowChartUtils'
+import { memo, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { Handle, NodeProps, Position } from "reactflow"
+
+import { useSnackbar } from "notistack"
+
 import {
   Button,
   ButtonGroup,
@@ -18,24 +12,24 @@ import {
   DialogContent,
   DialogTitle,
   Typography,
-} from '@mui/material'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
-import DatabaseExperiments from 'components/Database/DatabaseExperiments'
-import { GridEventListener, GridRowParams } from '@mui/x-data-grid'
-import { useSnackbar } from 'notistack'
-import { DatabaseType } from 'store/slice/Database/DatabaseType'
-import { useHandleColor } from './HandleColorHook'
+} from "@mui/material"
+import { GridEventListener, GridRowParams } from "@mui/x-data-grid"
 
-const sourceHandleStyle: CSSProperties = {
-  width: 8,
-  height: 15,
-  top: 15,
-  border: '1px solid',
-  borderColor: '#555',
-  borderRadius: 0,
-}
+import DatabaseExperiments from "components/Database/DatabaseExperiments"
+import { toHandleId } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
+import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
+import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
+import { HANDLE_STYLE } from "const/flowchart"
+import { DatabaseType } from "store/slice/Database/DatabaseType"
+import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
+import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
+import {
+  selectExpDbInputNodeSelectedFilePath,
+  selectInputNodeDefined,
+} from "store/slice/InputNode/InputNodeSelectors"
+import { selectCurrentUser } from "store/slice/User/UserSelector"
 
-export const ExpDbNode = React.memo<NodeProps>((element) => {
+export const ExpDbNode = memo(function ExpDbNode(element: NodeProps) {
   const defined = useSelector(selectInputNodeDefined(element.id))
   if (defined) {
     return <ExpDbFileNodeImple {...element} />
@@ -44,11 +38,13 @@ export const ExpDbNode = React.memo<NodeProps>((element) => {
   }
 })
 
-const ExpDbFileNodeImple = React.memo<NodeProps>(({ id: nodeId, selected }) => {
+const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
+  id: nodeId,
+  selected,
+}: NodeProps) {
   const dispatch = useDispatch()
 
-  const theme = useTheme()
-  const returnType = 'ExpDbData'
+  const returnType = "ExpDbData"
   const expdbColor = useHandleColor(returnType)
 
   const onClickDeleteIcon = () => {
@@ -56,19 +52,11 @@ const ExpDbFileNodeImple = React.memo<NodeProps>(({ id: nodeId, selected }) => {
   }
 
   return (
-    <div
-      style={{
-        height: '100%',
-        width: '250px',
-        background: selected
-          ? alpha(theme.palette.primary.light, 0.1)
-          : undefined,
-      }}
-    >
+    <NodeContainer nodeId={nodeId} selected={selected}>
       <button
         className="flowbutton"
         onClick={onClickDeleteIcon}
-        style={{ color: 'black', position: 'absolute', top: -10, right: 10 }}
+        style={{ color: "black", position: "absolute", top: -10, right: 10 }}
       >
         ×
       </button>
@@ -76,49 +64,51 @@ const ExpDbFileNodeImple = React.memo<NodeProps>(({ id: nodeId, selected }) => {
       <Handle
         type="source"
         position={Position.Right}
-        id={toHandleId(nodeId, 'expdb', returnType)}
-        style={{ ...sourceHandleStyle, background: expdbColor }}
+        id={toHandleId(nodeId, "expdb", returnType)}
+        style={{ ...HANDLE_STYLE, background: expdbColor }}
       />
-    </div>
+    </NodeContainer>
   )
 })
 
-const ExpDbSelect = React.memo<{ nodeId: string }>(({ nodeId }) => {
-  const [open, setOpen] = React.useState(false)
+const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
+  const [open, setOpen] = useState(false)
   const experimentId = useSelector(selectExpDbInputNodeSelectedFilePath(nodeId))
 
   return (
-    <div style={{ padding: 5 }}>
-      <ButtonGroup size="small" style={{ marginRight: 4 }}>
-        <Button variant="outlined" onClick={() => setOpen(true)}>
-          Select
-        </Button>
-        <ExpDbSelectDialog nodeId={nodeId} open={open} setOpen={setOpen} />
-      </ButtonGroup>
-      <div>
-        <Typography>
-          {experimentId
-            ? `Selected experiment id: ${experimentId}`
-            : 'No experiment selected'}
-        </Typography>
-      </div>
+    <div>
+      <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
+        Select
+      </Button>
+      <ExpDbSelectDialog nodeId={nodeId} open={open} setOpen={setOpen} />
+      <Typography>
+        {experimentId
+          ? `Selected experiment id: ${experimentId}`
+          : "No experiment selected"}
+      </Typography>
     </div>
   )
 })
 
-const ExpDbSelectDialog = React.memo<{
+interface ExpDbSelectDialogProps {
   nodeId: string
   open: boolean
   setOpen: (open: boolean) => void
-}>(({ nodeId, open, setOpen }) => {
+}
+
+const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
+  nodeId,
+  open,
+  setOpen,
+}: ExpDbSelectDialogProps) {
   const user = useSelector(selectCurrentUser)
-  const [experimentId, setExperimentId] = React.useState<string | undefined>(
+  const [experimentId, setExperimentId] = useState<string | undefined>(
     undefined,
   )
   const dispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
 
-  const handleRowClick: GridEventListener<'rowClick'> = (
+  const handleRowClick: GridEventListener<"rowClick"> = (
     params: GridRowParams<DatabaseType>,
   ) => {
     setExperimentId(params.row.experiment_id)
@@ -134,8 +124,7 @@ const ExpDbSelectDialog = React.memo<{
       setOpen(false)
       dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
     } catch (e) {
-      console.error(e)
-      enqueueSnackbar('Select experiment failed', { variant: 'error' })
+      enqueueSnackbar("Select experiment failed", { variant: "error" })
     }
   }
 

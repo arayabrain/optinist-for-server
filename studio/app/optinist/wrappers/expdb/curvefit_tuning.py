@@ -254,7 +254,7 @@ class OriTempTuning(TempTuning):
 
 
 def curvefit_tuning(
-    stat: StatData, output_dir: str, params: dict = None
+    stat: StatData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     interp_method = params["interp_method"]
     do_interp = params["do_interpolation"]

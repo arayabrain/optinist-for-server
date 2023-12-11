@@ -51,7 +51,8 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
 # * copy only minimal files to enable docker run cache.
 COPY --chown=optinist pyproject.toml ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry
+    pip3 install poetry && \
+    poetry config virtualenvs.create false
 RUN poetry install --no-root
 
 # copy application sources.

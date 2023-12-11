@@ -60,16 +60,16 @@ const Dashboard = () => {
   )
 }
 
-const BoxWrapper = styled(Box)({
+export const BoxWrapper = styled(Box)({
   width: "100%",
   height: "100%",
 })
 
-const LinkWrapper = styled(Link)(() => ({
+export const LinkWrapper = styled(Link)(() => ({
   textDecoration: "none",
 }))
 
-const DashboardWrapper = styled(Box)(() => ({
+export const DashboardWrapper = styled(Box)(() => ({
   width: "100%",
   height: "calc(100% - 90px)",
   display: "flex",

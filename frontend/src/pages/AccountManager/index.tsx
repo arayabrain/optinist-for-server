@@ -887,7 +887,7 @@ const AccountManager = () => {
 
   return (
     <AccountManagerWrapper>
-      <Typography variant="h1">Account Manager</Typography>
+      <h1>Account Manager</h1>
       <Box
         sx={{
           display: "flex",

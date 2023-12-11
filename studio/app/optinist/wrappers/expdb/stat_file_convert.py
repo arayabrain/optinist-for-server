@@ -207,7 +207,7 @@ def get_stat_data(data_tables) -> StatData:
 
 
 def stat_file_convert(
-    expdb: ExpDbData, output_dir: str, params: dict = None
+    expdb: ExpDbData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     tc = expdb.tc
     ts = expdb.ts

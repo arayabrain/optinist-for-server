@@ -1,14 +1,7 @@
-import React, { CSSProperties } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { Handle, NodeProps, Position } from 'react-flow-renderer'
-import {
-  selectInputNodeDefined,
-  selectMatlabInputNodeParamFieldName,
-  selectMatlabInputNodeParamIndex,
-  selectMatlabInputNodeSelectedFilePath,
-} from 'store/slice/InputNode/InputNodeSelectors'
-import { setInputNodeFilePath } from 'store/slice/InputNode/InputNodeActions'
-import { alpha, useTheme } from '@mui/material/styles'
+import { ChangeEvent, memo, useState } from "react"
+import { useSelector, useDispatch } from "react-redux"
+import { Handle, NodeProps, Position } from "reactflow"
+
 import {
   Button,
   Dialog,
@@ -17,29 +10,29 @@ import {
   DialogActions,
   TextField,
   Box,
-} from '@mui/material'
-import { deleteFlowNodeById } from 'store/slice/FlowElement/FlowElementSlice'
-import { FileSelect } from './FileSelect'
-import { toHandleId } from './FlowChartUtils'
-import { FILE_TYPE_SET } from 'store/slice/InputNode/InputNodeType'
-import { setMatlabInputNodeParam } from 'store/slice/InputNode/InputNodeSlice'
+} from "@mui/material"
 
-const sourceHandleStyle: CSSProperties = {
-  width: 8,
-  height: 15,
-  top: 15,
-  border: '1px solid',
-  borderColor: '#555',
-  borderRadius: 0,
-}
+import { FileSelect } from "components/Workspace/FlowChart/FlowChartNode/FileSelect"
+import { toHandleId } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
+import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
+import { HANDLE_STYLE } from "const/flowchart"
+import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
+import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
+import {
+  selectInputNodeDefined,
+  selectMatlabInputNodeParamFieldName,
+  selectMatlabInputNodeParamIndex,
+  selectMatlabInputNodeSelectedFilePath,
+} from "store/slice/InputNode/InputNodeSelectors"
+import { setMatlabInputNodeParam } from "store/slice/InputNode/InputNodeSlice"
+import { FILE_TYPE_SET } from "store/slice/InputNode/InputNodeType"
 
 export interface MatlabFileNodeProps extends NodeProps {
   hideSettingDialog?: boolean
 }
 
-export const MatlabFileNode = React.memo<NodeProps>((element) => {
+export const MatlabFileNode = memo(function MatlabFileNode(element: NodeProps) {
   const defined = useSelector(selectInputNodeDefined(element.id))
-
   if (defined) {
     return <MatlabFileNodeImpl {...element} />
   } else {
@@ -47,74 +40,69 @@ export const MatlabFileNode = React.memo<NodeProps>((element) => {
   }
 })
 
-export const MatlabFileNodeImpl = React.memo<MatlabFileNodeProps>(
-  ({ id: nodeId, selected, hideSettingDialog }) => {
-    const dispatch = useDispatch()
-    const filePath = useSelector(selectMatlabInputNodeSelectedFilePath(nodeId))
-    const onChangeFilePath = (path: string) => {
-      dispatch(setInputNodeFilePath({ nodeId, filePath: path }))
-    }
-    const theme = useTheme()
+export const MatlabFileNodeImpl = memo(function MatlabFileNodeImpl({
+  id: nodeId,
+  selected,
+  hideSettingDialog,
+}: MatlabFileNodeProps) {
+  const dispatch = useDispatch()
+  const filePath = useSelector(selectMatlabInputNodeSelectedFilePath(nodeId))
+  const onChangeFilePath = (path: string) => {
+    dispatch(setInputNodeFilePath({ nodeId, filePath: path }))
+  }
 
-    const onClickDeleteIcon = () => {
-      dispatch(deleteFlowNodeById(nodeId))
-    }
+  const onClickDeleteIcon = () => {
+    dispatch(deleteFlowNodeById(nodeId))
+  }
 
-    return (
-      <div
-        style={{
-          height: '100%',
-          width: '250px',
-          background: selected
-            ? alpha(theme.palette.primary.light, 0.1)
-            : undefined,
-        }}
+  return (
+    <NodeContainer nodeId={nodeId} selected={selected}>
+      <button
+        className="flowbutton"
+        onClick={onClickDeleteIcon}
+        style={{ color: "black", position: "absolute", top: -10, right: 10 }}
       >
-        <button
-          className="flowbutton"
-          onClick={onClickDeleteIcon}
-          style={{ color: 'black', position: 'absolute', top: -10, right: 10 }}
-        >
-          ×
-        </button>
-        <FileSelect
-          nodeId={nodeId}
-          onChangeFilePath={(path) => {
-            if (!Array.isArray(path)) {
-              onChangeFilePath(path)
-            }
-          }}
-          fileType={FILE_TYPE_SET.MATLAB}
-          filePath={filePath ?? ''}
-        />
-        {!!filePath && !hideSettingDialog && (
-          <MatlabParamSettingDialog nodeId={nodeId} />
-        )}
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={toHandleId(nodeId, 'matlab', 'MatlabData')}
-          style={sourceHandleStyle}
-        />
-      </div>
-    )
-  },
-)
+        ×
+      </button>
+      <FileSelect
+        nodeId={nodeId}
+        onChangeFilePath={(path) => {
+          if (!Array.isArray(path)) {
+            onChangeFilePath(path)
+          }
+        }}
+        fileType={FILE_TYPE_SET.MATLAB}
+        filePath={filePath ?? ""}
+      />
+      {!!filePath && !hideSettingDialog && (
+        <MatlabParamSettingDialog nodeId={nodeId} />
+      )}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id={toHandleId(nodeId, "matlab", "MatlabData")}
+        style={{ ...HANDLE_STYLE }}
+      />
+    </NodeContainer>
+  )
+})
 
-const MatlabParamSettingDialog = React.memo<{
+const MatlabParamSettingDialog = memo(function MatlabParamSettingDialog({
+  nodeId,
+}: {
   nodeId: string
-}>(({ nodeId }) => {
+}) {
   const dispatch = useDispatch()
 
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useState(false)
 
   const initialFieldName = useSelector(
     selectMatlabInputNodeParamFieldName(nodeId),
   )
-  const [fieldName, setFieldName] = React.useState(initialFieldName)
+  const [fieldName, setFieldName] = useState(initialFieldName)
 
   const initialIndex = useSelector(selectMatlabInputNodeParamIndex(nodeId))
-  const [index, setIndex] = React.useState<number[] | string | undefined>(
+  const [index, setIndex] = useState<number[] | string | undefined>(
     initialIndex,
   )
   const isArray = Array.isArray(index)
@@ -138,11 +126,11 @@ const MatlabParamSettingDialog = React.memo<{
   }
 
   const onBlur = (
-    event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+    event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => {
     let newValue: string | number[] = event.target.value
     newValue = newValue
-      .split(',')
+      .split(",")
       .filter(Boolean)
       .map((e) => Number(e))
       .filter((e) => !isNaN(e))
@@ -155,7 +143,7 @@ const MatlabParamSettingDialog = React.memo<{
       <Dialog open={open}>
         <DialogTitle>Matlab Setting</DialogTitle>
         <DialogContent dividers>
-          <Box sx={{ display: 'flex', p: 1, m: 1, alignItems: 'flex-start' }}>
+          <Box sx={{ display: "flex", p: 1, m: 1, alignItems: "flex-start" }}>
             <TextField
               label="field name"
               sx={{
@@ -192,7 +180,7 @@ const MatlabParamSettingDialog = React.memo<{
           <Button onClick={onClickCancel} variant="outlined" color="inherit">
             cancel
           </Button>
-          <Button onClick={onClickOk} color="primary" variant="outlined">
+          <Button onClick={onClickOk} color="primary" variant="contained">
             OK
           </Button>
         </DialogActions>
