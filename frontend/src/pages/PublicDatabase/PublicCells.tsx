@@ -1,5 +1,5 @@
-import DatabaseCells from 'components/Database/DatabaseCells'
-import PublicDatabaseWrapper from 'components/PublicDatabase/PublicDatabaseWrapper'
+import DatabaseCells from "components/Database/DatabaseCells"
+import PublicDatabaseWrapper from "components/PublicDatabase/PublicDatabaseWrapper"
 
 const PublicCells = () => {
   return (

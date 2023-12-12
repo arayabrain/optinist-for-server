@@ -1,11 +1,5 @@
-import { createAsyncThunk } from '@reduxjs/toolkit'
-import {
-  DATABASE_SLICE_NAME,
-  DatabaseDTO,
-  DatabaseParams,
-  ListShareDTO,
-  MultiShareType,
-} from './DatabaseType'
+import { createAsyncThunk } from "@reduxjs/toolkit"
+
 import {
   getCellsApi,
   getCellsPublicApi,
@@ -16,7 +10,14 @@ import {
   postMultiShareApi,
   postPublishAllApi,
   postPublishApi,
-} from 'api/database'
+} from "api/database"
+import {
+  DATABASE_SLICE_NAME,
+  DatabaseDTO,
+  DatabaseParams,
+  ListShareDTO,
+  MultiShareType,
+} from "store/slice/Database/DatabaseType"
 
 export const getExperimentsDatabase = createAsyncThunk<
   DatabaseDTO,
@@ -75,7 +76,7 @@ export const getCellsPublicDatabase = createAsyncThunk<
 
 export const postPublish = createAsyncThunk<
   boolean,
-  { id: number; status: 'on' | 'off' , params: DatabaseParams}
+  { id: number; status: "on" | "off"; params: DatabaseParams }
 >(`${DATABASE_SLICE_NAME}/postPublish`, async (params, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   try {
@@ -104,7 +105,7 @@ export const postListUserShare = createAsyncThunk<
   boolean,
   {
     id: number
-    data: { share_type: number, group_ids?: number[], user_ids: number[]}
+    data: { share_type: number; group_ids?: number[]; user_ids: number[] }
   }
 >(`${DATABASE_SLICE_NAME}/postListUserShare`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
@@ -116,10 +117,9 @@ export const postListUserShare = createAsyncThunk<
   }
 })
 
-
 export const postPublishAll = createAsyncThunk<
-    boolean,
-    { status: 'on' | 'off' , params: DatabaseParams, listCheck: number[]}
+  boolean,
+  { status: "on" | "off"; params: DatabaseParams; listCheck: number[] }
 >(`${DATABASE_SLICE_NAME}/postPublishAll`, async (data, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   const { status, listCheck, params } = data
@@ -133,8 +133,8 @@ export const postPublishAll = createAsyncThunk<
 })
 
 export const postMultiShare = createAsyncThunk<
-    boolean,
-    { params: DatabaseParams, dataPost: MultiShareType }
+  boolean,
+  { params: DatabaseParams; dataPost: MultiShareType }
 >(`${DATABASE_SLICE_NAME}/postMultiShare`, async (data, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   try {

@@ -1,5 +1,4 @@
-
-export const GROUP_MANAGER_SLICE_NAME = 'groupManager'
+export const GROUP_MANAGER_SLICE_NAME = "groupManager"
 
 export type GroupManager = {
   groupsManagerData: GroupManagerDTO
@@ -9,7 +8,7 @@ export type GroupManager = {
 }
 
 export type ItemGroupManage = {
-  id: number,
+  id: number
   name: string
   users_count: number
 }
@@ -30,4 +29,6 @@ export type UserInGroup = {
   updatedTime: string
 }
 
-export type GroupManagerParams = { [key: string]: number | string | string[] | undefined }
+export type GroupManagerParams = {
+  [key: string]: number | string | string[] | undefined
+}

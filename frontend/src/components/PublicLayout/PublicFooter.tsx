@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { Box, Container, Divider, Grid, Typography } from '@mui/material'
+import { FC } from "react"
+
+import { Box, Container, Divider, Grid, Typography } from "@mui/material"
 
 const PublicFooter: FC = () => {
   return (
