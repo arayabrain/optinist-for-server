@@ -51,11 +51,12 @@ async def list_user(
     try:
         sa_sort_list = sortOptions.get_sa_sort_list(
             sa_table=UserModel,
-            mapping={"role_id": UserRoleModel.role_id, "role": RoleModel.role},
+            mapping={"role_id": RoleModel.id, "role": RoleModel.role},
         )
         users = paginate(
             db,
             query=select(UserModel)
+            .join(UserModel.role)
             .filter(
                 UserModel.active.is_(True),
                 UserModel.organization_id == organization_id,
