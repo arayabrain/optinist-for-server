@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from studio.app.common.models import Group as GroupModel
 from studio.app.common.models import User as UserModel
+from studio.app.common.models import UserGroup as UserGroupModel
 from studio.app.common.schemas.group import GroupCreate, GroupUpdate, GroupWithUserCount
 from studio.app.optinist.schemas.base import SortOptions
 
@@ -82,7 +83,13 @@ def group_set_users(
     group = group_get(db, id, organization_id)
     try:
         users = db.query(UserModel).filter(UserModel.id.in_(user_ids)).all()
-        group.group_user = users
+        db.query(UserGroupModel).filter(UserGroupModel.group_id == group.id).delete(
+            synchronize_session=False
+        )
+        if len(users) != 0:
+            db.bulk_save_objects(
+                UserGroupModel(group_id=group.id, user_id=user.id) for user in users
+            )
         db.commit()
         return True
     except Exception as e:
