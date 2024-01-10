@@ -486,7 +486,7 @@ const AccountManager = () => {
 
   useEffect(() => {
     if (newParams === window.location.search.replace("?", "")) return
-    setParams(newParams)
+    setParams(newParams.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
 
