@@ -119,6 +119,7 @@ env = [
   "EXPDB_DIR=studio/test_data/dataset",
   "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
   "GRAPH_HOST=http://localhost:8000/datasets",
+  "IS_TEST=True",
 ]
 
 [tool.codespell]
