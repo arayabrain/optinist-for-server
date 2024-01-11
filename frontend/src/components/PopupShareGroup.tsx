@@ -206,9 +206,13 @@ const PopupShareGroup = ({
     timeout.current = setTimeout(() => {
       let api
       if (textSearch.groups)
-        api = getListGroupSearch({ keyword: textSearch.groups })
+        api = getListGroupSearch({
+          keyword: encodeURIComponent(textSearch.groups),
+        })
       if (textSearch.users)
-        api = getListUserSearch({ keyword: textSearch.users })
+        api = getListUserSearch({
+          keyword: encodeURIComponent(textSearch.users),
+        })
       if (!api) return
       dispatch(api)
     }, WAITING_TIME)
