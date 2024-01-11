@@ -386,6 +386,13 @@ const DatabaseCells = ({ user }: CellProps) => {
   }, [newParams])
 
   useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
