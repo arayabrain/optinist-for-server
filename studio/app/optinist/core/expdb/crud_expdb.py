@@ -33,6 +33,7 @@ def create_experiment(db: Session, data: ExpDbExperimentCreate) -> ExpDbExperime
         experiment_id=data.experiment_id,
         organization_id=data.organization_id,
         attributes=data.attributes,
+        view_attributes=data.view_attributes,
     )
 
     db.add(expdb)

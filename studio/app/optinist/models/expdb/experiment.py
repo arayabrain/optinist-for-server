@@ -92,6 +92,7 @@ class Experiment(Base, TimestampMixin, table=True):
     )
     experiment_id: str = Field(sa_column=Column(String(100), nullable=False))
     attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
+    view_attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
     share_type: int = Field(
         sa_column=Column(
             Integer(),
