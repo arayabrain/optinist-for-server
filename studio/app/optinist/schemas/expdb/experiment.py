@@ -79,6 +79,7 @@ class ExpDbExperimentUpdate(BaseModel):
     view_attributes: Optional[dict]
     share_type: Optional[int]
     publish_status: Optional[int]
+    updated_at: Optional[datetime]
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):

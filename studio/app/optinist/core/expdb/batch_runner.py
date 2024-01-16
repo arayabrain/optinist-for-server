@@ -17,8 +17,8 @@ from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
-    get_experiment,
     create_experiment,
+    get_experiment,
     update_experiment,
 )
 from studio.app.optinist.schemas.expdb.experiment import (
@@ -302,7 +302,10 @@ class ExpDbBatchRunner:
                 expdb_experiment = get_experiment(db, exp_id, self.org_id)
             except AssertionError:
                 self.logger_.warning(
-                    "No experiment found. skip metadata registration. [org_id: %d][exp_id: %s]", self.org_id, exp_id
+                    "No experiment found. skip metadata registration."
+                    " [org_id: %d][exp_id: %s]",
+                    self.org_id,
+                    exp_id,
                 )
                 return False
 

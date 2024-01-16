@@ -1,11 +1,10 @@
+import json
 import logging
 import math
 import os
 from dataclasses import dataclass
 from glob import glob
 from typing import Optional
-
-import json
 
 import cv2
 import numpy as np
@@ -23,12 +22,12 @@ from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.const import (
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
+    EXP_METADATA_SUFFIX,
     FOV_CONTRAST,
     FOV_SUFFIX,
     TC_SUFFIX,
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
-    EXP_METADATA_SUFFIX,
 )
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
