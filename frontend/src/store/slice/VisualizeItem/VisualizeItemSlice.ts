@@ -32,6 +32,7 @@ import {
   PolarItem,
   MatlabItem,
   VISUALIZE_ITEM_SLICE_NAME,
+  MatlabItem,
 } from "store/slice/VisualizeItem/VisualizeItemType"
 import {
   isDisplayDataItem,
@@ -84,7 +85,7 @@ const imageItemInitialValue: ImageItem = {
 const timeSeriesItemInitialValue: TimeSeriesItem = {
   ...displayDataCommonInitialValue,
   dataType: DATA_TYPE_SET.TIME_SERIES,
-  offset: true,
+  stdBool: false,
   span: 5,
   showgrid: true,
   showline: true,
@@ -169,6 +170,14 @@ const polarItemInitialValue: PolarItem = {
 const matlabItemInitialValue: MatlabItem = {
   ...displayDataCommonInitialValue,
   dataType: DATA_TYPE_SET.MATLAB,
+}
+
+const matlabItemInitialValue: MatlabItem = {
+  ...displayDataCommonInitialValue,
+  dataType: DATA_TYPE_SET.MATLAB,
+  setHeader: null,
+  setIndex: false,
+  transpose: false,
 }
 
 function getDisplayDataItemInitialValue(dataType: DATA_TYPE) {
@@ -579,12 +588,12 @@ export const visualaizeItemSlice = createSlice({
       state,
       action: PayloadAction<{
         itemId: number
-        offset: boolean
+        stdBool: boolean
       }>,
     ) => {
       const targetItem = state.items[action.payload.itemId]
       if (isTimeSeriesItem(targetItem)) {
-        targetItem.offset = action.payload.offset
+        targetItem.stdBool = action.payload.stdBool
       }
     },
     setTimeSeriesItemSpan: (

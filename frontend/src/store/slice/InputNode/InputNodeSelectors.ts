@@ -19,8 +19,9 @@ export const selectInputNodeFileType = (nodeId: string) => (state: RootState) =>
   selectInputNodeById(nodeId)(state).fileType
 
 export const selectInputNodeSelectedFilePath =
-  (nodeId: string) => (state: RootState) =>
-    selectInputNodeById(nodeId)(state).selectedFilePath
+  (nodeId: string) => (state: RootState) => {
+    return selectInputNodeById(nodeId)(state).selectedFilePath
+  }
 
 export const selectCsvInputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {
@@ -46,6 +47,16 @@ export const selectHDF5InputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {
     const node = selectInputNodeById(nodeId)(state)
     if (isHDF5InputNode(node)) {
+      return node.selectedFilePath
+    } else {
+      throw new Error("invalid input node type")
+    }
+  }
+
+export const selectMatlabInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const node = selectInputNodeById(nodeId)(state)
+    if (isMatlabInputNode(node)) {
       return node.selectedFilePath
     } else {
       throw new Error("invalid input node type")
@@ -101,32 +112,15 @@ export const selectInputNodeHDF5Path =
     }
   }
 
-export const selectMatlabInputNodeSelectedFilePath =
+export const selectInputNodeMatlabPath =
   (nodeId: string) => (state: RootState) => {
-    const node = selectInputNodeById(nodeId)(state)
-    if (isMatlabInputNode(node)) {
-      return node.selectedFilePath
+    const item = selectInputNodeById(nodeId)(state)
+    if (isMatlabInputNode(item)) {
+      return item.matPath
     } else {
-      throw new Error("invalid input node type")
+      return undefined
     }
   }
-
-const selectMatlabInputNodeParam = (nodeId: string) => (state: RootState) => {
-  const inputNode = selectInputNodeById(nodeId)(state)
-  if (isMatlabInputNode(inputNode)) {
-    return inputNode.param
-  } else {
-    throw new Error(`The InputNode is not MatlbaInputNode. (nodeId: ${nodeId})`)
-  }
-}
-
-export const selectMatlabInputNodeParamFieldName =
-  (nodeId: string) => (state: RootState) =>
-    selectMatlabInputNodeParam(nodeId)(state).fieldName
-
-export const selectMatlabInputNodeParamIndex =
-  (nodeId: string) => (state: RootState) =>
-    selectMatlabInputNodeParam(nodeId)(state).index
 
 export const selectExpDbInputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {

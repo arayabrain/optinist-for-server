@@ -119,6 +119,11 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           nodeName={"expdbData"}
           fileType={FILE_TYPE_SET.EXPDB}
         />
+        <InputNodeComponent
+          fileName={"matlab"}
+          nodeName={"matlabData"}
+          fileType={FILE_TYPE_SET.MATLAB}
+        />
       </TreeItem>
       <TreeItem nodeId="Algorithm" label="Algorithm">
         {Object.entries(algoList).map(([name, node], i) => (

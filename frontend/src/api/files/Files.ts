@@ -23,6 +23,7 @@ export interface NodeBaseDTO {
   path: string
   name: string
   isdir: boolean
+  shape: []
 }
 
 export interface DirNodeDTO extends NodeBaseDTO {
@@ -32,6 +33,12 @@ export interface DirNodeDTO extends NodeBaseDTO {
 
 export interface FileNodeDTO extends NodeBaseDTO {
   isdir: false
+}
+
+export type GetStatusViaUrl = {
+  total: number
+  current: number
+  error: string | null
 }
 
 export async function getFilesTreeApi(
@@ -60,4 +67,36 @@ export async function uploadFileApi(
     config,
   )
   return response.data
+}
+
+export async function updateShapeApi(
+  workspaceId: number,
+  fileName: string,
+): Promise<boolean> {
+  const response = await axios.post(
+    `${BASE_URL}/files/${workspaceId}/shape/${fileName}`,
+  )
+  return response.data
+}
+
+export const uploadViaUrlApi = async (
+  workspaceId: number,
+  url: string,
+): Promise<{ file_name: string }> => {
+  const res = await axios.post(
+    `${BASE_URL}/files/${workspaceId}/download`,
+    { url },
+    // config,
+  )
+  return res.data
+}
+
+export const getStatusLoadViaUrlApi = async (
+  workspaceId: number,
+  file_name: string,
+): Promise<GetStatusViaUrl> => {
+  const res = await axios.get(
+    `${BASE_URL}/files/${workspaceId}/download/status?file_name=${file_name}`,
+  )
+  return res.data
 }
