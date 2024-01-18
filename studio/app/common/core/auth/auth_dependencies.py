@@ -11,7 +11,6 @@ from studio.app.common.core.auth.auth_config import AUTH_CONFIG
 from studio.app.common.core.auth.security import validate_access_token
 from studio.app.common.db.database import get_db
 from studio.app.common.models import User as UserModel
-from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.users import User
 
 
@@ -35,16 +34,9 @@ async def get_current_user(
             assert err is None, str(err)
             uid = payload["sub"]
 
-        user_data = (
-            db.query(UserModel, UserRoleModel.role_id)
-            .outerjoin(UserRoleModel, UserRoleModel.user_id == UserModel.id)
-            .filter(UserModel.uid == uid)
-            .first()
-        )
+        user_data = db.query(UserModel).filter(UserModel.uid == uid).first()
         assert user_data is not None, "Invalid user data"
-        authed_user, role_id = user_data
-        authed_user.__dict__["role_id"] = role_id
-        return User.from_orm(authed_user)
+        return User.from_orm(user_data)
 
     except ValidationError as e:
         logging.getLogger().error(e)
