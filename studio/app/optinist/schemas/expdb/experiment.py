@@ -28,9 +28,9 @@ class PublishStatus(int, Enum):
 
 class ExpDbExperimentFields(BaseModel):
     brain_area: Optional[str]
-    cre_driver: Optional[str]
-    reporter_line: Optional[str]
-    imaging_depth: Optional[int]
+    imaging_depth: Optional[str]
+    promoter: Optional[str]
+    indicator: Optional[str]
 
 
 class ExpDbExperimentHeader(BaseModel):
@@ -82,16 +82,12 @@ class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")
     )
-    brain_area: Optional[List[str]] = Field(
+    brain_area: Optional[str] = Field(Query(default=None, description="complete match"))
+    imaging_depth: Optional[str] = Field(
         Query(default=None, description="complete match")
     )
-    cre_driver: Optional[List[str]] = Field(
-        Query(default=None, description="complete match")
-    )
-    reporter_line: Optional[List[str]] = Field(
-        Query(default=None, description="complete match")
-    )
-    imaging_depth: Optional[List[int]] = Field(Query(default=None))
+    promoter: Optional[str] = Field(Query(default=None, description="complete match"))
+    indicator: Optional[str] = Field(Query(default=None, description="complete match"))
 
 
 class ExpDbExperimentShareStatus(BaseModel):
