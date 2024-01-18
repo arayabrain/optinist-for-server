@@ -16,7 +16,6 @@ export const reactFlowNodeTypes = {
   AlgorithmNode,
   FluoFileNode,
   BehaviorFileNode,
-  MatlabFileNode,
   ExpDbNode,
 } as const
 
