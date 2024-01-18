@@ -161,7 +161,7 @@ const PopupShare = ({
       return
     }
     timeout.current = setTimeout(() => {
-      dispatch(getListUserSearch({ keyword: textSearch }))
+      dispatch(getListUserSearch({ keyword: encodeURIComponent(textSearch) }))
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch])

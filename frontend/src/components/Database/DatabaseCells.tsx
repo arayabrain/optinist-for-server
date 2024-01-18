@@ -381,9 +381,16 @@ const DatabaseCells = ({ user }: CellProps) => {
     let param = newParams
     if (newParams[0] === "&") param = newParams.slice(1, param.length)
     if (param === window.location.search.replace("?", "")) return
-    setParams(param)
+    setParams(param.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
+
+  useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
 
   useEffect(() => {
     fetchApi()
