@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.16-slim
+FROM --platform=linux/amd64 python:3.8.18-slim
 
 WORKDIR /app
 
@@ -34,7 +34,6 @@ RUN mkdir -p /opt/miniconda3 && \
     conda upgrade -y --all && \
     conda config --set channel_priority strict && \
     conda clean -y --tarballs
-
 ENV PATH $PATH:/opt/miniconda3/bin
 
 # setup cron
@@ -49,8 +48,10 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
 
 # pip install
 # * copy only minimal files to enable docker run cache.
-COPY --chown=optinist pyproject.toml ./
+COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir -e '.[dev]'
+    pip3 install poetry && \
+    poetry config virtualenvs.create false
+RUN poetry install --no-root --with dev
 
 EXPOSE 8000

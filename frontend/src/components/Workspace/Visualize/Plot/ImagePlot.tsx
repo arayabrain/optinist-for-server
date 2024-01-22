@@ -1,30 +1,46 @@
-import React, {
+import {
+  memo,
+  useContext,
   useCallback,
   useEffect,
   useState,
   MouseEvent,
   useRef,
-} from 'react'
-import PlotlyChart from 'react-plotlyjs-ts'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from 'store/store'
+  useMemo,
+  ChangeEvent,
+} from "react"
+import PlotlyChart from "react-plotlyjs-ts"
+import { useSelector, useDispatch } from "react-redux"
+
+import createColormap from "colormap"
+import { useSnackbar } from "notistack"
 import {
   Datum,
   LayoutAxis,
   PlotData,
   PlotMouseEvent,
   PlotSelectionEvent,
-} from 'plotly.js'
-import createColormap from 'colormap'
-import { Button, LinearProgress, TextField, Typography } from '@mui/material'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import Switch from '@mui/material/Switch'
-import Slider from '@mui/material/Slider'
-import Box from '@mui/material/Box'
-import { styled } from '@mui/material/styles'
-import { twoDimarrayEqualityFn } from 'utils/EqualityUtils'
-import { DisplayDataContext } from '../DataContext'
+} from "plotly.js"
 
+import { Button, LinearProgress, TextField, Typography } from "@mui/material"
+import Box from "@mui/material/Box"
+import FormControlLabel from "@mui/material/FormControlLabel"
+import Slider from "@mui/material/Slider"
+import { styled } from "@mui/material/styles"
+import Switch from "@mui/material/Switch"
+
+import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
+import {
+  addRoi,
+  cancelRoi,
+  commitRoi,
+  deleteRoi,
+  getImageData,
+  getRoiData,
+  getStatus,
+  getTimeSeriesInitData,
+  mergeRoi,
+} from "store/slice/DisplayData/DisplayDataActions"
 import {
   selectImageDataError,
   selectImageDataIsInitialized,
@@ -33,12 +49,13 @@ import {
   selectActiveImageData,
   selectRoiData,
   selectImageDataMaxSize,
-} from 'store/slice/DisplayData/DisplayDataSelectors'
+  selectImageMeta,
+  selectStatusRoi,
+} from "store/slice/DisplayData/DisplayDataSelectors"
 import {
-  getImageData,
-  getRoiData,
-  getTimeSeriesInitData,
-} from 'store/slice/DisplayData/DisplayDataActions'
+  selectingImageArea,
+  setImageItemClikedDataId,
+} from "store/slice/VisualizeItem/VisualizeItemActions"
 import {
   selectImageItemShowticklabels,
   selectImageItemZsmooth,
@@ -60,20 +77,18 @@ import {
   selectImageItemAlpha,
   selectRoiItemOutputKeys,
   selectVisualizeItems,
-} from 'store/slice/VisualizeItem/VisualizeItemSelectors'
+} from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import {
   incrementImageActiveIndex,
   resetAllOrderList,
   setImageActiveIndex,
   setImageItemDuration,
-} from 'store/slice/VisualizeItem/VisualizeItemSlice'
-import {
-  selectingImageArea,
-  setImageItemClikedDataId,
-} from 'store/slice/VisualizeItem/VisualizeItemActions'
-import { addRoiApi, deleteRoiApi, mergeRoiApi } from 'api/outputs/Outputs'
-import { isTimeSeriesItem } from 'store/slice/VisualizeItem/VisualizeItemUtils'
-import { selectCurrentWorkspaceId } from 'store/slice/Workspace/WorkspaceSelector'
+} from "store/slice/VisualizeItem/VisualizeItemSlice"
+import { isTimeSeriesItem } from "store/slice/VisualizeItem/VisualizeItemUtils"
+import { selectCurrentWorkspaceId } from "store/slice/Workspace/WorkspaceSelector"
+import { setDataCancel } from "store/slice/Workspace/WorkspaceSlice"
+import { AppDispatch, RootState } from "store/store"
+import { twoDimarrayEqualityFn } from "utils/EqualityUtils"
 
 interface PointClick {
   x: number
@@ -81,6 +96,16 @@ interface PointClick {
   z: number
 }
 
+export type StatusROI = {
+  temp_add_roi: number[]
+  temp_delete_roi: number[]
+  temp_merge_roi: number[]
+}
+
+const ADD_ROI = "Add ROI"
+const DELETE_ROI = "Delete ROI"
+const MERGE_ROI = "Merge ROI"
+const CELL_ROI = "/cell_roi.json"
 const WIDTH_CHARTJS = 321
 const INIT_WIDTH_ROI = 30
 
@@ -92,16 +117,16 @@ const initSizeDrag = {
 }
 
 enum PositionDrag {
-  'LEFT' = 'LEFT',
-  'RIGHT' = 'RIGHT',
-  'BOTTOM' = 'BOTTOM',
-  'TOP' = 'TOP',
+  "LEFT" = "LEFT",
+  "RIGHT" = "RIGHT",
+  "BOTTOM" = "BOTTOM",
+  "TOP" = "TOP",
 }
 
 const sChart = 320
 
-export const ImagePlot = React.memo(() => {
-  const { filePath: path, itemId } = React.useContext(DisplayDataContext)
+export const ImagePlot = memo(function ImagePlot() {
+  const { filePath: path, itemId } = useContext(DisplayDataContext)
 
   const workspaceId = useSelector(selectCurrentWorkspaceId)
   const startIndex = useSelector(selectImageItemStartIndex(itemId))
@@ -113,8 +138,8 @@ export const ImagePlot = React.memo(() => {
 
   const roiFilePath = useSelector(selectRoiItemFilePath(itemId))
 
-  const dispatch = useDispatch()
-  React.useEffect(() => {
+  const dispatch = useDispatch<AppDispatch>()
+  useEffect(() => {
     if (workspaceId) {
       if (!isInitialized) {
         dispatch(
@@ -150,23 +175,31 @@ export const ImagePlot = React.memo(() => {
   }
 })
 
-const ImagePlotImple = React.memo(() => {
-  const { itemId } = React.useContext(DisplayDataContext)
+const ImagePlotImple = memo(function ImagePlotImple() {
+  const { itemId } = useContext(DisplayDataContext)
   const activeIndex = useSelector(selectImageItemActiveIndex(itemId))
   return <ImagePlotChart activeIndex={activeIndex} />
 })
 
-const ImagePlotChart = React.memo<{
+interface ActiveIndexProps {
   activeIndex: number
-}>(({ activeIndex }) => {
-  const dispatch = useDispatch()
+}
+
+const ImagePlotChart = memo(function ImagePlotChart({
+  activeIndex,
+}: ActiveIndexProps) {
+  const { enqueueSnackbar } = useSnackbar()
+  const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
-  const { filePath: path, itemId } = React.useContext(DisplayDataContext)
+  const { filePath: path, itemId } = useContext(DisplayDataContext)
   const imageData = useSelector(
     selectActiveImageData(path, activeIndex),
     imageDataEqualtyFn,
   )
+  const meta = useSelector(selectImageMeta(path))
   const roiFilePath = useSelector(selectRoiItemFilePath(itemId))
+
+  const refRoiFilePath = useRef(roiFilePath)
 
   const roiData = useSelector(
     (state: RootState) =>
@@ -174,15 +207,10 @@ const ImagePlotChart = React.memo<{
     imageDataEqualtyFn,
   )
 
-  const [isAddRoi, setIsAddRoi] = useState(false)
-  const [loadingApi, setLoadingApi] = useState(false)
-
   const [roiDataState, setRoiDataState] = useState(roiData)
-
   const [pointClick, setPointClick] = useState<PointClick[]>([])
 
   const itemsVisual = useSelector(selectVisualizeItems)
-
   const showticklabels = useSelector(selectImageItemShowticklabels(itemId))
   const showline = useSelector(selectImageItemShowLine(itemId))
   const zsmooth = useSelector(selectImageItemZsmooth(itemId))
@@ -194,10 +222,10 @@ const ImagePlotChart = React.memo<{
   const roiAlpha = useSelector(selectImageItemRoiAlpha(itemId))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
-
+  const statusRoi = useSelector(selectStatusRoi)
   const [sizeDrag, setSizeDrag] = useState(initSizeDrag)
-
   const [startDragAddRoi, setStartDragAddRoi] = useState(false)
+  const [action, setAction] = useState("")
   const [positionDrag, setChangeSize] = useState<PositionDrag | undefined>()
 
   const outputKey: string | null = useSelector(selectRoiItemOutputKeys(itemId))
@@ -206,9 +234,9 @@ const ImagePlotChart = React.memo<{
   const refPageYSize = useRef(0)
 
   const colorscaleRoi = createColormap({
-    colormap: 'jet',
+    colormap: "jet",
     nshades: 100, //timeDataMaxIndex >= 6 ? timeDataMaxIndex : 6,
-    format: 'rgba',
+    format: "rgba",
     alpha: 1.0,
   })
 
@@ -217,17 +245,33 @@ const ImagePlotChart = React.memo<{
   }, [roiData])
 
   useEffect(() => {
-    onCancel()
-    onCancelAdd()
+    if (!roiFilePath || !workspaceId) return
+    dispatch(getStatus({ path: roiFilePath, workspaceId }))
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [outputKey, roiFilePath])
+  }, [roiFilePath, workspaceId])
 
-  const data = React.useMemo(
+  useEffect(() => {
+    refRoiFilePath.current = roiFilePath
+    return () => {
+      if (
+        !refRoiFilePath.current ||
+        !workspaceId ||
+        !refRoiFilePath.current.includes(CELL_ROI)
+      )
+        return
+      dispatch(
+        cancelRoi({ path: refRoiFilePath.current as string, workspaceId }),
+      )
+    }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roiFilePath])
+
+  const data = useMemo(
     () => [
       {
         z: imageData,
-        type: 'heatmap',
-        name: 'images',
+        type: "heatmap",
+        name: "images",
         colorscale: colorscale.map((value) => {
           let offset: number = parseFloat(value.offset)
           const offsets: number[] = colorscale.map((v) => {
@@ -241,28 +285,59 @@ const ImagePlotChart = React.memo<{
             offset = 0.0
           }
           const rgb = value.rgb
-            .replace(/[^0-9,]/g, '')
-            .split(',')
+            .replace(/[^0-9,]/g, "")
+            .split(",")
             .map((x) => Number(x))
           const hex = rgba2hex(rgb, alpha)
           return [offset, hex]
         }),
-        // hoverinfo: isAddRoi || pointClick.length ? 'none' : undefined,
+        // hoverinfo: isAddRoi || pointClick.length ? "none" : undefined,
         hoverongaps: false,
         showscale: showscale,
-        zsmooth: zsmooth, // ['best', 'fast', false]
+        zsmooth: zsmooth, // ["best", "fast", false]
       },
       {
         z: roiDataState,
-        type: 'heatmap',
-        name: 'roi',
-        hovertemplate: isAddRoi ? 'none' : 'cell id: %{z}',
-        // hoverinfo: isAddRoi || pointClick.length ? 'none' : undefined,
-        colorscale: [...Array(timeDataMaxIndex)].map((_, i) => {
+        type: "heatmap",
+        name: "roi",
+        hovertemplate: action === ADD_ROI ? "none" : "cell id: %{z}",
+        // hoverinfo: isAddRoi || pointClick.length ? "none" : undefined,
+        colorscale: [...Array(timeDataMaxIndex + 1)].map((_, i) => {
           const new_i = Math.floor(((i % 10) * 10 + i / 10) % 100)
-          const offset: number = i / (timeDataMaxIndex - 1)
+          const offset: number = i / timeDataMaxIndex
           const rgba = colorscaleRoi[new_i]
           const hex = rgba2hex(rgba, roiAlpha)
+          if (!action) {
+            if (statusRoi.temp_delete_roi.includes(i))
+              return [offset, "#ffffff"]
+            if (statusRoi.temp_merge_roi.includes(i)) return [offset, "#e134eb"]
+            if (statusRoi.temp_add_roi.includes(i)) return [offset, "#3483eb"]
+          }
+          if (action === ADD_ROI) {
+            if (statusRoi.temp_delete_roi.includes(i))
+              return [offset, "#ffffff"]
+            if (statusRoi.temp_add_roi.includes(i)) return [offset, "#3483eb"]
+            if (statusRoi.temp_merge_roi.includes(i)) return [offset, "#e134eb"]
+          }
+          if (action === DELETE_ROI) {
+            if (
+              pointClick.find((e) => e.z === i) ||
+              statusRoi.temp_delete_roi.includes(i)
+            )
+              return [offset, "#ffffff"]
+            if (statusRoi.temp_add_roi.includes(i)) return [offset, "#3483eb"]
+            if (statusRoi.temp_merge_roi.includes(i)) return [offset, "#e134eb"]
+          }
+          if (action === MERGE_ROI) {
+            if (statusRoi.temp_delete_roi.includes(i))
+              return [offset, "#ffffff"]
+            if (
+              pointClick.find((e) => e.z === i) ||
+              statusRoi.temp_merge_roi.includes(i)
+            )
+              return [offset, "#e134eb"]
+            if (statusRoi.temp_add_roi.includes(i)) return [offset, "#3483eb"]
+          }
           return [offset, hex]
         }),
         zmin: 0,
@@ -282,13 +357,30 @@ const ImagePlotChart = React.memo<{
       timeDataMaxIndex,
       roiAlpha,
       alpha,
-      isAddRoi,
+      pointClick,
+      action,
+      statusRoi,
     ],
   )
 
-  const [selectMode, setSelectMode] = React.useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [cancelFirst, setCancelFirst] = useState(true)
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const checkStatus = useCallback(() => {
+    if (!statusRoi) return
+    return Object.keys(statusRoi).every(
+      (key) => statusRoi[key as keyof StatusROI].length === 0,
+    )
+    //eslint-disable-next-line
+  }, [JSON.stringify(statusRoi)])
+
+  const [edit, setEdit] = useState<boolean>(!checkStatus())
+
+  useEffect(() => {
+    setEdit(!checkStatus())
+  }, [checkStatus])
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSelectMode(event.target.checked)
   }
   // debounceでイベントを間引きする。onSelectedはそれっぽい名前だが動かなかった。
@@ -297,8 +389,12 @@ const ImagePlotChart = React.memo<{
       dispatch(selectingImageArea({ itemId, range: event.range }))
     }
   })
-  const layout = React.useMemo(
+  const layout = useMemo(
     () => ({
+      title: {
+        text: meta?.title,
+        x: 0.1,
+      },
       width: width,
       height: height - 130,
       margin: {
@@ -306,29 +402,40 @@ const ImagePlotChart = React.memo<{
         l: 100, // left
         b: 20, // bottom
       },
-      dragmode: selectMode ? 'select' : 'pan',
+      dragmode: selectMode ? "select" : "pan",
       xaxis: {
+        title: meta?.xlabel,
         autorange: true,
         showgrid: showgrid,
         showline: showline,
         zeroline: false,
         autotick: true,
-        ticks: '',
+        ticks: "",
         showticklabels: showticklabels,
       },
       yaxis: {
+        title: meta?.ylabel,
         automargin: true,
-        autorange: 'reversed',
+        autorange: "reversed",
         showgrid: showgrid,
         showline: showline,
         zeroline: false,
         autotick: true, // todo
-        ticks: '',
+        ticks: "",
         showticklabels: showticklabels, // todo
       },
     }),
     //eslint-disable-next-line react-hooks/exhaustive-deps
-    [showgrid, showline, showticklabels, width, height, selectMode, isAddRoi],
+    [
+      meta,
+      showgrid,
+      showline,
+      showticklabels,
+      width,
+      height,
+      selectMode,
+      action,
+    ],
   )
 
   const saveFileName = useSelector(selectVisualizeSaveFilename(itemId))
@@ -341,22 +448,24 @@ const ImagePlotChart = React.memo<{
       format: saveFormat,
       filename: saveFileName,
       // scale: number;
-      // format: 'png' | 'svg' | 'jpeg' | 'webp';
+      // format: "png" | "svg" | "jpeg" | "webp";
       // height: number;
       // width: number;
     },
   }
 
   const onChartClick = (event: PlotMouseEvent) => {
-    const point: PlotDatum = event.points[0] as PlotDatum
-    if (point.curveNumber >= 1 && outputKey === 'cell_roi') {
+    if (![MERGE_ROI, DELETE_ROI].includes(action)) return
+    // use as unknown because original PlotDatum does not have z property
+    const point: PlotDatum = event.points[0] as unknown as PlotDatum
+    if (point.curveNumber >= 1 && outputKey === "cell_roi") {
       setSelectRoi({
         x: Number(point.x),
         y: Number(point.y),
         z: Number(point.z),
       })
     }
-    if (point.curveNumber >= 1 && point.z > 0) {
+    if (point.curveNumber >= 1 && point.z >= 0) {
       dispatch(
         setImageItemClikedDataId({
           itemId,
@@ -367,33 +476,67 @@ const ImagePlotChart = React.memo<{
   }
 
   const setSelectRoi = (point: PointClick) => {
-    if (!point.z) return
-    const newPoints = [...pointClick, point]
-    const newRoi = roiDataState.map((roi) => {
-      return roi.map((element) => {
-        if (newPoints.some((p) => p.z === element)) {
-          return 0
-        }
-        return element
-      })
-    })
-    setPointClick([...pointClick, point])
-    setRoiDataState(newRoi)
+    if (![MERGE_ROI, DELETE_ROI].includes(action)) return
+    if (isNaN(Number(point.z))) return
+
+    let newPoints
+    if (statusRoi.temp_delete_roi.includes(point.z)) {
+      return
+    }
+    const check = pointClick.findIndex((item) => item.z === point.z)
+    if (check < 0) {
+      newPoints = [...pointClick, point]
+    } else {
+      newPoints = pointClick.filter((item) => item.z !== point.z)
+    }
+    setPointClick(newPoints)
   }
 
-  const onCancel = () => {
+  const onCancel = async () => {
+    setAction("")
+    if (
+      !refRoiFilePath.current ||
+      !refRoiFilePath.current.includes(CELL_ROI) ||
+      workspaceId === undefined
+    ) {
+      return
+    }
     setPointClick([])
-    setRoiDataState(roiData)
+    try {
+      await dispatch(cancelRoi({ path: refRoiFilePath.current, workspaceId }))
+    } finally {
+      workspaceId &&
+        dispatch(getRoiData({ path: refRoiFilePath.current, workspaceId }))
+    }
   }
 
-  const addRoi = () => {
-    setIsAddRoi(true)
+  useEffect(() => {
+    if (!checkStatus && cancelFirst) {
+      setCancelFirst(false)
+    }
+    //eslint-disable-next-line
+  }, [JSON.stringify(statusRoi), cancelFirst])
+
+  useEffect(() => {
+    if (!roiFilePath || workspaceId === undefined) return
+    dispatch(setDataCancel({ roiFilePath, workspaceId, statusRoi }))
+    //eslint-disable-next-line
+  }, [roiFilePath, action, JSON.stringify(statusRoi)])
+
+  const onAddRoi = () => {
+    setAction(ADD_ROI)
+  }
+
+  const editRoi = () => {
+    setEdit(true)
   }
 
   const onCancelAdd = () => {
-    setIsAddRoi(false)
+    setAction("")
+    setEdit(true)
     setSizeDrag(initSizeDrag)
     setChangeSize(undefined)
+    setPointClick([])
   }
 
   const onMouseDownDragAddRoi = () => {
@@ -448,60 +591,84 @@ const ImagePlotChart = React.memo<{
     refPageYSize.current = pageY
   }
 
-  const addRoiSubmit = async () => {
-    if (!roiFilePath || loadingApi) return
-    setLoadingApi(true)
-    const sizeX = roiDataState[0].length - 1
-    const sizeY = roiDataState.length - 1
-    const xAdd = Number(((sizeDrag.width + 2) / (sChart / sizeX)).toFixed(1))
-    const yAdd = Number(((sizeDrag.height + 2) / (sChart / sizeY)).toFixed(1))
-    const x = Number((sizeDrag.left / (sChart / sizeX)).toFixed(1))
-    const y = Number((sizeDrag.top / (sChart / sizeY)).toFixed(1))
+  const addOrSelectRoi = async () => {
+    if (!roiFilePath || !workspaceId) return
+    if (action === ADD_ROI) {
+      const sizeX = roiDataState[0].length - 1
+      const sizeY = roiDataState.length - 1
+      const xAdd = Number(((sizeDrag.width + 2) / (sChart / sizeX)).toFixed(1))
+      const yAdd = Number(((sizeDrag.height + 2) / (sChart / sizeY)).toFixed(1))
+      const x = Number((sizeDrag.left / (sChart / sizeX)).toFixed(1))
+      const y = Number((sizeDrag.top / (sChart / sizeY)).toFixed(1))
 
-    const pointCenter = {
-      posx: x + Math.floor(xAdd / 2),
-      posy: y + Math.floor(yAdd / 2),
-      sizex: xAdd,
-      sizey: yAdd,
+      const pointCenter = {
+        posx: x + Math.floor(xAdd / 2),
+        posy: y + Math.floor(yAdd / 2),
+        sizex: xAdd,
+        sizey: yAdd,
+      }
+      await dispatch(resetAllOrderList())
+      await dispatch(
+        addRoi({ path: roiFilePath, workspaceId, data: pointCenter }),
+      )
+      onCancelAdd()
     }
-    dispatch(resetAllOrderList())
-    try {
-      await addRoiApi(roiFilePath, pointCenter)
-    } catch {}
-    setLoadingApi(false)
-    onCancelAdd()
-    workspaceId && dispatch(getRoiData({ path: roiFilePath, workspaceId }))
-    resetTimeSeries()
+    if (action === MERGE_ROI) {
+      if (pointClick.length < 2) return
+      dispatch(resetAllOrderList())
+      dispatch(
+        mergeRoi({
+          path: roiFilePath,
+          workspaceId,
+          data: {
+            ids: pointClick.map((point) => point.z),
+          },
+        }),
+      )
+      setPointClick([])
+      workspaceId && dispatch(getRoiData({ path: roiFilePath, workspaceId }))
+    } else if (action === DELETE_ROI) {
+      if (!pointClick.length) return
+      dispatch(resetAllOrderList())
+      await dispatch(
+        deleteRoi({
+          path: roiFilePath,
+          workspaceId,
+          data: {
+            ids: pointClick.map((point) => point.z),
+          },
+        }),
+      )
+      setPointClick([])
+      workspaceId && dispatch(getRoiData({ path: roiFilePath, workspaceId }))
+    }
+    setAction("")
+    setEdit(true)
+    dispatch(getStatus({ path: roiFilePath, workspaceId }))
   }
 
   const onMergeRoi = async () => {
-    if (!roiFilePath || loadingApi) return
-    setLoadingApi(true)
-    dispatch(resetAllOrderList())
-    try {
-      await mergeRoiApi(roiFilePath, {
-        ids: pointClick.map((point) => point.z - 1),
-      })
-    } catch {}
-    setLoadingApi(false)
-    onCancel()
-    workspaceId && dispatch(getRoiData({ path: roiFilePath, workspaceId }))
-    resetTimeSeries()
+    if (!roiFilePath) return
+    setAction(MERGE_ROI)
   }
 
   const onDeleteRoi = async () => {
-    if (!roiFilePath || loadingApi) return
-    setLoadingApi(true)
-    dispatch(resetAllOrderList())
+    if (!roiFilePath) return
+    setAction(DELETE_ROI)
+  }
+
+  const onCommitRoi = async () => {
+    if (!roiFilePath || workspaceId === undefined) return
     try {
-      await deleteRoiApi(roiFilePath, {
-        ids: pointClick.map((point) => point.z - 1),
-      })
-    } catch {}
-    setLoadingApi(false)
-    onCancel()
-    workspaceId && dispatch(getRoiData({ path: roiFilePath, workspaceId }))
-    resetTimeSeries()
+      await dispatch(commitRoi({ path: roiFilePath, workspaceId }))
+      workspaceId &&
+        (await dispatch(getRoiData({ path: roiFilePath, workspaceId })))
+      enqueueSnackbar("Finished", { variant: "success" })
+      resetTimeSeries()
+    } finally {
+      setEdit(false)
+      setAction("")
+    }
   }
 
   const resetTimeSeries = () => {
@@ -520,37 +687,69 @@ const ImagePlotChart = React.memo<{
   }
 
   const renderActionRoi = () => {
-    if (!roiDataState?.length || outputKey !== 'cell_roi') return null
-    if (!isAddRoi) {
-      return <LinkDiv onClick={addRoi}>Add ROI</LinkDiv>
+    if (!roiFilePath || !roiFilePath.includes(CELL_ROI)) return null
+    if (action) {
+      return (
+        <>
+          {action !== ADD_ROI ? (
+            <BoxDiv>
+              ROI Selecteds: [{pointClick.map((item) => item.z).join(",")}]
+            </BoxDiv>
+          ) : null}
+          <BoxDiv sx={{ display: "flex", gap: 1 }}>
+            <LinkDiv
+              sx={{
+                color:
+                  action === DELETE_ROI
+                    ? "#F84E1B"
+                    : action === MERGE_ROI
+                      ? "#6619A9"
+                      : "default",
+                display: "flex",
+                gap: 1,
+                textDecoration: "none",
+                cursor: "default",
+              }}
+            >
+              {`[${action}]`}
+            </LinkDiv>
+            <LinkDiv onClick={onCancelAdd}>Cancel</LinkDiv>
+            <LinkDiv
+              style={{
+                opacity:
+                  (pointClick.length < 2 && action === MERGE_ROI) ||
+                  (pointClick.length < 1 && action === DELETE_ROI)
+                    ? 0.5
+                    : 1,
+                cursor:
+                  (pointClick.length < 2 && action === MERGE_ROI) ||
+                  (pointClick.length < 1 && action === DELETE_ROI)
+                    ? "default"
+                    : "pointer",
+              }}
+              onClick={addOrSelectRoi}
+            >
+              OK
+            </LinkDiv>
+          </BoxDiv>
+        </>
+      )
     }
-    return (
-      <BoxDiv>
-        <LinkDiv
-          style={{
-            opacity: loadingApi ? 0.5 : 1,
-            cursor: loadingApi ? 'progress' : 'pointer',
-          }}
-          onClick={addRoiSubmit}
-        >
-          OK
+
+    if (!edit)
+      return (
+        <LinkDiv sx={{ width: "fit-content" }} onClick={editRoi}>
+          Edit ROI
         </LinkDiv>
-        <LinkDiv
-          style={{
-            opacity: loadingApi ? 0.5 : 1,
-            cursor: loadingApi ? 'progress' : 'pointer',
-          }}
-          onClick={onCancelAdd}
-        >
-          Cancel
-        </LinkDiv>
-      </BoxDiv>
-    )
+      )
+    return null
   }
 
+  if (!statusRoi) return null
+
   return (
-    <div>
-      <Box sx={{ display: 'flex' }}>
+    <ImagePlotContainer>
+      <Box sx={{ display: "flex" }}>
         <Box sx={{ flexGrow: 1, mt: 1 }}>
           <PlayBack activeIndex={activeIndex} />
         </Box>
@@ -561,39 +760,58 @@ const ImagePlotChart = React.memo<{
         />
       </Box>
       <Box sx={{ minHeight: 5.5 }}>
-        {pointClick.length ? (
+        {edit && !action && roiFilePath && roiFilePath.includes(CELL_ROI) ? (
           <>
-            <BoxDiv>
-              <span>ROI Selecteds: [{String(pointClick.map((e) => e.z))}]</span>
-            </BoxDiv>
-            <BoxDiv>
-              {pointClick.length >= 2 ? (
+            <BoxDiv sx={{ flexDirection: "column" }}>
+              <BoxWrapper sx={{ marginBottom: 2 }}>
+                <LinkDiv onClick={onAddRoi}>{ADD_ROI}</LinkDiv>
                 <LinkDiv
-                  sx={{ ml: 0, opacity: loadingApi ? 0.5 : 1 }}
+                  sx={{
+                    color: "#F84E1B",
+                  }}
+                  onClick={onDeleteRoi}
+                >
+                  {DELETE_ROI}
+                </LinkDiv>
+                <LinkDiv
+                  sx={{
+                    color: "#6619A9",
+                    ml: 0,
+                  }}
                   onClick={onMergeRoi}
                 >
-                  Merge ROI
+                  {MERGE_ROI}
                 </LinkDiv>
-              ) : null}
-              <LinkDiv
-                sx={{ color: '#F84E1B', opacity: loadingApi ? 0.5 : 1 }}
-                onClick={onDeleteRoi}
-              >
-                Delete ROI
-              </LinkDiv>
-              <LinkDiv
-                sx={{ opacity: loadingApi ? 0.5 : 1 }}
-                onClick={onCancel}
-              >
-                Cancel
-              </LinkDiv>
+              </BoxWrapper>
+              <BoxWrapper>
+                {Object.keys(statusRoi).some(
+                  (key) => statusRoi[key as keyof StatusROI].length > 0,
+                ) ? (
+                  <LinkDiv
+                    sx={{
+                      color: "#32A919",
+                    }}
+                    onClick={onCommitRoi}
+                  >
+                    Commit Edit
+                  </LinkDiv>
+                ) : null}
+                <LinkDiv
+                  onClick={() => {
+                    onCancel()
+                    setEdit(false)
+                  }}
+                >
+                  Cancel
+                </LinkDiv>
+              </BoxWrapper>
             </BoxDiv>
           </>
         ) : (
           renderActionRoi()
         )}
       </Box>
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: "relative" }}>
         <PlotlyChart
           data={data}
           layout={layout}
@@ -601,7 +819,7 @@ const ImagePlotChart = React.memo<{
           onClick={onChartClick}
           onSelecting={onSelecting}
         />
-        {isAddRoi ? (
+        {action === ADD_ROI ? (
           <DivAddRoi>
             <DivSvg
               onMouseLeave={onMouseUpDragAddRoi}
@@ -614,7 +832,7 @@ const ImagePlotChart = React.memo<{
                   style={{
                     width: sizeDrag.width - 1,
                     height: sizeDrag.height - 1,
-                    cursor: !startDragAddRoi ? 'grab' : 'grabbing',
+                    cursor: !startDragAddRoi ? "grab" : "grabbing",
                   }}
                 />
                 <DragSizeLeft
@@ -642,25 +860,21 @@ const ImagePlotChart = React.memo<{
           </DivAddRoi>
         ) : null}
       </div>
-    </div>
+    </ImagePlotContainer>
   )
 })
 
-const PlayBack = React.memo<{ activeIndex: number }>(({ activeIndex }) => {
+const PlayBack = memo(function PlayBack({ activeIndex }: ActiveIndexProps) {
   const dispatch = useDispatch()
-  const { filePath: path, itemId } = React.useContext(DisplayDataContext)
+  const { filePath: path, itemId } = useContext(DisplayDataContext)
 
   const maxSize = useSelector(selectImageDataMaxSize(path))
   const startIndex = useSelector(selectImageItemStartIndex(itemId))
   const endIndex = useSelector(selectImageItemEndIndex(itemId))
   const duration = useSelector(selectImageItemDuration(itemId))
 
-  const onSliderChange = (
-    event: Event,
-    value: number | number[],
-    activeThumb: number,
-  ) => {
-    if (typeof value === 'number') {
+  const onSliderChange = (event: Event, value: number | number[]) => {
+    if (typeof value === "number") {
       const newIndex = value - startIndex
       if (newIndex >= 0 && newIndex !== activeIndex) {
         dispatch(setImageActiveIndex({ itemId, activeIndex: newIndex }))
@@ -668,7 +882,7 @@ const PlayBack = React.memo<{ activeIndex: number }>(({ activeIndex }) => {
     }
   }
 
-  const intervalRef = React.useRef<null | NodeJS.Timeout>(null)
+  const intervalRef = useRef<null | NodeJS.Timeout>(null)
 
   useEffect(() => {
     if (intervalRef.current !== null) {
@@ -698,10 +912,10 @@ const PlayBack = React.memo<{ activeIndex: number }>(({ activeIndex }) => {
   }
 
   const onDurationChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
       const newValue =
-        event.target.value === '' ? '' : Number(event.target.value)
-      if (typeof newValue === 'number') {
+        event.target?.value === "" ? "" : Number(event.target?.value)
+      if (typeof newValue === "number") {
         dispatch(setImageItemDuration({ itemId, duration: newValue }))
       }
     },
@@ -717,7 +931,7 @@ const PlayBack = React.memo<{ activeIndex: number }>(({ activeIndex }) => {
       </Button>
       <TextField
         sx={{ width: 100, ml: 2 }}
-        label="Duration [msec]"
+        label="msec/frame"
         type="number"
         inputProps={{
           step: 100,
@@ -775,7 +989,7 @@ function rgba2hex(rgba: number[], alpha: number) {
   const b = rgba[2]
   const a = alpha
 
-  var outParts = [
+  const outParts = [
     r.toString(16),
     g.toString(16),
     b.toString(16),
@@ -787,14 +1001,14 @@ function rgba2hex(rgba: number[], alpha: number) {
   // Pad single-digit output values
   outParts.forEach(function (part, i) {
     if (part.length === 1) {
-      outParts[i] = '0' + part
+      outParts[i] = "0" + part
     }
   })
 
-  return `#${outParts.join('')}`
+  return `#${outParts.join("")}`
 }
 
-function debounce<T extends (...args: any[]) => unknown>(
+function debounce<T extends (...args: PlotSelectionEvent[]) => unknown>(
   callback: T,
   delay = 500,
 ): (...args: Parameters<T>) => void {
@@ -805,80 +1019,92 @@ function debounce<T extends (...args: any[]) => unknown>(
   }
 }
 
-const BoxDiv = styled('div')({
+const ImagePlotContainer = styled("div")`
+  .selectionlayer path {
+    stroke: white !important;
+    stroke-dasharray: 6 !important;
+    stroke-width: 2px !important;
+    opacity: 1 !important;
+  }
+`
+
+const BoxDiv = styled("div")({
   mt: 1,
-  display: 'flex',
-  alignItems: 'center',
-  listStyle: 'none',
+  display: "flex",
+  listStyle: "none",
   padding: 0,
   margin: 0,
 })
 
-const LinkDiv = styled('div')({
-  marginLeft: 16,
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: '#1155cc',
-  zIndex: 999,
-  position: 'relative',
+const BoxWrapper = styled("div")({
+  display: "flex",
+  gap: 12,
 })
 
-const DivAddRoi = styled('div')({
-  width: '100%',
-  height: '100%',
-  position: 'absolute',
+const LinkDiv = styled("div")({
+  textDecoration: "underline",
+  cursor: "pointer",
+  color: "#1155cc",
+  zIndex: 999,
+  position: "relative",
+})
+
+const DivAddRoi = styled("div")({
+  width: "100%",
+  height: "100%",
+  position: "absolute",
   left: 0,
   top: 0,
   borderRadius: 100,
 })
 
-const DivSvg = styled('div')({
+const DivSvg = styled("div")({
   width: 321,
   height: 321,
   marginTop: 30,
   marginLeft: 99,
-  position: 'relative',
+  position: "relative",
 })
 
-const DivDrag = styled('div')({
-  border: '1px solid #ffffff',
-  position: 'absolute',
+const DivDrag = styled("div")({
+  border: "1px solid #ffffff",
+  position: "absolute",
   borderRadius: 100,
 })
 
-const DragCenter = styled('div')({
+const DragCenter = styled("div")({
   borderRadius: 100,
-  cursor: 'grab',
+  cursor: "grab",
 })
 
-const DragSize = styled('div')({
+const DragSize = styled("div")({
   width: 3,
   height: 3,
   borderRadius: 100,
-  position: 'absolute',
-  background: '#fff',
+  position: "absolute",
+  background: "#fff",
 })
 
 const DragSizeLeft = styled(DragSize)({
-  top: `calc(50% - 1px)`,
+  top: "calc(50% - 1px)",
   left: -2,
-  cursor: 'ew-resize',
+  cursor: "ew-resize",
 })
 
 const DragSizeRight = styled(DragSize)({
-  top: `calc(50% - 1px)`,
+  top: "calc(50% - 1px)",
   right: -2,
-  cursor: 'ew-resize',
+  cursor: "ew-resize",
 })
 
 const DragSizeTop = styled(DragSize)({
   top: -2,
-  right: `calc(50% - 1px)`,
-  cursor: 'ns-resize',
+  right: "calc(50% - 1px)",
+  cursor: "ns-resize",
 })
 
 const DragSizeBottom = styled(DragSize)({
   bottom: -2,
-  right: `calc(50% - 1px)`,
-  cursor: 'ns-resize',
+  right: "calc(50% - 1px)",
+  cursor: "ns-resize",
 })

@@ -1,4 +1,5 @@
-import { createSlice, isAnyOf } from '@reduxjs/toolkit'
+import { createSlice, isAnyOf } from "@reduxjs/toolkit"
+
 import {
   getExperimentsDatabase,
   getCellsDatabase,
@@ -9,8 +10,13 @@ import {
   postPublish,
   postPublishAll,
   postMultiShare,
-} from './DatabaseActions'
-import {DATABASE_SLICE_NAME, DatabaseDTO, ListShareGroup, ListShareUser} from './DatabaseType'
+} from "store/slice/Database/DatabaseActions"
+import {
+  DATABASE_SLICE_NAME,
+  DatabaseDTO,
+  ListShareGroup,
+  ListShareUser,
+} from "store/slice/Database/DatabaseType"
 
 const initData = {
   offset: 0,
@@ -30,7 +36,7 @@ export type TypeData = {
 export const initialState: {
   data: TypeData
   loading: boolean
-  type: 'experiment' | 'cell'
+  type: "experiment" | "cell"
   listShare?: {
     share_type: number
     users: ListShareUser[]
@@ -47,9 +53,9 @@ export const initialState: {
     private: initData,
   },
   loading: false,
-  type: 'experiment',
+  type: "experiment",
   listShare: undefined,
-  listGroupsShare: undefined
+  listGroupsShare: undefined,
 }
 
 export const databaseSlice = createSlice({
@@ -58,35 +64,35 @@ export const databaseSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(getExperimentsDatabase.pending, (state, action) => {
-        if (state.type === 'cell') {
+      .addCase(getExperimentsDatabase.pending, (state) => {
+        if (state.type === "cell") {
           state.data.private = initData
-          state.type = 'experiment'
+          state.type = "experiment"
         }
         state.loading = true
       })
-      .addCase(getCellsDatabase.pending, (state, action) => {
-        if (state.type === 'experiment') {
+      .addCase(getCellsDatabase.pending, (state) => {
+        if (state.type === "experiment") {
           state.data.private = initData
-          state.type = 'cell'
+          state.type = "cell"
         }
         state.loading = true
       })
-      .addCase(getExperimentsPublicDatabase.pending, (state, action) => {
-        if (state.type === 'cell') {
+      .addCase(getExperimentsPublicDatabase.pending, (state) => {
+        if (state.type === "cell") {
           state.data.public = initData
-          state.type = 'experiment'
+          state.type = "experiment"
         }
         state.loading = true
       })
-      .addCase(getCellsPublicDatabase.pending, (state, action) => {
-        if (state.type === 'experiment') {
+      .addCase(getCellsPublicDatabase.pending, (state) => {
+        if (state.type === "experiment") {
           state.data.public = initData
-          state.type = 'cell'
+          state.type = "cell"
         }
         state.loading = true
       })
-      .addCase(getListShare.pending, (state, action) => {
+      .addCase(getListShare.pending, (state) => {
         state.listShare = undefined
         state.loading = true
       })
@@ -95,17 +101,14 @@ export const databaseSlice = createSlice({
           postMultiShare.pending,
           postListUserShare.pending,
           postPublish.pending,
-          postPublishAll.pending
+          postPublishAll.pending,
         ),
-        (state, action) => {
+        (state) => {
           state.loading = true
         },
       )
       .addMatcher(
-        isAnyOf(
-          getCellsDatabase.fulfilled,
-          getExperimentsDatabase.fulfilled,
-        ),
+        isAnyOf(getCellsDatabase.fulfilled, getExperimentsDatabase.fulfilled),
         (state, action) => {
           state.data.private = action.payload
           state.loading = false
@@ -121,15 +124,10 @@ export const databaseSlice = createSlice({
           state.loading = false
         },
       )
-      .addMatcher(
-        isAnyOf(
-          getListShare.fulfilled,
-        ),
-        (state, action) => {
-          state.listShare = action.payload
-          state.loading = false
-        },
-      )
+      .addMatcher(isAnyOf(getListShare.fulfilled), (state, action) => {
+        state.listShare = action.payload
+        state.loading = false
+      })
       .addMatcher(
         isAnyOf(
           getExperimentsDatabase.rejected,
@@ -143,7 +141,7 @@ export const databaseSlice = createSlice({
           postPublish.rejected,
           postPublishAll.rejected,
           postMultiShare.rejected,
-          postMultiShare.fulfilled
+          postMultiShare.fulfilled,
         ),
         (state) => {
           state.loading = false

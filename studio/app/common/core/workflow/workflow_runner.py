@@ -35,6 +35,8 @@ class WorkflowRunner:
             self.workspace_id,
             self.unique_id,
             self.runItem.name,
+            nwbfile=get_typecheck_params(self.runItem.nwbParam, "nwb"),
+            snakemake=get_typecheck_params(self.runItem.snakemakeParam, "snakemake"),
         ).write()
 
     def run_workflow(self, background_tasks):
@@ -116,14 +118,14 @@ class WorkflowRunner:
                     edgeDict=self.edgeDict,
                     nwbfile=nwbfile,
                 ).hdf5()
-            elif node.type == NodeType.MATLAB:
+            elif node.type == NodeType.MAT:
                 rule_dict[node.id] = SmkRule(
                     workspace_id=self.workspace_id,
                     unique_id=self.unique_id,
                     node=node,
                     edgeDict=self.edgeDict,
                     nwbfile=nwbfile,
-                ).matlab()
+                ).mat()
             elif node.type == NodeType.EXPDB:
                 rule_dict[node.id] = SmkRule(
                     workspace_id=self.workspace_id,

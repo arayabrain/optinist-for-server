@@ -1,15 +1,7 @@
-import React from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import PlotlyChart from 'react-plotlyjs-ts'
-import { DisplayDataContext } from '../DataContext'
-import {
-  selectHistogramData,
-  selectHistogramDataError,
-  selectHistogramDataIsFulfilled,
-  selectHistogramDataIsInitialized,
-  selectHistogramDataIsPending,
-} from 'store/slice/DisplayData/DisplayDataSelectors'
-import { getHistogramData } from 'store/slice/DisplayData/DisplayDataActions'
+import { ChangeEvent, memo, useContext, useEffect, useMemo } from "react"
+import PlotlyChart from "react-plotlyjs-ts"
+import { useSelector, useDispatch } from "react-redux"
+
 import {
   Box,
   FormControl,
@@ -17,23 +9,35 @@ import {
   InputLabel,
   LinearProgress,
   Typography,
-} from '@mui/material'
+} from "@mui/material"
+
+import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
+import { getHistogramData } from "store/slice/DisplayData/DisplayDataActions"
+import {
+  selectHistogramData,
+  selectHistogramDataError,
+  selectHistogramDataIsFulfilled,
+  selectHistogramDataIsInitialized,
+  selectHistogramDataIsPending,
+  selectHistogramMeta,
+} from "store/slice/DisplayData/DisplayDataSelectors"
 import {
   selectHistogramItemBins,
   selectVisualizeItemHeight,
   selectVisualizeItemWidth,
-} from 'store/slice/VisualizeItem/VisualizeItemSelectors'
-import { setHistogramItemBins } from 'store/slice/VisualizeItem/VisualizeItemSlice'
+} from "store/slice/VisualizeItem/VisualizeItemSelectors"
+import { setHistogramItemBins } from "store/slice/VisualizeItem/VisualizeItemSlice"
+import { AppDispatch } from "store/store"
 
-export const HistogramPlot = React.memo(() => {
-  const { filePath: path } = React.useContext(DisplayDataContext)
-  const dispatch = useDispatch()
+export const HistogramPlot = memo(function HistogramPlot() {
+  const { filePath: path } = useContext(DisplayDataContext)
+  const dispatch = useDispatch<AppDispatch>()
   const isPending = useSelector(selectHistogramDataIsPending(path))
   const isInitialized = useSelector(selectHistogramDataIsInitialized(path))
   const error = useSelector(selectHistogramDataError(path))
   const isFulfilled = useSelector(selectHistogramDataIsFulfilled(path))
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isInitialized) {
       dispatch(getHistogramData({ path }))
     }
@@ -50,23 +54,27 @@ export const HistogramPlot = React.memo(() => {
   }
 })
 
-const HistogramPlotImple = React.memo(() => {
-  const { filePath: path, itemId } = React.useContext(DisplayDataContext)
+const HistogramPlotImple = memo(function HistogramPlotImple() {
+  const { filePath: path, itemId } = useContext(DisplayDataContext)
   const histogramData = useSelector(selectHistogramData(path))
+  const meta = useSelector(selectHistogramMeta(path))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
   const bins = useSelector(selectHistogramItemBins(itemId))
 
-  const data = React.useMemo(
+  const data = useMemo(
     () =>
       histogramData != null
         ? [
             {
               x: histogramData[0],
-              type: 'histogram',
+              type: "histogram",
               autobinx: false,
               xbins: {
-                size: (Math.max(...histogramData[0]) - Math.min(...histogramData[0])) / (bins - 1),
+                size:
+                  (Math.max(...histogramData[0]) -
+                    Math.min(...histogramData[0])) /
+                  (bins - 1),
               },
             },
           ]
@@ -74,24 +82,34 @@ const HistogramPlotImple = React.memo(() => {
     [histogramData, bins],
   )
 
-  const layout = React.useMemo(
+  const layout = useMemo(
     () => ({
+      title: {
+        text: meta?.title,
+        x: 0.1,
+      },
       width: width,
       height: height - 120,
-      dragmode: 'pan',
+      dragmode: "pan",
       margin: {
-        t: 60, // top
+        t: 50, // top
         l: 50, // left
-        b: 30, // bottom
+        b: 40, // bottom
       },
       autosize: true,
+      xaxis: {
+        title: meta?.xlabel,
+      },
+      yaxis: {
+        title: meta?.ylabel,
+      },
     }),
-    [width, height],
+    [meta, width, height],
   )
 
   return (
     <div>
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: "flex" }}>
         <Box sx={{ flexGrow: 1, ml: 1 }}>
           <InputBins />
         </Box>
@@ -101,12 +119,12 @@ const HistogramPlotImple = React.memo(() => {
   )
 })
 
-const InputBins = React.memo(() => {
-  const { itemId } = React.useContext(DisplayDataContext)
+const InputBins = memo(function InputBins() {
+  const { itemId } = useContext(DisplayDataContext)
   const dispatch = useDispatch()
   const bins = useSelector(selectHistogramItemBins(itemId))
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     dispatch(
       setHistogramItemBins({ itemId, bins: parseInt(event.target.value) }),
     )

@@ -1,18 +1,28 @@
 from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.dataclass import FluoData, IscellData, RoiData, Suite2pData
+from studio.app.optinist.dataclass import (
+    EditRoiData,
+    FluoData,
+    IscellData,
+    RoiData,
+    Suite2pData,
+)
 
 
 def suite2p_roi(
-    ops: Suite2pData, output_dir: str, params: dict = None
+    ops: Suite2pData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(ops=Suite2pData, fluorescence=FluoData, iscell=IscellData):
     import numpy as np
     from suite2p import ROI, classification, default_ops, detection, extraction
 
-    print("start suite2p_roi")
-    ops = ops.data
+    function_id = output_dir.split("/")[-1]
+    print("start suite2p_roi:", function_id)
 
-    ops = {**default_ops(), **ops, **params}
+    nwbfile = kwargs.get("nwbfile", {})
+    fs = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+
+    ops = ops.data
+    ops = {**default_ops(), **ops, **params, "fs": fs}
 
     # ROI detection
     ops_classfile = ops.get("classifier_path")
@@ -36,7 +46,7 @@ def suite2p_roi(
 
     # ROI CLASSIFICATION
     iscell = classification.classify(stat=stat, classfile=classfile)
-    iscell = iscell[:, 0].astype(bool)
+    iscell = iscell[:, 0].astype(int)
 
     arrays = []
     for i, s in enumerate(stat):
@@ -48,6 +58,7 @@ def suite2p_roi(
 
     im = np.stack(arrays)
     im[im == 0] = np.nan
+    im -= 1
 
     # roiを追加
     roi_list = []
@@ -61,34 +72,42 @@ def suite2p_roi(
     # NWBを追加
     nwbfile = {}
 
-    nwbfile[NWBDATASET.ROI] = {"roi_list": roi_list}
+    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
 
     # iscellを追加
     nwbfile[NWBDATASET.COLUMN] = {
-        "roi_column": {
+        function_id: {
             "name": "iscell",
-            "discription": "two columns - iscell & probcell",
+            "description": "two columns - iscell & probcell",
             "data": iscell,
         }
     }
 
     # Fluorenceを追加
-    nwbfile[NWBDATASET.FLUORESCENCE] = {}
-    for name, data in zip(["Fluorescence", "Neuropil"], [F, Fneu]):
-        nwbfile[NWBDATASET.FLUORESCENCE][name] = {
-            "table_name": name,
-            "region": list(range(len(data))),
-            "name": name,
-            "data": data,
-            "unit": "lumens",
-            "rate": ops["fs"],
+    nwbfile[NWBDATASET.FLUORESCENCE] = {
+        function_id: {
+            "Fluorescence": {
+                "table_name": "Fluorescence",
+                "region": list(range(len(F))),
+                "name": "Fluorescence",
+                "data": F,
+                "unit": "lumens",
+                "rate": ops["fs"],
+            },
+            "Neuropil": {
+                "table_name": "Neuropil",
+                "region": list(range(len(Fneu))),
+                "name": "Neuropil",
+                "data": Fneu,
+                "unit": "lumens",
+                "rate": ops["fs"],
+            },
         }
+    }
 
     ops["stat"] = stat
     ops["F"] = F
     ops["Fneu"] = Fneu
-    ops["iscell"] = iscell
-    ops["im"] = im
 
     info = {
         "ops": Suite2pData(ops),
@@ -102,13 +121,16 @@ def suite2p_roi(
             np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
         ),
         "non_cell_roi": RoiData(
-            np.nanmax(im[~iscell], axis=0),
+            np.nanmax(im[iscell == 0], axis=0),
             output_dir=output_dir,
             file_name="noncell_roi",
         ),
         "cell_roi": RoiData(
-            np.nanmax(im[iscell], axis=0), output_dir=output_dir, file_name="cell_roi"
+            np.nanmax(im[iscell != 0], axis=0),
+            output_dir=output_dir,
+            file_name="cell_roi",
         ),
+        "edit_roi_data": EditRoiData(images=ImageData(ops["filelist"]).data, im=im),
         "nwbfile": nwbfile,
     }
 

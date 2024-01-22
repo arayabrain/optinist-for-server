@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
@@ -8,18 +10,29 @@ from studio.app.common.core.utils.filepath_creater import (
 from studio.app.common.core.utils.json_writer import JsonWriter
 from studio.app.common.core.workflow.workflow import OutputPath, OutputType
 from studio.app.common.dataclass.base import BaseData
+from studio.app.common.schemas.outputs import PlotMetaData
 
 
 class TimeSeriesData(BaseData):
     def __init__(
-        self, data, std=None, index=None, cell_numbers=None, file_name="timeseries"
+        self,
+        data,
+        std=None,
+        sem=None,
+        index=None,
+        cell_numbers=None,
+        params=None,
+        file_name="timeseries",
+        meta: Optional[PlotMetaData] = None,
     ):
         super().__init__(file_name)
+        self.meta = meta
 
         assert data.ndim <= 2, "TimeSeries Dimension Error"
 
         if isinstance(data, str):
-            self.data = pd.read_csv(data, header=None).values
+            header = params.get("setHeader", None) if isinstance(params, dict) else None
+            self.data = pd.read_csv(data, header=header).values
         else:
             self.data = data
 
@@ -27,6 +40,7 @@ class TimeSeriesData(BaseData):
             self.data = self.data[np.newaxis, :]
 
         self.std = std
+        self.sem = sem
 
         # indexを指定
         if index is not None:
@@ -36,14 +50,15 @@ class TimeSeriesData(BaseData):
 
         # cell番号を表示
         if cell_numbers is not None:
-            self.cell_numbers = cell_numbers + 1
+            self.cell_numbers = cell_numbers
         else:
-            self.cell_numbers = range(1, len(self.data) + 1)
+            self.cell_numbers = range(len(self.data))
 
     def save_json(self, json_dir):
         # timeseriesだけはdirを返す
         self.json_path = join_filepath([json_dir, self.file_name])
         create_directory(self.json_path, delete_dir=True)
+        JsonWriter.write_plot_meta(json_dir, self.file_name, self.meta)
 
         for i, cell_i in enumerate(self.cell_numbers):
             data = self.data[i]

@@ -8,12 +8,16 @@ def correlation(
     output_dir: str,
     iscell: IscellData = None,
     params: dict = None,
+    **kwargs,
 ) -> dict():
     import numpy as np
 
+    function_id = output_dir.split("/")[-1]
+    print("start correlation:", function_id)
+
     neural_data = neural_data.data
 
-    # data shold be time x component matrix
+    # data should be time x component matrix
     if params["transpose"]:
         X = neural_data.transpose()
     else:
@@ -34,7 +38,9 @@ def correlation(
     # NWB追加
     nwbfile = {}
     nwbfile[NWBDATASET.POSTPROCESS] = {
-        "corr": corr,
+        function_id: {
+            "corr": corr,
+        }
     }
 
     info = {

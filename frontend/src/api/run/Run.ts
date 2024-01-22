@@ -1,13 +1,13 @@
-import axios from 'utils/axios'
-import type { Edge, Node } from 'react-flow-renderer'
+import type { Edge, Node } from "reactflow"
 
-import { BASE_URL } from 'const/API'
+import { BASE_URL } from "const/API"
 import type {
   AlgorithmNodeData,
   InputNodeData,
-} from 'store/slice/FlowElement/FlowElementType'
-import type { FILE_TYPE } from 'store/slice/InputNode/InputNodeType'
-import type { ParamMap } from 'utils/param/ParamType'
+} from "store/slice/FlowElement/FlowElementType"
+import type { FILE_TYPE } from "store/slice/InputNode/InputNodeType"
+import axios from "utils/axios"
+import type { ParamMap } from "utils/param/ParamType"
 
 export type RunPostData = {
   name: string
@@ -35,6 +35,7 @@ export interface InputNodePostData extends InputNodeData {
     [key: string]: unknown
   }
   hdf5Path?: string
+  matPath?: string
 }
 
 export interface AlgorithmNodePostData extends AlgorithmNodeData {
@@ -53,7 +54,7 @@ export async function runApi(
 export async function runByUidApi(
   workspaceId: number,
   uid: string,
-  data: Omit<RunPostData, 'name'>,
+  data: Omit<RunPostData, "name">,
 ): Promise<string> {
   const response = await axios.post(
     `${BASE_URL}/run/${workspaceId}/${uid}`,
@@ -94,10 +95,12 @@ export async function runResult(data: {
 }
 
 export async function cancelResultApi(data: {
-  workspaceId: string
+  workspaceId: number
   uid: string
 }): Promise<RunResultDTO> {
   const { workspaceId, uid } = data
-  const response = await axios.post(`${BASE_URL}/run/cancel/${workspaceId}/${uid}`)
+  const response = await axios.post(
+    `${BASE_URL}/run/cancel/${workspaceId}/${uid}`,
+  )
   return response.data
 }

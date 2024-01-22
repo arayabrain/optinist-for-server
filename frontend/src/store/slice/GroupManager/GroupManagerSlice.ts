@@ -1,13 +1,17 @@
-import {GROUP_MANAGER_SLICE_NAME, GroupManager} from "./GroupManagerType";
-import {createSlice, isAnyOf} from "@reduxjs/toolkit";
+import { createSlice, isAnyOf } from "@reduxjs/toolkit"
+
 import {
   deleteGroupManager,
   getGroupsManager,
   getListSearchGroup,
   getListUserGroup,
   postGroupManager,
-  postListSet
-} from "./GroupActions";
+  postListSet,
+} from "store/slice/GroupManager/GroupActions"
+import {
+  GROUP_MANAGER_SLICE_NAME,
+  GroupManager,
+} from "store/slice/GroupManager/GroupManagerType"
 
 const initialState: GroupManager = {
   groupsManagerData: {
@@ -46,10 +50,11 @@ export const groupManagerSlice = createSlice({
           postListSet.pending,
           postGroupManager.pending,
           getGroupsManager.pending,
-          deleteGroupManager.pending
-        ), (state, action) => {
+          deleteGroupManager.pending,
+        ),
+        (state) => {
           state.loading = true
-        }
+        },
       )
       .addMatcher(
         isAnyOf(
@@ -59,12 +64,13 @@ export const groupManagerSlice = createSlice({
           postListSet.rejected,
           postGroupManager.rejected,
           getGroupsManager.rejected,
-          deleteGroupManager.rejected
-        ), (state, action) => {
+          deleteGroupManager.rejected,
+        ),
+        (state) => {
           state.loading = false
-        }
+        },
       )
-  }
+  },
 })
 
 export default groupManagerSlice.reducer

@@ -6,7 +6,7 @@ from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 
 
 def analyze_stats(
-    expdb: ExpDbData, output_dir: str, params: dict = None
+    expdb: ExpDbData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     stat = stat_file_convert(expdb, output_dir, params).get("stat")
     stat = anova1_mult(stat, output_dir, params).get("stat")

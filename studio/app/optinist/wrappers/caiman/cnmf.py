@@ -5,7 +5,7 @@ import numpy as np
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.dataclass import CaimanCnmfData, FluoData, IscellData, RoiData
+from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 
 
 def get_roi(A, thr, thr_method, swap_dim, dims):
@@ -64,7 +64,7 @@ def get_roi(A, thr, thr_method, swap_dim, dims):
 
 
 def caiman_cnmf(
-    images: ImageData, output_dir: str, params: dict = None
+    images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData):
     import scipy
     from caiman import local_correlations, stop_server
@@ -73,6 +73,19 @@ def caiman_cnmf(
     from caiman.paths import memmap_frames_filename
     from caiman.source_extraction.cnmf import cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
+
+    function_id = output_dir.split("/")[-1]
+    print("start caiman_cnmf:", function_id)
+
+    # flatten params segments.
+    params_flatten = {}
+    for params_segment in params.values():
+        params_flatten.update(params_segment)
+    params = params_flatten
+
+    Ain = params.pop("Ain", None)
+    do_refit = params.pop("do_refit", None)
+    thr = params.pop("thr", None)
 
     file_path = images.path
     if isinstance(file_path, list):
@@ -104,10 +117,13 @@ def caiman_cnmf(
     del images
     gc.collect()
 
+    nwbfile = kwargs.get("nwbfile", {})
+    fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+
     if params is None:
         ops = CNMFParams()
     else:
-        ops = CNMFParams(params_dict=params)
+        ops = CNMFParams(params_dict={**params, "fr": fr})
 
     if "dview" in locals():
         stop_server(dview=dview)  # noqa: F821
@@ -116,8 +132,11 @@ def caiman_cnmf(
         backend="local", n_processes=None, single_thread=True
     )
 
-    cnm = cnmf.CNMF(n_processes=n_processes, dview=dview, Ain=None, params=ops)
+    cnm = cnmf.CNMF(n_processes=n_processes, dview=dview, Ain=Ain, params=ops)
     cnm = cnm.fit(mmap_images)
+
+    if do_refit:
+        cnm = cnm.refit(mmap_images, dview=dview)
 
     stop_server(dview=dview)
 
@@ -125,27 +144,39 @@ def caiman_cnmf(
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
     Cn[np.isnan(Cn)] = 0
 
-    thr = params["thr"]
     thr_method = "nrg"
     swap_dim = False
 
     iscell = np.concatenate(
-        [np.ones(cnm.estimates.A.shape[-1]), np.zeros(cnm.estimates.b.shape[-1])]
+        [
+            np.ones(len(cnm.estimates.C)),
+            np.zeros(cnm.estimates.b.shape[-1] if cnm.estimates.b is not None else 0),
+        ]
     )
 
-    ims = get_roi(cnm.estimates.A, thr, thr_method, swap_dim, dims)
-    ims = np.stack(ims)
-    cell_roi = np.nanmax(ims, axis=0).astype(float)
-    cell_roi[cell_roi == 0] = np.nan
+    cell_ims = get_roi(cnm.estimates.A, thr, thr_method, swap_dim, dims)
+    cell_ims = np.stack(cell_ims).astype(float)
+    cell_ims[cell_ims == 0] = np.nan
+    cell_ims -= 1
+    n_rois = len(cell_ims)
 
-    non_cell_roi_ims = get_roi(
-        scipy.sparse.csc_matrix(cnm.estimates.b), thr, thr_method, swap_dim, dims
-    )
-    non_cell_roi_ims = np.stack(non_cell_roi_ims)
-    non_cell_roi = np.nanmax(non_cell_roi_ims, axis=0).astype(float)
-    non_cell_roi[non_cell_roi == 0] = np.nan
+    if cnm.estimates.b is not None and cnm.estimates.b.size != 0:
+        non_cell_ims = get_roi(
+            scipy.sparse.csc_matrix(cnm.estimates.b), thr, thr_method, swap_dim, dims
+        )
+        non_cell_ims = np.stack(non_cell_ims).astype(float)
+        for i, j in enumerate(range(n_rois, n_rois + len(non_cell_ims))):
+            non_cell_ims[i, :] = np.where(non_cell_ims[i, :] != 0, j, 0)
+        non_cell_roi = np.nanmax(non_cell_ims, axis=0).astype(float)
+    else:
+        non_cell_ims = np.zeros((0, *dims))
+        non_cell_roi = np.zeros(dims)
+        non_cell_roi[non_cell_roi == 0] = np.nan
+    non_cell_ims[non_cell_ims == 0] = np.nan
 
-    all_roi = np.nanmax(np.stack([cell_roi, non_cell_roi]), axis=0)
+    n_bg = len(non_cell_ims)
+
+    im = np.vstack([cell_ims, non_cell_ims])
 
     # NWBの追加
     nwbfile = {}
@@ -162,63 +193,50 @@ def caiman_cnmf(
         roi_list.append(kargs)
 
     # backgroundsを追加
-    bg_list = []
-    for bg in cnm.estimates.b.T:
-        kargs = {}
-        kargs["image_mask"] = bg.reshape(dims)
-        if hasattr(cnm.estimates, "accepted_list"):
-            kargs["accepted"] = False
-        if hasattr(cnm.estimates, "rejected_list"):
-            kargs["rejected"] = False
-        bg_list.append(kargs)
+    if cnm.estimates.b is not None:
+        for bg in cnm.estimates.b.T:
+            kargs = {}
+            kargs["image_mask"] = bg.reshape(dims)
+            if hasattr(cnm.estimates, "accepted_list"):
+                kargs["accepted"] = False
+            if hasattr(cnm.estimates, "rejected_list"):
+                kargs["rejected"] = False
+            roi_list.append(kargs)
 
-    nwbfile[NWBDATASET.ROI] = {
-        "roi_list": roi_list,
-        "bg_list": bg_list,
-    }
+    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
 
     # iscellを追加
     nwbfile[NWBDATASET.COLUMN] = {
-        "roi_column": {
+        function_id: {
             "name": "iscell",
-            "discription": "two columns - iscell & probcell",
+            "description": "two columns - iscell & probcell",
             "data": iscell,
         }
     }
 
     # Fluorescence
-    n_rois = cnm.estimates.A.shape[-1]
-    n_bg = len(cnm.estimates.f)
-
-    nwbfile[NWBDATASET.FLUORESCENCE] = {
-        "RoiResponseSeries": {
-            "table_name": "ROIs",
-            "region": list(range(n_rois)),
-            "name": "RoiResponseSeries",
-            "data": cnm.estimates.C.T,
-            "unit": "lumens",
-        },
-        "Background_Fluorescence_Response": {
-            "table_name": "Background",
-            "region": list(range(n_rois, n_rois + n_bg)),
-            "name": "Background_Fluorescence_Response",
-            "data": cnm.estimates.f.T,
-            "unit": "lumens",
-        },
-    }
-
-    fluorescence = np.concatenate(
-        [
-            cnm.estimates.C,
-            cnm.estimates.f,
-        ]
+    fluorescence = (
+        np.concatenate(
+            [
+                cnm.estimates.C,
+                cnm.estimates.f,
+            ]
+        )
+        if cnm.estimates.f is not None
+        else cnm.estimates.C
     )
 
-    cnmf_data = {}
-    cnmf_data["fluorescence"] = fluorescence
-    cnmf_data["im"] = np.concatenate([ims, non_cell_roi_ims], axis=0)
-    cnmf_data["is_cell"] = iscell.astype(bool)
-    cnmf_data["images"] = mmap_images
+    nwbfile[NWBDATASET.FLUORESCENCE] = {
+        function_id: {
+            "Fluorescence": {
+                "table_name": "ROIs",
+                "region": list(range(n_rois + n_bg)),
+                "name": "Fluorescence",
+                "data": fluorescence.T,
+                "unit": "lumens",
+            }
+        }
+    }
 
     info = {
         "images": ImageData(
@@ -228,13 +246,19 @@ def caiman_cnmf(
         ),
         "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),
-        "all_roi": RoiData(all_roi, output_dir=output_dir, file_name="all_roi"),
-        "cell_roi": RoiData(cell_roi, output_dir=output_dir, file_name="cell_roi"),
+        "all_roi": RoiData(
+            np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
+        ),
+        "cell_roi": RoiData(
+            np.nanmax(im[iscell != 0], axis=0),
+            output_dir=output_dir,
+            file_name="cell_roi",
+        ),
         "non_cell_roi": RoiData(
             non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
         ),
+        "edit_roi_data": EditRoiData(mmap_images, im),
         "nwbfile": nwbfile,
-        "cnmf_data": CaimanCnmfData(cnmf_data),
     }
 
     return info

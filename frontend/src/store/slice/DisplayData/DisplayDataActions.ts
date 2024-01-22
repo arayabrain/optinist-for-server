@@ -1,4 +1,5 @@
-import { createAsyncThunk } from '@reduxjs/toolkit'
+import { createAsyncThunk } from "@reduxjs/toolkit"
+
 import {
   TimeSeriesData,
   CsvData,
@@ -26,11 +27,28 @@ import {
   getLineDataApi,
   getPieDataApi,
   getPolarDataApi,
-} from 'api/outputs/Outputs'
-import { DISPLAY_DATA_SLICE_NAME } from './DisplayDataType'
+  getMatlabDataApi,
+  MatlabData,
+  cancelRoiApi,
+  addRoiApi,
+  mergeRoiApi,
+  deleteRoiApi,
+  commitRoiApi,
+  getStatusRoi,
+} from "api/outputs/Outputs"
+import { StatusROI } from "components/Workspace/Visualize/Plot/ImagePlot"
+import {
+  PlotMetaData,
+  DISPLAY_DATA_SLICE_NAME,
+} from "store/slice/DisplayData/DisplayDataType"
 
 export const getTimeSeriesInitData = createAsyncThunk<
-  { data: TimeSeriesData; xrange: number[]; std: TimeSeriesData },
+  {
+    data: TimeSeriesData
+    xrange: string[]
+    std: TimeSeriesData
+    meta?: PlotMetaData
+  },
   { path: string; itemId: number }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getTimeSeriesInitData`,
@@ -45,7 +63,12 @@ export const getTimeSeriesInitData = createAsyncThunk<
 )
 
 export const getTimeSeriesDataById = createAsyncThunk<
-  { data: TimeSeriesData; xrange: number[]; std: TimeSeriesData },
+  {
+    data: TimeSeriesData
+    xrange: string[]
+    std: TimeSeriesData
+    meta?: PlotMetaData
+  },
   { path: string; index: string }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getTimeSeriesDataById`,
@@ -60,7 +83,12 @@ export const getTimeSeriesDataById = createAsyncThunk<
 )
 
 export const getTimeSeriesAllData = createAsyncThunk<
-  { data: TimeSeriesData; xrange: number[]; std: TimeSeriesData },
+  {
+    data: TimeSeriesData
+    xrange: string[]
+    std: TimeSeriesData
+    meta?: PlotMetaData
+  },
   { path: string }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getTimeSeriesAllData`,
@@ -75,7 +103,12 @@ export const getTimeSeriesAllData = createAsyncThunk<
 )
 
 export const getHeatMapData = createAsyncThunk<
-  { data: HeatMapData; columns: string[]; index: string[] },
+  {
+    data: HeatMapData
+    columns: string[]
+    index: string[]
+    meta?: PlotMetaData
+  },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getHeatMapData`, async ({ path }, thunkAPI) => {
   try {
@@ -87,7 +120,7 @@ export const getHeatMapData = createAsyncThunk<
 })
 
 export const getImageData = createAsyncThunk<
-  { data: ImageData },
+  { data: ImageData; meta?: PlotMetaData },
   { path: string; workspaceId: number; startIndex?: number; endIndex?: number }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getImageData`,
@@ -106,9 +139,7 @@ export const getImageData = createAsyncThunk<
 )
 
 export const getCsvData = createAsyncThunk<
-  {
-    data: CsvData
-  },
+  { data: CsvData; meta?: PlotMetaData },
   { path: string; workspaceId: number }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getCsvData`,
@@ -122,8 +153,23 @@ export const getCsvData = createAsyncThunk<
   },
 )
 
+export const getMatlabData = createAsyncThunk<
+  { data: MatlabData; meta?: PlotMetaData },
+  { path: string; workspaceId: number }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/getMatlabData`,
+  async ({ path, workspaceId }, thunkAPI) => {
+    try {
+      const response = await getMatlabDataApi(path, { workspaceId })
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
 export const getRoiData = createAsyncThunk<
-  { data: RoiData },
+  { data: RoiData; meta?: PlotMetaData },
   { path: string; workspaceId: number }
 >(
   `${DISPLAY_DATA_SLICE_NAME}/getRoiData`,
@@ -137,8 +183,111 @@ export const getRoiData = createAsyncThunk<
   },
 )
 
+export const cancelRoi = createAsyncThunk<
+  { data: HTMLData; meta?: PlotMetaData },
+  { path: string | string[]; workspaceId: number }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/cancelRoi`,
+  async ({ path, workspaceId }, thunkAPI) => {
+    try {
+      const response = await cancelRoiApi(path, workspaceId)
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
+export const addRoi = createAsyncThunk<
+  { data: HTMLData; meta?: PlotMetaData },
+  {
+    path: string
+    workspaceId: number
+    data: { posx: number; posy: number; sizex: number; sizey: number }
+  }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/addRoi`,
+  async ({ path, workspaceId, data }, thunkAPI) => {
+    const { dispatch } = thunkAPI
+    try {
+      const response = await addRoiApi(path, workspaceId, data)
+      await dispatch(getStatus({ path, workspaceId }))
+      await dispatch(getRoiData({ path, workspaceId }))
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
+export const mergeRoi = createAsyncThunk<
+  { data: HTMLData; meta?: PlotMetaData },
+  { path: string; workspaceId: number; data: { ids: number[] } }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/mergeROi`,
+  async ({ path, workspaceId, data }, thunkAPI) => {
+    const { dispatch } = thunkAPI
+    try {
+      const response = await mergeRoiApi(path, workspaceId, data)
+      dispatch(getStatus({ path, workspaceId }))
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
+export const deleteRoi = createAsyncThunk<
+  { data: HTMLData; meta?: PlotMetaData },
+  { path: string; workspaceId: number; data: { ids: number[] } }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/deleteRoi`,
+  async ({ path, workspaceId, data }, thunkAPI) => {
+    const { dispatch } = thunkAPI
+    try {
+      const response = await deleteRoiApi(path, workspaceId, data)
+      dispatch(getStatus({ path, workspaceId }))
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
+export const commitRoi = createAsyncThunk<
+  boolean,
+  { path: string; workspaceId: number }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/commitRoi`,
+  async ({ path, workspaceId }, thunkAPI) => {
+    const { dispatch } = thunkAPI
+    try {
+      const response = await commitRoiApi(path, workspaceId)
+      dispatch(getStatus({ path, workspaceId }))
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
+export const getStatus = createAsyncThunk<
+  StatusROI,
+  { path: string; workspaceId: number }
+>(
+  `${DISPLAY_DATA_SLICE_NAME}/getStatusRoi`,
+  async ({ path, workspaceId }, thunkAPI) => {
+    try {
+      const response = await getStatusRoi(path, workspaceId)
+      return response
+    } catch (e) {
+      return thunkAPI.rejectWithValue(e)
+    }
+  },
+)
+
 export const getScatterData = createAsyncThunk<
-  { data: ScatterData },
+  { data: ScatterData; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getScatterData`, async ({ path }, thunkAPI) => {
   try {
@@ -150,7 +299,7 @@ export const getScatterData = createAsyncThunk<
 })
 
 export const getBarData = createAsyncThunk<
-  { data: BarData; columns: string[]; index: string[] },
+  { data: BarData; columns: string[]; index: string[]; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getBarData`, async ({ path }, thunkAPI) => {
   try {
@@ -162,7 +311,7 @@ export const getBarData = createAsyncThunk<
 })
 
 export const getHTMLData = createAsyncThunk<
-  { data: HTMLData },
+  { data: HTMLData; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getHTMLData`, async ({ path }, thunkAPI) => {
   try {
@@ -174,7 +323,7 @@ export const getHTMLData = createAsyncThunk<
 })
 
 export const getHistogramData = createAsyncThunk<
-  { data: HistogramData },
+  { data: HistogramData; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getHistogramData`, async ({ path }, thunkAPI) => {
   try {
@@ -186,7 +335,7 @@ export const getHistogramData = createAsyncThunk<
 })
 
 export const getLineData = createAsyncThunk<
-  { data: LineData; columns: number[]; index: number[] },
+  { data: LineData; columns: number[]; index: number[]; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getLineData`, async ({ path }, thunkAPI) => {
   try {
@@ -198,7 +347,7 @@ export const getLineData = createAsyncThunk<
 })
 
 export const getPieData = createAsyncThunk<
-  { data: PieData; columns: string[] },
+  { data: PieData; columns: string[]; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getPieData`, async ({ path }, thunkAPI) => {
   try {
@@ -210,7 +359,7 @@ export const getPieData = createAsyncThunk<
 })
 
 export const getPolarData = createAsyncThunk<
-  { data: PolarData; columns: number[]; index: number[] },
+  { data: PolarData; columns: number[]; index: number[]; meta?: PlotMetaData },
   { path: string }
 >(`${DISPLAY_DATA_SLICE_NAME}/getPolarData`, async ({ path }, thunkAPI) => {
   try {

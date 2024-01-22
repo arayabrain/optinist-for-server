@@ -1,16 +1,18 @@
-import { FC } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Box, Button, styled } from '@mui/material'
-import PublicLayout from 'components/PublicLayout'
+import { FC, ReactNode } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
 
-const PublicDatabaseWrapper: FC = ({ children }) => {
+import { Box, Button, styled } from "@mui/material"
+
+import PublicLayout from "components/PublicLayout"
+
+const PublicDatabaseWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const handleClickExperiments = () => {
-    navigate('/experiments')
+    navigate("/experiments")
   }
   const handleClickCells = () => {
-    navigate('/cells')
+    navigate("/cells")
   }
 
   return (
@@ -25,7 +27,7 @@ const PublicDatabaseWrapper: FC = ({ children }) => {
           <Button
             variant="text"
             onClick={handleClickExperiments}
-            disabled={location.pathname === '/experiments'}
+            disabled={location.pathname === "/experiments"}
           >
             Experiments
           </Button>
@@ -33,7 +35,7 @@ const PublicDatabaseWrapper: FC = ({ children }) => {
           <Button
             variant="text"
             onClick={handleClickCells}
-            disabled={location.pathname === '/cells'}
+            disabled={location.pathname === "/cells"}
           >
             Cells
           </Button>
@@ -44,9 +46,9 @@ const PublicDatabaseWrapper: FC = ({ children }) => {
   )
 }
 
-const DataBaseContent = styled(Box)(({ theme }) => ({
-  width: '94vw',
-  margin: 'auto',
+const DataBaseContent = styled(Box)(() => ({
+  width: "94vw",
+  margin: "auto",
   marginTop: 15,
 }))
 

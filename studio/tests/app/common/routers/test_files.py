@@ -1,14 +1,10 @@
-from fastapi.testclient import TestClient
-
-from studio.app.common.routers.files import DirTreeGetter, router
+from studio.app.common.routers.files import DirTreeGetter
 from studio.app.common.schemas.files import TreeNode
-
-client = TestClient(router)
 
 workspace_id = "1"
 
 
-def test_create_files():
+def test_create_files(client):
     response = client.get(f"/files/{workspace_id}?file_type=image")
     data = response.json()
 

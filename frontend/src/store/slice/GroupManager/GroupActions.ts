@@ -1,22 +1,26 @@
-import {createAsyncThunk} from "@reduxjs/toolkit";
-import {
-  GROUP_MANAGER_SLICE_NAME,
-  GroupManagerDTO,
-  GroupManagerParams,
-  ItemGroupManage,
-  UserInGroup
-} from "./GroupManagerType";
+import { createAsyncThunk } from "@reduxjs/toolkit"
+
 import {
   getGroupsManagerApi,
   postGroupManagerApi,
   getGroupManagerApi,
   changeNameGroupManagerApi,
-  deleteGroupManagerApi, postListSetApi, getListUserGroupApi, getListSearchGroupApi
-} from "../../../api/groupManager";
+  deleteGroupManagerApi,
+  postListSetApi,
+  getListUserGroupApi,
+  getListSearchGroupApi,
+} from "api/groupManager"
+import {
+  GROUP_MANAGER_SLICE_NAME,
+  GroupManagerDTO,
+  GroupManagerParams,
+  ItemGroupManage,
+  UserInGroup,
+} from "store/slice/GroupManager/GroupManagerType"
 
 export const getGroupsManager = createAsyncThunk<
-    GroupManagerDTO,
-    GroupManagerParams
+  GroupManagerDTO,
+  GroupManagerParams
 >(`${GROUP_MANAGER_SLICE_NAME}/getGroupManager`, async (params, thunkAPI) => {
   const { rejectWithValue } = thunkAPI
   try {
@@ -27,35 +31,35 @@ export const getGroupsManager = createAsyncThunk<
   }
 })
 
-export const postGroupManager = createAsyncThunk<
-    GroupManagerDTO,
-    string
->(`${GROUP_MANAGER_SLICE_NAME}/getGroupManager`, async (data, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await postGroupManagerApi(data)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
+export const postGroupManager = createAsyncThunk<GroupManagerDTO, string>(
+  `${GROUP_MANAGER_SLICE_NAME}/getGroupManager`,
+  async (data, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await postGroupManagerApi(data)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
-export const getGroupManager = createAsyncThunk<
-    GroupManagerDTO,
-    number
->(`${GROUP_MANAGER_SLICE_NAME}/getGroupManager`, async (id, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await getGroupManagerApi(id)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
+export const getGroupManager = createAsyncThunk<GroupManagerDTO, number>(
+  `${GROUP_MANAGER_SLICE_NAME}/getGroupManager`,
+  async (id, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getGroupManagerApi(id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
 export const changeNameGroupManager = createAsyncThunk<
-    GroupManagerDTO,
-    {id: number, name: string}
+  GroupManagerDTO,
+  { id: number; name: string }
 >(`${GROUP_MANAGER_SLICE_NAME}/changeGroupManager`, async (data, thunkAPI) => {
   const { id, name } = data
   const { rejectWithValue } = thunkAPI
@@ -68,8 +72,8 @@ export const changeNameGroupManager = createAsyncThunk<
 })
 
 export const deleteGroupManager = createAsyncThunk<
-    GroupManagerDTO,
-    { id: number, params: GroupManagerParams}
+  GroupManagerDTO,
+  { id: number; params: GroupManagerParams }
 >(`${GROUP_MANAGER_SLICE_NAME}/deleterGroupManager`, async (data, thunkAPI) => {
   const { id, params } = data
   const { rejectWithValue, dispatch } = thunkAPI
@@ -83,8 +87,8 @@ export const deleteGroupManager = createAsyncThunk<
 })
 
 export const postListSet = createAsyncThunk<
-    GroupManagerDTO,
-    { list: number[], id: number, params: GroupManagerParams }
+  GroupManagerDTO,
+  { list: number[]; id: number; params: GroupManagerParams }
 >(`${GROUP_MANAGER_SLICE_NAME}/deleterGroupManager`, async (data, thunkAPI) => {
   const { rejectWithValue, dispatch } = thunkAPI
   const { list, id, params } = data
@@ -97,29 +101,28 @@ export const postListSet = createAsyncThunk<
   }
 })
 
-export const getListUserGroup = createAsyncThunk<
-    UserInGroup[],
-    number
->(`${GROUP_MANAGER_SLICE_NAME}/getListUserGroup`, async (id, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await getListUserGroupApi(id)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
+export const getListUserGroup = createAsyncThunk<UserInGroup[], number>(
+  `${GROUP_MANAGER_SLICE_NAME}/getListUserGroup`,
+  async (id, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getListUserGroupApi(id)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
-export const getListSearchGroup = createAsyncThunk<
-    ItemGroupManage[],
-    string
->(`${GROUP_MANAGER_SLICE_NAME}/getListSearchGroup`, async (keyword, thunkAPI) => {
-  const { rejectWithValue } = thunkAPI
-  try {
-    const response = await getListSearchGroupApi(keyword)
-    return response
-  } catch (e) {
-    return rejectWithValue(e)
-  }
-})
-
+export const getListSearchGroup = createAsyncThunk<ItemGroupManage[], string>(
+  `${GROUP_MANAGER_SLICE_NAME}/getListSearchGroup`,
+  async (keyword, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getListSearchGroupApi(keyword)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)

@@ -1,14 +1,15 @@
-import DatabaseCells from 'components/Database/DatabaseCells'
-import DatabaseWrapper from 'components/Database/DatabaseWrapper'
-import { useSelector } from 'react-redux'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import { useSelector } from "react-redux"
+
+import DatabaseCells from "components/Database/DatabaseCells"
+import DatabaseWrapper from "components/Database/DatabaseWrapper"
+import { selectCurrentUser } from "store/slice/User/UserSelector"
 
 const Cells = () => {
   const user = useSelector(selectCurrentUser)
 
   return (
     <DatabaseWrapper>
-      <DatabaseCells user={user}/>
+      <DatabaseCells user={user} />
     </DatabaseWrapper>
   )
 }

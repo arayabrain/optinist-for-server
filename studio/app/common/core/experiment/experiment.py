@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from typing import Dict, Optional
 
+from studio.app.common.core.snakemake.smk import SmkParam
+from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.workflow.workflow import OutputPath
+from studio.app.dir_path import CORE_PARAM_PATH
+from studio.app.optinist.schemas.nwb import NWBParams
 
 
 @dataclass
@@ -26,3 +30,7 @@ class ExptConfig:
     success: Optional[str]
     hasNWB: bool
     function: Dict[str, ExptFunction]
+    nwb: Optional[NWBParams] = NWBParams(**ConfigReader.read(CORE_PARAM_PATH.nwb.value))
+    snakemake: Optional[SmkParam] = SmkParam(
+        **ConfigReader.read(CORE_PARAM_PATH.snakemake.value)
+    )

@@ -1,5 +1,5 @@
-import DatabaseExperiments from 'components/Database/DatabaseExperiments'
-import PublicDatabaseWrapper from 'components/PublicDatabase/PublicDatabaseWrapper'
+import DatabaseExperiments from "components/Database/DatabaseExperiments"
+import PublicDatabaseWrapper from "components/PublicDatabase/PublicDatabaseWrapper"
 
 const PublicExperiments = () => {
   return (

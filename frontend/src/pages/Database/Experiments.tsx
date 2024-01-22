@@ -1,7 +1,8 @@
-import DatabaseExperiments from 'components/Database/DatabaseExperiments'
-import DatabaseWrapper from 'components/Database/DatabaseWrapper'
-import { useSelector } from 'react-redux'
-import { selectCurrentUser } from 'store/slice/User/UserSelector'
+import { useSelector } from "react-redux"
+
+import DatabaseExperiments from "components/Database/DatabaseExperiments"
+import DatabaseWrapper from "components/Database/DatabaseWrapper"
+import { selectCurrentUser } from "store/slice/User/UserSelector"
 
 const Experiments = () => {
   const user = useSelector(selectCurrentUser)

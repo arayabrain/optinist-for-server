@@ -22,7 +22,7 @@ def get_1d_vector_average(ratio):
 
 
 def vector_average(
-    stat: StatData, output_dir: str, params: dict = None
+    stat: StatData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     for i in range(stat.ncells):
         (

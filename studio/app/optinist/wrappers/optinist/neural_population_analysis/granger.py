@@ -9,6 +9,7 @@ def Granger(
     output_dir: str,
     iscell: IscellData = None,
     params: dict = None,
+    **kwargs,
 ) -> dict():
     # modules specific to function
     # from sklearn.preprocessing import StandardScaler
@@ -18,9 +19,12 @@ def Granger(
     from statsmodels.tsa.stattools import adfuller, coint, grangercausalitytests
     from tqdm import tqdm
 
+    function_id = output_dir.split("/")[-1]
+    print("start granger:", function_id)
+
     neural_data = neural_data.data
 
-    # data shold be time x component matrix
+    # data should be time x component matrix
     if params["transpose"]:
         X = neural_data.transpose()
     else:
@@ -115,7 +119,7 @@ def Granger(
         # The Null hypothesis for grangercausalitytests is
         # that the time series in the second column1,
         # does NOT Granger cause the time series in the first column0
-        # column 1 -> colum 0
+        # column 1 -> column 0
         tp = grangercausalitytests(
             tX[:, [comb[i][0], comb[i][1]]],
             params["Granger_maxlag"],
@@ -158,14 +162,16 @@ def Granger(
     # NWB追加
     nwbfile = {}
     nwbfile[NWBDATASET.POSTPROCESS] = {
-        "Granger_fval_mat": GC["Granger_fval_mat"][0],
-        "gc_combinations": GC["gc_combinations"],
-        "gc_ssr_ftest": GC["gc_ssr_ftest"],
-        "gc_ssr_chi2test": GC["gc_ssr_chi2test"],
-        "gc_lrtest": GC["gc_lrtest"],
-        "gc_params_ftest": GC["gc_params_ftest"],
-        "cit_pvalue": cit["cit_pvalue"],
-        "adf_pvalue": adf["adf_pvalue"],
+        function_id: {
+            "Granger_fval_mat": GC["Granger_fval_mat"][0],
+            "gc_combinations": GC["gc_combinations"],
+            "gc_ssr_ftest": GC["gc_ssr_ftest"],
+            "gc_ssr_chi2test": GC["gc_ssr_chi2test"],
+            "gc_lrtest": GC["gc_lrtest"],
+            "gc_params_ftest": GC["gc_params_ftest"],
+            "cit_pvalue": cit["cit_pvalue"],
+            "adf_pvalue": adf["adf_pvalue"],
+        }
     }
 
     info["nwbfile"] = nwbfile

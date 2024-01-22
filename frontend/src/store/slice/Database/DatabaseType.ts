@@ -1,11 +1,11 @@
-export const DATABASE_SLICE_NAME = 'database'
+export const DATABASE_SLICE_NAME = "database"
 
-export type OrderBy = 'ASC' | 'DESC' | ''
+export type OrderBy = "ASC" | "DESC" | ""
 
 export type ImageUrls = {
   url: string
   thumb_url: string
-  params: {}
+  params: object
 }
 
 export type DatabaseType = {
@@ -20,11 +20,11 @@ export type DatabaseType = {
   attributes?: object
   cell_image_urls: ImageUrls[]
   cell_image_url?: {
-    url: string,
-    thumb_url: string,
-    params: {}
+    url: string
+    thumb_url: string
+    params: object
   }
-  statistics? : {
+  statistics?: {
     p_value_resp?: string
     p_value_sel?: string
     p_value_ori_resp?: string
@@ -39,7 +39,7 @@ export type DatabaseType = {
     dir_tuning_width?: string
     ori_tuning_width?: string
   }
-  graph_urls: {url: string, params: {}, thumb_url: string}[]
+  graph_urls: { url: string; params: object; thumb_url: string }[]
   share_type?: number
   publish_status?: number
   created_at: string
@@ -63,7 +63,7 @@ export type ListShareDTO = {
 }
 
 export type ListShareUser = {
-  id: number,
+  id: number
   name: string
   email: string
   created_at: string
@@ -79,10 +79,12 @@ export type ListShareGroup = {
 export type MultiShareType = {
   ids: number[]
   data: {
-    share_type: number,
-    user_ids: number[],
+    share_type: number
+    user_ids: number[]
     group_ids: number[]
   }
 }
 
-export type DatabaseParams = { [key: string]: number | string | string[] | undefined }
+export type DatabaseParams = {
+  [key: string]: number | string | string[] | undefined
+}

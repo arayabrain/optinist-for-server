@@ -32,7 +32,3 @@ class WorkspaceSharePostStatus(BaseModel):
 
 class WorkspaceShareStatus(BaseModel):
     users: Optional[List[UserInfo]]
-
-
-class WorkspacesSetting(BaseModel):
-    todo_dummy: dict
