@@ -301,13 +301,12 @@ class ExpDbBatchRunner:
             try:
                 expdb_experiment = get_experiment(db, exp_id, self.org_id)
             except AssertionError:
-                self.logger_.warning(
+                log = (
                     "No experiment found. skip metadata registration."
-                    " [org_id: %d][exp_id: %s]",
-                    self.org_id,
-                    exp_id,
+                    f" [org_id: {self.org_id}][exp_id: {exp_id}]"
                 )
-                return False
+                self.logger_.warning(log)
+                raise FileNotFoundError(log)
 
             # Read metadata
             (attributes, view_attributes) = expdb_batch.load_exp_metadata()
