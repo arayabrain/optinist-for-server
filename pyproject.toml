@@ -34,7 +34,7 @@ include = [
   "studio/app/Snakefile",
   "studio/config/*.yaml",
   "sample_data/input/*",
-  "sample_data/output/*",
+  "sample_data/output/**/*.yaml",
 ]
 exclude = ["studio/tests/*", "studio/test_data/*", "conda.env.*"]
 
@@ -71,6 +71,7 @@ ruamel-yaml = "^0.18.5"
 zc-lockfile = "*"
 lauda = "*"
 opencv-python = "*"
+pymatreader = "^0.0.32"
 
 [tool.poetry.group.dev]
 optional = true

@@ -381,7 +381,7 @@ const DatabaseExperiments = ({
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
 
-  const offset = searchParams.get("offset")
+  const offset = searchParams.get("offset") || 0
   const limit = searchParams.get("limit") || 50
   const sort = searchParams.getAll("sort")
 
@@ -507,10 +507,23 @@ const DatabaseExperiments = ({
   }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
+    const newListId = dataExperiments.items.map((item) => item.id)
+    const isCheck = newListId.every((id) => listCheck.includes(id))
+    setCheckBoxAll(isCheck)
+  }, [dataExperiments, listCheck])
+
+  useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
     let param = newParams
     if (newParams[0] === "&") param = newParams.slice(1, param.length)
     if (param === window.location.search.replace("?", "")) return
-    setParams(param)
+    setParams(param.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
 

@@ -11,7 +11,9 @@ import {
   LineData,
   PieData,
   PolarData,
+  MatlabData,
 } from "api/outputs/Outputs"
+import { StatusROI } from "components/Workspace/Visualize/Plot/ImagePlot"
 
 export const DISPLAY_DATA_SLICE_NAME = "displayData"
 
@@ -55,6 +57,8 @@ export type DisplayData = {
   polar: {
     [filePath: string]: PolarDisplayData
   }
+  loading: boolean
+  statusRoi: StatusROI
 }
 
 export const DATA_TYPE_SET = {
@@ -108,6 +112,10 @@ export interface HeatMapDisplayData
 export interface ImageDisplayData extends BaseDisplay<"image", ImageData> {}
 
 export interface CsvDisplayData extends BaseDisplay<"csv", CsvData> {
+  // columns: string[]
+}
+
+export interface MatlabDisplayData extends BaseDisplay<"matlab", MatlabData> {
   // columns: string[]
 }
 

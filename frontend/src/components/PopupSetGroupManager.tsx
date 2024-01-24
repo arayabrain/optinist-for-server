@@ -156,7 +156,11 @@ const PopupSetGroupManager = ({
       return
     }
     timeout.current = setTimeout(() => {
-      dispatch(getListUserSearch({ keyword: textSearch.searchAdd }))
+      dispatch(
+        getListUserSearch({
+          keyword: encodeURIComponent(textSearch.searchAdd),
+        }),
+      )
     }, WAITING_TIME)
     //eslint-disable-next-line
   }, [textSearch.searchAdd, infoGroup.open])

@@ -82,7 +82,7 @@ export interface ImageItem extends DisplayDataItemBaseType {
 
 export interface TimeSeriesItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.TIME_SERIES
-  offset: boolean
+  stdBool: boolean
   span: number
   showgrid: boolean
   showline: boolean
@@ -109,6 +109,14 @@ export interface CsvItem extends DisplayDataItemBaseType {
   setIndex: boolean
   transpose: boolean
 }
+
+export interface MatlabItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.MATLAB
+  setHeader: number | null
+  setIndex: boolean
+  transpose: boolean
+}
+
 export interface RoiItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.ROI
   outputKey?: string
@@ -159,8 +167,4 @@ export interface PieItem extends DisplayDataItemBaseType {
 export interface PolarItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.POLAR
   selectedIndex: number
-}
-
-export interface MatlabItem extends DisplayDataItemBaseType {
-  dataType: typeof DATA_TYPE_SET.MATLAB
 }

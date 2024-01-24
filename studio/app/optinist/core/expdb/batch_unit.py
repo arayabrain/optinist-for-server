@@ -1,3 +1,4 @@
+import json
 import logging
 import math
 import os
@@ -21,6 +22,7 @@ from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.const import (
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
+    EXP_METADATA_SUFFIX,
     FOV_CONTRAST,
     FOV_SUFFIX,
     TC_SUFFIX,
@@ -65,12 +67,16 @@ class ExpDbPath:
                 [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
             self.fov_file = join_filepath([self.exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+            self.exp_metadata_file = join_filepath(
+                [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
+            )
             assert os.path.exists(self.tc_file), f"tc_file not found: {self.tc_file}"
             assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
             assert os.path.exists(
                 self.cellmask_file
             ), f"cellmask_file not found: {self.cellmask_file}"
             assert os.path.exists(self.fov_file), f"fov_file not found: {self.fov_file}"
+            # Note: Metadata file is allowed to be missing.
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
             self.output_dir = self.exp_dir
@@ -225,3 +231,28 @@ class ExpDbBatch:
             ) == len(pixelmaps) + len(
                 pixlemaps_with_num
             ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"
+
+    @stopwatch(callback=__stopwatch_callback)
+    def load_exp_metadata(self) -> (dict, dict):
+        if not os.path.exists(self.raw_path.exp_metadata_file):
+            return (None, None)
+        else:
+            with open(self.raw_path.exp_metadata_file) as f:
+                attributes = json.load(f)
+                attributes_metadata_attr = attributes["metadata"]["metadata"]
+                view_attributes = {
+                    "brain_area": attributes_metadata_attr[
+                        "Specimen type Brain region"
+                    ]["Brain region Marmoset"][-1]["label"],
+                    "imaging_depth": attributes_metadata_attr["Modality Imaging"][
+                        "Ca Imaging>Depth"
+                    ],
+                    "promoter": attributes_metadata_attr["Modality Imaging"][
+                        "Ca Imaging>Promoter"
+                    ],
+                    "indicator": attributes_metadata_attr["Modality Imaging"][
+                        "Ca Imaging>Indicator"
+                    ],
+                }
+
+        return (attributes, view_attributes)

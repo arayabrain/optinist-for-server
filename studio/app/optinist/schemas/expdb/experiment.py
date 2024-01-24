@@ -53,6 +53,7 @@ class ExpDbExperiment(BaseModel):
     experiment_id: str
     fields: ExpDbExperimentFields = None
     attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
     cell_image_urls: List[ImageInfo] = None
     graph_urls: List[ImageInfo] = None
     share_type: int = Field(description="1: default(per users), 2: for organization")
@@ -68,14 +69,17 @@ class ExpDbExperimentCreate(BaseModel):
     experiment_id: str
     organization_id: int
     attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
 
 
 class ExpDbExperimentUpdate(BaseModel):
     experiment_id: Optional[str]
     organization_id: Optional[int]
     attributes: Optional[dict]
+    view_attributes: Optional[dict]
     share_type: Optional[int]
     publish_status: Optional[int]
+    updated_at: Optional[datetime]
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):

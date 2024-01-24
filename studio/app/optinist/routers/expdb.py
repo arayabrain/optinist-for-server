@@ -658,23 +658,30 @@ def update_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
+    (
+        db.query(optinist_model.ExperimentShareUser)
+        .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
+        .delete(synchronize_session=False)
+    )
+    (
+        db.query(optinist_model.ExperimentShareGroup)
+        .filter(optinist_model.ExperimentShareGroup.experiment_uid == id)
+        .delete(synchronize_session=False)
+    )
+
     if data.share_type == ExperimentShareType.per_user_or_group:
-        exp.user_share = (
-            db.query(common_model.User)
-            .filter(
-                common_model.User.id.in_(data.user_ids),
-                common_model.User.active.is_(True),
+        if len(data.user_ids) > 0:
+            db.bulk_save_objects(
+                optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id)
+                for user_id in data.user_ids
             )
-            .all()
-        )
-        exp.group_share = (
-            db.query(common_model.Group)
-            .filter(common_model.Group.id.in_(data.group_ids))
-            .all()
-        )
-    else:
-        exp.user_share = []
-        exp.group_share = []
+        if len(data.group_ids) > 0:
+            db.bulk_save_objects(
+                optinist_model.ExperimentShareGroup(
+                    experiment_uid=id, group_id=group_id
+                )
+                for group_id in data.group_ids
+            )
     exp.share_type = data.share_type
 
     db.commit()
@@ -712,25 +719,41 @@ def update_multiple_experiment_database_share_status(
         .all()
     )
 
+    (
+        db.query(optinist_model.ExperimentShareUser)
+        .filter(
+            optinist_model.ExperimentShareUser.experiment_uid.in_(
+                [exp.id for exp in exps]
+            )
+        )
+        .delete(synchronize_session=False)
+    )
+    (
+        db.query(optinist_model.ExperimentShareGroup)
+        .filter(
+            optinist_model.ExperimentShareGroup.experiment_uid.in_(
+                [exp.id for exp in exps]
+            )
+        )
+        .delete(synchronize_session=False)
+    )
     for exp in exps:
         exp.share_type = data.share_type
         if data.share_type == ExperimentShareType.per_user_or_group:
-            exp.user_share = (
-                db.query(common_model.User)
-                .filter(
-                    common_model.User.id.in_(data.user_ids),
-                    common_model.User.active.is_(True),
+            if len(data.user_ids) > 0:
+                db.bulk_save_objects(
+                    optinist_model.ExperimentShareUser(
+                        experiment_uid=exp.id, user_id=user_id
+                    )
+                    for user_id in data.user_ids
                 )
-                .all()
-            )
-            exp.group_share = (
-                db.query(common_model.Group)
-                .filter(common_model.Group.id.in_(data.group_ids))
-                .all()
-            )
-        else:
-            exp.user_share = []
-            exp.group_share = []
+            if len(data.group_ids) > 0:
+                db.bulk_save_objects(
+                    optinist_model.ExperimentShareGroup(
+                        experiment_uid=exp.id, group_id=group_id
+                    )
+                    for group_id in data.group_ids
+                )
 
     db.commit()
 

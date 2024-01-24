@@ -11,11 +11,11 @@ import { MatlabFileNode } from "components/Workspace/FlowChart/FlowChartNode/Mat
 export const reactFlowNodeTypes = {
   ImageFileNode,
   CsvFileNode,
+  MatlabFileNode,
   HDF5FileNode,
   AlgorithmNode,
   FluoFileNode,
   BehaviorFileNode,
-  MatlabFileNode,
   ExpDbNode,
 } as const
 
