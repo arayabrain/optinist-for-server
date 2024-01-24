@@ -1,3 +1,5 @@
+import datetime
+
 from sqlmodel import Session
 
 from studio.app.optinist.models import Experiment as ExperimentModel
@@ -33,6 +35,7 @@ def create_experiment(db: Session, data: ExpDbExperimentCreate) -> ExpDbExperime
         experiment_id=data.experiment_id,
         organization_id=data.organization_id,
         attributes=data.attributes,
+        view_attributes=data.view_attributes,
     )
 
     db.add(expdb)
@@ -49,6 +52,7 @@ def update_experiment(
     expdb = db.query(ExperimentModel).get(id)
     assert expdb is not None, "Experiment not found"
 
+    data.updated_at = datetime.datetime.now()
     new_data = data.dict(exclude_unset=True)
     for key, value in new_data.items():
         setattr(expdb, key, value)

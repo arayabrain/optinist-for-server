@@ -16,8 +16,15 @@ from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
-from studio.app.optinist.core.expdb.crud_expdb import create_experiment
-from studio.app.optinist.schemas.expdb.experiment import ExpDbExperimentCreate
+from studio.app.optinist.core.expdb.crud_expdb import (
+    create_experiment,
+    get_experiment,
+    update_experiment,
+)
+from studio.app.optinist.schemas.expdb.experiment import (
+    ExpDbExperimentCreate,
+    ExpDbExperimentUpdate,
+)
 
 LOCKFILE_NAME = "process.lock"
 FLAG_FILE_EXT = ".proc"
@@ -25,6 +32,7 @@ FLAG_FILE_EXT = ".proc"
 
 class ProcessCommand(Enum):
     REGIST = "regist"
+    REGIST_METADATA = "regist_metadata"
     DELETE = "delete"
 
 
@@ -198,6 +206,8 @@ class ExpDbBatchRunner:
 
                 if command == ProcessCommand.REGIST.value:
                     self.__process_dataset_registration(flag_file)
+                elif command == ProcessCommand.REGIST_METADATA.value:
+                    self.__process_dataset_metadata_registration(flag_file)
                 elif command == ProcessCommand.DELETE.value:
                     self.__process_dataset_deletion(flag_file)
                 else:
@@ -260,14 +270,55 @@ class ExpDbBatchRunner:
             expdb_batch.generate_cellmasks()
             expdb_batch.generate_pixelmaps()
 
+            # Read metadata
+            (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+
             exp = create_experiment(
                 db,
                 ExpDbExperimentCreate(
-                    experiment_id=exp_id, organization_id=self.org_id
+                    experiment_id=exp_id,
+                    organization_id=self.org_id,
+                    attributes=attributes,
+                    view_attributes=view_attributes,
                 ),
             )
 
             bulk_insert_cells(db, exp.id, stat_data)
+
+        return True
+
+    @stopwatch(callback=__stopwatch_callback)
+    def __process_dataset_metadata_registration(self, flag_file: str) -> bool:
+        """
+        Metadata 登録処理
+        """
+
+        self.logger_.info("process dataset metadata registration: %s", flag_file)
+        exp_id = self.__get_exp_id_from_flag_file(flag_file)
+        expdb_batch = ExpDbBatch(exp_id, self.org_id)
+
+        with session_scope() as db:
+            try:
+                expdb_experiment = get_experiment(db, exp_id, self.org_id)
+            except AssertionError:
+                log = (
+                    "No experiment found. skip metadata registration."
+                    f" [org_id: {self.org_id}][exp_id: {exp_id}]"
+                )
+                self.logger_.warning(log)
+                raise FileNotFoundError(log)
+
+            # Read metadata
+            (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+
+            update_experiment(
+                db,
+                expdb_experiment.id,
+                ExpDbExperimentUpdate(
+                    attributes=attributes,
+                    view_attributes=view_attributes,
+                ),
+            )
 
         return True
 
