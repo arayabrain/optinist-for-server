@@ -62,8 +62,8 @@ export type Data = {
   id: number
   fields: {
     brain_area?: string
-    cre_driver?: string
-    reporter_line?: string
+    promoter?: string
+    indicator?: string
     imaging_depth?: number
   }
   experiment_id: string
@@ -200,18 +200,22 @@ const columns = (
     width: 120,
   },
   {
-    field: "cre_driver",
-    headerName: "Cre driver",
+    field: "promoter",
+    headerName: "Promoter",
     width: 120,
+    valueOptions: [1, "â", "a b + ê", 4, 5, 6, 7, 8],
+    type: "singleSelect",
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver ?? "NA",
+      params.row.fields?.promoter ?? "NA",
   },
   {
-    field: "reporter_line",
-    headerName: "Reporter line",
+    field: "indicator",
+    headerName: "Indicator",
     width: 120,
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line ?? "NA",
+      params.row.fields?.indicator ?? "NA",
   },
   {
     field: "imaging_depth",
@@ -413,8 +417,8 @@ const DatabaseExperiments = ({
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
       brain_area: searchParams.get("brain_area") || undefined,
-      cre_driver: searchParams.get("cre_driver") || undefined,
-      reporter_line: searchParams.get("reporter_line") || undefined,
+      promoter: searchParams.get("promoter") || undefined,
+      indicator: searchParams.get("indicator") || undefined,
       imaging_depth: Number(searchParams.get("imaging_depth")) || undefined,
     }),
     [searchParams],
@@ -433,7 +437,12 @@ const DatabaseExperiments = ({
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator: ["publish_status", "brain_area"].includes(
+          operator: [
+            "publish_status",
+            "brain_area",
+            "promoter",
+            "indicator",
+          ].includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
             ) || "publish_status",
@@ -483,10 +492,15 @@ const DatabaseExperiments = ({
                     dataParamsFilter[key as keyof typeof dataParamsFilter],
                 )
                 ?.replace("publish_status", "published") || "",
-            operator: ["publish_status", "brain_area"].includes(
+            operator: [
+              "publish_status",
+              "brain_area",
+              "promoter",
+              "indicator",
+            ].includes(
               Object.keys(dataParamsFilter).find(
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) || "",
+              ) || "publish_status",
             )
               ? "is"
               : "contains",

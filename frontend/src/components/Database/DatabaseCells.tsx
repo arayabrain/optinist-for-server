@@ -89,18 +89,18 @@ const columns = (user?: boolean, loading: boolean = false) => [
       params.row.fields?.brain_area ?? "NA",
   },
   {
-    field: "cre_driver",
-    headerName: "Cre driver",
+    field: "promoter",
+    headerName: "Promoter",
     width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver ?? "NA",
+      params.row.fields?.promoter ?? "NA",
   },
   {
-    field: "reporter_line",
-    headerName: "Reporter line",
+    field: "indicator",
+    headerName: "Indicator",
     width: 120,
     renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line ?? "NA",
+      params.row.fields?.indicator ?? "NA",
   },
   {
     field: "imaging_depth",
@@ -276,8 +276,8 @@ const DatabaseCells = ({ user }: CellProps) => {
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
       brain_area: searchParams.get("brain_area") || undefined,
-      cre_driver: searchParams.get("cre_driver") || undefined,
-      reporter_line: searchParams.get("reporter_line") || undefined,
+      promoter: searchParams.get("promoter") || undefined,
+      indicator: searchParams.get("indicator") || undefined,
       imaging_depth: Number(searchParams.get("imaging_depth")) || undefined,
     }),
     [searchParams],
@@ -296,12 +296,18 @@ const DatabaseCells = ({ user }: CellProps) => {
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator:
+          operator: [
+            "publish_status",
+            "brain_area",
+            "promoter",
+            "indicator",
+          ].includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-            ) === "publish_status"
-              ? "is"
-              : "contains",
+            ) || "publish_status",
+          )
+            ? "is"
+            : "contains",
           value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
       ],
@@ -355,12 +361,18 @@ const DatabaseCells = ({ user }: CellProps) => {
                     dataParamsFilter[key as keyof typeof dataParamsFilter],
                 )
                 ?.replace("publish_status", "published") || "",
-            operator:
+            operator: [
+              "publish_status",
+              "brain_area",
+              "promoter",
+              "indicator",
+            ].includes(
               Object.keys(dataParamsFilter).find(
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) === "publish_status"
-                ? "is"
-                : "contains",
+              ) || "publish_status",
+            )
+              ? "is"
+              : "contains",
             value:
               Object.values(dataParamsFilter).find((value) => value) || null,
           },
