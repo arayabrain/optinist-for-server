@@ -92,6 +92,8 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "promoter",
     headerName: "Promoter",
     width: 120,
+    valueOptions: [1, "â", "a b + ê", 4, 5, 6, 7, 8],
+    type: "singleSelect",
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.promoter ?? "NA",
   },
@@ -99,6 +101,8 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "indicator",
     headerName: "Indicator",
     width: 120,
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.indicator ?? "NA",
   },
