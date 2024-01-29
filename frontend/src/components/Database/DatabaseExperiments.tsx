@@ -221,6 +221,8 @@ const columns = (
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
+    valueOptions: [1, "â", "a b + ê", 4, 5, 6, 7, 8],
+    type: "singleSelect",
     renderCell: (params: { row: DatabaseType }) =>
       params.row.fields?.imaging_depth ?? "NA",
   },
@@ -419,7 +421,7 @@ const DatabaseExperiments = ({
       brain_area: searchParams.get("brain_area") || undefined,
       promoter: searchParams.get("promoter") || undefined,
       indicator: searchParams.get("indicator") || undefined,
-      imaging_depth: Number(searchParams.get("imaging_depth")) || undefined,
+      imaging_depth: searchParams.get("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -442,6 +444,7 @@ const DatabaseExperiments = ({
             "brain_area",
             "promoter",
             "indicator",
+            "imaging_depth",
           ].includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
@@ -497,6 +500,7 @@ const DatabaseExperiments = ({
               "brain_area",
               "promoter",
               "indicator",
+              "imaging_depth",
             ].includes(
               Object.keys(dataParamsFilter).find(
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
