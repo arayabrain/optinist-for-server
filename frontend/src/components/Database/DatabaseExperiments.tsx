@@ -507,6 +507,10 @@ const DatabaseExperiments = ({
   }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
+    if (dataExperiments.items.length === 0) {
+      setCheckBoxAll(false)
+      return
+    }
     const newListId = dataExperiments.items.map((item) => item.id)
     const isCheck = newListId.every((id) => listCheck.includes(id))
     setCheckBoxAll(isCheck)
