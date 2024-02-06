@@ -1,5 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
@@ -23,15 +23,15 @@ import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogContentText from "@mui/material/DialogContentText"
 import {
-  GridFilterModel,
-  GridSortDirection,
-  GridSortModel,
   DataGrid,
-  GridEventListener,
-  GridSortItem,
   GridColDef,
+  GridEventListener,
   GridFilterInputValueProps,
   GridFilterItem,
+  GridFilterModel,
+  GridSortDirection,
+  GridSortItem,
+  GridSortModel,
 } from "@mui/x-data-grid"
 
 import { SHARE, WAITING_TIME } from "@types"
@@ -51,8 +51,8 @@ import {
 } from "store/slice/Database/DatabaseActions"
 import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
-  DatabaseType,
   DATABASE_SLICE_NAME,
+  DatabaseType,
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
@@ -193,8 +193,13 @@ const columns = (
   {
     field: "brain_area",
     headerName: "Brain area",
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.brain_area}>
+          <SpanCustom>{params.row.fields?.brain_area ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: "singleSelect",
     width: 120,
@@ -203,10 +208,15 @@ const columns = (
     field: "promoter",
     headerName: "Promoter",
     width: 120,
-    valueOptions: [1, "â", "a b + ê", 4, 5, 6, 7, 8],
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: "singleSelect",
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.promoter ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.promoter}>
+          <SpanCustom>{params.row.fields?.promoter ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "indicator",
@@ -214,17 +224,27 @@ const columns = (
     width: 120,
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: "singleSelect",
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.indicator ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.indicator}>
+          <SpanCustom>{params.row.fields?.indicator ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
-    valueOptions: [1, "â", "a b + ê", 4, 5, 6, 7, 8],
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: "singleSelect",
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.imaging_depth}>
+          <SpanCustom>{params.row.fields?.imaging_depth ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "attributes",
@@ -239,7 +259,9 @@ const columns = (
           handleOpenAttributes(JSON.stringify(params.row?.attributes))
         }
       >
-        {JSON.stringify(params.row?.attributes)}
+        <Tooltip title={JSON.stringify(params.row?.attributes)}>
+          <SpanCustom>{JSON.stringify(params.row?.attributes)}</SpanCustom>
+        </Tooltip>
       </Box>
     ),
   },
@@ -296,6 +318,22 @@ const PopupAttributes = ({
   role = false,
   handleChangeAttributes,
 }: PopupAttributesProps) => {
+  const [error, setError] = useState("")
+
+  const isValidJSON = (str: string) => {
+    try {
+      JSON.parse(str)
+      setError("")
+    } catch {
+      setError("format JSON invalid")
+    }
+  }
+
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    isValidJSON(e.target.value)
+    handleChangeAttributes(e)
+  }
+
   useEffect(() => {
     const handleClosePopup = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -320,18 +358,23 @@ const PopupAttributes = ({
       >
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content
-              readOnly={!role}
-              value={data}
-              onChange={handleChangeAttributes}
-            />
+            <Content readOnly={!role} value={data} onChange={handleChange} />
+            <p style={{ color: "red" }}>{error}</p>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={handleClose}>
+          <Button variant={"outlined"} autoFocus onClick={handleClose}>
             Close
           </Button>
-          {role && <Button onClick={handleClose}>Save</Button>}
+          {role && (
+            <Button
+              variant={"contained"}
+              disabled={!!error}
+              onClick={handleClose}
+            >
+              Save
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
@@ -1013,7 +1056,7 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 
 const Content = styled("textarea")(() => ({
   width: 400,
-  height: "fit-content",
+  height: 300,
 }))
 
 const WrapperIcons = styled(Box, {
@@ -1034,6 +1077,12 @@ const WrapperIcons = styled(Box, {
   "button: hover": {
     backgroundColor: "#1976d257",
   },
+}))
+
+export const SpanCustom = styled("span")(() => ({
+  display: "inline-block",
+  textOverflow: "ellipsis",
+  overflow: "hidden",
 }))
 
 export default DatabaseExperiments

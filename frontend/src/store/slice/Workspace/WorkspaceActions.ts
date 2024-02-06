@@ -9,7 +9,7 @@ import {
   putWorkspaceApi,
   getListUserShareWorkspaceApi,
   postListUserShareWorkspaceApi,
-} from "api/workspace"
+} from "api/Workspace"
 import {
   ItemsWorkspace,
   WorkspaceDataDTO,
