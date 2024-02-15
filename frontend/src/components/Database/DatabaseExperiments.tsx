@@ -253,16 +253,20 @@ const columns = (
     width: 120,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{ cursor: "pointer" }}
-        onClick={() =>
-          handleOpenAttributes(JSON.stringify(params.row?.attributes))
-        }
-      >
-        <AssignmentOutlinedIcon color={"primary"} />
-      </Box>
-    ),
+    renderCell: (params: { row: DatabaseType }) => {
+      const inputValue = JSON.stringify(params?.row?.attributes).trim()
+      const parsedJSON = JSON.parse(inputValue)
+      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
+      const value = formattedJSON
+      return (
+        <Box
+          sx={{ cursor: "pointer" }}
+          onClick={() => handleOpenAttributes(value)}
+        >
+          <AssignmentOutlinedIcon color={"primary"} />
+        </Box>
+      )
+    },
   },
   !readonly && {
     field: "cells",
@@ -629,14 +633,7 @@ const DatabaseExperiments = ({
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const inputValue = event.target.value.trim()
-    try {
-      const parsedJSON = JSON.parse(inputValue)
-      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
-      setDataDialog((pre) => ({ ...pre, data: formattedJSON }))
-    } catch (error) {
-      setDataDialog((pre) => ({ ...pre, data: event.target.value }))
-    }
+    setDataDialog((pre) => ({ ...pre, data: event.target.value }))
   }
 
   const handleOpenShare = (expId?: string, value?: number, id?: number) => {
