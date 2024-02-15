@@ -2,6 +2,7 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
 import DomainIcon from "@mui/icons-material/Domain"
@@ -259,9 +260,7 @@ const columns = (
           handleOpenAttributes(JSON.stringify(params.row?.attributes))
         }
       >
-        <Tooltip title={JSON.stringify(params.row?.attributes)}>
-          <SpanCustom>{JSON.stringify(params.row?.attributes)}</SpanCustom>
-        </Tooltip>
+        <AssignmentOutlinedIcon color={"primary"} />
       </Box>
     ),
   },
