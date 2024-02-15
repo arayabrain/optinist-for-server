@@ -359,7 +359,7 @@ const PopupAttributes = ({
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
             <Content readOnly={!role} value={data} onChange={handleChange} />
-            <p style={{ color: "red" }}>{error}</p>
+            <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -630,7 +630,14 @@ const DatabaseExperiments = ({
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setDataDialog((pre) => ({ ...pre, data: event.target.value }))
+    const inputValue = event.target.value.trim()
+    try {
+      const parsedJSON = JSON.parse(inputValue)
+      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
+      setDataDialog((pre) => ({ ...pre, data: formattedJSON }))
+    } catch (error) {
+      setDataDialog((pre) => ({ ...pre, data: event.target.value }))
+    }
   }
 
   const handleOpenShare = (expId?: string, value?: number, id?: number) => {
@@ -1057,6 +1064,7 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 const Content = styled("textarea")(() => ({
   width: 400,
   height: 300,
+  whiteSpace: "pre-wrap",
 }))
 
 const WrapperIcons = styled(Box, {
