@@ -34,7 +34,9 @@ class SortOptions:
             sort_field, sort_type = sort[i : i + 2]
 
             sort_column = (
-                mapping.get(sort_field) or sort_field if mapping else sort_field
+                mapping.get(sort_field)
+                if mapping is not None and mapping.get(sort_field) is not None
+                else sort_field
             )
             if isinstance(sort_column, str):
                 sort_column = getattr(sa_table, sort_column)

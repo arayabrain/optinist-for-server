@@ -120,6 +120,21 @@ CELL_GRAPHS = {
     "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
 }
 
+EXP_ATTRIBUTE_SORT_MAPPING = {
+    "brain_area": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.brain_area"
+    ),
+    "imaging_depth": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.imaging_depth"
+    ),
+    "promoter": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.promoter"
+    ),
+    "indicator": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.indicator"
+    ),
+}
+
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
@@ -180,7 +195,9 @@ async def search_public_experiments(
     db: Session = Depends(get_db),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
-        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+        sa_table=optinist_model.Experiment,
+        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        default=["experiment_id", SortDirection.asc],
     )
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
@@ -216,7 +233,10 @@ async def search_public_cells(
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Cell,
-        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+        mapping={
+            "experiment_id": optinist_model.Experiment.experiment_id,
+            **EXP_ATTRIBUTE_SORT_MAPPING,
+        },
         default=["experiment_id", SortDirection.asc],
     )
     base_query = (
@@ -286,7 +306,9 @@ async def search_db_experiments(
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
-        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+        sa_table=optinist_model.Experiment,
+        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        default=["experiment_id", SortDirection.asc],
     )
     query = select(optinist_model.Experiment)
     if current_user.is_admin_data:
@@ -373,6 +395,7 @@ async def search_db_cells(
         mapping={
             "experiment_id": optinist_model.Experiment.experiment_id,
             "publish_status": optinist_model.Experiment.publish_status,
+            **EXP_ATTRIBUTE_SORT_MAPPING,
         },
         default=["experiment_id", SortDirection.asc],
     )
