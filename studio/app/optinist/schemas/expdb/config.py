@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ExpDbConfig(BaseModel):
@@ -13,7 +13,7 @@ class ExpDbConfig(BaseModel):
     class Config:
         orm_mode = True
 
+
 class ExpDbConfigUpdate(BaseModel):
     experiment_config: Optional[dict]
     updated_at: Optional[datetime]
-
