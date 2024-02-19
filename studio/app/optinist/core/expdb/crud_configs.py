@@ -1,13 +1,10 @@
+import datetime
+
 from sqlmodel import Session, func
 
-import datetime
-from studio.app.optinist.models.expdb.config import Config as ConfigModel
 from studio.app.optinist.models import Experiment as ExperimentModel
-
-from studio.app.optinist.schemas.expdb.config import (
-    ExpDbConfig,
-    ExpDbConfigUpdate,
-)
+from studio.app.optinist.models.expdb.config import Config as ConfigModel
+from studio.app.optinist.schemas.expdb.config import ExpDbConfig, ExpDbConfigUpdate
 
 
 def summarize_experiment_metadata(db: Session) -> bool:

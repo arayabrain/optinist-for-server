@@ -1,11 +1,6 @@
 from typing import Dict, Optional
 
-from sqlmodel import (
-    JSON,
-    Column,
-    Field,
-)
-
+from sqlmodel import JSON, Column, Field
 
 from studio.app.common.models.base import Base, TimestampMixin
 
