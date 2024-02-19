@@ -486,7 +486,7 @@ const AccountManager = () => {
 
   useEffect(() => {
     if (newParams === window.location.search.replace("?", "")) return
-    setParams(newParams)
+    setParams(newParams.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
 
@@ -887,7 +887,7 @@ const AccountManager = () => {
 
   return (
     <AccountManagerWrapper>
-      <h1>Account Manager</h1>
+      <AccountManagerTitle>Account Manager</AccountManagerTitle>
       <Box
         sx={{
           display: "flex",
@@ -993,5 +993,7 @@ const LabelModal = styled(Box)(({ theme }) => ({
 const ButtonModal = styled(DialogActions)(({ theme }) => ({
   margin: theme.spacing(5),
 }))
+
+const AccountManagerTitle = styled("h1")(() => ({}))
 
 export default AccountManager

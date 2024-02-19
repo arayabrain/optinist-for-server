@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { useSearchParams } from "react-router-dom"
 
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import { Box, Input, styled } from "@mui/material"
+import { Box, Input, styled, Tooltip } from "@mui/material"
 import {
   GridFilterModel,
   GridSortModel,
@@ -18,6 +18,7 @@ import { WAITING_TIME } from "@types"
 import DialogImage from "components/common/DialogImage"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
+import { SpanCustom } from "components/Database/DatabaseExperiments"
 import {
   getCellsDatabase,
   getCellsPublicDatabase,
@@ -29,6 +30,7 @@ import {
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { AppDispatch, RootState } from "store/store"
+
 
 type CellProps = {
   user?: unknown
@@ -85,30 +87,57 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "brain_area",
     headerName: "Brain area",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.brain_area}>
+          <SpanCustom>{params.row.fields?.brain_area ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: "cre_driver",
-    headerName: "Cre driver",
+    field: "promoter",
+    headerName: "Promoter",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.promoter}>
+          <SpanCustom>{params.row.fields?.promoter ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: "reporter_line",
-    headerName: "Reporter line",
+    field: "indicator",
+    headerName: "Indicator",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.indicator}>
+          <SpanCustom>{params.row.fields?.indicator ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "imaging_depth",
     headerName: "Imaging depth",
-    filterable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.imaging_depth}>
+          <SpanCustom>{params.row.fields?.imaging_depth ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
 ]
 
@@ -119,8 +148,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_resp ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_resp}>
+          <SpanCustom>{params.row.statistics?.p_value_resp ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "p_value_sel",
@@ -128,8 +162,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_sel ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_sel}>
+          <SpanCustom>{params.row.statistics?.p_value_sel ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "p_value_ori_resp",
@@ -137,8 +176,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_ori_resp ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_ori_resp}>
+          <SpanCustom>
+            {params.row.statistics?.p_value_ori_resp ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "p_value_ori_sel",
@@ -146,8 +192,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_ori_sel ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_ori_sel}>
+          <SpanCustom>
+            {params.row.statistics?.p_value_ori_sel ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "dir_vector_angle",
@@ -155,8 +208,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dir_vector_angle ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dir_vector_angle}>
+          <SpanCustom>
+            {params.row.statistics?.dir_vector_angle ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "ori_vector_angle",
@@ -164,8 +224,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.ori_vector_angle ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.ori_vector_angle}>
+          <SpanCustom>
+            {params.row.statistics?.ori_vector_angle ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "di",
@@ -173,8 +240,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.di ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.di}>
+          <SpanCustom>{params.row.statistics?.di ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "oi",
@@ -182,8 +254,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.oi ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.oi}>
+          <SpanCustom>{params.row.statistics?.oi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "dsi",
@@ -191,8 +268,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dsi ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dsi}>
+          <SpanCustom>{params.row.statistics?.dsi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "osi",
@@ -200,8 +282,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.osi ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.osi}>
+          <SpanCustom>{params.row.statistics?.osi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "r_best_dir",
@@ -209,8 +296,13 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.r_best_dir ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.r_best_dir}>
+          <SpanCustom>{params.row.statistics?.r_best_dir ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "dir_tuning_width",
@@ -218,8 +310,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dir_tuning_width ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dir_tuning_width}>
+          <SpanCustom>
+            {params.row.statistics?.dir_tuning_width ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "ori_tuning_width",
@@ -227,8 +326,15 @@ const statistics = () => [
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.ori_tuning_width ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.ori_tuning_width}>
+          <SpanCustom>
+            {params.row.statistics?.ori_tuning_width ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
 ]
 
@@ -276,9 +382,9 @@ const DatabaseCells = ({ user }: CellProps) => {
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
       brain_area: searchParams.get("brain_area") || undefined,
-      cre_driver: searchParams.get("cre_driver") || undefined,
-      reporter_line: searchParams.get("reporter_line") || undefined,
-      imaging_depth: Number(searchParams.get("imaging_depth")) || undefined,
+      promoter: searchParams.get("promoter") || undefined,
+      indicator: searchParams.get("indicator") || undefined,
+      imaging_depth: searchParams.get("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -296,12 +402,19 @@ const DatabaseCells = ({ user }: CellProps) => {
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator:
+          operator: [
+            "publish_status",
+            "brain_area",
+            "promoter",
+            "indicator",
+            "imaging_depth",
+          ].includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-            ) === "publish_status"
-              ? "is"
-              : "contains",
+            ) || "publish_status",
+          )
+            ? "is"
+            : "contains",
           value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
       ],
@@ -355,12 +468,19 @@ const DatabaseCells = ({ user }: CellProps) => {
                     dataParamsFilter[key as keyof typeof dataParamsFilter],
                 )
                 ?.replace("publish_status", "published") || "",
-            operator:
+            operator: [
+              "publish_status",
+              "brain_area",
+              "promoter",
+              "indicator",
+              "imaging_depth",
+            ].includes(
               Object.keys(dataParamsFilter).find(
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) === "publish_status"
-                ? "is"
-                : "contains",
+              ) || "publish_status",
+            )
+              ? "is"
+              : "contains",
             value:
               Object.values(dataParamsFilter).find((value) => value) || null,
           },
@@ -381,9 +501,16 @@ const DatabaseCells = ({ user }: CellProps) => {
     let param = newParams
     if (newParams[0] === "&") param = newParams.slice(1, param.length)
     if (param === window.location.search.replace("?", "")) return
-    setParams(param)
+    setParams(param.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
+
+  useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
 
   useEffect(() => {
     fetchApi()

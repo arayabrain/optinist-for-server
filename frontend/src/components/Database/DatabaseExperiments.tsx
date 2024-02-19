@@ -1,7 +1,8 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
 import DomainIcon from "@mui/icons-material/Domain"
@@ -23,15 +24,15 @@ import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogContentText from "@mui/material/DialogContentText"
 import {
-  GridFilterModel,
-  GridSortDirection,
-  GridSortModel,
   DataGrid,
-  GridEventListener,
-  GridSortItem,
   GridColDef,
+  GridEventListener,
   GridFilterInputValueProps,
   GridFilterItem,
+  GridFilterModel,
+  GridSortDirection,
+  GridSortItem,
+  GridSortModel,
 } from "@mui/x-data-grid"
 
 import { SHARE, WAITING_TIME } from "@types"
@@ -51,8 +52,8 @@ import {
 } from "store/slice/Database/DatabaseActions"
 import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
-  DatabaseType,
   DATABASE_SLICE_NAME,
+  DatabaseType,
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
@@ -62,8 +63,8 @@ export type Data = {
   id: number
   fields: {
     brain_area?: string
-    cre_driver?: string
-    reporter_line?: string
+    promoter?: string
+    indicator?: string
     imaging_depth?: number
   }
   experiment_id: string
@@ -193,32 +194,58 @@ const columns = (
   {
     field: "brain_area",
     headerName: "Brain area",
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area ?? "NA",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.brain_area}>
+          <SpanCustom>{params.row.fields?.brain_area ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
     valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
     type: "singleSelect",
     width: 120,
   },
   {
-    field: "cre_driver",
-    headerName: "Cre driver",
+    field: "promoter",
+    headerName: "Promoter",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.promoter}>
+          <SpanCustom>{params.row.fields?.promoter ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: "reporter_line",
-    headerName: "Reporter line",
+    field: "indicator",
+    headerName: "Indicator",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.indicator}>
+          <SpanCustom>{params.row.fields?.indicator ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth ?? "NA",
+    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
+    type: "singleSelect",
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.imaging_depth}>
+          <SpanCustom>{params.row.fields?.imaging_depth ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
     field: "attributes",
@@ -226,16 +253,20 @@ const columns = (
     width: 120,
     filterable: false,
     sortable: false,
-    renderCell: (params: { row: DatabaseType }) => (
-      <Box
-        sx={{ cursor: "pointer" }}
-        onClick={() =>
-          handleOpenAttributes(JSON.stringify(params.row?.attributes))
-        }
-      >
-        {JSON.stringify(params.row?.attributes)}
-      </Box>
-    ),
+    renderCell: (params: { row: DatabaseType }) => {
+      const inputValue = JSON.stringify(params?.row?.attributes).trim()
+      const parsedJSON = JSON.parse(inputValue)
+      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
+      const value = formattedJSON
+      return (
+        <Box
+          sx={{ cursor: "pointer" }}
+          onClick={() => handleOpenAttributes(value)}
+        >
+          <AssignmentOutlinedIcon color={"primary"} />
+        </Box>
+      )
+    },
   },
   !readonly && {
     field: "cells",
@@ -290,6 +321,22 @@ const PopupAttributes = ({
   role = false,
   handleChangeAttributes,
 }: PopupAttributesProps) => {
+  const [error, setError] = useState("")
+
+  const isValidJSON = (str: string) => {
+    try {
+      JSON.parse(str)
+      setError("")
+    } catch {
+      setError("format JSON invalid")
+    }
+  }
+
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    isValidJSON(e.target.value)
+    handleChangeAttributes(e)
+  }
+
   useEffect(() => {
     const handleClosePopup = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -314,18 +361,23 @@ const PopupAttributes = ({
       >
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content
-              readOnly={!role}
-              value={data}
-              onChange={handleChangeAttributes}
-            />
+            <Content readOnly={!role} value={data} onChange={handleChange} />
+            <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={handleClose}>
+          <Button variant={"outlined"} autoFocus onClick={handleClose}>
             Close
           </Button>
-          {role && <Button onClick={handleClose}>Save</Button>}
+          {role && (
+            <Button
+              variant={"contained"}
+              disabled={!!error}
+              onClick={handleClose}
+            >
+              Save
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
@@ -381,7 +433,7 @@ const DatabaseExperiments = ({
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
 
-  const offset = searchParams.get("offset")
+  const offset = searchParams.get("offset") || 0
   const limit = searchParams.get("limit") || 50
   const sort = searchParams.getAll("sort")
 
@@ -413,9 +465,9 @@ const DatabaseExperiments = ({
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
       brain_area: searchParams.get("brain_area") || undefined,
-      cre_driver: searchParams.get("cre_driver") || undefined,
-      reporter_line: searchParams.get("reporter_line") || undefined,
-      imaging_depth: Number(searchParams.get("imaging_depth")) || undefined,
+      promoter: searchParams.get("promoter") || undefined,
+      indicator: searchParams.get("indicator") || undefined,
+      imaging_depth: searchParams.get("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -433,7 +485,13 @@ const DatabaseExperiments = ({
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator: ["publish_status", "brain_area"].includes(
+          operator: [
+            "publish_status",
+            "brain_area",
+            "promoter",
+            "indicator",
+            "imaging_depth",
+          ].includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
             ) || "publish_status",
@@ -483,10 +541,16 @@ const DatabaseExperiments = ({
                     dataParamsFilter[key as keyof typeof dataParamsFilter],
                 )
                 ?.replace("publish_status", "published") || "",
-            operator: ["publish_status", "brain_area"].includes(
+            operator: [
+              "publish_status",
+              "brain_area",
+              "promoter",
+              "indicator",
+              "imaging_depth",
+            ].includes(
               Object.keys(dataParamsFilter).find(
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) || "",
+              ) || "publish_status",
             )
               ? "is"
               : "contains",
@@ -507,10 +571,23 @@ const DatabaseExperiments = ({
   }, [dataParams, dataParamsFilter])
 
   useEffect(() => {
+    const newListId = dataExperiments.items.map((item) => item.id)
+    const isCheck = newListId.every((id) => listCheck.includes(id))
+    setCheckBoxAll(isCheck)
+  }, [dataExperiments, listCheck])
+
+  useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
     let param = newParams
     if (newParams[0] === "&") param = newParams.slice(1, param.length)
     if (param === window.location.search.replace("?", "")) return
-    setParams(param)
+    setParams(param.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
 
@@ -982,7 +1059,8 @@ const DatabaseExperimentsWrapper = styled(Box)(() => ({
 
 const Content = styled("textarea")(() => ({
   width: 400,
-  height: "fit-content",
+  height: 300,
+  whiteSpace: "pre-wrap",
 }))
 
 const WrapperIcons = styled(Box, {
@@ -1003,6 +1081,12 @@ const WrapperIcons = styled(Box, {
   "button: hover": {
     backgroundColor: "#1976d257",
   },
+}))
+
+export const SpanCustom = styled("span")(() => ({
+  display: "inline-block",
+  textOverflow: "ellipsis",
+  overflow: "hidden",
 }))
 
 export default DatabaseExperiments

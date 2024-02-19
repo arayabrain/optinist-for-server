@@ -43,6 +43,12 @@ export interface CsvInputNode
   selectedFilePath?: string
 }
 
+export interface MatlabInputNode
+  extends InputNodeBaseType<"matlab", Record<never, never>> {
+  selectedFilePath?: string
+  matPath?: string
+}
+
 export interface ImageInputNode
   extends InputNodeBaseType<"image", Record<never, never>> {
   selectedFilePath?: string[]
@@ -52,16 +58,6 @@ export interface HDF5InputNode
   extends InputNodeBaseType<"hdf5", Record<never, never>> {
   selectedFilePath?: string
   hdf5Path?: string
-}
-
-export type MatlabInputParamType = {
-  fieldName?: string
-  index?: number[]
-}
-
-export interface MatlabInputNode
-  extends InputNodeBaseType<"matlab", MatlabInputParamType> {
-  selectedFilePath?: string
 }
 
 export interface ExpDbInputNode

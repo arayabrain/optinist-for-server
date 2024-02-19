@@ -1,10 +1,11 @@
 import h5py
 
 from studio.app.common.core.snakemake.smk import Rule
-from studio.app.common.dataclass import CsvData, ImageData, MatlabData, TimeSeriesData
+from studio.app.common.dataclass import CsvData, ImageData, TimeSeriesData
 from studio.app.const import FILETYPE
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.expdb import ExpDbData
+from studio.app.optinist.routers.mat import MatGetter
 
 
 class FileWriter:
@@ -69,12 +70,27 @@ class FileWriter:
         return info
 
     @classmethod
-    def matlab(cls, rule_config: Rule):
-        info = {
-            rule_config.return_arg: MatlabData(rule_config.input, rule_config.params)
-        }
+    def mat(cls, rule_config: Rule):
         nwbfile = rule_config.nwbfile
-        info["nwbfile"] = {"input": nwbfile}
+        data = MatGetter.data(rule_config.input, rule_config.matPath)
+
+        if data.ndim == 3:
+            info = {rule_config.return_arg: ImageData(data, "")}
+            nwbfile["image_series"]["external_file"] = info[rule_config.return_arg]
+            info["nwbfile"] = {}
+            info["nwbfile"][FILETYPE.IMAGE] = nwbfile
+        elif data.ndim == 2:
+            info = {rule_config.return_arg: TimeSeriesData(data, "")}
+
+            if NWBDATASET.TIMESERIES not in nwbfile:
+                nwbfile[NWBDATASET.TIMESERIES] = {}
+
+            nwbfile[NWBDATASET.TIMESERIES][rule_config.return_arg] = info[
+                rule_config.return_arg
+            ]
+            nwbfile.pop("image_series", None)
+            info["nwbfile"] = {"input": nwbfile}
+
         return info
 
     @classmethod

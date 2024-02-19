@@ -4,6 +4,7 @@ from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
+from sqlalchemy.sql import Select
 from sqlmodel import Session, and_, func, or_, select
 
 from studio.app.common import models as common_model
@@ -41,8 +42,11 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
         expdbcell = ExpDbCell.from_orm(item)
         subject_id = expdbcell.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
-        # TODO: set fields from real data
-        expdbcell.fields = ExpDbExperimentFields()
+        try:
+            expdbcell.fields = ExpDbExperimentFields(**item.view_attributes)
+        except Exception:
+            expdbcell.fields = ExpDbExperimentFields()
+
         expdbcell.graph_urls = get_cell_urls(CELL_GRAPHS, exp_dir, item.cell_number)
         expdbcell.statistics = {
             k: "{:.4g}".format(v) if v else None
@@ -55,12 +59,16 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 def experiment_transformer(items: Sequence) -> Sequence:
     experiments = []
     for item in items:
-        expdb = item
+        expdb: optinist_model.Experiment = item
         exp = ExpDbExperiment.from_orm(expdb)
         subject_id = exp.experiment_id.split("_")[0]
         exp_dir = f"{DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
-        # TODO: set fields from real data
-        exp.fields = ExpDbExperimentFields()
+
+        try:
+            exp.fields = ExpDbExperimentFields(**expdb.view_attributes)
+        except Exception:
+            exp.fields = ExpDbExperimentFields()
+
         exp.cell_image_urls = get_pixelmap_urls(exp_dir)
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
         experiments.append(exp)
@@ -112,12 +120,66 @@ CELL_GRAPHS = {
     "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
 }
 
+EXP_ATTRIBUTE_SORT_MAPPING = {
+    "brain_area": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.brain_area"
+    ),
+    "imaging_depth": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.imaging_depth"
+    ),
+    "promoter": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.promoter"
+    ),
+    "indicator": func.json_extract(
+        optinist_model.Experiment.view_attributes, "$.indicator"
+    ),
+}
+
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
         ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
         for k, v in source.items()
     ]
+
+
+def get_search_db_experiment_query(
+    query: Select, options: ExpDbExperimentsSearchOptions
+) -> Select:
+    if options.experiment_id is not None:
+        query = query.filter(
+            optinist_model.Experiment.experiment_id.like(
+                "%{0}%".format(options.experiment_id)
+            )
+        )
+
+    if options.brain_area is not None:
+        query = query.filter(
+            func.json_extract(optinist_model.Experiment.view_attributes, "$.brain_area")
+            == options.brain_area
+        )
+
+    if options.imaging_depth is not None:
+        query = query.filter(
+            func.json_extract(
+                optinist_model.Experiment.view_attributes, "$.imaging_depth"
+            )
+            == options.imaging_depth
+        )
+
+    if options.indicator is not None:
+        query = query.filter(
+            func.json_extract(optinist_model.Experiment.view_attributes, "$.indicator")
+            == options.indicator
+        )
+
+    if options.promoter is not None:
+        query = query.filter(
+            func.json_extract(optinist_model.Experiment.view_attributes, "$.promoter")
+            == options.promoter
+        )
+
+    return query
 
 
 @public_router.get(
@@ -133,7 +195,9 @@ async def search_public_experiments(
     db: Session = Depends(get_db),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
-        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+        sa_table=optinist_model.Experiment,
+        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        default=["experiment_id", SortDirection.asc],
     )
 
     graph_titles = [v["title"] for v in EXPERIMENT_GRAPHS.values()]
@@ -141,12 +205,7 @@ async def search_public_experiments(
         publish_status=PublishStatus.on.value
     )
 
-    if options.experiment_id is not None:
-        query = query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
+    query = get_search_db_experiment_query(query, options)
     query = query.group_by(optinist_model.Experiment.id).order_by(*sa_sort_list)
 
     data = paginate(
@@ -174,7 +233,10 @@ async def search_public_cells(
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Cell,
-        mapping={"experiment_id": optinist_model.Experiment.experiment_id},
+        mapping={
+            "experiment_id": optinist_model.Experiment.experiment_id,
+            **EXP_ATTRIBUTE_SORT_MAPPING,
+        },
         default=["experiment_id", SortDirection.asc],
     )
     base_query = (
@@ -186,13 +248,7 @@ async def search_public_cells(
         .filter(optinist_model.Experiment.publish_status == PublishStatus.on.value)
     )
 
-    if options.experiment_id is not None:
-        base_query = base_query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
-
+    base_query = get_search_db_experiment_query(base_query, options)
     sub_query = (
         base_query.order_by(*sa_sort_list).limit(limit).offset(offset).subquery()
     )
@@ -206,6 +262,7 @@ async def search_public_cells(
             optinist_model.Cell.experiment_uid,
             optinist_model.Experiment.experiment_id,
             optinist_model.Experiment.publish_status,
+            optinist_model.Experiment.view_attributes,
         )
         .join(
             optinist_model.Experiment,
@@ -249,7 +306,9 @@ async def search_db_experiments(
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
-        sa_table=optinist_model.Experiment, default=["experiment_id", SortDirection.asc]
+        sa_table=optinist_model.Experiment,
+        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        default=["experiment_id", SortDirection.asc],
     )
     query = select(optinist_model.Experiment)
     if current_user.is_admin_data:
@@ -297,12 +356,7 @@ async def search_db_experiments(
             )
         )
 
-    if options.experiment_id is not None:
-        query = query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
+    query = get_search_db_experiment_query(query, options)
 
     if publish_status is not None:
         query = query.filter(optinist_model.Experiment.publish_status == publish_status)
@@ -341,6 +395,7 @@ async def search_db_cells(
         mapping={
             "experiment_id": optinist_model.Experiment.experiment_id,
             "publish_status": optinist_model.Experiment.publish_status,
+            **EXP_ATTRIBUTE_SORT_MAPPING,
         },
         default=["experiment_id", SortDirection.asc],
     )
@@ -353,6 +408,7 @@ async def search_db_cells(
         optinist_model.Cell.experiment_uid,
         optinist_model.Experiment.experiment_id,
         optinist_model.Experiment.publish_status,
+        optinist_model.Experiment.view_attributes,
     )
     if any(
         sort.element.table.name == optinist_model.Cell.__table__.name
@@ -464,17 +520,9 @@ async def search_db_cells(
                 )
             )
         )
-    if options.experiment_id is not None:
-        query = query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
-        total_query = total_query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
-        )
+
+    query = get_search_db_experiment_query(query, options)
+    total_query = get_search_db_experiment_query(total_query, options)
     if publish_status is not None:
         query = query.filter(
             optinist_model.Experiment.publish_status == publish_status
@@ -633,23 +681,30 @@ def update_experiment_database_share_status(
     if not exp:
         raise HTTPException(status_code=404)
 
+    (
+        db.query(optinist_model.ExperimentShareUser)
+        .filter(optinist_model.ExperimentShareUser.experiment_uid == id)
+        .delete(synchronize_session=False)
+    )
+    (
+        db.query(optinist_model.ExperimentShareGroup)
+        .filter(optinist_model.ExperimentShareGroup.experiment_uid == id)
+        .delete(synchronize_session=False)
+    )
+
     if data.share_type == ExperimentShareType.per_user_or_group:
-        exp.user_share = (
-            db.query(common_model.User)
-            .filter(
-                common_model.User.id.in_(data.user_ids),
-                common_model.User.active.is_(True),
+        if len(data.user_ids) > 0:
+            db.bulk_save_objects(
+                optinist_model.ExperimentShareUser(experiment_uid=id, user_id=user_id)
+                for user_id in data.user_ids
             )
-            .all()
-        )
-        exp.group_share = (
-            db.query(common_model.Group)
-            .filter(common_model.Group.id.in_(data.group_ids))
-            .all()
-        )
-    else:
-        exp.user_share = []
-        exp.group_share = []
+        if len(data.group_ids) > 0:
+            db.bulk_save_objects(
+                optinist_model.ExperimentShareGroup(
+                    experiment_uid=id, group_id=group_id
+                )
+                for group_id in data.group_ids
+            )
     exp.share_type = data.share_type
 
     db.commit()
@@ -687,25 +742,41 @@ def update_multiple_experiment_database_share_status(
         .all()
     )
 
+    (
+        db.query(optinist_model.ExperimentShareUser)
+        .filter(
+            optinist_model.ExperimentShareUser.experiment_uid.in_(
+                [exp.id for exp in exps]
+            )
+        )
+        .delete(synchronize_session=False)
+    )
+    (
+        db.query(optinist_model.ExperimentShareGroup)
+        .filter(
+            optinist_model.ExperimentShareGroup.experiment_uid.in_(
+                [exp.id for exp in exps]
+            )
+        )
+        .delete(synchronize_session=False)
+    )
     for exp in exps:
         exp.share_type = data.share_type
         if data.share_type == ExperimentShareType.per_user_or_group:
-            exp.user_share = (
-                db.query(common_model.User)
-                .filter(
-                    common_model.User.id.in_(data.user_ids),
-                    common_model.User.active.is_(True),
+            if len(data.user_ids) > 0:
+                db.bulk_save_objects(
+                    optinist_model.ExperimentShareUser(
+                        experiment_uid=exp.id, user_id=user_id
+                    )
+                    for user_id in data.user_ids
                 )
-                .all()
-            )
-            exp.group_share = (
-                db.query(common_model.Group)
-                .filter(common_model.Group.id.in_(data.group_ids))
-                .all()
-            )
-        else:
-            exp.user_share = []
-            exp.group_share = []
+            if len(data.group_ids) > 0:
+                db.bulk_save_objects(
+                    optinist_model.ExperimentShareGroup(
+                        experiment_uid=exp.id, group_id=group_id
+                    )
+                    for group_id in data.group_ids
+                )
 
     db.commit()
 

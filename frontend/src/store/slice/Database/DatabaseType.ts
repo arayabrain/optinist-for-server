@@ -12,8 +12,8 @@ export type DatabaseType = {
   id: number
   fields: {
     brain_area?: string
-    cre_driver?: string
-    reporter_line?: string
+    promoter?: string
+    indicator?: string
     imaging_depth?: number
   }
   experiment_id?: string
