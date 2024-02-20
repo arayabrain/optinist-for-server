@@ -13,8 +13,14 @@ import { RETRY_WAIT } from "const/Mode"
 import Account from "pages/Account"
 import AccountDelete from "pages/AccountDelete"
 import AccountManager from "pages/AccountManager"
+import Administration from "pages/Administration"
 import Dashboard from "pages/Dashboard"
+import Cells from "pages/Database/Cells"
+import Experiments from "pages/Database/Experiments"
+import GroupManager from "pages/GroupManager"
 import Login from "pages/Login"
+import PublicCells from "pages/PublicDatabase/PublicCells"
+import PublicExperiments from "pages/PublicDatabase/PublicExperiments"
 import ResetPassword from "pages/ResetPassword"
 import Workspaces from "pages/Workspace"
 import Workspace from "pages/Workspace/Workspace"
@@ -62,7 +68,12 @@ const App: FC = () => {
             </Routes>
           ) : (
             <Routes>
-              <Route path="/" element={<Navigate replace to="/console" />} />
+              <Route
+                path="/"
+                element={<Navigate replace to="/experiments" />}
+              />
+              <Route path="/experiments" element={<PublicExperiments />} />
+              <Route path="/cells" element={<PublicCells />} />
               <Route path="/account-deleted" element={<AccountDelete />} />
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -72,6 +83,13 @@ const App: FC = () => {
                 path="/console/account-manager"
                 element={<AccountManager />}
               />
+              <Route path="/console/experiments" element={<Experiments />} />
+              <Route path="/console/group-manager" element={<GroupManager />} />
+              <Route
+                path="/console/administration"
+                element={<Administration />}
+              />
+              <Route path="/console/cells" element={<Cells />} />
               <Route path="/console/workspaces">
                 <Route path="" element={<Workspaces />} />
                 <Route path=":workspaceId" element={<Workspace />} />

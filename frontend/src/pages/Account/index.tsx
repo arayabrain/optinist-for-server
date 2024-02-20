@@ -138,9 +138,14 @@ const Account = () => {
       case ROLE.ADMIN:
         newRole = "Admin"
         break
+      case ROLE.DATA_MANAGER:
+        newRole = "Data Manager"
+        break
       case ROLE.OPERATOR:
         newRole = "Operator"
         break
+      case ROLE.GUEST_OPERATOR:
+        newRole = "Guest Operator"
     }
     return newRole
   }

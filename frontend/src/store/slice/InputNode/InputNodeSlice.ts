@@ -30,7 +30,7 @@ import {
 
 const initialState: InputNode = {
   [INITIAL_IMAGE_ELEMENT_ID]: {
-    fileType: FILE_TYPE_SET.IMAGE,
+    fileType: FILE_TYPE_SET.EXPDB,
     param: {},
   },
 }
@@ -144,6 +144,12 @@ export const inputNodeSlice = createSlice({
                 param: {},
               }
               break
+            case FILE_TYPE_SET.EXPDB:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
           }
         }
       })
@@ -199,6 +205,11 @@ export const inputNodeSlice = createSlice({
                   fileType: FILE_TYPE_SET.HDF5,
                   param: {},
                 }
+              } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.EXPDB,
+                  param: {},
+                }
               }
             }
           })
@@ -235,6 +246,12 @@ export const inputNodeSlice = createSlice({
                   newState[node.id] = {
                     fileType: FILE_TYPE_SET.HDF5,
                     hdf5Path: node.data.hdf5Path,
+                    selectedFilePath: node.data.path as string,
+                    param: {},
+                  }
+                } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.EXPDB,
                     selectedFilePath: node.data.path as string,
                     param: {},
                   }

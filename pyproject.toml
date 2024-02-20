@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "optinist"
-description = "Calcium Imaging Pipeline Tool"
-version = "1.0.1"
+name = "studio"
+description = "analysis studio"
+version = "1.1.0"
 license = "GPL-3.0"
-authors = ["OIST <email@example.com>"]
+authors = ["Ohki Lab <email@example.com>"]
 readme = "README.md"
 documentation = "https://optinist.readthedocs.io"
-repository = "https://github.com/oist/optinist"
+repository = "https://github.com/arayabrain/optinist-for-server"
 keywords = ["optinist"]
 classifiers = [
   "Intended Audience :: Developers",
@@ -68,6 +68,9 @@ plotly = "5.18.0"
 kaleido = "0.2.1"
 filelock = "*"
 ruamel-yaml = "^0.18.5"
+zc-lockfile = "*"
+lauda = "*"
+opencv-python = "*"
 pymatreader = "^0.0.32"
 xmltodict = "*"
 
@@ -114,7 +117,13 @@ profile = "black"
 [tool.pytest.ini_options]
 pythonpath = "."
 testpaths = "studio/tests"
-env = ["OPTINIST_DIR=studio/test_data"]
+env = [
+  "OPTINIST_DIR=studio/test_data",
+  "EXPDB_DIR=studio/test_data/dataset",
+  "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
+  "GRAPH_HOST=http://localhost:8000/datasets",
+  "IS_TEST=True",
+]
 
 [tool.codespell]
 skip = './frontend/build,./frontend/node_modules,./docs/_build,*.lock,*log,*.egg-info'

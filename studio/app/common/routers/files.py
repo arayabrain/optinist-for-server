@@ -28,9 +28,9 @@ from studio.app.common.schemas.files import (
     TreeNode,
 )
 from studio.app.const import (
-    ACCEPR_MATLAB_EXT,
     ACCEPT_CSV_EXT,
     ACCEPT_HDF5_EXT,
+    ACCEPT_MATLAB_EXT,
     ACCEPT_TIFF_EXT,
     FILETYPE,
 )
@@ -157,7 +157,7 @@ async def get_files(workspace_id: str, file_type: str = None):
     elif file_type == FILETYPE.HDF5:
         return DirTreeGetter.get_tree(workspace_id, ACCEPT_HDF5_EXT)
     elif file_type == FILETYPE.MATLAB:
-        return DirTreeGetter.get_tree(workspace_id, ACCEPR_MATLAB_EXT)
+        return DirTreeGetter.get_tree(workspace_id, ACCEPT_MATLAB_EXT)
     else:
         return []
 

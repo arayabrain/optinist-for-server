@@ -9,21 +9,21 @@ def test_run(client):
 
     assert response.status_code == 200
     assert isinstance(output, dict)
-    assert "caiman" in output
-    assert "children" in output["caiman"]
-    assert "caiman_mc" in output["caiman"]["children"]
+    assert "analysis_preset" in output
+    assert "children" in output["analysis_preset"]
+    assert "analyze_stats" in output["analysis_preset"]["children"]
 
-    assert "args" in output["caiman"]["children"]["caiman_mc"]
-    assert "path" in output["caiman"]["children"]["caiman_mc"]
-    assert "suite2p" in output
+    assert "args" in output["analysis_preset"]["children"]["analyze_stats"]
+    assert "path" in output["analysis_preset"]["children"]["analyze_stats"]
+    assert "preset_components" in output
 
 
 def test_NestDictGetter():
     output = NestDictGetter.get_nest_dict(wrapper_dict, "")
 
     assert isinstance(output, dict)
-    assert "caiman" in output
-    assert "children" in output["caiman"]
-    assert "caiman_mc" in output["caiman"]["children"]
+    assert "analysis_preset" in output
+    assert "children" in output["analysis_preset"]
+    assert "analyze_stats" in output["analysis_preset"]["children"]
 
-    assert isinstance(output["caiman"]["children"]["caiman_mc"], Algo)
+    assert isinstance(output["analysis_preset"]["children"]["analyze_stats"], Algo)

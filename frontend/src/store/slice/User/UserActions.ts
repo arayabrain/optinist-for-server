@@ -6,7 +6,8 @@ import {
   createUserApi,
   listUsersApi,
   updateUserApi,
-  getListSearchApi,
+  getListGroupSearchApi,
+  getListUserSearchApi,
 } from "api/users/UsersAdmin"
 import {
   AddUserDTO,
@@ -94,12 +95,24 @@ export const getListUser = createAsyncThunk(
   },
 )
 
-export const getListSearch = createAsyncThunk<
+export const getListUserSearch = createAsyncThunk<
   UserDTO[],
   { keyword: string | null }
->(`${USER_SLICE_NAME}/getListSearch`, async (params, thunkAPI) => {
+>(`${USER_SLICE_NAME}/getUserListSearch`, async (params, thunkAPI) => {
   try {
-    const responseData = await getListSearchApi(params)
+    const responseData = await getListUserSearchApi(params)
+    return responseData
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e)
+  }
+})
+
+export const getListGroupSearch = createAsyncThunk<
+  UserDTO[],
+  { keyword: string | null }
+>(`${USER_SLICE_NAME}/getGroupListSearch`, async (params, thunkAPI) => {
+  try {
+    const responseData = await getListGroupSearchApi(params)
     return responseData
   } catch (e) {
     return thunkAPI.rejectWithValue(e)

@@ -25,7 +25,10 @@ import {
   workspaceReducer,
   userReducer,
   modeStandalone,
+  databaseReducer,
+  groupManagerReducer,
 } from "store/slice"
+import { DATABASE_SLICE_NAME } from "store/slice/Database/DatabaseType"
 
 export const rootReducer = combineReducers({
   algorithmList: algorithmListReducer,
@@ -47,6 +50,8 @@ export const rootReducer = combineReducers({
   workspace: workspaceReducer,
   user: userReducer,
   mode: modeStandalone,
+  groupManager: groupManagerReducer,
+  [DATABASE_SLICE_NAME]: databaseReducer,
 })
 
 export const store = configureStore({

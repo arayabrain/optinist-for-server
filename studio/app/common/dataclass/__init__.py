@@ -6,6 +6,7 @@ from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.common.dataclass.html import HTMLData
 from studio.app.common.dataclass.image import ImageData
 from studio.app.common.dataclass.line import LineData
+from studio.app.common.dataclass.matlab import MatlabData
 from studio.app.common.dataclass.pie import PieData
 from studio.app.common.dataclass.polar import PolarData
 from studio.app.common.dataclass.scatter import ScatterData
@@ -20,6 +21,7 @@ __all__ = [
     "HTMLData",
     "ImageData",
     "LineData",
+    "MatlabData",
     "PieData",
     "PolarData",
     "ScatterData",

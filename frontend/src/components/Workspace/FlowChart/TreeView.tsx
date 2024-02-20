@@ -89,9 +89,9 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        <InputNodeComponent
-          fileName={"image"}
-          nodeName={"imageData"}
+        {/* <InputNodeComponent
+          fileName={'image'}
+          nodeName={'imageData'}
           fileType={FILE_TYPE_SET.IMAGE}
         />
         <InputNodeComponent
@@ -113,6 +113,11 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileName={"behavior"}
           nodeName={"behaviorData"}
           fileType={FILE_TYPE_SET.BEHAVIOR}
+        /> */}
+        <InputNodeComponent
+          fileName={"expdb"}
+          nodeName={"expdbData"}
+          fileType={FILE_TYPE_SET.EXPDB}
         />
         <InputNodeComponent
           fileName={"matlab"}
@@ -178,6 +183,10 @@ const InputNodeComponent = memo(function InputNodeComponent({
         case FILE_TYPE_SET.MATLAB:
           reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.MatlabFileNode
           fileType = FILE_TYPE_SET.MATLAB
+          break
+        case FILE_TYPE_SET.EXPDB:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.ExpDbNode
+          fileType = FILE_TYPE_SET.EXPDB
           break
       }
       const newNode = {

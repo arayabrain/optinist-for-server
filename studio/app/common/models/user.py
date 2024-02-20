@@ -14,7 +14,9 @@ from sqlmodel import (
 )
 
 from studio.app.common.models.base import Base, TimestampMixin
+from studio.app.common.models.group import UserGroup
 from studio.app.common.models.workspace import WorkspacesShareUser
+from studio.app.optinist.models.expdb.experiment import ExperimentShareUser
 
 
 class UserRole(Base, table=True):
@@ -61,6 +63,17 @@ class User(Base, TimestampMixin, table=True):
     workspace_share: List["Workspace"] = Relationship(  # noqa: F821
         back_populates="user", link_model=WorkspacesShareUser
     )
+    experiment_share: List["Experiment"] = Relationship(  # noqa: F821
+        back_populates="user_share", link_model=ExperimentShareUser
+    )
+    groups: List["Group"] = Relationship(  # noqa: F821
+        back_populates="group_user",
+        link_model=UserGroup,
+    )
+
+    @property
+    def role_id(self):
+        return self.role.id if self.role else None
 
 
 class Role(Base, table=True):
@@ -82,5 +95,8 @@ class Organization(Base, table=True):
     )
 
     users: List["User"] = Relationship(
+        back_populates="organization", sa_relationship_kwargs={"uselist": True}
+    )
+    groups: List["Group"] = Relationship(  # noqa
         back_populates="organization", sa_relationship_kwargs={"uselist": True}
     )

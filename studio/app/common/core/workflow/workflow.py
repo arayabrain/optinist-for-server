@@ -15,6 +15,8 @@ class NodeType:
     HDF5: str = "HDF5FileNode"
     MAT: str = "MatlabFileNode"
     ALGO: str = "AlgorithmNode"
+    MATLAB: str = "MatlabFileNode"
+    EXPDB: str = "ExpDbNode"
 
 
 @dataclass
@@ -104,3 +106,9 @@ class RunItem(BaseModel):
     snakemakeParam: dict = {}
     nwbParam: dict = {}
     forceRunList: List[ForceRun]
+
+
+@dataclass
+class WorkflowConfig:
+    nodeDict: Dict[str, Node]
+    edgeDict: Dict[str, Edge]

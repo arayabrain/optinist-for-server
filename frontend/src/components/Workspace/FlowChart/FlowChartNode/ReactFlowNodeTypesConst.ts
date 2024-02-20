@@ -2,6 +2,7 @@ import { CustomEdge } from "components/Workspace/FlowChart/CustomEdge"
 import { AlgorithmNode } from "components/Workspace/FlowChart/FlowChartNode/AlgorithmNode"
 import { BehaviorFileNode } from "components/Workspace/FlowChart/FlowChartNode/BehaviorFileNode"
 import { CsvFileNode } from "components/Workspace/FlowChart/FlowChartNode/CsvFileNode"
+import { ExpDbNode } from "components/Workspace/FlowChart/FlowChartNode/ExpDbNode"
 import { FluoFileNode } from "components/Workspace/FlowChart/FlowChartNode/FluoFileNode"
 import { HDF5FileNode } from "components/Workspace/FlowChart/FlowChartNode/HDF5FileNode"
 import { ImageFileNode } from "components/Workspace/FlowChart/FlowChartNode/ImageFileNode"
@@ -15,6 +16,7 @@ export const reactFlowNodeTypes = {
   AlgorithmNode,
   FluoFileNode,
   BehaviorFileNode,
+  ExpDbNode,
 } as const
 
 export const reactFlowEdgeTypes = {

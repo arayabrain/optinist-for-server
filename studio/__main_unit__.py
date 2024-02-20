@@ -22,6 +22,7 @@ from studio.app.common.routers import (
     auth,
     experiment,
     files,
+    group,
     outputs,
     params,
     run,
@@ -32,7 +33,7 @@ from studio.app.common.routers import (
     workspace,
 )
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.routers import hdf5, mat, nwb, roi
+from studio.app.optinist.routers import expdb, hdf5, mat, nwb, roi
 
 app = FastAPI(docs_url="/docs", openapi_url="/openapi")
 
@@ -49,6 +50,7 @@ app.include_router(run.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_admin.router, dependencies=[Depends(get_admin_user)])
 app.include_router(users_me.router, dependencies=[Depends(get_current_user)])
 app.include_router(users_search.router, dependencies=[Depends(get_current_user)])
+app.include_router(group.router, dependencies=[Depends(get_current_user)])
 app.include_router(workflow.router, dependencies=[Depends(get_current_user)])
 app.include_router(workspace.router, dependencies=[Depends(get_current_user)])
 
@@ -57,6 +59,8 @@ app.include_router(hdf5.router, dependencies=[Depends(get_current_user)])
 app.include_router(mat.router, dependencies=[Depends(get_current_user)])
 app.include_router(nwb.router, dependencies=[Depends(get_current_user)])
 app.include_router(roi.router, dependencies=[Depends(get_current_user)])
+app.include_router(expdb.public_router)
+app.include_router(expdb.router, dependencies=[Depends(get_current_user)])
 
 
 def skip_dependencies():
@@ -84,6 +88,13 @@ app.mount(
     StaticFiles(directory=f"{FRONTEND_DIRPATH}/build/static"),
     name="static",
 )
+
+if DIRPATH.SELFHOST_GRAPH:
+    app.mount(
+        "/datasets",
+        StaticFiles(directory=DIRPATH.PUBLIC_EXPDB_DIR),
+        name="datasets",
+    )
 
 templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
 

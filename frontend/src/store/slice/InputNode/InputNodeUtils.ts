@@ -2,6 +2,7 @@ import {
   CsvInputNode,
   ImageInputNode,
   HDF5InputNode,
+  ExpDbInputNode,
   InputNodeType,
   FILE_TYPE_SET,
   MatlabInputNode,
@@ -29,4 +30,10 @@ export function isHDF5InputNode(
   inputNode: InputNodeType,
 ): inputNode is HDF5InputNode {
   return inputNode.fileType === FILE_TYPE_SET.HDF5
+}
+
+export function isExpDbInputNode(
+  inputNode: InputNodeType,
+): inputNode is ExpDbInputNode {
+  return inputNode.fileType === FILE_TYPE_SET.EXPDB
 }

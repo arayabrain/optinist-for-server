@@ -10,6 +10,7 @@ export const FILE_TREE_TYPE_SET = {
   FLUO: "fluo",
   BEHAVIOR: "behavior",
   MATLAB: "matlab",
+  EXPDB: "expdb",
   ALL: "all",
 } as const
 

@@ -7,6 +7,7 @@ from sqlmodel import SQLModel
 
 from studio.app.common.db.config import DATABASE_CONFIG
 from studio.app.common.models import *  # noqa
+from studio.app.optinist.models import *  # noqa
 
 load_dotenv()
 

@@ -22,6 +22,7 @@ import {
   DialogTitle,
   Input,
   styled,
+  Tooltip,
   Typography,
 } from "@mui/material"
 import IconButton from "@mui/material/IconButton"
@@ -46,6 +47,9 @@ import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
 import SelectError from "components/common/SelectError"
 import { regexEmail, regexIgnoreS, regexPassword } from "const/Auth"
+import { getGroupsManager } from "store/slice/GroupManager/GroupActions"
+import { selectGroupManager } from "store/slice/GroupManager/GroupManagerSelectors"
+import { ItemGroupManage } from "store/slice/GroupManager/GroupManagerType"
 import {
   deleteUser,
   createUser,
@@ -62,16 +66,22 @@ import { AppDispatch } from "store/store"
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
+type FormDataType = {
+  id?: string
+  uid?: string
+  email?: string
+  password?: string
+  role_id?: string
+  name?: string
+  confirmPassword?: string
+  group_ids?: string[] | number[] | string | null
+}
+
 type ModalComponentProps = {
   open: boolean
-  onSubmitEdit: (
-    id: number | string | undefined,
-    data: { [key: string]: string },
-  ) => void
+  onSubmitEdit: (id: number | string | undefined, data: FormDataType) => void
   setOpenModal: (v: boolean) => void
-  dataEdit?: {
-    [key: string]: string
-  }
+  dataEdit?: FormDataType
 }
 
 const initState = {
@@ -80,6 +90,7 @@ const initState = {
   role_id: "",
   name: "",
   confirmPassword: "",
+  group_ids: [],
 }
 
 const ModalComponent = ({
@@ -88,13 +99,44 @@ const ModalComponent = ({
   setOpenModal,
   dataEdit,
 }: ModalComponentProps) => {
-  const [formData, setFormData] = useState<{ [key: string]: string }>(
-    dataEdit || initState,
-  )
+  const dispatch = useDispatch<AppDispatch>()
+  const listGroupData = useSelector(selectGroupManager)
+  const [formData, setFormData] = useState<FormDataType>(dataEdit || initState)
   const [isDisabled, setIsDisabled] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>(initState)
+  const [errors, setErrors] = useState<{ [key: string]: string }>({
+    ...initState,
+    group_ids: "",
+  })
+  const [listGroup, setListGroup] = useState<ItemGroupManage[]>([])
+  const [optionsGroup, setOptionsGroup] = useState<
+    { name: string; id: number }[]
+  >([])
+
+  useEffect(() => {
+    dispatch(
+      getGroupsManager({
+        offset: 0,
+        limit: 50,
+      }),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    setListGroup(listGroupData.items)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(listGroupData)])
+
+  useEffect(() => {
+    const newOptions = listGroup.map((item) => ({
+      name: item.name,
+      id: item.id,
+    }))
+    setOptionsGroup(newOptions)
+  }, [listGroup])
 
   const validateEmail = (value: string): string => {
+    if (dataEdit?.id) return ""
     const error = validateField("email", 255, value)
     if (error) return error
     if (!regexEmail.test(value)) {
@@ -106,7 +148,7 @@ const ModalComponent = ({
   const validatePassword = (
     value: string,
     isConfirm = false,
-    values?: { [key: string]: string },
+    values?: FormDataType,
   ): string => {
     if (!value && !dataEdit?.uid) return "This field is required"
     const errorLength = validateLength("password", 255, value)
@@ -127,14 +169,18 @@ const ModalComponent = ({
   }
 
   const validateField = (name: string, length: number, value?: string) => {
-    if (!value) return "This field is required"
+    if (!value) return dataEdit?.id ? "" : "This field is required"
     return validateLength(name, length, value)
   }
 
   const validateLength = (name: string, length: number, value?: string) => {
     if (value && value.length > length)
       return `The text may not be longer than ${length} characters`
-    if (formData[name]?.length && value && value.length > length) {
+    if (
+      formData[name as keyof FormDataType]?.length &&
+      value &&
+      value.length > length
+    ) {
       return `The text may not be longer than ${length} characters`
     }
     return ""
@@ -142,14 +188,14 @@ const ModalComponent = ({
 
   const validateForm = (): { [key: string]: string } => {
     const errorName = validateField("name", 100, formData.name)
-    const errorEmail = validateEmail(formData.email)
+    const errorEmail = validateEmail(formData.email as string)
     const errorRole = validateField("role_id", 50, formData.role_id)
     const errorPassword = dataEdit?.id
       ? ""
-      : validatePassword(formData.password)
+      : validatePassword(formData.password as string)
     const errorConfirmPassword = dataEdit?.id
       ? ""
-      : validatePassword(formData.confirmPassword, true)
+      : validatePassword(formData.confirmPassword as string, true)
     return {
       email: errorEmail,
       password: errorPassword,
@@ -174,7 +220,11 @@ const ModalComponent = ({
     if (name.toLowerCase().includes("password")) {
       error = validatePassword(value, name === "confirmPassword", newData)
       if (name !== "confirmPassword" && formData.confirmPassword) {
-        errorConfirm = validatePassword(newData.confirmPassword, true, newData)
+        errorConfirm = validatePassword(
+          newData.confirmPassword as string,
+          true,
+          newData,
+        )
       }
     }
     setErrors({ ...errors, confirmPassword: errorConfirm, [name]: error })
@@ -190,7 +240,33 @@ const ModalComponent = ({
       return
     }
     try {
-      await onSubmitEdit(dataEdit?.id, formData)
+      const newGroup = optionsGroup.map((option) => {
+        if ((formData.group_ids as string[]).includes(option.name))
+          return option.id
+        return undefined
+      })
+      const newForm = { ...formData }
+      Object.keys(formData).map((key) => {
+        if (
+          !formData[key as keyof FormDataType] ||
+          (dataEdit &&
+            formData[key as keyof FormDataType] ===
+              dataEdit[key as keyof FormDataType])
+        ) {
+          if (key === "name") newForm[key] = ""
+          else newForm[key as keyof FormDataType] = undefined
+        }
+        return undefined
+      })
+      await onSubmitEdit(dataEdit?.id, {
+        ...newForm,
+        group_ids:
+          dataEdit?.id &&
+          JSON.stringify([...(formData.group_ids as number[])]?.sort()) ===
+            JSON.stringify([...(dataEdit?.group_ids as number[])]?.sort())
+            ? null
+            : (newGroup.filter(Boolean) as number[]),
+      })
       setOpenModal(false)
     } finally {
       setIsDisabled(false)
@@ -230,6 +306,23 @@ const ModalComponent = ({
             onBlur={(e) => onChangeData(e, 255)}
             errorMessage={errors.email}
           />
+          <LabelModal>Group: </LabelModal>
+          <Tooltip
+            title={(formData?.group_ids as string[])?.join(", ") || ""}
+            placement="top"
+          >
+            <Box display={"inline"}>
+              <SelectError
+                multiple={true}
+                value={(formData?.group_ids as string[]) || []}
+                options={optionsGroup.map((item) => item.name)}
+                name="group_ids"
+                onChange={(e) => onChangeData(e, 50)}
+                onBlur={(e) => onChangeData(e, 50)}
+                errorMessage={errors.group_ids}
+              />
+            </Box>
+          </Tooltip>
           {!dataEdit?.id ? (
             <>
               <LabelModal>Password: </LabelModal>
@@ -355,6 +448,12 @@ const AccountManager = () => {
   }, [JSON.stringify(admin)])
 
   useEffect(() => {
+    if (
+      Object.keys(filterParams).every(
+        (key) => !filterParams[key as keyof typeof filterParams],
+      )
+    )
+      return
     setModel({
       filter: {
         items: [
@@ -472,31 +571,49 @@ const AccountManager = () => {
     email: string
     // temporarily use role's name (like "ADMIN") for select modal
     role_id?: string
+    groups?: {
+      id: number
+      name: string
+    }[]
   }
   const handleEdit = (dataEdit: UserFormDTO) => {
     setOpenModal(true)
-    setDataEdit(dataEdit)
+    setDataEdit({
+      ...dataEdit,
+      group_ids: dataEdit.groups?.map((item) => item.name),
+    })
   }
 
   const onSubmitEdit = async (
     id: number | string | undefined,
-    data: { [key: string]: string },
+    data: FormDataType,
   ) => {
-    const { role_id, ...newData } = data
+    const { role_id, group_ids, ...newData } = data
     let newRole
     switch (role_id) {
       case "ADMIN":
         newRole = ROLE.ADMIN
         break
+      case "DATA_MANAGER":
+        newRole = ROLE.DATA_MANAGER
+        break
       case "OPERATOR":
         newRole = ROLE.OPERATOR
+        break
+      case "GUEST_OPERATOR":
+        newRole = ROLE.GUEST_OPERATOR
         break
     }
     if (id !== undefined) {
       const data = await dispatch(
         updateUser({
           id: id as number,
-          data: { name: newData.name, email: newData.email, role_id: newRole },
+          data: {
+            name: newData.name as string,
+            email: newData.email as string,
+            role_id: !role_id ? null : newRole,
+            group_ids: group_ids as number[],
+          },
           params: { ...filterParams, ...sortParams, ...params },
         }),
       )
@@ -512,7 +629,11 @@ const AccountManager = () => {
     } else {
       const data = await dispatch(
         createUser({
-          data: { ...newData, role_id: newRole } as AddUserDTO,
+          data: {
+            ...newData,
+            role_id: newRole,
+            group_ids: group_ids,
+          } as AddUserDTO,
           params: { ...filterParams, ...sortParams, ...params },
         }),
       )
@@ -530,7 +651,7 @@ const AccountManager = () => {
         )
       }
     }
-    return
+    return undefined
   }
 
   const handleOpenPopupDel = (id?: number, name?: string) => {
@@ -607,6 +728,7 @@ const AccountManager = () => {
           InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
             return (
               <Input
+                autoFocus={!loading}
                 sx={{ paddingTop: "16px" }}
                 defaultValue={item.value || ""}
                 onChange={(e) => {
@@ -633,8 +755,14 @@ const AccountManager = () => {
           case ROLE.ADMIN:
             role = "Admin"
             break
+          case ROLE.DATA_MANAGER:
+            role = "Data Manager"
+            break
           case ROLE.OPERATOR:
-            role = "OPERATOR"
+            role = "Operator"
+            break
+          case ROLE.GUEST_OPERATOR:
+            role = "Guest Operator"
             break
         }
         return <span>{role}</span>
@@ -654,6 +782,7 @@ const AccountManager = () => {
           InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
             return (
               <Input
+                autoFocus={!loading}
                 sx={{ paddingTop: "16px" }}
                 defaultValue={item.value || ""}
                 onChange={(e) => {
@@ -669,6 +798,36 @@ const AccountManager = () => {
       ],
     },
     {
+      headerName: "Groups",
+      field: "groups",
+      type: "string",
+      filterable: false,
+      sortable: false,
+      minWidth: 100,
+      flex: 3,
+      renderCell: (params: { row: UserDTO }) => {
+        if (!params) return null
+        return (
+          <Tooltip
+            title={
+              params?.row?.groups?.map((item) => item.name).join(", ") || ""
+            }
+            placement={"top"}
+          >
+            <div
+              style={{
+                textOverflow: "ellipsis",
+                width: "100%",
+                overflow: "hidden",
+              }}
+            >
+              {params?.row?.groups?.map((item) => item.name).join(", ")}
+            </div>
+          </Tooltip>
+        )
+      },
+    },
+    {
       headerName: "",
       field: "action",
       sortable: false,
@@ -676,15 +835,21 @@ const AccountManager = () => {
       minWidth: 100,
       flex: 1,
       renderCell: (params: { row: UserDTO }) => {
-        const { id, role_id, name, email } = params.row
+        const { id, role_id, name, email, groups } = params.row
         if (!id || !role_id || !name || !email) return null
         let role: string
         switch (role_id) {
           case ROLE.ADMIN:
             role = "ADMIN"
             break
+          case ROLE.DATA_MANAGER:
+            role = "DATA_MANAGER"
+            break
           case ROLE.OPERATOR:
             role = "OPERATOR"
+            break
+          case ROLE.GUEST_OPERATOR:
+            role = "GUEST_OPERATOR"
             break
         }
 
@@ -692,7 +857,13 @@ const AccountManager = () => {
           <>
             <IconButton
               onClick={() =>
-                handleEdit({ id, role_id: role, name, email } as UserFormDTO)
+                handleEdit({
+                  id,
+                  role_id: role,
+                  name,
+                  email,
+                  groups,
+                } as UserFormDTO)
               }
             >
               <EditIcon />

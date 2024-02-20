@@ -2,6 +2,7 @@
 __pycache__
 .ipynb_checkpoints
 .vscode/*
+.idea
 !.vscode/extensions.json
 !.vscode/settings.example.json
 dist
@@ -18,11 +19,14 @@ Pipfile.lock
 .pytest_cache
 
 studio/test_data/output
-docs/_build
-
 studio/notebooks
+studio/config.production*
+
+docs/_build
 conda/envs/*
 tensorflow-2.4.1-py3-none-any.whl
 
 .env*
 !*.env.example
+
+process.lock

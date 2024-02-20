@@ -3,6 +3,7 @@ import {
   isCsvInputNode,
   isImageInputNode,
   isMatlabInputNode,
+  isExpDbInputNode,
 } from "store/slice/InputNode/InputNodeUtils"
 import { RootState } from "store/store"
 
@@ -118,5 +119,15 @@ export const selectInputNodeMatlabPath =
       return item.matPath
     } else {
       return undefined
+    }
+  }
+
+export const selectExpDbInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const inputNode = selectInputNodeById(nodeId)(state)
+    if (isExpDbInputNode(inputNode)) {
+      return inputNode.selectedFilePath
+    } else {
+      throw new Error("invalid input node type")
     }
   }

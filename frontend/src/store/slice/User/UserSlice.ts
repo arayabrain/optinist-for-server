@@ -3,7 +3,8 @@ import { createSlice, isAnyOf } from "@reduxjs/toolkit"
 import {
   deleteMe,
   getListUser,
-  getListSearch,
+  getListGroupSearch,
+  getListUserSearch,
   getMe,
   login,
   updateMe,
@@ -24,6 +25,7 @@ import {
 const initialState: User = {
   currentUser: undefined,
   listUserSearch: undefined,
+  listGroupSearch: undefined,
   listUser: undefined,
   loading: false,
 }
@@ -55,12 +57,17 @@ export const userSlice = createSlice({
         state.listUser = action.payload
         state.loading = false
       })
-      .addCase(getListSearch.fulfilled, (state, action) => {
+      .addCase(getListUserSearch.fulfilled, (state, action) => {
         state.listUserSearch = action.payload
+        state.loading = false
+      })
+      .addCase(getListGroupSearch.fulfilled, (state, action) => {
+        state.listGroupSearch = action.payload
       })
       .addMatcher(
         isAnyOf(
-          getListSearch.rejected,
+          getListUserSearch.rejected,
+          getListGroupSearch.rejected,
           createUser.rejected,
           getListUser.rejected,
           updateUser.rejected,
@@ -86,6 +93,7 @@ export const userSlice = createSlice({
           updateMe.pending,
           deleteMe.pending,
           updateUser.pending,
+          getListUserSearch.pending,
           updateMePassword.pending,
         ),
         (state) => {

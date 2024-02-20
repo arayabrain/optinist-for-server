@@ -1,0 +1,16 @@
+# stat_file_convert
+percentile_window: 49
+n_percentile: 20
+moving_avg_window: 21
+nbinning: 1
+
+# anova1_mult
+p_value_threshold: 0.05
+r_best_threshold: 0.05
+si_threshold: 0.3
+
+# curvefit_tuning
+do_interpolation: True
+interp_method: 'spline'
+p_threshold: 0.05
+use_fourier: True

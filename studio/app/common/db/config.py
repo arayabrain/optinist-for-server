@@ -15,6 +15,8 @@ class DatabaseConfig(BaseSettings):
     MYSQL_DATABASE: str = Field(default=None, env="MYSQL_DATABASE")
     DATABASE_URL: str = Field(default=None)
 
+    POOL_SIZE: int = Field(default=100)
+
     @validator("DATABASE_URL", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
@@ -23,7 +25,6 @@ class DatabaseConfig(BaseSettings):
         password = values.get("MYSQL_PASSWORD")
         server = values.get("MYSQL_SERVER")
         database = values.get("MYSQL_DATABASE")
-
         return f"mysql+pymysql://{user}:{password}@{server}/{database}?charset=utf8mb4"
 
     class Config:

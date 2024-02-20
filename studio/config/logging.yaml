@@ -21,6 +21,8 @@ handlers:
     interval: 1
     backupCount: 365
 loggers:
+  sqlalchemy.engine:
+    level: INFO
   snakemake:
     level: INFO
     handlers: [rotating_file]
