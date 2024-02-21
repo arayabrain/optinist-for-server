@@ -41,12 +41,14 @@ import { ConfirmDialog } from "components/common/ConfirmDialog"
 import DialogImage from "components/common/DialogImage"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
+import SelectFilter from "components/common/SelectFilter"
 import SwitchCustom from "components/common/SwitchCustom"
 import PopupShareGroup from "components/PopupShareGroup"
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
   getListShare,
+  getOptionsFilter,
   postPublish,
   postPublishAll,
 } from "store/slice/Database/DatabaseActions"
@@ -54,6 +56,7 @@ import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
   DATABASE_SLICE_NAME,
   DatabaseType,
+  FilterParams,
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
@@ -95,6 +98,14 @@ type DatabaseProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
+const LIST_FILTER_IS = [
+  "publish_status",
+  "brain_area",
+  "promoter",
+  "indicator",
+  "imaging_depth",
+]
+
 const columns = (
   listIdData: number[],
   setListCheck: (value: number[]) => void,
@@ -110,6 +121,7 @@ const columns = (
   adminOrManager: boolean,
   readonly?: boolean,
   loading: boolean = false,
+  options?: FilterParams,
 ) => [
   adminOrManager &&
     user &&
@@ -201,16 +213,48 @@ const columns = (
         </Tooltip>
       )
     },
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.brain_areas}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     width: 120,
   },
   {
     field: "promoter",
     headerName: "Promoter",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.promoters}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.promoter}>
@@ -223,8 +267,24 @@ const columns = (
     field: "indicator",
     headerName: "Indicator",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.indicators}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.indicator}>
@@ -237,8 +297,24 @@ const columns = (
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.imaging_depths}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.imaging_depth}>
@@ -391,12 +467,15 @@ const DatabaseExperiments = ({
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
-  const { data: dataExperiments, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
-  )
+  const {
+    data: dataExperiments,
+    loading,
+    filterParams,
+  } = useSelector((state: RootState) => ({
+    data: state[DATABASE_SLICE_NAME].data[type],
+    loading: state[DATABASE_SLICE_NAME].loading,
+    filterParams: state[DATABASE_SLICE_NAME].filterParams,
+  }))
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -428,6 +507,8 @@ const DatabaseExperiments = ({
     type: "",
     data: undefined,
   })
+  const [fieldFilter, setFieldFilter] = useState("")
+  const [valueFilter, setValueFilter] = useState<string | string[]>("")
 
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch<AppDispatch>()
@@ -464,10 +545,10 @@ const DatabaseExperiments = ({
     () => ({
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
-      brain_area: searchParams.get("brain_area") || undefined,
-      promoter: searchParams.get("promoter") || undefined,
-      indicator: searchParams.get("indicator") || undefined,
-      imaging_depth: searchParams.get("imaging_depth") || undefined,
+      brain_area: searchParams.getAll("brain_area") || undefined,
+      promoter: searchParams.getAll("promoter") || undefined,
+      indicator: searchParams.getAll("indicator") || undefined,
+      imaging_depth: searchParams.getAll("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -485,18 +566,12 @@ const DatabaseExperiments = ({
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator: [
-            "publish_status",
-            "brain_area",
-            "promoter",
-            "indicator",
-            "imaging_depth",
-          ].includes(
+          operator: LIST_FILTER_IS.includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
             ) || "publish_status",
           )
-            ? "is"
+            ? "isAnyOf"
             : "contains",
           value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
@@ -534,28 +609,11 @@ const DatabaseExperiments = ({
       filter: {
         items: [
           {
-            field:
-              Object.keys(dataParamsFilter)
-                .find(
-                  (key) =>
-                    dataParamsFilter[key as keyof typeof dataParamsFilter],
-                )
-                ?.replace("publish_status", "published") || "",
-            operator: [
-              "publish_status",
-              "brain_area",
-              "promoter",
-              "indicator",
-              "imaging_depth",
-            ].includes(
-              Object.keys(dataParamsFilter).find(
-                (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) || "publish_status",
-            )
-              ? "is"
+            field: fieldFilter?.replace("publish_status", "published") || "",
+            operator: LIST_FILTER_IS.includes(fieldFilter || "publish_status")
+              ? "isAnyOf"
               : "contains",
-            value:
-              Object.values(dataParamsFilter).find((value) => value) || null,
+            value: valueFilter || null,
           },
         ],
       },
@@ -568,7 +626,12 @@ const DatabaseExperiments = ({
       ],
     })
     //eslint-disable-next-line
-  }, [dataParams, dataParamsFilter])
+  }, [dataParams, dataParamsFilter, fieldFilter, valueFilter])
+
+  useEffect(() => {
+    dispatch(getOptionsFilter())
+    //eslint-disable-next-line
+  }, [])
 
   useEffect(() => {
     const newListId = dataExperiments.items.map((item) => item.id)
@@ -643,11 +706,22 @@ const DatabaseExperiments = ({
 
   const getParamsData = () => {
     const dataFilter = Object.keys(dataParamsFilter)
-      .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (key) =>
-          `${key}=${dataParamsFilter[key as keyof typeof dataParamsFilter]}`,
-      )
+      .filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return !!value[0]
+        }
+        return value
+      })
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replaceAll("publish_status", "published")
     return dataFilter
@@ -720,13 +794,19 @@ const DatabaseExperiments = ({
       ...model,
       filter: modelFilter,
     })
+    setFieldFilter(modelFilter.items[0].field)
+    setValueFilter(modelFilter.items[0].value)
     let filter = ""
     if (modelFilter.items[0]?.value) {
       filter = modelFilter.items
         .filter((item) => item.value)
-        .map((item: GridFilterItem) => `${item.field}=${item?.value}`)
-        .join("&")
-        ?.replace("publish_status", "published")
+        .map((item: GridFilterItem) => {
+          if (Array.isArray(item.value)) {
+            return item.value.map((value) => `${item.field}=${value}`).join("&")
+          }
+          return `${item.field}=${item?.value}`
+        })[0]
+        .replace("publish_status", "published")
     }
     const { sort } = dataParams
     const param =
@@ -743,10 +823,15 @@ const DatabaseExperiments = ({
     let filter = ""
     filter = Object.keys(dataParamsFilter)
       .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (item) =>
-          `${item}=${dataParamsFilter[item as keyof typeof dataParamsFilter]}`,
-      )
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replace("publish_status", "published")
     const { sort } = dataParams
@@ -891,6 +976,7 @@ const DatabaseExperiments = ({
       !!adminOrManager,
       readonly,
       loading,
+      filterParams,
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]

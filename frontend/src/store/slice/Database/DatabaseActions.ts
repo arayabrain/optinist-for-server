@@ -6,6 +6,7 @@ import {
   getExperimentsApi,
   getExperimentsPublicApi,
   getListShareApi,
+  getOptionsFilterApi,
   postListUserShareApi,
   postMultiShareApi,
   postPublishAllApi,
@@ -15,6 +16,7 @@ import {
   DATABASE_SLICE_NAME,
   DatabaseDTO,
   DatabaseParams,
+  FilterParams,
   ListShareDTO,
   MultiShareType,
 } from "store/slice/Database/DatabaseType"
@@ -145,3 +147,16 @@ export const postMultiShare = createAsyncThunk<
     return rejectWithValue(e)
   }
 })
+
+export const getOptionsFilter = createAsyncThunk<FilterParams>(
+  `${DATABASE_SLICE_NAME}/getOptionsFilter`,
+  async (_, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getOptionsFilterApi()
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
