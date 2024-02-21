@@ -2,8 +2,10 @@ import os
 from glob import glob
 from typing import List, Optional, Sequence
 
+import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
+from pydantic import parse_obj_as
 from sqlalchemy.sql import Select
 from sqlmodel import Session, and_, func, or_, select
 
@@ -18,6 +20,7 @@ from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
+from studio.app.optinist.schemas.expdb.config import ExpDbExperimentFilterParams
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
     ExpDbExperimentFields,
@@ -291,6 +294,26 @@ async def search_public_cells(
         limit=limit,
         offset=offset,
     )
+
+
+@public_router.get(
+    "/public/config/filter_params",
+    response_model=ExpDbExperimentFilterParams,
+    description="""
+- Responds to the parameter list for Filter for Experiments.
+- Data is obtained from DB table `configs.experiment_config`.
+""",
+)
+async def get_config_filter_params(
+    db: Session = Depends(get_db),
+):
+    try:
+        config = db.query(optinist_model.Config).one_or_none()
+        return parse_obj_as(
+            ExpDbExperimentFilterParams, config.experiment_config["filter_params"]
+        )
+    except sqlalchemy.exc.MultipleResultsFound as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get(
@@ -782,6 +805,9 @@ def update_multiple_experiment_database_share_status(
                     for group_id in data.group_ids
                 )
 
+    db.commit()
+
+    return True
     db.commit()
 
     return True
