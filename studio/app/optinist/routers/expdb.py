@@ -155,28 +155,30 @@ def get_search_db_experiment_query(
 
     if options.brain_area is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.brain_area")
-            == options.brain_area
+            func.json_extract(
+                optinist_model.Experiment.view_attributes, "$.brain_area"
+            ).in_(options.brain_area)
         )
 
     if options.imaging_depth is not None:
         query = query.filter(
             func.json_extract(
                 optinist_model.Experiment.view_attributes, "$.imaging_depth"
-            )
-            == options.imaging_depth
+            ).in_(options.imaging_depth)
         )
 
     if options.indicator is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.indicator")
-            == options.indicator
+            func.json_extract(
+                optinist_model.Experiment.view_attributes, "$.indicator"
+            ).in_(options.indicator)
         )
 
     if options.promoter is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.promoter")
-            == options.promoter
+            func.json_extract(
+                optinist_model.Experiment.view_attributes, "$.promoter"
+            ).in_(options.promoter)
         )
 
     return query
@@ -411,7 +413,9 @@ async def search_db_cells(
         optinist_model.Experiment.view_attributes,
     )
     if any(
-        sort.element.table.name == optinist_model.Cell.__table__.name
+        hasattr(sort, "element")
+        and hasattr(sort.element, "table")
+        and sort.element.table.name == optinist_model.Cell.__table__.name
         for sort in sa_sort_list
     ):
         query = query.with_hint(
