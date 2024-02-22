@@ -84,6 +84,7 @@ type PopupAttributesProps = {
   role?: boolean
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
   exp_id?: string
+  readonly?: boolean
 }
 
 type DatabaseProps = {
@@ -320,9 +321,9 @@ const PopupAttributes = ({
   handleClose,
   role = false,
   handleChangeAttributes,
+  readonly,
 }: PopupAttributesProps) => {
   const [error, setError] = useState("")
-
   const isValidJSON = (str: string) => {
     try {
       JSON.parse(str)
@@ -369,7 +370,7 @@ const PopupAttributes = ({
           <Button variant={"outlined"} autoFocus onClick={handleClose}>
             Close
           </Button>
-          {role && (
+          {role && !readonly && (
             <Button
               variant={"contained"}
               disabled={!!error}
@@ -1013,7 +1014,8 @@ const DatabaseExperiments = ({
         data={dataDialog.data}
         open={dataDialog.type === "attribute"}
         handleClose={handleCloseDialog}
-        role={!!adminOrManager}
+        role={!!adminOrManager && !!user}
+        readonly={readonly}
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
