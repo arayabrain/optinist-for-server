@@ -16,6 +16,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
+from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
@@ -626,23 +627,8 @@ def update_db_experiment_metadata(
     db: Session = Depends(get_db),
     current_admin_user: User = Depends(get_admin_data_user),
 ):
-    try:
-        attributes_metadata_attr = metadata["metadata"]["metadata"]
-        view_attributes = {
-            "brain_area": attributes_metadata_attr["Specimen type Brain region"][
-                "Brain region Marmoset"
-            ][-1]["label"],
-            "imaging_depth": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Depth"
-            ],
-            "promoter": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Promoter"
-            ],
-            "indicator": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Indicator"
-            ],
-        }
-    except Exception:
+    view_attributes = extract_experiment_view_attributes(metadata)
+    if not view_attributes:
         raise HTTPException(status_code=422)
 
     exp = (
