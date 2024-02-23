@@ -169,7 +169,7 @@ const columns = (
   {
     field: "experiment_id",
     headerName: "Experiment ID",
-    width: 160,
+    resizable: true,
     filterOperators: [
       {
         label: "Contains",
@@ -599,12 +599,29 @@ const DatabaseExperiments = ({
   }
 
   useEffect(() => {
+    const key = Object.keys(dataParamsFilter).find((key) => {
+      const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+      return (
+        (!Array.isArray(value) && value) ||
+        (Array.isArray(value) && value.length)
+      )
+    }) as keyof typeof dataParamsFilter
+    if (key) {
+      setFieldFilter(key)
+      setValueFilter(dataParamsFilter[key] as string[])
+    }
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
     if (
       Object.keys(dataParamsFilter).every(
         (key) => !dataParamsFilter[key as keyof typeof dataParamsFilter],
       )
-    )
+    ) {
       return
+    }
+    if (!fieldFilter?.trim()?.length) return
     setModel({
       filter: {
         items: [
@@ -790,12 +807,37 @@ const DatabaseExperiments = ({
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
+    if (modelFilter.items.length === 0) {
+      const data = Object.keys(dataParamsFilter).filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value) && value.length === 0) {
+          return false
+        }
+        return !!value
+      })
+      setModel({
+        ...model,
+        filter: {
+          items: [
+            {
+              field: data[0],
+              operator: "isAnyOf",
+              value:
+                dataParamsFilter[data[0] as keyof typeof dataParamsFilter] ||
+                "",
+            },
+          ],
+        },
+      })
+      return
+    }
+
     setModel({
       ...model,
       filter: modelFilter,
     })
-    setFieldFilter(modelFilter.items[0].field)
-    setValueFilter(modelFilter.items[0].value)
+    setFieldFilter(modelFilter.items[0]?.field)
+    setValueFilter(modelFilter.items[0]?.value)
     let filter = ""
     if (modelFilter.items[0]?.value) {
       filter = modelFilter.items

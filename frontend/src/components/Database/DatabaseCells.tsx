@@ -531,12 +531,28 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    const key = Object.keys(dataParamsFilter).find((key) => {
+      const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+      return (
+        (!Array.isArray(value) && value) ||
+        (Array.isArray(value) && value.length)
+      )
+    }) as keyof typeof dataParamsFilter
+    if (key) {
+      setFieldFilter(key)
+      setValueFilter(dataParamsFilter[key] as string[])
+    }
+  }, [])
+
+  useEffect(() => {
     if (
       Object.keys(dataParamsFilter).every(
         (key) => !dataParamsFilter[key as keyof typeof dataParamsFilter],
       )
-    )
+    ) {
       return
+    }
+    if (!fieldFilter?.trim()?.length) return
     setModel({
       filter: {
         items: [
@@ -673,6 +689,30 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
+    if (modelFilter.items.length === 0) {
+      const data = Object.keys(dataParamsFilter).filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value) && value.length === 0) {
+          return false
+        }
+        return !!value
+      })
+      setModel({
+        ...model,
+        filter: {
+          items: [
+            {
+              field: data[0],
+              operator: "isAnyOf",
+              value:
+                dataParamsFilter[data[0] as keyof typeof dataParamsFilter] ||
+                "",
+            },
+          ],
+        },
+      })
+      return
+    }
     setModel({
       ...model,
       filter: modelFilter,
