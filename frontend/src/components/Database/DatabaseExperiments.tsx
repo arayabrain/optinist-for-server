@@ -169,7 +169,6 @@ const columns = (
   {
     field: "experiment_id",
     headerName: "Experiment ID",
-    resizable: true,
     filterOperators: [
       {
         label: "Contains",
