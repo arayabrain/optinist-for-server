@@ -362,7 +362,11 @@ const PopupAttributes = ({
       >
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content readOnly={!role} value={data} onChange={handleChange} />
+            <Content
+              readOnly={!role || readonly}
+              value={data}
+              onChange={handleChange}
+            />
             <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
