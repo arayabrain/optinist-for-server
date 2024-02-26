@@ -652,15 +652,12 @@ const DatabaseExperiments = ({
         params: { ...dataParamsFilter, ...dataParams },
       }),
     )
-    if (
-      (res as { payload: { response: { status: number } } }).payload?.response
-        ?.status === 422
-    ) {
-      handleClickVariant("error", "Update attributes failed!")
+    if ((res as { payload: boolean }).payload === true) {
+      handleClickVariant("success", "Successfully updated attributes!")
+      setDataDialog({ ...dataDialog, id: undefined, type: "" })
       return
     }
-    handleClickVariant("success", "Successfully updated attributes!")
-    setDataDialog({ ...dataDialog, id: undefined, type: "" })
+    handleClickVariant("error", "Update attributes failed!")
   }
 
   const handleOpenShare = (expId?: string, value?: number, id?: number) => {
