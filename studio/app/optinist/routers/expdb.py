@@ -124,16 +124,16 @@ CELL_GRAPHS = {
 }
 
 EXP_ATTRIBUTE_SORT_MAPPING = {
-    "brain_area": func.json_extract(
+    "brain_area": func.json_value(
         optinist_model.Experiment.view_attributes, "$.brain_area"
     ),
-    "imaging_depth": func.json_extract(
+    "imaging_depth": func.json_value(
         optinist_model.Experiment.view_attributes, "$.imaging_depth"
     ),
-    "promoter": func.json_extract(
+    "promoter": func.json_value(
         optinist_model.Experiment.view_attributes, "$.promoter"
     ),
-    "indicator": func.json_extract(
+    "indicator": func.json_value(
         optinist_model.Experiment.view_attributes, "$.indicator"
     ),
 }
@@ -158,28 +158,28 @@ def get_search_db_experiment_query(
 
     if options.brain_area is not None:
         query = query.filter(
-            func.json_extract(
+            func.json_value(
                 optinist_model.Experiment.view_attributes, "$.brain_area"
             ).in_(options.brain_area)
         )
 
     if options.imaging_depth is not None:
         query = query.filter(
-            func.json_extract(
+            func.json_value(
                 optinist_model.Experiment.view_attributes, "$.imaging_depth"
             ).in_(options.imaging_depth)
         )
 
     if options.indicator is not None:
         query = query.filter(
-            func.json_extract(
+            func.json_value(
                 optinist_model.Experiment.view_attributes, "$.indicator"
             ).in_(options.indicator)
         )
 
     if options.promoter is not None:
         query = query.filter(
-            func.json_extract(
+            func.json_value(
                 optinist_model.Experiment.view_attributes, "$.promoter"
             ).in_(options.promoter)
         )
