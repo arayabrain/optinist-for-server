@@ -10,6 +10,7 @@ import {
   postPublish,
   postPublishAll,
   postMultiShare,
+  putAttributes,
 } from "store/slice/Database/DatabaseActions"
 import {
   DATABASE_SLICE_NAME,
@@ -102,6 +103,7 @@ export const databaseSlice = createSlice({
           postListUserShare.pending,
           postPublish.pending,
           postPublishAll.pending,
+          putAttributes.pending,
         ),
         (state) => {
           state.loading = true
@@ -142,6 +144,8 @@ export const databaseSlice = createSlice({
           postPublishAll.rejected,
           postMultiShare.rejected,
           postMultiShare.fulfilled,
+          putAttributes.fulfilled,
+          putAttributes.rejected,
         ),
         (state) => {
           state.loading = false
