@@ -645,25 +645,21 @@ const DatabaseExperiments = ({
   const onSubmitAttributes = async () => {
     const { id, data } = dataDialog
     if (!id || !data) return
-    try {
-      const res = await dispatch(
-        putAttributes({
-          id: id,
-          attributes: data as string,
-          params: { ...dataParamsFilter, ...dataParams },
-        }),
-      )
-      if (
-        (res as { payload: { response: { status: number } } }).payload.response
-          .status === 422
-      ) {
-        handleClickVariant("error", "Update attributes failed!")
-        return
-      }
-      handleClickVariant("success", "Successfully updated attributes!")
-    } catch {
+    const res = await dispatch(
+      putAttributes({
+        id: id,
+        attributes: data as string,
+        params: { ...dataParamsFilter, ...dataParams },
+      }),
+    )
+    if (
+      (res as { payload: { response: { status: number } } }).payload?.response
+        ?.status === 422
+    ) {
       handleClickVariant("error", "Update attributes failed!")
+      return
     }
+    handleClickVariant("success", "Successfully updated attributes!")
     setDataDialog({ ...dataDialog, id: undefined, type: "" })
   }
 
