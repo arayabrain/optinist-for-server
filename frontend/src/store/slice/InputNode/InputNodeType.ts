@@ -7,6 +7,7 @@ export const FILE_TYPE_SET = {
   FLUO: "fluo",
   BEHAVIOR: "behavior",
   MATLAB: "matlab",
+  MICROSCOPE: "microscope",
   EXPDB: "expdb",
 } as const
 
@@ -21,6 +22,7 @@ export type InputNodeType =
   | ImageInputNode
   | HDF5InputNode
   | MatlabInputNode
+  | MicroscopeInputNode
   | ExpDbInputNode
 
 interface InputNodeBaseType<
@@ -58,6 +60,11 @@ export interface HDF5InputNode
   extends InputNodeBaseType<"hdf5", Record<never, never>> {
   selectedFilePath?: string
   hdf5Path?: string
+}
+
+export interface MicroscopeInputNode
+  extends InputNodeBaseType<"microscope", Record<never, never>> {
+  selectedFilePath?: string
 }
 
 export interface ExpDbInputNode
