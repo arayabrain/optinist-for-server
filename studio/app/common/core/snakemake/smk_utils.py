@@ -17,6 +17,7 @@ class SmkUtils:
             FILETYPE.BEHAVIOR,
             FILETYPE.HDF5,
             FILETYPE.MATLAB,
+            FILETYPE.MICROSCOPE,
         ]:
             return join_filepath([DIRPATH.INPUT_DIR, details["input"]])
         elif details["type"] in [FILETYPE.EXPDB]:
@@ -43,6 +44,7 @@ class SmkUtils:
             FILETYPE.BEHAVIOR,
             FILETYPE.HDF5,
             FILETYPE.MATLAB,
+            FILETYPE.MICROSCOPE,
             FILETYPE.EXPDB,
         ]:
             return None
