@@ -120,6 +120,11 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileType={FILE_TYPE_SET.EXPDB}
         />
         <InputNodeComponent
+          fileName={"microscope"}
+          nodeName={"microscopeData"}
+          fileType={FILE_TYPE_SET.MICROSCOPE}
+        />
+        <InputNodeComponent
           fileName={"matlab"}
           nodeName={"matlabData"}
           fileType={FILE_TYPE_SET.MATLAB}
@@ -183,6 +188,10 @@ const InputNodeComponent = memo(function InputNodeComponent({
         case FILE_TYPE_SET.MATLAB:
           reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.MatlabFileNode
           fileType = FILE_TYPE_SET.MATLAB
+          break
+        case FILE_TYPE_SET.MICROSCOPE:
+          reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.MicroscopeFileNode
+          fileType = FILE_TYPE_SET.MICROSCOPE
           break
         case FILE_TYPE_SET.EXPDB:
           reactFlowNodeType = REACT_FLOW_NODE_TYPE_KEY.ExpDbNode
