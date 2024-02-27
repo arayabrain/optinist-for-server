@@ -371,7 +371,14 @@ const PopupAttributes = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button variant={"outlined"} autoFocus onClick={handleClose}>
+          <Button
+            variant={"outlined"}
+            autoFocus
+            onClick={() => {
+              handleClose()
+              setError("")
+            }}
+          >
             Close
           </Button>
           {role && (
