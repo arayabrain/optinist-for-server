@@ -16,6 +16,7 @@ class NodeType:
     MAT: str = "MatlabFileNode"
     ALGO: str = "AlgorithmNode"
     MATLAB: str = "MatlabFileNode"
+    MICROSCOPE: str = "MicroscopeFileNode"
     EXPDB: str = "ExpDbNode"
 
 

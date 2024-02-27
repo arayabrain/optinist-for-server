@@ -23,6 +23,7 @@ else:
             FILETYPE.BEHAVIOR,
             FILETYPE.HDF5,
             FILETYPE.MATLAB,
+            FILETYPE.MICROSCOPE,
             FILETYPE.EXPDB,
         ]:
             rule:
