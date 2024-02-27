@@ -3,6 +3,7 @@ from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
+from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 
 expdb_wrapper_dict = {
     "analysis_preset": {
@@ -12,6 +13,10 @@ expdb_wrapper_dict = {
         },
     },
     "preset_components": {
+        "preprocessing": {
+            "function": preprocessing,
+            "conda_name": "expdb",
+        },
         "stat_file_convert": {
             "function": stat_file_convert,
             "conda_name": "expdb",

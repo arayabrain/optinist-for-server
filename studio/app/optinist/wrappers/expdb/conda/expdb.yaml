@@ -1,5 +1,9 @@
+channels:
+  - defaults
+  - conda-forge
 dependencies:
   - python=3.8
+  - gcc==12.1.0
   - pip
   - pip:
     - numpy==1.23.*
