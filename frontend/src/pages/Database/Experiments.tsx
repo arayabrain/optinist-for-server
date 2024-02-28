@@ -4,7 +4,7 @@ import DatabaseExperiments from "components/Database/DatabaseExperiments"
 import DatabaseWrapper from "components/Database/DatabaseWrapper"
 import { selectCurrentUser } from "store/slice/User/UserSelector"
 
-const METADATA = process.env.REACT_APP_ENABLE_EXPDB_METADATA_EDITABLE === "true"
+const METADATA = process.env.REACT_APP_EXPDB_METADATA_EDITABLE === "true"
 
 const Experiments = () => {
   const user = useSelector(selectCurrentUser)
