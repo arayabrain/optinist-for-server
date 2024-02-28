@@ -74,3 +74,27 @@ def delete_experiment(db: Session, id: int):
     db.flush()
 
     return True
+
+
+def extract_experiment_view_attributes(attributes: dict) -> dict:
+    try:
+        attributes_metadata_attr = attributes["metadata"]["metadata"]
+        view_attributes = {
+            "brain_area": attributes_metadata_attr["Specimen type Brain region"][
+                "Brain region Marmoset"
+            ][-1]["label"],
+            "imaging_depth": attributes_metadata_attr["Modality Imaging"][
+                "Ca Imaging>Depth"
+            ],
+            "promoter": attributes_metadata_attr["Modality Imaging"][
+                "Ca Imaging>Promoter"
+            ],
+            "indicator": attributes_metadata_attr["Modality Imaging"][
+                "Ca Imaging>Indicator"
+            ],
+        }
+
+        return view_attributes
+
+    except KeyError:
+        return None
