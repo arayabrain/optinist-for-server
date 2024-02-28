@@ -10,6 +10,7 @@ import {
   postMultiShareApi,
   postPublishAllApi,
   postPublishApi,
+  putAttributesApi,
 } from "api/database"
 import {
   DATABASE_SLICE_NAME,
@@ -140,6 +141,21 @@ export const postMultiShare = createAsyncThunk<
   try {
     const response = await postMultiShareApi(data.dataPost)
     await dispatch(getExperimentsDatabase(data.params))
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})
+
+export const putAttributes = createAsyncThunk<
+  boolean,
+  { id: number; attributes: string; params: DatabaseParams }
+>(`${DATABASE_SLICE_NAME}/putAttributes`, async (data, thunkAPI) => {
+  const { rejectWithValue, dispatch } = thunkAPI
+  try {
+    const { id, attributes, params } = data
+    const response = await putAttributesApi(id, attributes)
+    await dispatch(getExperimentsDatabase(params))
     return response
   } catch (e) {
     return rejectWithValue(e)
