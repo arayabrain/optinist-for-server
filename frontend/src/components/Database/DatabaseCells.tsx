@@ -1,36 +1,39 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useSearchParams } from "react-router-dom"
 
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { Box, Input, styled, Tooltip } from "@mui/material"
 import {
-  GridFilterModel,
-  GridSortModel,
   DataGrid,
-  GridSortDirection,
-  GridSortItem,
   GridColDef,
   GridFilterInputValueProps,
+  GridFilterItem,
+  GridFilterModel,
+  GridSortDirection,
+  GridSortItem,
+  GridSortModel,
 } from "@mui/x-data-grid"
 
 import { WAITING_TIME } from "@types"
 import DialogImage from "components/common/DialogImage"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
+import SelectFilter from "components/common/SelectFilter"
 import { SpanCustom } from "components/Database/DatabaseExperiments"
 import {
   getCellsDatabase,
   getCellsPublicDatabase,
+  getOptionsFilter,
 } from "store/slice/Database/DatabaseActions"
 import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
-  DatabaseType,
   DATABASE_SLICE_NAME,
+  DatabaseType,
+  FilterParams,
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { AppDispatch, RootState } from "store/store"
-
 
 type CellProps = {
   user?: unknown
@@ -38,7 +41,19 @@ type CellProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (user?: boolean, loading: boolean = false) => [
+const LIST_FILTER_IS = [
+  "publish_status",
+  "brain_area",
+  "promoter",
+  "indicator",
+  "imaging_depth",
+]
+
+const columns = (
+  user?: boolean,
+  loading: boolean = false,
+  options?: FilterParams,
+) => [
   {
     field: "experiment_id",
     headerName: "Experiment ID",
@@ -87,8 +102,24 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "brain_area",
     headerName: "Brain area",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.brain_areas}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.brain_area}>
@@ -101,8 +132,24 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "promoter",
     headerName: "Promoter",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.promoters}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.promoter}>
@@ -115,8 +162,24 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "indicator",
     headerName: "Indicator",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.indicators}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.indicator}>
@@ -129,8 +192,24 @@ const columns = (user?: boolean, loading: boolean = false) => [
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.imaging_depths}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.imaging_depth}>
@@ -341,9 +420,14 @@ const statistics = () => [
 const DatabaseCells = ({ user }: CellProps) => {
   const type: keyof TypeData = user ? "private" : "public"
 
-  const { data: dataCells, loading } = useSelector((state: RootState) => ({
+  const {
+    data: dataCells,
+    loading,
+    filterParams,
+  } = useSelector((state: RootState) => ({
     data: state[DATABASE_SLICE_NAME].data[type],
     loading: state[DATABASE_SLICE_NAME].loading,
+    filterParams: state[DATABASE_SLICE_NAME].filterParams,
   }))
 
   const [newParams, setNewParams] = useState(
@@ -358,6 +442,8 @@ const DatabaseCells = ({ user }: CellProps) => {
     type: "",
     data: undefined,
   })
+  const [fieldFilter, setFieldFilter] = useState("")
+  const [valueFilter, setValueFilter] = useState<string | string[]>("")
 
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch<AppDispatch>()
@@ -381,10 +467,10 @@ const DatabaseCells = ({ user }: CellProps) => {
     () => ({
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
-      brain_area: searchParams.get("brain_area") || undefined,
-      promoter: searchParams.get("promoter") || undefined,
-      indicator: searchParams.get("indicator") || undefined,
-      imaging_depth: searchParams.get("imaging_depth") || undefined,
+      brain_area: searchParams.getAll("brain_area") || undefined,
+      promoter: searchParams.getAll("promoter") || undefined,
+      indicator: searchParams.getAll("indicator") || undefined,
+      imaging_depth: searchParams.getAll("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -402,18 +488,12 @@ const DatabaseCells = ({ user }: CellProps) => {
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator: [
-            "publish_status",
-            "brain_area",
-            "promoter",
-            "indicator",
-            "imaging_depth",
-          ].includes(
+          operator: LIST_FILTER_IS.includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
             ) || "publish_status",
           )
-            ? "is"
+            ? "isAnyOf"
             : "contains",
           value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
@@ -451,38 +531,37 @@ const DatabaseCells = ({ user }: CellProps) => {
   }
 
   useEffect(() => {
+    const key = Object.keys(dataParamsFilter).find((key) => {
+      const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+      return (
+        (!Array.isArray(value) && value) ||
+        (Array.isArray(value) && value.length)
+      )
+    }) as keyof typeof dataParamsFilter
+    if (key) {
+      setFieldFilter(key)
+      setValueFilter(dataParamsFilter[key] as string[])
+    }
+  }, [])
+
+  useEffect(() => {
     if (
       Object.keys(dataParamsFilter).every(
         (key) => !dataParamsFilter[key as keyof typeof dataParamsFilter],
       )
-    )
+    ) {
       return
+    }
+    if (!fieldFilter?.trim()?.length) return
     setModel({
       filter: {
         items: [
           {
-            field:
-              Object.keys(dataParamsFilter)
-                .find(
-                  (key) =>
-                    dataParamsFilter[key as keyof typeof dataParamsFilter],
-                )
-                ?.replace("publish_status", "published") || "",
-            operator: [
-              "publish_status",
-              "brain_area",
-              "promoter",
-              "indicator",
-              "imaging_depth",
-            ].includes(
-              Object.keys(dataParamsFilter).find(
-                (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) || "publish_status",
-            )
-              ? "is"
+            field: fieldFilter?.replace("publish_status", "published") || "",
+            operator: LIST_FILTER_IS.includes(fieldFilter || "publish_status")
+              ? "isAnyOf"
               : "contains",
-            value:
-              Object.values(dataParamsFilter).find((value) => value) || null,
+            value: valueFilter || null,
           },
         ],
       },
@@ -495,7 +574,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       ],
     })
     //eslint-disable-next-line
-  }, [dataParams, dataParamsFilter])
+  }, [dataParams, dataParamsFilter, fieldFilter, valueFilter])
 
   useEffect(() => {
     let param = newParams
@@ -511,6 +590,11 @@ const DatabaseCells = ({ user }: CellProps) => {
     }
     //eslint-disable-next-line
   }, [searchParams])
+
+  useEffect(() => {
+    dispatch(getOptionsFilter())
+    //eslint-disable-next-line
+  }, [])
 
   useEffect(() => {
     fetchApi()
@@ -540,11 +624,22 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const getParamsData = () => {
     const dataFilter = Object.keys(dataParamsFilter)
-      .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (key) =>
-          `${key}=${dataParamsFilter[key as keyof typeof dataParamsFilter]}`,
-      )
+      .filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return !!value[0]
+        }
+        return value
+      })
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replaceAll("publish_status", "published")
     return dataFilter
@@ -594,18 +689,46 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
+    if (modelFilter.items.length === 0) {
+      const data = Object.keys(dataParamsFilter).filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value) && value.length === 0) {
+          return false
+        }
+        return !!value
+      })
+      setModel({
+        ...model,
+        filter: {
+          items: [
+            {
+              field: data[0],
+              operator: "isAnyOf",
+              value:
+                dataParamsFilter[data[0] as keyof typeof dataParamsFilter] ||
+                "",
+            },
+          ],
+        },
+      })
+      return
+    }
     setModel({
       ...model,
       filter: modelFilter,
     })
+    setFieldFilter(modelFilter.items[0]?.field)
+    setValueFilter(modelFilter.items[0]?.value)
     let filter = ""
     if (modelFilter.items[0]?.value) {
       filter = modelFilter.items
         .filter((item) => item.value)
-        .map((item) => {
+        .map((item: GridFilterItem) => {
+          if (Array.isArray(item.value)) {
+            return item.value.map((value) => `${item.field}=${value}`).join("&")
+          }
           return `${item.field}=${item?.value}`
-        })
-        .join("&")
+        })[0]
         .replace("publish_status", "published")
     }
     const { sort } = dataParams
@@ -623,10 +746,15 @@ const DatabaseCells = ({ user }: CellProps) => {
     let filter = ""
     filter = Object.keys(dataParamsFilter)
       .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (item) =>
-          `${item}=${dataParamsFilter[item as keyof typeof dataParamsFilter]}`,
-      )
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replace("publish_status", "published")
     const { sort } = dataParams
@@ -668,7 +796,7 @@ const DatabaseCells = ({ user }: CellProps) => {
   }, [dataCells.header?.graph_titles])
 
   const columnsTable = [
-    ...columns(!!user, loading),
+    ...columns(!!user, loading, filterParams),
     ...getColumns,
     ...statistics(),
   ].filter(Boolean) as GridColDef[]

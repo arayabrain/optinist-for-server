@@ -3,6 +3,7 @@ import { stringify } from "qs"
 import {
   DatabaseDTO,
   DatabaseParams,
+  FilterParams,
   ListShareDTO,
   MultiShareType,
 } from "store/slice/Database/DatabaseType"
@@ -88,5 +89,10 @@ export const putAttributesApi = async (
       "Content-Type": "application/json",
     },
   })
+  return response.data
+}
+
+export const getOptionsFilterApi = async (): Promise<FilterParams> => {
+  const response = await axios.get("public/config/filter_params")
   return response.data
 }
