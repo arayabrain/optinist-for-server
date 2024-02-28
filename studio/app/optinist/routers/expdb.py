@@ -2,8 +2,10 @@ import os
 from glob import glob
 from typing import Dict, List, Optional, Sequence
 
+import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
+from pydantic import parse_obj_as
 from sqlalchemy.sql import Select
 from sqlmodel import Session, and_, func, or_, select
 
@@ -19,6 +21,7 @@ from studio.app.optinist import models as optinist_model
 from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
+from studio.app.optinist.schemas.expdb.config import ExpDbExperimentFilterParams
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
     ExpDbExperimentFields,
@@ -122,16 +125,16 @@ CELL_GRAPHS = {
 }
 
 EXP_ATTRIBUTE_SORT_MAPPING = {
-    "brain_area": func.json_extract(
+    "brain_area": func.json_value(
         optinist_model.Experiment.view_attributes, "$.brain_area"
     ),
-    "imaging_depth": func.json_extract(
+    "imaging_depth": func.json_value(
         optinist_model.Experiment.view_attributes, "$.imaging_depth"
     ),
-    "promoter": func.json_extract(
+    "promoter": func.json_value(
         optinist_model.Experiment.view_attributes, "$.promoter"
     ),
-    "indicator": func.json_extract(
+    "indicator": func.json_value(
         optinist_model.Experiment.view_attributes, "$.indicator"
     ),
 }
@@ -156,28 +159,30 @@ def get_search_db_experiment_query(
 
     if options.brain_area is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.brain_area")
-            == options.brain_area
+            func.json_value(
+                optinist_model.Experiment.view_attributes, "$.brain_area"
+            ).in_(options.brain_area)
         )
 
     if options.imaging_depth is not None:
         query = query.filter(
-            func.json_extract(
+            func.json_value(
                 optinist_model.Experiment.view_attributes, "$.imaging_depth"
-            )
-            == options.imaging_depth
+            ).in_(options.imaging_depth)
         )
 
     if options.indicator is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.indicator")
-            == options.indicator
+            func.json_value(
+                optinist_model.Experiment.view_attributes, "$.indicator"
+            ).in_(options.indicator)
         )
 
     if options.promoter is not None:
         query = query.filter(
-            func.json_extract(optinist_model.Experiment.view_attributes, "$.promoter")
-            == options.promoter
+            func.json_value(
+                optinist_model.Experiment.view_attributes, "$.promoter"
+            ).in_(options.promoter)
         )
 
     return query
@@ -290,6 +295,26 @@ async def search_public_cells(
         limit=limit,
         offset=offset,
     )
+
+
+@public_router.get(
+    "/public/config/filter_params",
+    response_model=ExpDbExperimentFilterParams,
+    description="""
+- Responds to the parameter list for Filter for Experiments.
+- Data is obtained from DB table `configs.experiment_config`.
+""",
+)
+async def get_config_filter_params(
+    db: Session = Depends(get_db),
+):
+    try:
+        config = db.query(optinist_model.Config).one_or_none()
+        return parse_obj_as(
+            ExpDbExperimentFilterParams, config.experiment_config["filter_params"]
+        )
+    except sqlalchemy.exc.MultipleResultsFound as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get(
@@ -412,7 +437,9 @@ async def search_db_cells(
         optinist_model.Experiment.view_attributes,
     )
     if any(
-        sort.element.table.name == optinist_model.Cell.__table__.name
+        hasattr(sort, "element")
+        and hasattr(sort.element, "table")
+        and sort.element.table.name == optinist_model.Cell.__table__.name
         for sort in sa_sort_list
     ):
         query = query.with_hint(
@@ -815,6 +842,9 @@ def update_multiple_experiment_database_share_status(
                     for group_id in data.group_ids
                 )
 
+    db.commit()
+
+    return True
     db.commit()
 
     return True
