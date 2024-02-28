@@ -16,6 +16,7 @@ from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
+from studio.app.optinist.core.expdb.crud_configs import summarize_experiment_metadata
 from studio.app.optinist.core.expdb.crud_expdb import (
     create_experiment,
     get_experiment,
@@ -183,7 +184,7 @@ class ExpDbBatchRunner:
             self.logger_.info("No datasets found.")
             return processResult
 
-        # フラグファイルを走査
+        # 処理対象datasets検索：フラグファイルを走査
         for flag_file in target_flag_files:
             exp_id = self.__get_exp_id_from_flag_file(flag_file)
             self.logger_.info(
@@ -230,6 +231,11 @@ class ExpDbBatchRunner:
                     self.logger_.error("finish process dataset: [exp_id: %s]", exp_id)
                 else:
                     self.logger_.info("finish process dataset: [exp_id: %s]", exp_id)
+
+        # datasets処理完了後の後処理:
+        with session_scope() as db:
+            # Summarize experiment metadata.
+            summarize_experiment_metadata(db)
 
         return processResult
 
