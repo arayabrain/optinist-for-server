@@ -173,6 +173,7 @@ const columns = (
   {
     field: "experiment_id",
     headerName: "Experiment ID",
+    width: 160,
     filterOperators: [
       {
         label: "Contains",
@@ -195,7 +196,11 @@ const columns = (
       },
     ],
     type: "string",
-    renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+    renderCell: (params: { row: DatabaseType }) => (
+      <Tooltip title={params.row?.experiment_id}>
+        <SpanCustom>{params.row?.experiment_id}</SpanCustom>
+      </Tooltip>
+    ),
   },
   user && {
     field: "published",
