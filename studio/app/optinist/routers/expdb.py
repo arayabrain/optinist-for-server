@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination.ext.sqlmodel import paginate
@@ -16,6 +16,7 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist import models as optinist_model
+from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.experiment import (
@@ -607,6 +608,42 @@ def multiple_publish_db_experiment(
         {optinist_model.Experiment.publish_status: int(flag == PublishFlags.on)},
         synchronize_session=False,
     )
+    db.commit()
+    return True
+
+
+@router.put(
+    "/expdb/experiment/metadata/{id}",
+    response_model=bool,
+    tags=["Experiment Database"],
+    description="""
+- Experiments の Metadata を更新する
+""",
+    dependencies=[Depends(get_admin_data_user)],
+)
+def update_db_experiment_metadata(
+    id: int,
+    metadata: Dict,
+    db: Session = Depends(get_db),
+    current_admin_user: User = Depends(get_admin_data_user),
+):
+    view_attributes = extract_experiment_view_attributes(metadata)
+    if not view_attributes:
+        raise HTTPException(status_code=422)
+
+    exp = (
+        db.query(optinist_model.Experiment)
+        .filter(
+            optinist_model.Experiment.id == id,
+            optinist_model.Experiment.organization_id
+            == current_admin_user.organization.id,
+        )
+        .first()
+    )
+    if not exp:
+        raise HTTPException(status_code=404)
+    exp.attributes = metadata
+    exp.view_attributes = view_attributes
     db.commit()
     return True
 
