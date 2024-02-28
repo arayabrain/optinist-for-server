@@ -80,6 +80,18 @@ export const postMultiShareApi = async (
   return response.data
 }
 
+export const putAttributesApi = async (
+  id: number,
+  data: string,
+): Promise<boolean> => {
+  const response = await axios.put(`expdb/experiment/metadata/${id}`, data, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  return response.data
+}
+
 export const getOptionsFilterApi = async (): Promise<FilterParams> => {
   const response = await axios.get("public/config/filter_params")
   return response.data

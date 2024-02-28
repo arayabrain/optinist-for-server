@@ -11,6 +11,7 @@ import {
   postMultiShareApi,
   postPublishAllApi,
   postPublishApi,
+  putAttributesApi,
 } from "api/database"
 import {
   DATABASE_SLICE_NAME,
@@ -160,3 +161,18 @@ export const getOptionsFilter = createAsyncThunk<FilterParams>(
     }
   },
 )
+
+export const putAttributes = createAsyncThunk<
+  boolean,
+  { id: number; attributes: string; params: DatabaseParams }
+>(`${DATABASE_SLICE_NAME}/putAttributes`, async (data, thunkAPI) => {
+  const { rejectWithValue, dispatch } = thunkAPI
+  try {
+    const { id, attributes, params } = data
+    const response = await putAttributesApi(id, attributes)
+    await dispatch(getExperimentsDatabase(params))
+    return response
+  } catch (e) {
+    return rejectWithValue(e)
+  }
+})

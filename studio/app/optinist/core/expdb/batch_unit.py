@@ -4,7 +4,7 @@ import math
 import os
 from dataclasses import dataclass
 from glob import glob
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np
@@ -31,7 +31,11 @@ from studio.app.const import (
 )
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
-from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
+from studio.app.optinist.core.expdb.crud_expdb import (
+    delete_experiment,
+    extract_experiment_view_attributes,
+    get_experiment,
+)
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.wrappers.expdb import analyze_stats
 
@@ -233,26 +237,15 @@ class ExpDbBatch:
             ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"
 
     @stopwatch(callback=__stopwatch_callback)
-    def load_exp_metadata(self) -> (dict, dict):
+    def load_exp_metadata(self) -> Tuple[dict, dict]:
         if not os.path.exists(self.raw_path.exp_metadata_file):
             return (None, None)
         else:
             with open(self.raw_path.exp_metadata_file) as f:
                 attributes = json.load(f)
-                attributes_metadata_attr = attributes["metadata"]["metadata"]
-                view_attributes = {
-                    "brain_area": attributes_metadata_attr[
-                        "Specimen type Brain region"
-                    ]["Brain region Marmoset"][-1]["label"],
-                    "imaging_depth": attributes_metadata_attr["Modality Imaging"][
-                        "Ca Imaging>Depth"
-                    ],
-                    "promoter": attributes_metadata_attr["Modality Imaging"][
-                        "Ca Imaging>Promoter"
-                    ],
-                    "indicator": attributes_metadata_attr["Modality Imaging"][
-                        "Ca Imaging>Indicator"
-                    ],
-                }
+                view_attributes = extract_experiment_view_attributes(attributes)
+
+                if not view_attributes:
+                    raise KeyError("Invalid metadata format")
 
         return (attributes, view_attributes)

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -17,3 +17,10 @@ class ExpDbConfig(BaseModel):
 class ExpDbConfigUpdate(BaseModel):
     experiment_config: Optional[dict]
     updated_at: Optional[datetime]
+
+
+class ExpDbExperimentFilterParams(BaseModel):
+    brain_areas: List[str]
+    imaging_depths: List[str]
+    promoters: List[str]
+    indicators: List[str]

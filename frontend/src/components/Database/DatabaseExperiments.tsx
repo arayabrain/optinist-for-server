@@ -2,6 +2,8 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
+import { enqueueSnackbar, VariantType } from "notistack"
+
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
@@ -51,6 +53,7 @@ import {
   getOptionsFilter,
   postPublish,
   postPublishAll,
+  putAttributes,
 } from "store/slice/Database/DatabaseActions"
 import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
@@ -87,6 +90,7 @@ type PopupAttributesProps = {
   role?: boolean
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
   exp_id?: string
+  onSubmit: () => void
 }
 
 type DatabaseProps = {
@@ -113,7 +117,7 @@ const columns = (
   dataExperiments: DatabaseType[],
   checkBoxAll: boolean,
   setCheckBoxAll: (value: boolean) => void,
-  handleOpenAttributes: (value: string) => void,
+  handleOpenAttributes: (value: string, id: number) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
@@ -336,7 +340,7 @@ const columns = (
       return (
         <Box
           sx={{ cursor: "pointer" }}
-          onClick={() => handleOpenAttributes(value)}
+          onClick={() => handleOpenAttributes(value, params?.row?.id)}
         >
           <AssignmentOutlinedIcon color={"primary"} />
         </Box>
@@ -395,6 +399,7 @@ const PopupAttributes = ({
   handleClose,
   role = false,
   handleChangeAttributes,
+  onSubmit,
 }: PopupAttributesProps) => {
   const [error, setError] = useState("")
 
@@ -441,15 +446,18 @@ const PopupAttributes = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button variant={"outlined"} autoFocus onClick={handleClose}>
+          <Button
+            variant={"outlined"}
+            autoFocus
+            onClick={() => {
+              handleClose()
+              setError("")
+            }}
+          >
             Close
           </Button>
           {role && (
-            <Button
-              variant={"contained"}
-              disabled={!!error}
-              onClick={handleClose}
-            >
+            <Button variant={"contained"} disabled={!!error} onClick={onSubmit}>
               Save
             </Button>
           )}
@@ -497,6 +505,7 @@ const DatabaseExperiments = ({
   const [checkBoxAll, setCheckBoxAll] = useState(false)
   const [openShareGroup, setOpenShareGroup] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
+    id?: number
     type?: string
     data?: string | string[]
     expId?: string
@@ -520,6 +529,10 @@ const DatabaseExperiments = ({
   const { dataShare } = useSelector((state: RootState) => ({
     dataShare: state[DATABASE_SLICE_NAME].listShare,
   }))
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant })
+  }
 
   const pagiFilter = useCallback(
     (page?: number) => {
@@ -650,6 +663,10 @@ const DatabaseExperiments = ({
   }, [])
 
   useEffect(() => {
+    if (dataExperiments.items.length === 0) {
+      setCheckBoxAll(false)
+      return
+    }
     const newListId = dataExperiments.items.map((item) => item.id)
     const isCheck = newListId.every((id) => listCheck.includes(id))
     setCheckBoxAll(isCheck)
@@ -707,12 +724,30 @@ const DatabaseExperiments = ({
     setDataDialog({ type: "", data: undefined })
   }
 
-  const handleOpenAttributes = (data: string) => {
-    setDataDialog({ type: "attribute", data })
+  const handleOpenAttributes = (data: string, id: number) => {
+    setDataDialog({ id: id, type: "attribute", data })
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setDataDialog((pre) => ({ ...pre, data: event.target.value }))
+  }
+
+  const onSubmitAttributes = async () => {
+    const { id, data } = dataDialog
+    if (!id || !data) return
+    const res = await dispatch(
+      putAttributes({
+        id: id,
+        attributes: data as string,
+        params: { ...dataParamsFilter, ...dataParams },
+      }),
+    )
+    if ((res as { payload: boolean }).payload === true) {
+      handleClickVariant("success", "Successfully updated attributes!")
+      setDataDialog({ ...dataDialog, id: undefined, type: "" })
+      return
+    }
+    handleClickVariant("error", "Update attributes failed!")
   }
 
   const handleOpenShare = (expId?: string, value?: number, id?: number) => {
@@ -1140,6 +1175,7 @@ const DatabaseExperiments = ({
         data={dataDialog.data}
         open={dataDialog.type === "attribute"}
         handleClose={handleCloseDialog}
+        onSubmit={onSubmitAttributes}
         role={!!adminOrManager}
       />
       {loading ? <Loading /> : null}
