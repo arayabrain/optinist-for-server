@@ -88,6 +88,7 @@ type PopupAttributesProps = {
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
   exp_id?: string
   onSubmit: () => void
+  readonly?: boolean
 }
 
 type DatabaseProps = {
@@ -325,9 +326,9 @@ const PopupAttributes = ({
   role = false,
   handleChangeAttributes,
   onSubmit,
+  readonly,
 }: PopupAttributesProps) => {
   const [error, setError] = useState("")
-
   const isValidJSON = (str: string) => {
     try {
       JSON.parse(str)
@@ -366,7 +367,11 @@ const PopupAttributes = ({
       >
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content readOnly={!role} value={data} onChange={handleChange} />
+            <Content
+              readOnly={!role || readonly}
+              value={data}
+              onChange={handleChange}
+            />
             <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
@@ -381,7 +386,7 @@ const PopupAttributes = ({
           >
             Close
           </Button>
-          {role && (
+          {role && !readonly && (
             <Button variant={"contained"} disabled={!!error} onClick={onSubmit}>
               Save
             </Button>
@@ -1049,7 +1054,8 @@ const DatabaseExperiments = ({
         open={dataDialog.type === "attribute"}
         handleClose={handleCloseDialog}
         onSubmit={onSubmitAttributes}
-        role={!!adminOrManager}
+        role={!!adminOrManager && !!user}
+        readonly={readonly}
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
