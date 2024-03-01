@@ -4,7 +4,6 @@ from studio.app.optinist.microscopes.IsxdReader import IsxdReader
 from studio.app.optinist.microscopes.ND2Reader import ND2Reader
 from studio.app.optinist.microscopes.OIRReader import OIRReader
 from studio.app.optinist.microscopes.ThorlabsReader import ThorlabsReader
-from pprint import pprint
 
 
 class MicroscopeData(BaseData):
@@ -31,5 +30,4 @@ class MicroscopeData(BaseData):
             raise Exception(f"Unsupported file type: {ext}")
 
         reader.load(self.path)
-        pprint(reader.ome_metadata)
         return reader
