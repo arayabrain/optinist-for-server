@@ -1,18 +1,17 @@
+from pprint import pprint
+
+import h5py
+import numpy as np
+
 from studio.app.common.dataclass.image import ImageData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.wrappers.expdb.stack_average import stack_average
-import numpy as np
-from pprint import pprint
-
-# from studio.app.optinist.wrappers.expdb.stack_phase_correct import stack_phase_correct
+from studio.app.optinist.wrappers.expdb.stack_phase_correct import stack_phase_correct
 
 
 def preprocessing(
     microscope: MicroscopeData, output_dir: str, params: dict = None, **kwargs
-) -> dict(
-    # avg=ImageData,
-    p_avg=ImageData,
-):
+) -> dict(avg=ImageData, p_avg=ImageData):
     # convert_onefileの処理を実装
     params_flatten = {}
     for segment in params.values():
@@ -32,7 +31,7 @@ def preprocessing(
     is_timeseries = ome_meta.size_t > 1
 
     # set common params to variables
-    # first_dim = params["first_dim"]
+    first_dim = params["first_dim"]
 
     # run preprocess for each channel
     for ch in range(ome_meta.size_c):
@@ -46,16 +45,27 @@ def preprocessing(
             runs = params["runs"]
 
             fov = np.squeeze(stack_average(stack, period, runs))  # (y, x, (z))
-            # corrected_stack, dx = stack_phase_correct(stack, fov, first_dim)
-            # corrected_fov = stack_average(corrected_stack, period, runs)
+            corrected_stack, dx = stack_phase_correct(stack, fov, first_dim)
+            corrected_fov = np.squeeze(stack_average(corrected_stack, period, runs))
 
             info = {
                 "avg": ImageData(
                     fov, output_dir=output_dir, file_name=f"avg_img_ch{ch + 1}"
                 ),
-                # "p_avg": corrected_fov,  # Set ImageData for p_avg
+                "p_avg": ImageData(
+                    corrected_fov,
+                    output_dir=output_dir,
+                    file_name=f"p_avg_img_ch{ch + 1}",
+                ),
                 # Add some data for timecourse
             }
+
+            # save array for debugging
+            with h5py.File(output_dir + "/p_mat.hdf5", "w") as f:
+                f.create_dataset("raw_stack", data=stack)
+                f.create_dataset("corrected_stack", data=corrected_stack)
+                f.create_dataset("fov", data=fov)
+                f.create_dataset("corrected_fov", data=corrected_fov)
 
             if params["do_realign"]:
                 # realign
@@ -68,7 +78,7 @@ def preprocessing(
             # save raw stack as avg tiff
 
             # stackPhaseCorrection
-            # corrected_stack, dx = stack_phase_correct(stack, stack, first_dim)
+            corrected_stack, dx = stack_phase_correct(stack, stack, first_dim)
 
             # save p_avg tiff
             # save p mat
@@ -76,8 +86,10 @@ def preprocessing(
                 "avg": ImageData(
                     stack, output_dir=output_dir, file_name=f"avg_img_ch{ch + 1}"
                 ),
-                # "p_avg": ImageData(
-                #     corrected_stack, output_dir=output_dir, file_name="pAvgImg"
-                # ),
+                "p_avg": ImageData(
+                    corrected_stack,
+                    output_dir=output_dir,
+                    file_name=f"p_avg_img_ch{ch + 1}",
+                ),
                 # Add some data for timecourse
             }

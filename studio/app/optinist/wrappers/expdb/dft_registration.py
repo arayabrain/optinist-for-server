@@ -249,10 +249,9 @@ def dft_registration_nD(buf1ft, buf2ft):
 
     """
     dim = buf1ft.shape
-    dimension = len(dim)
 
     cc = np.fft.ifftn(buf1ft * np.conj(buf2ft))
-    cc_max = cc.max()
+    cc_max = np.max(cc, axis=1)
     loc = np.unravel_index(
         np.argmax(cc), cc.shape
     )  # n-dimensional position of peak. loc[0],...,loc[n]
@@ -264,10 +263,9 @@ def dft_registration_nD(buf1ft, buf2ft):
     error = 1.0 - cc_max * np.conj(cc_max) / (rgzero * rfzero)
     error = np.sqrt(np.abs(error))
     diffphase = np.arctan2(np.imag(cc_max), np.real(cc_max))
+    shift = np.array(loc)
 
-    shift = np.array(loc) - 1
-
-    for d in range(dimension):
+    for d in range(len(dim)):
         if shift[d] > np.floor(dim[d] / 2):
             shift[d] = shift[d] - dim[d]
 

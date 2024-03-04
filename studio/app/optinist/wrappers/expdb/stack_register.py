@@ -39,6 +39,7 @@ def stack_register(stack, target, us_fac=100):
 
 def stack_register_3d(stack, target, le, shift_method):
     """ """
+    pass
 
 
 def stack_register_nD(stack, target):
@@ -46,27 +47,35 @@ def stack_register_nD(stack, target):
     Based on DFTREGISTRATION by Manuel Guizar
     Extended to n-dimension by Kenichi Ohki  2011.7.8.
     """
-    from scipy.ndimage import shift
     from scipy.fftpack import fftn
 
     target_after_fft = fftn(target.astype(np.float32))
-    dim = stack.shape
-    dimension = len(dim)
-    dimtarget = target.shape
-    outstack = np.zeros(dim)
+    stack_dim = stack.shape
+    target_dim = target.shape
+    outstack = np.zeros(stack_dim)
 
-    if dimension - len(dimtarget) == 1:
-        nframes = dim[-1]
+    dim_diff = len(stack_dim) - len(target_dim)
+    assert dim_diff in [0, 1], "mismatch of stack and target dimension"
+
+    if dim_diff == 1:
+        nframes = stack_dim[-1]
         # reshape stack to handle n-dimension
-        stack = stack.reshape(np.prod(dimtarget), nframes)
-
-        outs = np.zeros((nframes, len(dimtarget) + 2))
+        reshaped_stack = stack.reshape(np.prod(target_dim), nframes)
+        outs = np.zeros((nframes, len(target_dim) + 2))
 
         for i in range(nframes):
-            slice_ = stack[:, i].reshape(dimtarget)
+            slice_ = reshaped_stack[:, i].reshape(target_dim)
             source = fftn(slice_.astype(np.float32))
+            # outs is (error, diffphase, shift)
             outs[i, :] = dft_registration_nD(target_after_fft, source)
+            # roll with shift
+            outstack[:, :, i] = np.roll(slice_, outs[i, 2])
 
-            outstack[:, :, i] = shift(slice_, outs[i, 2:])
+    elif dim_diff == 0:
+        source = fftn(stack.astype(np.float32))
+        # outs is (error, diffphase, shift)
+        outs = dft_registration_nD(target_after_fft, source)
+        # roll with shift
+        outstack = np.roll(stack, outs[2])
 
     return outs, outstack
