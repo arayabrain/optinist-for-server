@@ -6,6 +6,7 @@ import re
 from enum import Enum, IntEnum
 
 import numpy as np
+
 from studio.app.optinist.microscopes.MicroscopeDataReaderBase import (
     MicroscopeDataReaderBase,
     OMEDataModel,

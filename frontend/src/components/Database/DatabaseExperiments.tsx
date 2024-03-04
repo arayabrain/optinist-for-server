@@ -2,6 +2,8 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
+import { enqueueSnackbar, VariantType } from "notistack"
+
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
@@ -41,19 +43,23 @@ import { ConfirmDialog } from "components/common/ConfirmDialog"
 import DialogImage from "components/common/DialogImage"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
+import SelectFilter from "components/common/SelectFilter"
 import SwitchCustom from "components/common/SwitchCustom"
 import PopupShareGroup from "components/PopupShareGroup"
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
   getListShare,
+  getOptionsFilter,
   postPublish,
   postPublishAll,
+  putAttributes,
 } from "store/slice/Database/DatabaseActions"
 import { TypeData } from "store/slice/Database/DatabaseSlice"
 import {
   DATABASE_SLICE_NAME,
   DatabaseType,
+  FilterParams,
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
@@ -84,6 +90,8 @@ type PopupAttributesProps = {
   role?: boolean
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
   exp_id?: string
+  onSubmit: () => void
+  readonly?: boolean
 }
 
 type DatabaseProps = {
@@ -95,6 +103,14 @@ type DatabaseProps = {
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
+const LIST_FILTER_IS = [
+  "publish_status",
+  "brain_area",
+  "promoter",
+  "indicator",
+  "imaging_depth",
+]
+
 const columns = (
   listIdData: number[],
   setListCheck: (value: number[]) => void,
@@ -102,7 +118,7 @@ const columns = (
   dataExperiments: DatabaseType[],
   checkBoxAll: boolean,
   setCheckBoxAll: (value: boolean) => void,
-  handleOpenAttributes: (value: string) => void,
+  handleOpenAttributes: (value: string, id: number) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
@@ -110,6 +126,7 @@ const columns = (
   adminOrManager: boolean,
   readonly?: boolean,
   loading: boolean = false,
+  options?: FilterParams,
 ) => [
   adminOrManager &&
     user &&
@@ -180,7 +197,11 @@ const columns = (
       },
     ],
     type: "string",
-    renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
+    renderCell: (params: { row: DatabaseType }) => (
+      <Tooltip title={params.row?.experiment_id}>
+        <SpanCustom>{params.row?.experiment_id}</SpanCustom>
+      </Tooltip>
+    ),
   },
   user && {
     field: "published",
@@ -201,16 +222,48 @@ const columns = (
         </Tooltip>
       )
     },
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.brain_areas}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     width: 120,
   },
   {
     field: "promoter",
     headerName: "Promoter",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.promoters}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.promoter}>
@@ -223,8 +276,24 @@ const columns = (
     field: "indicator",
     headerName: "Indicator",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.indicators}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.indicator}>
@@ -237,8 +306,24 @@ const columns = (
     field: "imaging_depth",
     headerName: "Imaging depth",
     width: 120,
-    valueOptions: [1, 2, 3, 4, 5, 6, 7, 8],
-    type: "singleSelect",
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.imaging_depths}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
     renderCell: (params: { row: DatabaseType }) => {
       return (
         <Tooltip title={params.row.fields?.imaging_depth}>
@@ -261,7 +346,7 @@ const columns = (
       return (
         <Box
           sx={{ cursor: "pointer" }}
-          onClick={() => handleOpenAttributes(value)}
+          onClick={() => handleOpenAttributes(value, params?.row?.id)}
         >
           <AssignmentOutlinedIcon color={"primary"} />
         </Box>
@@ -320,9 +405,10 @@ const PopupAttributes = ({
   handleClose,
   role = false,
   handleChangeAttributes,
+  onSubmit,
+  readonly,
 }: PopupAttributesProps) => {
   const [error, setError] = useState("")
-
   const isValidJSON = (str: string) => {
     try {
       JSON.parse(str)
@@ -361,20 +447,27 @@ const PopupAttributes = ({
       >
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content readOnly={!role} value={data} onChange={handleChange} />
+            <Content
+              readOnly={!role || readonly}
+              value={data}
+              onChange={handleChange}
+            />
             <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button variant={"outlined"} autoFocus onClick={handleClose}>
+          <Button
+            variant={"outlined"}
+            autoFocus
+            onClick={() => {
+              handleClose()
+              setError("")
+            }}
+          >
             Close
           </Button>
-          {role && (
-            <Button
-              variant={"contained"}
-              disabled={!!error}
-              onClick={handleClose}
-            >
+          {role && !readonly && (
+            <Button variant={"contained"} disabled={!!error} onClick={onSubmit}>
               Save
             </Button>
           )}
@@ -391,12 +484,15 @@ const DatabaseExperiments = ({
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
-  const { data: dataExperiments, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
-  )
+  const {
+    data: dataExperiments,
+    loading,
+    filterParams,
+  } = useSelector((state: RootState) => ({
+    data: state[DATABASE_SLICE_NAME].data[type],
+    loading: state[DATABASE_SLICE_NAME].loading,
+    filterParams: state[DATABASE_SLICE_NAME].filterParams,
+  }))
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -419,6 +515,7 @@ const DatabaseExperiments = ({
   const [checkBoxAll, setCheckBoxAll] = useState(false)
   const [openShareGroup, setOpenShareGroup] = useState(false)
   const [dataDialog, setDataDialog] = useState<{
+    id?: number
     type?: string
     data?: string | string[]
     expId?: string
@@ -428,6 +525,8 @@ const DatabaseExperiments = ({
     type: "",
     data: undefined,
   })
+  const [fieldFilter, setFieldFilter] = useState("")
+  const [valueFilter, setValueFilter] = useState<string | string[]>("")
 
   const [searchParams, setParams] = useSearchParams()
   const dispatch = useDispatch<AppDispatch>()
@@ -440,6 +539,10 @@ const DatabaseExperiments = ({
   const { dataShare } = useSelector((state: RootState) => ({
     dataShare: state[DATABASE_SLICE_NAME].listShare,
   }))
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant })
+  }
 
   const pagiFilter = useCallback(
     (page?: number) => {
@@ -464,10 +567,10 @@ const DatabaseExperiments = ({
     () => ({
       experiment_id: searchParams.get("experiment_id") || undefined,
       publish_status: searchParams.get("published") || undefined,
-      brain_area: searchParams.get("brain_area") || undefined,
-      promoter: searchParams.get("promoter") || undefined,
-      indicator: searchParams.get("indicator") || undefined,
-      imaging_depth: searchParams.get("imaging_depth") || undefined,
+      brain_area: searchParams.getAll("brain_area") || undefined,
+      promoter: searchParams.getAll("promoter") || undefined,
+      indicator: searchParams.getAll("indicator") || undefined,
+      imaging_depth: searchParams.getAll("imaging_depth") || undefined,
     }),
     [searchParams],
   )
@@ -485,18 +588,12 @@ const DatabaseExperiments = ({
                 (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
               )
               ?.replace("publish_status", "published") || "",
-          operator: [
-            "publish_status",
-            "brain_area",
-            "promoter",
-            "indicator",
-            "imaging_depth",
-          ].includes(
+          operator: LIST_FILTER_IS.includes(
             Object.keys(dataParamsFilter).find(
               (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
             ) || "publish_status",
           )
-            ? "is"
+            ? "isAnyOf"
             : "contains",
           value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
@@ -524,38 +621,38 @@ const DatabaseExperiments = ({
   }
 
   useEffect(() => {
+    const key = Object.keys(dataParamsFilter).find((key) => {
+      const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+      return (
+        (!Array.isArray(value) && value) ||
+        (Array.isArray(value) && value.length)
+      )
+    }) as keyof typeof dataParamsFilter
+    if (key) {
+      setFieldFilter(key)
+      setValueFilter(dataParamsFilter[key] as string[])
+    }
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
     if (
       Object.keys(dataParamsFilter).every(
         (key) => !dataParamsFilter[key as keyof typeof dataParamsFilter],
       )
-    )
+    ) {
       return
+    }
+    if (!fieldFilter?.trim()?.length) return
     setModel({
       filter: {
         items: [
           {
-            field:
-              Object.keys(dataParamsFilter)
-                .find(
-                  (key) =>
-                    dataParamsFilter[key as keyof typeof dataParamsFilter],
-                )
-                ?.replace("publish_status", "published") || "",
-            operator: [
-              "publish_status",
-              "brain_area",
-              "promoter",
-              "indicator",
-              "imaging_depth",
-            ].includes(
-              Object.keys(dataParamsFilter).find(
-                (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
-              ) || "publish_status",
-            )
-              ? "is"
+            field: fieldFilter?.replace("publish_status", "published") || "",
+            operator: LIST_FILTER_IS.includes(fieldFilter || "publish_status")
+              ? "isAnyOf"
               : "contains",
-            value:
-              Object.values(dataParamsFilter).find((value) => value) || null,
+            value: valueFilter || null,
           },
         ],
       },
@@ -568,9 +665,18 @@ const DatabaseExperiments = ({
       ],
     })
     //eslint-disable-next-line
-  }, [dataParams, dataParamsFilter])
+  }, [dataParams, dataParamsFilter, fieldFilter, valueFilter])
 
   useEffect(() => {
+    dispatch(getOptionsFilter())
+    //eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
+    if (dataExperiments.items.length === 0) {
+      setCheckBoxAll(false)
+      return
+    }
     const newListId = dataExperiments.items.map((item) => item.id)
     const isCheck = newListId.every((id) => listCheck.includes(id))
     setCheckBoxAll(isCheck)
@@ -628,12 +734,30 @@ const DatabaseExperiments = ({
     setDataDialog({ type: "", data: undefined })
   }
 
-  const handleOpenAttributes = (data: string) => {
-    setDataDialog({ type: "attribute", data })
+  const handleOpenAttributes = (data: string, id: number) => {
+    setDataDialog({ id: id, type: "attribute", data })
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setDataDialog((pre) => ({ ...pre, data: event.target.value }))
+  }
+
+  const onSubmitAttributes = async () => {
+    const { id, data } = dataDialog
+    if (!id || !data) return
+    const res = await dispatch(
+      putAttributes({
+        id: id,
+        attributes: data as string,
+        params: { ...dataParamsFilter, ...dataParams },
+      }),
+    )
+    if ((res as { payload: boolean }).payload === true) {
+      handleClickVariant("success", "Successfully updated attributes!")
+      setDataDialog({ ...dataDialog, id: undefined, type: "" })
+      return
+    }
+    handleClickVariant("error", "Update attributes failed!")
   }
 
   const handleOpenShare = (expId?: string, value?: number, id?: number) => {
@@ -643,11 +767,22 @@ const DatabaseExperiments = ({
 
   const getParamsData = () => {
     const dataFilter = Object.keys(dataParamsFilter)
-      .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (key) =>
-          `${key}=${dataParamsFilter[key as keyof typeof dataParamsFilter]}`,
-      )
+      .filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return !!value[0]
+        }
+        return value
+      })
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replaceAll("publish_status", "published")
     return dataFilter
@@ -716,17 +851,48 @@ const DatabaseExperiments = ({
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
+    if (modelFilter.items.length === 0) {
+      const data = Object.keys(dataParamsFilter).filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value) && value.length === 0) {
+          return false
+        }
+        return !!value
+      })
+      setModel({
+        ...model,
+        filter: {
+          items: [
+            {
+              field: data[0],
+              operator: "isAnyOf",
+              value:
+                dataParamsFilter[data[0] as keyof typeof dataParamsFilter] ||
+                "",
+            },
+          ],
+        },
+      })
+      return
+    }
+
     setModel({
       ...model,
       filter: modelFilter,
     })
+    setFieldFilter(modelFilter.items[0]?.field)
+    setValueFilter(modelFilter.items[0]?.value)
     let filter = ""
     if (modelFilter.items[0]?.value) {
       filter = modelFilter.items
         .filter((item) => item.value)
-        .map((item: GridFilterItem) => `${item.field}=${item?.value}`)
-        .join("&")
-        ?.replace("publish_status", "published")
+        .map((item: GridFilterItem) => {
+          if (Array.isArray(item.value)) {
+            return item.value.map((value) => `${item.field}=${value}`).join("&")
+          }
+          return `${item.field}=${item?.value}`
+        })[0]
+        .replace("publish_status", "published")
     }
     const { sort } = dataParams
     const param =
@@ -743,10 +909,15 @@ const DatabaseExperiments = ({
     let filter = ""
     filter = Object.keys(dataParamsFilter)
       .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
-      .map(
-        (item) =>
-          `${item}=${dataParamsFilter[item as keyof typeof dataParamsFilter]}`,
-      )
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
       .join("&")
       .replace("publish_status", "published")
     const { sort } = dataParams
@@ -891,6 +1062,7 @@ const DatabaseExperiments = ({
       !!adminOrManager,
       readonly,
       loading,
+      filterParams,
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]
@@ -1013,7 +1185,9 @@ const DatabaseExperiments = ({
         data={dataDialog.data}
         open={dataDialog.type === "attribute"}
         handleClose={handleCloseDialog}
-        role={!!adminOrManager}
+        onSubmit={onSubmitAttributes}
+        role={!!adminOrManager && !!user}
+        readonly={readonly}
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (

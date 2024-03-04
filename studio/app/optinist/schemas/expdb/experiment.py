@@ -86,12 +86,10 @@ class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")
     )
-    brain_area: Optional[str] = Field(Query(default=None, description="complete match"))
-    imaging_depth: Optional[str] = Field(
-        Query(default=None, description="complete match")
-    )
-    promoter: Optional[str] = Field(Query(default=None, description="complete match"))
-    indicator: Optional[str] = Field(Query(default=None, description="complete match"))
+    brain_area: Optional[List[str]] = Field(Query(default=None))
+    imaging_depth: Optional[List[str]] = Field(Query(default=None))
+    promoter: Optional[List[str]] = Field(Query(default=None))
+    indicator: Optional[List[str]] = Field(Query(default=None))
 
 
 class ExpDbExperimentShareStatus(BaseModel):

@@ -88,3 +88,10 @@ export type MultiShareType = {
 export type DatabaseParams = {
   [key: string]: number | string | string[] | undefined
 }
+
+export type FilterParams = {
+  brain_areas: string[]
+  imaging_depths: string[]
+  promoters: string[]
+  indicators: string[]
+}

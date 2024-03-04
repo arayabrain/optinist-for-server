@@ -3,6 +3,7 @@ import { stringify } from "qs"
 import {
   DatabaseDTO,
   DatabaseParams,
+  FilterParams,
   ListShareDTO,
   MultiShareType,
 } from "store/slice/Database/DatabaseType"
@@ -76,5 +77,22 @@ export const postMultiShareApi = async (
   data: MultiShareType,
 ): Promise<boolean> => {
   const response = await axios.post("expdb/multiple/share/status", data)
+  return response.data
+}
+
+export const putAttributesApi = async (
+  id: number,
+  data: string,
+): Promise<boolean> => {
+  const response = await axios.put(`expdb/experiment/metadata/${id}`, data, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  return response.data
+}
+
+export const getOptionsFilterApi = async (): Promise<FilterParams> => {
+  const response = await axios.get("public/config/filter_params")
   return response.data
 }

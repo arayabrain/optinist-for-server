@@ -10,10 +10,13 @@ import {
   postPublish,
   postPublishAll,
   postMultiShare,
+  putAttributes,
+  getOptionsFilter,
 } from "store/slice/Database/DatabaseActions"
 import {
   DATABASE_SLICE_NAME,
   DatabaseDTO,
+  FilterParams,
   ListShareGroup,
   ListShareUser,
 } from "store/slice/Database/DatabaseType"
@@ -47,6 +50,7 @@ export const initialState: {
     users: ListShareUser[]
     groups: ListShareGroup[]
   }
+  filterParams?: FilterParams
 } = {
   data: {
     public: initData,
@@ -56,6 +60,7 @@ export const initialState: {
   type: "experiment",
   listShare: undefined,
   listGroupsShare: undefined,
+  filterParams: undefined,
 }
 
 export const databaseSlice = createSlice({
@@ -96,12 +101,21 @@ export const databaseSlice = createSlice({
         state.listShare = undefined
         state.loading = true
       })
+      .addCase(getOptionsFilter.fulfilled, (state, action) => {
+        state.filterParams = action.payload
+        state.loading = false
+      })
+      .addCase(getOptionsFilter.rejected, (state) => {
+        state.loading = true
+      })
       .addMatcher(
         isAnyOf(
           postMultiShare.pending,
           postListUserShare.pending,
           postPublish.pending,
           postPublishAll.pending,
+          putAttributes.pending,
+          getOptionsFilter.pending,
         ),
         (state) => {
           state.loading = true
@@ -142,6 +156,9 @@ export const databaseSlice = createSlice({
           postPublishAll.rejected,
           postMultiShare.rejected,
           postMultiShare.fulfilled,
+          putAttributes.fulfilled,
+          putAttributes.rejected,
+          getOptionsFilter.rejected,
         ),
         (state) => {
           state.loading = false
