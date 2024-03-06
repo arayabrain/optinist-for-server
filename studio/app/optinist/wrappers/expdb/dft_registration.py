@@ -74,8 +74,8 @@ def dft_ups(inp, nor=None, noc=None, usfac=1, roff=0, coff=0):
 
 
 def dft_registration(buf1ft, buf2ft, usfac=1):
-    from scipy.fft import fftshift, ifftshift, ifft2
-    from numpy import conj, exp, pi, meshgrid, fix, ceil
+    from numpy import ceil, conj, exp, fix, meshgrid, pi
+    from scipy.fft import fftshift, ifft2, ifftshift
 
     c = buf1ft.dtype
 
@@ -251,7 +251,7 @@ def dft_registration_nD(buf1ft, buf2ft):
     dim = buf1ft.shape
 
     cc = np.fft.ifftn(buf1ft * np.conj(buf2ft))
-    cc_max = np.max(cc, axis=1)
+    cc_max = np.max(cc, axis=0)
     loc = np.unravel_index(
         np.argmax(cc), cc.shape
     )  # n-dimensional position of peak. loc[0],...,loc[n]

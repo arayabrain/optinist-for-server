@@ -36,9 +36,28 @@ def preprocessing(
     # run preprocess for each channel
     for ch in range(ome_meta.size_c):
         if ome_meta.size_z > 1:
-            stack = raw_stack[ch].transpose(2, 3, 1, 0)  # (y, x, z, t)
+            stack = (  # (y, x, z, t)
+                raw_stack[ch]
+                .transpose(3, 2, 1, 0)
+                .reshape(
+                    ome_meta.size_y,
+                    ome_meta.size_x,
+                    ome_meta.size_z,
+                    ome_meta.size_t,
+                    order="F",
+                )
+            )
         else:
-            stack = np.squeeze(raw_stack[ch]).transpose(1, 2, 0)  # (y, x, t)
+            stack = (  # (y, x, t)
+                raw_stack[ch]
+                .transpose(2, 1, 0)
+                .reshape(
+                    ome_meta.size_y,
+                    ome_meta.size_x,
+                    ome_meta.size_t,
+                    order="F",
+                )
+            )
 
         if is_timeseries:
             period = params["period"]
