@@ -1,4 +1,5 @@
 import numpy as np
+
 from studio.app.optinist.wrappers.expdb.dft_registration import dft_registration_nD
 
 
@@ -74,7 +75,7 @@ def stack_register_nD(stack, target):
     elif dim_diff == 0:
         source = fftn(stack.astype(np.float32))
         # outs is (error, diffphase, shift)
-        outs = dft_registration_nD(target_after_fft, source)
+        outs = tuple(dft_registration_nD(target_after_fft, source))
         # roll with shift
         outstack = np.roll(stack, outs[2])
 

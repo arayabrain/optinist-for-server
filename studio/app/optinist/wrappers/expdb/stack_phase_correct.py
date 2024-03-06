@@ -1,4 +1,5 @@
 import numpy as np
+
 from studio.app.optinist.wrappers.expdb.stack_register import stack_register_nD
 
 
@@ -9,7 +10,7 @@ def stack_phase_correct(stack, fov, first_dim=1):
     Parameters
     ----------
     stack: ndarray
-        2-5 dimensions
+        3-4 dimensions
     fov: ndarray
         2-3 dimensions
     first_dim: int, optional
@@ -31,40 +32,46 @@ def stack_phase_correct(stack, fov, first_dim=1):
     if first_dim == 1:
         # separate odd lines and even lines
         reshaped_fov = fov.reshape(
-            [int(fov_dim[1] / 2), 2, fov_dim[0], int(np.prod(fov_dim[2:]))]
+            [fov_dim[0], 2, int(fov_dim[1] / 2), int(np.prod(fov_dim[2:]))],
+            order="F",
         )
 
         # estimate phase mismatch
         outs, out_stack = stack_register_nD(
-            reshaped_fov[:, 0, :, :], reshaped_fov[:, 1, :, :]
+            np.squeeze(reshaped_fov[:, 0, :, :]),
+            np.squeeze(reshaped_fov[:, 1, :, :]),
         )
-        dx = -outs[1][0]
+        dx = -np.array(outs[2])  # shift
 
         # align phase of stack
         result_stack = stack.reshape(
-            [int(stack_dim[1] / 2), 2, stack_dim[0], int(np.prod(stack_dim[2:]))]
+            [stack_dim[0], 2, int(stack_dim[1] / 2), int(np.prod(stack_dim[2:]))],
+            order="F",
         )
         for i in range(np.prod(stack_dim[2:])):
-            result_stack[:, 1, :, i] = np.roll(result_stack[:, 1, :, i], dx, axis=1)
+            result_stack[:, 1, :, i] = np.roll(result_stack[:, 1, :, i], dx, axis=0)
 
     elif first_dim == 2:
         # separate odd lines and even lines
         reshaped_fov = fov.reshape(
-            [2, fov_dim[1], int(fov_dim[0] / 2), int(np.prod(fov_dim[2:]))]
+            [2, int(fov_dim[0] / 2), fov_dim[1], int(np.prod(fov_dim[2:]))],
+            order="F",
         )
 
         # estimate phase mismatch
         outs, outstack = stack_register_nD(
-            np.squeeze(reshaped_fov[0, :, :, :]), np.squeeze(reshaped_fov[1, :, :, :])
+            np.squeeze(reshaped_fov[0, :, :, :]),
+            np.squeeze(reshaped_fov[1, :, :, :]),
         )
-        dx = -outs[1][1]
+        dx = -np.array(outs[2])  # shift
 
         # align phase of stack
         result_stack = stack.reshape(
-            [2, int(stack_dim[0] / 2), stack_dim[1], int(np.prod(stack_dim[2:]))]
+            [2, int(stack_dim[0] / 2), stack_dim[1], int(np.prod(stack_dim[2:]))],
+            order="F",
         )
-        for i in range(np.prod(stack_dim[3:])):
-            result_stack[1, :, :, i] = np.roll(result_stack[1, :, :, i], [0, 0, dx])
+        for i in range(np.prod(stack_dim[2:])):
+            result_stack[1, :, :, i] = np.roll(result_stack[1, :, :, i], dx, axis=1)
 
-    result_stack = result_stack.reshape(stack_dim)
+    result_stack = result_stack.reshape(stack_dim, order="F")
     return result_stack, dx
