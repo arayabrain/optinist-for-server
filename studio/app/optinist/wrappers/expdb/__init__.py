@@ -1,9 +1,9 @@
 from studio.app.optinist.wrappers.expdb.analyze_stats import analyze_stats
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
+from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
-from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 
 expdb_wrapper_dict = {
     "analysis_preset": {
