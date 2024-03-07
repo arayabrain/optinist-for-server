@@ -2,11 +2,11 @@ import numpy as np
 
 
 # NOTE: still in progress
-def dft_ups(inp, nor=None, noc=None, usfac=1, roff=0, coff=0):
+def dft_ups(inp: np.ndarray, nor=None, noc=None, usfac=1, roff=0, coff=0):
     """
     Upsampled DFT by matrix multiplies,
     can compute an upsampled DFT in just a small region.
-    Recieves DC in upper left corner, image center must be in (1,1)
+    Receives DC in upper left corner, image center must be in (1,1)
     Manuel Guizar - Dec 13, 2007
     Modified from dftus, by J.R. Fienup 7/31/06
     This code is intended to provide the same result as if
@@ -25,6 +25,8 @@ def dft_ups(inp, nor=None, noc=None, usfac=1, roff=0, coff=0):
 
     Parameters
     ----------
+    inp: ndarray
+        input array
     usfac: int
         Upsampling factot
     nor, noc: int
@@ -34,6 +36,8 @@ def dft_ups(inp, nor=None, noc=None, usfac=1, roff=0, coff=0):
         Row and column offsets,
         allow to shift the output array to a region of interest on the DFT
     """
+    from numpy.fft import ifftshift
+
     nr, nc = inp.shape
 
     if nor is None:
@@ -42,110 +46,128 @@ def dft_ups(inp, nor=None, noc=None, usfac=1, roff=0, coff=0):
         noc = nc
 
     # Compute kernels and obtain DFT by matrix products
-    kernc = np.exp(
-        (-1j * 2 * np.pi / (nc * usfac))
-        * (np.fft.ifftshift(np.arange(nc)) - np.floor(nc / 2))[:, None]
-        * (np.arange(noc) - coff)
+    kern_row = np.outer(
+        (np.arange(nor) - roff),
+        (ifftshift(np.arange(nr) - np.floor(nr / 2)) * 2 * np.pi / (nr * usfac)),
     )
-    kernr = np.exp(
-        (-1j * 2 * np.pi / (nr * usfac))
-        * (np.arange(nor)[:, None] - roff)
-        * (np.fft.ifftshift(np.arange(nr)) - np.floor(nr / 2))
+    kern_col = np.outer(
+        (ifftshift(np.arange(nc)) - int(np.floor(nc / 2))),
+        (np.arange(noc) - coff) * 2 * np.pi / (nc * usfac),
     )
-    out = np.dot(np.dot(kernr, inp), kernc)
 
-    kernc2 = (
-        (np.fft.ifftshift(np.arange(nc))[:, None] - np.floor(nc / 2))
-        * (np.arange(noc) - coff)
-        * 2
-        * np.pi
-        / (nc * usfac)
-    )
-    kernr2 = (
-        (np.arange(nor)[:, None] - roff)
-        * (np.fft.ifftshift(np.arange(nr)) - np.floor(nr / 2))
-        * 2
-        * np.pi
-        / (nr * usfac)
-    )
-    out = np.exp(kernr2 * (-1j)) * inp * np.exp(kernc2 * (-1j))
-
-    return out
+    return np.exp(kern_row * (-1j)) @ inp @ np.exp(kern_col * (-1j))
 
 
-def dft_registration(buf1ft, buf2ft, usfac=1):
+def dft_registration(buf1ft: np.ndarray, buf2ft: np.ndarray, usfac: int):
+    """
+    Efficient subpixel image registration by crosscorrelation. This code
+    gives the same precision as the FFT upsampled cross correlation in a
+    small fraction of the computation time and with reduced memory
+    requirements. It obtains an initial estimate of the crosscorrelation peak
+    by an FFT and then refines the shift estimation by upsampling the DFT
+    only in a small neighborhood of that estimate by means of a
+    matrix-multiply DFT. With this procedure all the image points are used to
+    compute the upsampled crosscorrelation.
+    Manuel Guizar - Dec 13, 2007
+    Portions of this code were taken from code written by Ann M. Kowalczyk
+    and James R. Fienup.
+    J.R. Fienup and A.M. Kowalczyk, "Phase retrieval for a complex-valued
+    object by using a low-resolution image," J. Opt. Soc. Am. A 7, 450-458
+    (1990).
+    Citation for this algorithm:
+    Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup,
+    "Efficient subpixel image registration algorithms," Opt. Lett. 33,
+    156-158 (2008).
+
+    change log
+    09/04/17 VB replaced abs(a).^2 with a.*conj(a)
+            computer as 'single' if inputs are 'single'
+
+    Parameters
+    ----------
+    buf1ft: ndarray
+        Fourier transform of reference image, DC in (1,1)   [DO NOT FFTSHIFT]
+    buf2ft: ndarray
+        Fourier transform of image to register, DC in (1,1) [DO NOT FFTSHIFT]
+    usfac: int
+        Upsampling factor. Images will be registered to within 1/usfac of a pixel.
+        For example usfac = 20 means the images will be registered
+        within1/20 of a pixel. (default = 1)
+
+    Returns
+    -------
+    error: float
+        Translation invariant normalized RMS error between f and g
+    diffphase: float
+        Global phase difference between the two images
+        (should be zero if images are non-negative).
+    net_row_shift, net_col_shift: int
+        Pixel shifts between images
+    g_reg: ndarray, (Optional)
+        Fourier transform of registered version of buf2ft,
+        the global phase difference is compensated for.
+
+    """
     from numpy import ceil, conj, exp, fix, meshgrid, pi
-    from scipy.fft import fftshift, ifft2, ifftshift
-
-    c = buf1ft.dtype
-
-    assert (
-        c == np.float32 or c == np.float64
-    ), "buf1ft should be of class single or double"
+    from numpy.fft import fftshift, ifft2, ifftshift
 
     if usfac == 0:
-        CCmax = np.sum(buf1ft * conj(buf2ft))
+        cc_max = np.sum(buf1ft * conj(buf2ft))
         rfzero = np.sum(buf1ft.flatten() * conj(buf1ft.flatten()))
         rgzero = np.sum(buf2ft.flatten() * conj(buf2ft.flatten()))
-        error = 1.0 - CCmax * conj(CCmax) / (rgzero * rfzero)
+        error = 1.0 - cc_max * conj(cc_max) / (rgzero * rfzero)
         error = np.sqrt(np.abs(error))
-        diffphase = np.arctan2(np.imag(CCmax), np.real(CCmax))
-        output = [error, diffphase]
+        diffphase = np.arctan2(np.imag(cc_max), np.real(cc_max))
+        row_shift = None
+        col_shift = None
 
     elif usfac == 1:
         m, n = buf1ft.shape
-        CC = ifft2(buf1ft * conj(buf2ft))
-        max1 = np.max(CC, axis=0)
-        # max2 = np.max(max1)
-        loc1 = np.argmax(CC, axis=0)
-        loc2 = np.argmax(max1)
-        rloc = loc1[loc2]
-        cloc = loc2
-        CCmax = CC[rloc, cloc]
+        cc = ifft2(buf1ft * conj(buf2ft))
+        loc_1 = np.argmax(cc, axis=0)
+        loc_2 = np.argmax(np.max(cc, axis=0))
+        loc_row = loc_1[loc_2]
+        loc_col = loc_2
+        cc_max = cc[loc_row, loc_col]
 
         rfzero = np.sum(buf1ft.flatten() * conj(buf1ft.flatten())) / (m * n)
         rgzero = np.sum(buf2ft.flatten() * conj(buf2ft.flatten())) / (m * n)
-        error = 1.0 - CCmax * conj(CCmax) / (rgzero * rfzero)
-        error = np.sqrt(np.abs(error))
-        diffphase = np.arctan2(np.imag(CCmax), np.real(CCmax))
-        md2 = fix(m / 2)
-        nd2 = fix(n / 2)
-        row_shift = rloc - m - 1 if rloc > md2 else rloc - 1
-        col_shift = cloc - n - 1 if cloc > nd2 else cloc - 1
-        output = [error, diffphase, row_shift, col_shift]
+        error = np.sqrt(np.abs(1.0 - cc_max * conj(cc_max) / (rgzero * rfzero)))
+        diffphase = np.arctan2(np.imag(cc_max), np.real(cc_max))
+
+        row_shift = loc_row - m if loc_row > fix(m / 2) else loc_row
+        col_shift = loc_col - n if loc_col > fix(n / 2) else loc_col
 
     else:
         m, n = buf1ft.shape
-        mlarge = m * 2
-        nlarge = n * 2
-        CC = np.zeros((mlarge, nlarge), dtype=c)
-        CC[
-            m + 1 - fix(m / 2) - 1 : m + fix((m - 1) / 2),
-            n + 1 - fix(n / 2) - 1 : n + fix((n - 1) / 2),
+        m_large = m * 2
+        n_large = n * 2
+        cc = np.zeros((m_large, n_large), dtype=buf1ft.dtype)
+        cc[
+            m - int(fix(m / 2)) : m + int(fix((m - 1) / 2)) + 1,
+            n - int(fix(n / 2)) : n + int(fix((n - 1) / 2)) + 1,
         ] = fftshift(buf1ft) * conj(fftshift(buf2ft))
 
-        CC = ifft2(ifftshift(CC))
-        max1 = np.max(CC, axis=0)
-        # max2 = np.max(max1)
-        loc1 = np.argmax(CC, axis=0)
-        loc2 = np.argmax(max1)
-        rloc = loc1[loc2]
-        cloc = loc2
-        CCmax = CC[rloc, cloc]
+        cc = ifft2(ifftshift(cc))
+        loc_1 = np.argmax(cc, axis=0)
+        loc_2 = np.argmax(np.max(cc, axis=0))
+        loc_row = loc_1[loc_2]
+        loc_col = loc_2
+        cc_max = cc[loc_row, loc_col]
 
-        m, n = CC.shape
+        m, n = cc.shape
         md2 = fix(m / 2)
         nd2 = fix(n / 2)
-        row_shift = rloc - m - 1 if rloc > md2 else rloc - 1
-        col_shift = cloc - n - 1 if cloc > nd2 else cloc - 1
-        row_shift = row_shift / 2
-        col_shift = col_shift / 2
+        row_shift = loc_row - m if loc_row > md2 else loc_row
+        col_shift = loc_col - n if loc_col > nd2 else loc_col
+        row_shift /= 2
+        col_shift /= 2
 
         if usfac > 2:
             row_shift = round(row_shift * usfac) / usfac
             col_shift = round(col_shift * usfac) / usfac
             dftshift = fix(ceil(usfac * 1.5) / 2)
-            CC = conj(
+            cc = conj(
                 dft_ups(
                     buf2ft * conj(buf1ft),
                     ceil(usfac * 1.5),
@@ -155,56 +177,53 @@ def dft_registration(buf1ft, buf2ft, usfac=1):
                     dftshift - col_shift * usfac,
                 )
             ) / (md2 * nd2 * usfac**2)
-            max1 = np.max(CC, axis=0)
-            # max2 = np.max(max1)
-            loc1 = np.argmax(CC, axis=0)
-            loc2 = np.argmax(max1)
-            rloc = loc1[loc2]
-            cloc = loc2
-            CCmax = CC[rloc, cloc]
-            rg00 = dft_ups(buf1ft * conj(buf1ft), 1, 1, usfac) / (md2 * nd2 * usfac**2)
-            rf00 = dft_ups(buf2ft * conj(buf2ft), 1, 1, usfac) / (md2 * nd2 * usfac**2)
-            rloc = rloc - dftshift - 1
-            cloc = cloc - dftshift - 1
-            row_shift = row_shift + rloc / usfac
-            col_shift = col_shift + cloc / usfac
+            loc_1 = np.argmax(cc, axis=0)
+            loc_2 = np.argmax(np.max(cc, axis=0))
+            loc_row = loc_1[loc_2]
+            loc_col = loc_2
+            cc_max = cc[loc_row, loc_col]
+
+            rgzero = dft_ups(buf1ft * conj(buf1ft), 1, 1, usfac) / (
+                md2 * nd2 * usfac**2
+            )
+            rfzero = dft_ups(buf2ft * conj(buf2ft), 1, 1, usfac) / (
+                md2 * nd2 * usfac**2
+            )
+            loc_row = loc_row - dftshift
+            loc_col = loc_col - dftshift
+            row_shift = row_shift + loc_row / usfac
+            col_shift = col_shift + loc_col / usfac
 
         else:
-            rg00 = np.sum(buf1ft * conj(buf1ft)) / m / n
-            rf00 = np.sum(buf2ft * conj(buf2ft)) / m / n
+            rgzero = np.sum(buf1ft * conj(buf1ft)) / m / n
+            rfzero = np.sum(buf2ft * conj(buf2ft)) / m / n
 
-        error = 1.0 - CCmax * conj(CCmax) / (rg00 * rf00)
-        error = np.sqrt(np.abs(error))
-        diffphase = np.arctan2(np.imag(CCmax), np.real(CCmax))
+        error = np.sqrt(np.abs(1.0 - cc_max * conj(cc_max) / (rgzero * rfzero)))
+        diffphase = np.arctan2(np.imag(cc_max), np.real(cc_max))
 
         if md2 == 1:
             row_shift = 0
         if nd2 == 1:
             col_shift = 0
 
-        output = [error, diffphase, row_shift, col_shift]
-
-    output = np.array(output, dtype=np.float64)
-
     if usfac > 0:
-        nr, nc = buf2ft.shape
-        from numpy import fix
+        n_row, n_col = buf2ft.shape
+        grid_col, grid_row = meshgrid(
+            ifftshift(range(-int(fix(n_col / 2)), int(ceil(n_col / 2)))),
+            ifftshift(range(-int(fix(n_row / 2)), int(ceil(n_row / 2)))),
+        )
+        g_reg = buf2ft * exp(
+            1j * 2 * pi * (-row_shift * grid_row / n_row - col_shift * grid_col / n_col)
+        )
+        g_reg = g_reg * exp(1j * diffphase)
 
-        # TODO: fix this
-        Nr = np.zeros()
-        Nc = np.zeros()
-        # Nr = ifftshift([-fix(nr / 2) : ceil(nr / 2) - 1])
-        # Nc = ifftshift([-fix(nc / 2 ) : ceil(nc / 2) - 1])
-        Nc, Nr = meshgrid(Nc, Nr)
-        Greg = buf2ft * exp(1j * 2 * pi * (-row_shift * Nr / nr - col_shift * Nc / nc))
-        Greg = Greg * exp(1j * diffphase)
     elif usfac == 0:
-        Greg = buf2ft * exp(1j * diffphase)
+        g_reg = buf2ft * exp(1j * diffphase)
 
-    return output, Greg
+    return error, diffphase, int(row_shift), int(col_shift), g_reg
 
 
-def dft_registration_nD(buf1ft, buf2ft):
+def dft_registration_nD(buf1ft: np.ndarray, buf2ft: np.ndarray):
     """
     Efficient subpixel image registration by crosscorrelation.
     This code gives the same precision as the FFT upsampled cross correlation

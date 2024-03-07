@@ -7,6 +7,10 @@ from studio.app.common.dataclass.image import ImageData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.wrappers.expdb.stack_average import stack_average
 from studio.app.optinist.wrappers.expdb.stack_phase_correct import stack_phase_correct
+from studio.app.optinist.wrappers.expdb.stack_register import (
+    stack_register,
+    stack_register_3d,
+)
 
 
 def preprocessing(
@@ -69,46 +73,57 @@ def preprocessing(
 
             info = {
                 "avg": ImageData(
-                    fov, output_dir=output_dir, file_name=f"avg_img_ch{ch + 1}"
+                    fov, output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
                 ),
                 "p_avg": ImageData(
                     corrected_fov,
                     output_dir=output_dir,
-                    file_name=f"p_avg_img_ch{ch + 1}",
+                    file_name=f"p_avg_ch{ch + 1}",
                 ),
-                # Add some data for timecourse
             }
 
-            # save array for debugging
-            with h5py.File(output_dir + "/p_mat.hdf5", "w") as f:
-                f.create_dataset("raw_stack", data=stack)
-                f.create_dataset("corrected_stack", data=corrected_stack)
-                f.create_dataset("fov", data=fov)
-                f.create_dataset("corrected_fov", data=corrected_fov)
-
             if params["do_realign"]:
-                # realign
-                # if len(stack.size) == 3:
-                return info
-            else:
-                return info
+                if len(stack.size) == 3:
+                    usfac = params["usfac"]
+                    realign_params, realigned_stack = stack_register(
+                        corrected_stack, corrected_fov, usfac
+                    )
+                elif len(stack.size) == 4:
+                    le = params["le"]
+                    shift_method = params["shift_method"]
+                    realign_params, realigned_stack = stack_register_3d(
+                        corrected_stack, corrected_fov, le, shift_method
+                    )
+
+                realigned_fov = np.squeeze(stack_average(realigned_stack, period, runs))
+                info["rp_avg"] = ImageData(
+                    realigned_fov,
+                    output_dir=output_dir,
+                    file_name=f"rp_avg_img_ch{ch + 1}",
+                )
+
+                # save array for debugging
+                with h5py.File(output_dir + "/p_mat.hdf5", "w") as f:
+                    f.create_dataset("raw_stack", data=stack)
+                    f.create_dataset("fov", data=fov)
+                    f.create_dataset("corrected_stack", data=corrected_stack)
+                    f.create_dataset("corrected_fov", data=corrected_fov)
+                    f.create_dataset("realigned_stack", data=realigned_stack)
+                    f.create_dataset("realigned_fov", data=realigned_fov)
+                    f.create_dataset("realign_params", data=realign_params)
+
+            return info
 
         else:  # for anatomy (non-timeseries)
-            # save raw stack as avg tiff
-
-            # stackPhaseCorrection
             corrected_stack, dx = stack_phase_correct(stack, stack, first_dim)
 
-            # save p_avg tiff
-            # save p mat
             return {
                 "avg": ImageData(
-                    stack, output_dir=output_dir, file_name=f"avg_img_ch{ch + 1}"
+                    stack, output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
                 ),
                 "p_avg": ImageData(
                     corrected_stack,
                     output_dir=output_dir,
-                    file_name=f"p_avg_img_ch{ch + 1}",
+                    file_name=f"p_avg_ch{ch + 1}",
                 ),
-                # Add some data for timecourse
             }

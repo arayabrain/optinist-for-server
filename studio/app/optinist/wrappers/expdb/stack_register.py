@@ -1,9 +1,13 @@
 import numpy as np
 
-from studio.app.optinist.wrappers.expdb.dft_registration import dft_registration_nD
+from studio.app.optinist.wrappers.expdb.dft_registration import (
+    dft_registration,
+    dft_registration_nD,
+)
+from studio.app.optinist.wrappers.expdb.stack_average import stack_average
 
 
-def stack_register(stack, target, us_fac=100):
+def stack_register(stack: np.ndarray, target: np.ndarray, usfac: int):
     """
     Fourier-domain subpixel 2d rigid body registration.
 
@@ -13,6 +17,8 @@ def stack_register(stack, target, us_fac=100):
         3d array containing stack to register
     target : ndarray
         2d array
+    usfac : int
+        upsampling factor
 
     Returns
     -------
@@ -23,32 +29,140 @@ def stack_register(stack, target, us_fac=100):
         outs(:,2) is net row shift
         outs(:,3) is net column shift
     """
-    from scipy.fftpack import fft2, ifft2
+    from numpy.fft import fft2, ifft2
 
     target_after_fft = fft2(target.astype(np.float32))
     ny, nx, nframes = stack.shape
-    outs = np.zeros((nframes, 4))
+    outs = np.empty((nframes, 4))
+    result_stack = stack.copy()
 
     for i in range(nframes):
         slice_ = fft2(stack[:, :, i].astype(np.float32))
-        outs[i, :], temp = dft_registration_nD(target_after_fft, slice_, us_fac)
+        error, diffphase, row_shift, col_shift, greg = dft_registration(
+            target_after_fft, slice_, usfac
+        )
+        outs[i, :] = [error, diffphase, row_shift, col_shift]
 
-        stack[:, :, i] = np.abs(ifft2(temp)).astype(stack.dtype)
+        if greg is not None:
+            result_stack[:, :, i] = np.abs(ifft2(greg)).astype(stack.dtype)
 
-    return outs, stack
-
-
-def stack_register_3d(stack, target, le, shift_method):
-    """ """
-    pass
+    return outs, result_stack
 
 
-def stack_register_nD(stack, target):
+def translate_stack(stack: np.ndarray, y: int, x: int, z: int):
+    ny, nx, nz = stack.shape
+
+    out = np.zeros(stack.shape)
+    xmin = max(1, x + 1)
+    xmax = min(nx + x, nx)
+    ymin = max(1, y + 1)
+    ymax = min(ny + y, ny)
+    zmin = max(1, z + 1)
+    zmax = min(nz + z, nz)
+
+    out[ymin - 1 : ymax, xmin - 1 : xmax, zmin - 1 : zmax] = stack[
+        ymin - 1 - y : ymax - y, xmin - 1 - x : xmax - x, zmin - 1 - z : zmax - z
+    ]
+
+    return out
+
+
+def stack_register_3d(
+    stack: np.ndarray,
+    target: np.ndarray,
+    le: int,
+    shift_method: str,
+):
+    """
+    DFT-based xy registration of 3D stacks
+    assuming rigid body translation, it calculates xy shift from
+    representative three planes around the center and shift entire stack.
+
+    Parameters
+    ----------
+    stack : ndarray
+        xyz time course 4-D data
+    target : ndarray
+        average xyz 3-D data
+    le : int
+        if LE is 1, LE version (default 0)
+        LE version does not correct Z shift
+        if LE is 2, XY alignment is done in each depth, independently
+        if Z correction needed,use LE=0
+    shift_method: str
+        'circ' circular shift
+        'zero' shift and pad by zero
+
+    Returns
+    -------
+    ndarray
+        outs(:,0): correlation coefficients
+        outs(:,1): global phase difference between images
+                (should be zero if images real and non-negative).
+        outs(:,2) is net row shift
+        outs(:,3) is net column shift
+    ndarray
+        registered stack
+    """
+    from numpy.fft import fftn, ifftn
+
+    # reshape stack to handle 3d (y, x, z, t)
+    if len(stack.shape) < 4:  # (y, x, t)
+        stack = np.expand_dims(stack, axis=2)
+
+    ny, nx, nz, nframes = stack.shape
+
+    if le == 2 and nz > 1:
+        result_params = []
+        for z in range(nz):
+            realign_params, stack[:, :, z, :] = stack_register(
+                stack[:, :, z, :],
+                stack_average(stack[:, :, z, :], period=1),
+                usfac=100,
+            )
+            # insert shifts
+            result_params.extend(realign_params[:, 2:4])
+        return np.array(result_params, dtype=np.int64), stack
+
+    if le == 1 and nz > 2:
+        z_center = int(np.round(nz / 2))
+        plane_index = np.arange(z_center)
+    else:
+        plane_index = np.arange(nz)
+
+    f_target = fftn(target[:, :, plane_index].astype(np.float32))
+    result_params = np.zeros((nframes, 3))
+
+    for i in range(nframes):
+        original = np.squeeze(stack[:, :, :, i])
+        source = original[:, :, plane_index]
+        f_stack = fftn(source.astype(np.float32))
+        ref_v = ifftn(f_target * np.conj(f_stack))
+        loc = np.unravel_index(np.argmax(np.abs(ref_v)), ref_v.shape)
+        loc_row, loc_col = loc[:2]
+
+        rd_2 = int(np.fix(ny / 2))
+        cd_2 = int(np.fix(nx / 2))
+
+        row_shift = loc_row - ny if loc_row > rd_2 else loc_row
+        col_shift = loc_col - nx if loc_col > cd_2 else loc_col
+
+        if shift_method == "circ":
+            stack[:, :, :, i] = np.roll(original, [row_shift, col_shift, 0])
+        else:
+            stack[:, :, :, i] = translate_stack(original, row_shift, col_shift, 0)
+
+        result_params[i, :] = [row_shift, col_shift, 0]
+
+    return result_params, stack
+
+
+def stack_register_nD(stack: np.ndarray, target: np.ndarray):
     """
     Based on DFTREGISTRATION by Manuel Guizar
     Extended to n-dimension by Kenichi Ohki  2011.7.8.
     """
-    from scipy.fftpack import fftn
+    from numpy.fft import fftn
 
     target_after_fft = fftn(target.astype(np.float32))
     stack_dim = stack.shape

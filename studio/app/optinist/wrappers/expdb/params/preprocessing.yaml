@@ -6,3 +6,5 @@ stack_phase_correct:
 stack_register:
   do_realign: True
   le: 1
+  usfac: 1
+  shift_method: "circ"
