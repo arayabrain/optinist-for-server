@@ -220,7 +220,7 @@ def dft_registration(buf1ft: np.ndarray, buf2ft: np.ndarray, usfac: int):
     elif usfac == 0:
         g_reg = buf2ft * exp(1j * diffphase)
 
-    return error, diffphase, int(row_shift), int(col_shift), g_reg
+    return np.squeeze(error), diffphase, row_shift, col_shift, g_reg
 
 
 def dft_registration_nD(buf1ft: np.ndarray, buf2ft: np.ndarray):
