@@ -3,7 +3,7 @@ import numpy as np
 from studio.app.optinist.wrappers.expdb.stack_register import stack_register_nD
 
 
-def stack_phase_correct(stack, fov, first_dim=1):
+def stack_phase_correct(stack: np.ndarray, fov: np.ndarray, first_dim):
     """
     Correct phase mismatch in bidirectional scanning with galvano and resonant mirrors
 
@@ -13,7 +13,7 @@ def stack_phase_correct(stack, fov, first_dim=1):
         3-4 dimensions
     fov: ndarray
         2-3 dimensions
-    first_dim: int, optional
+    first_dim: int
         First dimension, in which bidirectional scan was obtained.
         Usually 1, but sometimes could be 2.
 
