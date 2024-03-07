@@ -83,12 +83,12 @@ def preprocessing(
             }
 
             if params["do_realign"]:
-                if len(stack.size) == 3:
+                if len(stack.shape) == 3:
                     usfac = params["usfac"]
                     realign_params, realigned_stack = stack_register(
                         corrected_stack, corrected_fov, usfac
                     )
-                elif len(stack.size) == 4:
+                elif len(stack.shape) == 4:
                     le = params["le"]
                     shift_method = params["shift_method"]
                     realign_params, realigned_stack = stack_register_3d(
