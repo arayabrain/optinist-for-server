@@ -15,7 +15,7 @@ from studio.app.optinist.wrappers.expdb.stack_register import (
 
 def preprocessing(
     microscope: MicroscopeData, output_dir: str, params: dict = None, **kwargs
-) -> dict(avg=ImageData, p_avg=ImageData):
+) -> dict(stack=ImageData):
     # convert_onefileの処理を実装
     params_flatten = {}
     for segment in params.values():
@@ -101,6 +101,11 @@ def preprocessing(
                     output_dir=output_dir,
                     file_name=f"rp_avg_img_ch{ch + 1}",
                 )
+                info["stack"] = ImageData(
+                    realigned_stack,
+                    output_dir=output_dir,
+                    file_name=f"realigned_stack_ch{ch + 1}",
+                )
 
                 # save array for debugging
                 with h5py.File(output_dir + "/p_mat.hdf5", "w") as f:
@@ -108,10 +113,16 @@ def preprocessing(
                     f.create_dataset("fov", data=fov)
                     f.create_dataset("corrected_stack", data=corrected_stack)
                     f.create_dataset("corrected_fov", data=corrected_fov)
+                    f.create_dataset("dx", data=dx)
                     f.create_dataset("realigned_stack", data=realigned_stack)
                     f.create_dataset("realigned_fov", data=realigned_fov)
                     f.create_dataset("realign_params", data=realign_params)
-
+            else:
+                info["stack"] = ImageData(
+                    corrected_stack,
+                    output_dir=output_dir,
+                    file_name=f"corrected_stack_ch{ch + 1}",
+                )
             return info
 
         else:  # for anatomy (non-timeseries)
@@ -125,5 +136,10 @@ def preprocessing(
                     corrected_stack,
                     output_dir=output_dir,
                     file_name=f"p_avg_ch{ch + 1}",
+                ),
+                "stack": ImageData(
+                    corrected_stack,
+                    output_dir=output_dir,
+                    file_name=f"corrected_stack_ch{ch + 1}",
                 ),
             }
