@@ -43,6 +43,7 @@ services:
       TZ: Asia/Tokyo
       OPTINIST_DIR: /tmp
       POETRY_VIRTUALENVS_CREATE: false
+      CONDA_CHANNEL_PRIORITY: strict
     depends_on:
       - db
 
