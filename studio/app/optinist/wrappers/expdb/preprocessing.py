@@ -1,6 +1,3 @@
-from pprint import pprint
-
-import h5py
 import numpy as np
 
 from studio.app.common.dataclass.image import ImageData
@@ -24,14 +21,7 @@ def preprocessing(
 
     microscope_data = microscope.data
     ome_meta = microscope_data.ome_metadata
-    print()
-    print()
-    pprint(ome_meta)
-    print()
-    print()
-    raw_stack = np.array(
-        microscope_data.get_image_stacks()
-    )  # (ch, t, y, x) or (ch, t, z, y, x)
+    raw_stack = microscope_data.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
     is_timeseries = ome_meta.size_t > 1
 
     # set common params to variables
@@ -40,106 +30,82 @@ def preprocessing(
     # run preprocess for each channel
     for ch in range(ome_meta.size_c):
         if ome_meta.size_z > 1:
-            stack = (  # (y, x, z, t)
-                raw_stack[ch]
-                .transpose(3, 2, 1, 0)
-                .reshape(
-                    ome_meta.size_y,
-                    ome_meta.size_x,
-                    ome_meta.size_z,
-                    ome_meta.size_t,
-                    order="F",
-                )
-            )
+            stack = raw_stack[ch].transpose(2, 3, 1, 0)  # (y, x, z, t)
         else:
-            stack = (  # (y, x, t)
-                raw_stack[ch]
-                .transpose(2, 1, 0)
-                .reshape(
-                    ome_meta.size_y,
-                    ome_meta.size_x,
-                    ome_meta.size_t,
-                    order="F",
-                )
-            )
+            stack = raw_stack[ch].transpose(1, 2, 0)  # (y, x, t)
+
+        info = {}
 
         if is_timeseries:
             period = params["period"]
             runs = params["runs"]
 
             fov = np.squeeze(stack_average(stack, period, runs))  # (y, x, (z))
-            corrected_stack, dx = stack_phase_correct(stack, fov, first_dim)
-            corrected_fov = np.squeeze(stack_average(corrected_stack, period, runs))
-
-            info = {
-                "avg": ImageData(
-                    fov, output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
-                ),
-                "p_avg": ImageData(
-                    corrected_fov,
-                    output_dir=output_dir,
-                    file_name=f"p_avg_ch{ch + 1}",
-                ),
-            }
+            info["avg"] = ImageData(
+                fov.copy(), output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
+            )
+            stack, dx = stack_phase_correct(stack, fov, first_dim)
+            fov = np.squeeze(stack_average(stack, period, runs))
+            info["p_avg"] = ImageData(
+                fov.copy(), output_dir=output_dir, file_name=f"p_avg_ch{ch + 1}"
+            )
 
             if params["do_realign"]:
-                if len(stack.shape) == 3:
+                if stack.ndim == 3:
                     usfac = params["usfac"]
-                    realign_params, realigned_stack = stack_register(
-                        corrected_stack, corrected_fov, usfac
-                    )
-                elif len(stack.shape) == 4:
+                    realign_params, stack = stack_register(stack, fov, usfac)
+                elif stack.ndim == 4:
                     le = params["le"]
                     shift_method = params["shift_method"]
-                    realign_params, realigned_stack = stack_register_3d(
-                        corrected_stack, corrected_fov, le, shift_method
+                    realign_params, stack = stack_register_3d(
+                        stack, fov, le, shift_method
                     )
 
-                realigned_fov = np.squeeze(stack_average(realigned_stack, period, runs))
+                fov = np.squeeze(stack_average(stack, period, runs))
                 info["rp_avg"] = ImageData(
-                    realigned_fov,
+                    fov,
                     output_dir=output_dir,
                     file_name=f"rp_avg_img_ch{ch + 1}",
                 )
-                info["stack"] = ImageData(
-                    realigned_stack,
+                info["stack"] = ImageData(  # (t, y, x) or (t, z, y, x)
+                    # TODO: test for 4D stack
+                    (
+                        stack.transpose(2, 0, 1)
+                        if stack.ndim == 3
+                        else stack.transpose(3, 2, 0, 1)
+                    ),
                     output_dir=output_dir,
                     file_name=f"realigned_stack_ch{ch + 1}",
                 )
 
-                # save array for debugging
-                with h5py.File(output_dir + "/p_mat.hdf5", "w") as f:
-                    f.create_dataset("raw_stack", data=stack)
-                    f.create_dataset("fov", data=fov)
-                    f.create_dataset("corrected_stack", data=corrected_stack)
-                    f.create_dataset("corrected_fov", data=corrected_fov)
-                    f.create_dataset("dx", data=dx)
-                    f.create_dataset("realigned_stack", data=realigned_stack)
-                    f.create_dataset("realigned_fov", data=realigned_fov)
-                    f.create_dataset("realign_params", data=realign_params)
             else:
-                info["stack"] = ImageData(
-                    corrected_stack,
+                info["stack"] = ImageData(  # (t, y, x) or (t, z, y, x)
+                    # TODO: test for 4D stack
+                    (
+                        stack.transpose(2, 0, 1)
+                        if stack.ndim == 3
+                        else stack.transpose(3, 2, 0, 1)
+                    ),
                     output_dir=output_dir,
                     file_name=f"corrected_stack_ch{ch + 1}",
                 )
-            return info
 
         else:  # for anatomy (non-timeseries)
-            corrected_stack, dx = stack_phase_correct(stack, stack, first_dim)
+            info["avg"] = ImageData(
+                stack.copy(),
+                output_dir=output_dir,
+                file_name=f"avg_ch{ch + 1}",
+            )
+            stack, dx = stack_phase_correct(stack, stack, first_dim)
+            info["p_avg"] = ImageData(
+                stack,
+                output_dir=output_dir,
+                file_name=f"p_avg_ch{ch + 1}",
+            )
+            info["stack"] = ImageData(
+                stack,
+                output_dir=output_dir,
+                file_name=f"corrected_stack_ch{ch + 1}",
+            )
 
-            return {
-                "avg": ImageData(
-                    stack, output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
-                ),
-                "p_avg": ImageData(
-                    corrected_stack,
-                    output_dir=output_dir,
-                    file_name=f"p_avg_ch{ch + 1}",
-                ),
-                "stack": ImageData(
-                    corrected_stack,
-                    output_dir=output_dir,
-                    file_name=f"corrected_stack_ch{ch + 1}",
-                ),
-            }
+        return info

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def stack_average(stack: np.ndarray, period, runs=None):
+def stack_average(stack: np.ndarray, period, runs=None) -> np.ndarray:
     """
     Average stack over repeats
 
@@ -20,26 +20,32 @@ def stack_average(stack: np.ndarray, period, runs=None):
     """
     # stack: (y, x, t) or (y, x, z, t)
     dim = stack.shape
-    d = len(dim)
+    d = stack.ndim
     assert d in [3, 4], "stack must be 2d, 3d"
     frames = dim[-1]
 
     if runs is None:
         runs = list(range(int(frames / period)))
+    runs_len = len(runs)
 
     if d == 3:
-        avg = np.zeros((dim[0], dim[1], period))  # (y, x, t)
+        avg = np.zeros((dim[0], dim[1], period), dtype=np.float32)  # (y, x, t)
+    # TODO: test for 4D pattern
     elif d == 4:
-        avg = np.zeros((dim[0], dim[1], dim[2], period))  # (y, x, z, t)
+        avg = np.zeros(
+            (dim[0], dim[1], dim[2], period), dtype=np.float32
+        )  # (y, x, z, t)
 
-    for r in runs:
-        start = r * period
-        end = (r + 1) * period
-        if d == 3:
-            avg += stack[:, :, start:end].astype(float)
-        elif d == 4:
-            avg += stack[:, :, :, start:end].astype(float)
-
-    avg /= len(runs)
+    if d == 3:
+        stack = stack[:, :, : (period * runs_len)].reshape(
+            dim[0], dim[1], period, runs_len, order="F"
+        )
+        avg = np.average(stack, axis=3)
+    # TODO: test for 4D pattern
+    elif d == 4:
+        stack = stack[:, :, :, : (period * runs_len)].reshape(
+            dim[0], dim[1], dim[2], period, runs_len, order="F"
+        )
+        avg = np.average(stack, axis=4)
 
     return avg

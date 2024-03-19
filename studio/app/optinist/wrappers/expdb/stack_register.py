@@ -31,22 +31,21 @@ def stack_register(stack: np.ndarray, target: np.ndarray, usfac: int):
     """
     from numpy.fft import fft2, ifft2
 
-    target_after_fft = fft2(target.astype(np.float32))
-    ny, nx, nframes = stack.shape
+    target = fft2(target.astype(np.float32))
+    nframes = stack.shape[-1]
     outs = np.empty((nframes, 4))
-    result_stack = stack.copy()
 
     for i in range(nframes):
         slice_ = fft2(stack[:, :, i].astype(np.float32))
         error, diffphase, row_shift, col_shift, greg = dft_registration(
-            target_after_fft, slice_, usfac
+            target, slice_, usfac
         )
         outs[i, :] = [error, diffphase, row_shift, col_shift]
 
         if greg is not None:
-            result_stack[:, :, i] = np.abs(ifft2(greg)).astype(stack.dtype)
+            stack[:, :, i] = np.abs(ifft2(greg)).astype(stack.dtype)
 
-    return outs, result_stack
+    return outs, stack
 
 
 def translate_stack(stack: np.ndarray, y: int, x: int, z: int):
@@ -107,7 +106,7 @@ def stack_register_3d(
     from numpy.fft import fftn, ifftn
 
     # reshape stack to handle 3d (y, x, z, t)
-    if len(stack.shape) < 4:  # (y, x, t)
+    if stack.ndim < 4:  # (y, x, t)
         stack = np.expand_dims(stack, axis=2)
 
     ny, nx, nz, nframes = stack.shape
@@ -130,14 +129,14 @@ def stack_register_3d(
     else:
         plane_index = np.arange(nz)
 
-    f_target = fftn(target[:, :, plane_index].astype(np.float32))
+    target = fftn(target[:, :, plane_index].astype(np.float32))
     result_params = np.zeros((nframes, 3))
 
     for i in range(nframes):
         original = np.squeeze(stack[:, :, :, i])
         source = original[:, :, plane_index]
         f_stack = fftn(source.astype(np.float32))
-        ref_v = ifftn(f_target * np.conj(f_stack))
+        ref_v = ifftn(target * np.conj(f_stack))
         loc = np.unravel_index(np.argmax(np.abs(ref_v)), ref_v.shape)
         loc_row, loc_col = loc[:2]
 
@@ -164,32 +163,32 @@ def stack_register_nD(stack: np.ndarray, target: np.ndarray):
     """
     from numpy.fft import fftn
 
-    target_after_fft = fftn(target.astype(np.float32))
-    stack_dim = stack.shape
     target_dim = target.shape
+    stack_dim = stack.shape
+    target = fftn(target.astype(np.float32))
     outstack = np.zeros(stack_dim)
 
-    dim_diff = len(stack_dim) - len(target_dim)
+    dim_diff = stack.ndim - target.ndim
     assert dim_diff in [0, 1], "mismatch of stack and target dimension"
 
     if dim_diff == 1:
         nframes = stack_dim[-1]
         # reshape stack to handle n-dimension
         reshaped_stack = stack.reshape(np.prod(target_dim), nframes)
-        outs = np.zeros((nframes, len(target_dim) + 2))
+        outs = np.zeros((nframes, target.ndim + 2))
 
         for i in range(nframes):
             slice_ = reshaped_stack[:, i].reshape(target_dim)
             source = fftn(slice_.astype(np.float32))
             # outs is (error, diffphase, shift)
-            outs[i, :] = dft_registration_nD(target_after_fft, source)
+            outs[i, :] = dft_registration_nD(target, source)
             # roll with shift
             outstack[:, :, i] = np.roll(slice_, outs[i, 2])
 
     elif dim_diff == 0:
         source = fftn(stack.astype(np.float32))
         # outs is (error, diffphase, shift)
-        outs = tuple(dft_registration_nD(target_after_fft, source))
+        outs = tuple(dft_registration_nD(target, source))
         # roll with shift
         outstack = np.roll(stack, outs[2])
 
