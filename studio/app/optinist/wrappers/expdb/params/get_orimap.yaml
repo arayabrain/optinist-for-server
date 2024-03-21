@@ -1,0 +1,5 @@
+channel: 1
+nbinning: 1
+lowpass: 1
+kernel_size: 2
+tune_max: 0.4

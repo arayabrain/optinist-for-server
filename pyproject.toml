@@ -73,6 +73,7 @@ lauda = "*"
 opencv-python = "*"
 pymatreader = "^0.0.32"
 xmltodict = "*"
+matplotlib = "==3.7.*"
 
 [tool.poetry.group.dev]
 optional = true
