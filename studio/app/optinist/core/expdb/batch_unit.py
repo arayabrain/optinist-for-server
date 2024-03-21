@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import tifffile
 from lauda import stopwatch
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
 from studio.app.common.core.utils.config_handler import ConfigReader
@@ -19,7 +19,9 @@ from studio.app.common.core.utils.filepath_creater import (
     join_filepath,
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
+    ACCEPT_MICROSCOPE_EXT,
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
     EXP_METADATA_SUFFIX,
@@ -37,7 +39,10 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     get_experiment,
 )
 from studio.app.optinist.dataclass import ExpDbData, StatData
+from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.wrappers.expdb import analyze_stats
+from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
+from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 
 
 @dataclass
@@ -65,21 +70,40 @@ class ExpDbPath:
             self.exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
+
+            microscope_files = []
+            for ext in ACCEPT_MICROSCOPE_EXT:
+                microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
+            assert (
+                len(microscope_files) > 0
+            ), f"microscope files not found: {self.exp_dir}"
+            assert (
+                len(microscope_files) == 1
+            ), f"multiple microscope files found: {microscope_files}"
+            self.microscope_file = microscope_files[0]
+
+            self.preprocess_dir = join_filepath([self.output_dir, "preprocess"])
+            self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
+
+            # TODO: timecourse.matをCNMFの結果から取得する
             self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
             self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
+            assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
+
+            # TODO: cellmask.matをCNMFの結果から取得する
             self.cellmask_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
-            self.fov_file = join_filepath([self.exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+            # TODO: 専用のディレクトリに変更
+            # 前半実装時はexp_dir直下の想定でファイルの移動が必要になるため保留
+            # self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
+            self.orimaps_dir = self.exp_dir
+            self.fov_file = join_filepath(
+                [self.orimaps_dir, f"{exp_id}_{FOV_SUFFIX}.tif"]
+            )
             self.exp_metadata_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
             )
-            assert os.path.exists(self.tc_file), f"tc_file not found: {self.tc_file}"
-            assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
-            assert os.path.exists(
-                self.cellmask_file
-            ), f"cellmask_file not found: {self.cellmask_file}"
-            assert os.path.exists(self.fov_file), f"fov_file not found: {self.fov_file}"
             # Note: Metadata file is allowed to be missing.
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
@@ -132,6 +156,42 @@ class ExpDbBatch:
         return (cellmask, imxx, ncells)
 
     @stopwatch(callback=__stopwatch_callback)
+    def preprocess(self) -> ImageData:
+        preprocess_results = preprocessing(
+            microscope=MicroscopeData(self.raw_path.microscope_file),
+            output_dir=self.raw_path.preprocess_dir,
+            params=get_default_params("preprocessing"),
+        )
+
+        savemat(
+            join_filepath([self.raw_path.info_file]),
+            {
+                k: v.data
+                for k, v in preprocess_results.items()
+                if isinstance(v, ImageData)
+            },
+        )
+
+        return preprocess_results["stack"]
+
+    @stopwatch(callback=__stopwatch_callback)
+    def generate_orimaps(self, stack: ImageData):
+        create_directory(self.raw_path.orimaps_dir)
+
+        expdb = ExpDbData(paths=[self.raw_path.ts_file])
+        get_orimap(
+            stack=stack,
+            expdb=expdb,
+            output_dir=self.raw_path.orimaps_dir,
+            params={**get_default_params("get_orimap"), "exp_id": self.exp_id},
+        )
+
+    # TODO: implement cell_detection_cnmf
+    @stopwatch(callback=__stopwatch_callback)
+    def cell_detection_cnmf(self):
+        pass
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
@@ -140,6 +200,7 @@ class ExpDbBatch:
         assert isinstance(stat, StatData), "generate statdata failed"
 
         for expdb_path in self.expdb_paths:
+            # TODO: save in NWB
             stat.save_as_hdf5(expdb_path.stat_file)
             assert os.path.exists(
                 expdb_path.stat_file
@@ -218,8 +279,10 @@ class ExpDbBatch:
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.pixelmap_dir)
 
-        pixelmaps = glob(join_filepath([self.raw_path.exp_dir, "*_hc.tif"]))
-        pixlemaps_with_num = glob(join_filepath([self.raw_path.exp_dir, "*_hc_*.tif"]))
+        pixelmaps = glob(join_filepath([self.raw_path.orimaps_dir, "*_hc.tif"]))
+        pixlemaps_with_num = glob(
+            join_filepath([self.raw_path.orimaps_dir, "*_hc_*.tif"])
+        )
         for pixelmap in [*pixelmaps, *pixlemaps_with_num]:
             img = tifffile.imread(pixelmap)
             file_name = os.path.splitext(os.path.basename(pixelmap))[0]
