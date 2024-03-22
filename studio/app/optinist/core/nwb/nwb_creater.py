@@ -54,7 +54,7 @@ class NWBCreater:
             excitation_lambda=float(
                 config["imaging_plane"]["excitation_lambda"]
             ),  # 励起（れいき）波長
-            indicator=config["imaging_plane"]["indicator"],  # カルシウムインディケーター
+            indicator=config["imaging_plane"]["indicator"],  # カルシウムインジケーター
             location=config["imaging_plane"]["location"],
         )
 
@@ -277,6 +277,17 @@ class NWBCreater:
         return nwbfile
 
     @classmethod
+    def oristats(cls, nwbfile, data):
+        # data is Oristats instance
+        nwbfile.add_analysis(data)
+        return nwbfile
+
+    @classmethod
+    def lab_specific_metadata(cls, nwbfile, data):
+        nwbfile.add_lab_meta_data(lab_meta_data=data)
+        return nwbfile
+
+    @classmethod
     def reaqcuisition(cls, nwbfile):
         new_nwbfile = NWBFile(
             session_description=nwbfile.session_description,
@@ -388,6 +399,17 @@ def set_nwbconfig(nwbfile, config):
                 function_key,
                 config[NWBDATASET.FLUORESCENCE][function_key],
             )
+
+    if NWBDATASET.ORISTATS in config:
+        nwbfile = NWBCreater.oristats(nwbfile, config[NWBDATASET.ORISTATS])
+
+    if NWBDATASET.SUBJECT_METADATA in config:
+        nwbfile.subject = config[NWBDATASET.SUBJECT_METADATA]
+
+    if NWBDATASET.LAB_METADATA in config:
+        nwbfile = NWBCreater.lab_specific_metadata(
+            nwbfile, config[NWBDATASET.LAB_METADATA]
+        )
 
     return nwbfile
 

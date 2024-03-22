@@ -6,6 +6,7 @@ from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.common.dataclass.line import LineData
 from studio.app.common.dataclass.pie import PieData
 from studio.app.common.dataclass.polar import PolarData
+from studio.app.optinist.core.nwb.oristat import Oristats
 
 
 class StatData(BaseData):
@@ -228,6 +229,27 @@ class StatData(BaseData):
             data=self.ori_tuning_width[self.index_orientation_selective_cell],
             file_name="orientation_tuning_width",
         )
+
+    @property
+    def nwb_data(self):
+        stats_dict = self.__dict__.copy()
+        stats_dict.pop("file_name")
+        stats_dict.update(
+            {
+                "tuning_curve": self.tuning_curve.data,
+                "tuning_curve_polar": self.tuning_curve_polar.data,
+                "direction_responsivity_ratio": self.direction_responsivity_ratio.data,
+                "orientation_responsivity_ratio": self.orientation_responsivity_ratio.data,  # noqa: E501
+                "direction_selectivity": self.direction_selectivity.data,
+                "orientation_selectivity": self.orientation_selectivity.data,
+                "best_responsivity": self.best_responsivity.data,
+                "preferred_direction": self.preferred_direction.data,
+                "preferred_orientation": self.preferred_orientation.data,
+                "direction_tuning_width": self.direction_tuning_width.data,
+                "orientation_tuning_width": self.orientation_tuning_width.data,
+            }
+        )
+        return Oristats(**stats_dict)
 
     def save_as_hdf5(self, filepath):
         with h5py.File(filepath, "w") as f:

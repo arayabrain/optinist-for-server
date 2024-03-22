@@ -35,9 +35,12 @@ from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
+    extract_experiment_nwb,
     extract_experiment_view_attributes,
     get_experiment,
 )
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.wrappers.expdb import analyze_stats
@@ -105,6 +108,7 @@ class ExpDbPath:
                 [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
             )
             # Note: Metadata file is allowed to be missing.
+            self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
             self.output_dir = self.exp_dir
@@ -125,6 +129,7 @@ class ExpDbBatch:
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbPath(self.exp_id)
         self.expdb_paths = [self.raw_path, self.pub_path]
+        self.nwbfile = {}
 
     def __stopwatch_callback(watch, function):
         logging.getLogger().info(
@@ -198,6 +203,8 @@ class ExpDbBatch:
             expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
         ).get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
+
+        self.nwbfile[NWBDATASET.ORISTATS] = stat.nwb_data
 
         for expdb_path in self.expdb_paths:
             # TODO: save in NWB
@@ -307,8 +314,16 @@ class ExpDbBatch:
             with open(self.raw_path.exp_metadata_file) as f:
                 attributes = json.load(f)
                 view_attributes = extract_experiment_view_attributes(attributes)
+                subject_nwb, lab_specific_nwb = extract_experiment_nwb(attributes)
+                self.nwbfile[NWBDATASET.SUBJECT_METADATA] = subject_nwb
+                self.nwbfile[NWBDATASET.LAB_METADATA] = lab_specific_nwb
 
                 if not view_attributes:
                     raise KeyError("Invalid metadata format")
 
         return (attributes, view_attributes)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def save_nwb(self):
+        input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
+        save_nwb(self.raw_path.nwb_file, input_config, self.nwbfile)
