@@ -23,8 +23,7 @@ class MicroscopeData(BaseData):
             reader = OIRReader()
         elif ext == ".isxd":
             reader = IsxdReader()
-        elif ext == ".tif" or ext == ".tiff":
-            # ThorlabsReader requires a directory path
+        elif ext == ".thor.zip":
             self.path = os.path.dirname(self.path)
             reader = ThorlabsReader()
         else:
