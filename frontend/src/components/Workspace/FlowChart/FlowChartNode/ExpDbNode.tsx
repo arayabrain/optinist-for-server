@@ -95,7 +95,7 @@ interface ExpDbSelectDialogProps {
   setOpen: (open: boolean) => void
 }
 
-const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
+export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   nodeId,
   open,
   setOpen,
