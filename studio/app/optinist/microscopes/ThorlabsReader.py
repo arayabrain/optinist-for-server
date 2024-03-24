@@ -22,7 +22,7 @@ class ThorlabsReader(MicroscopeDataReaderBase):
     #   so any module that supports it (e.g., tifffile) can be used.
     SDK_MODULE_NAME = "tifffile"
 
-    RAW_ARCHIVE_FILE_PATTERN = ".*\\.zip$"
+    RAW_ARCHIVE_FILE_PATTERN = ".*\\.thor.zip$"
 
     OME_TIFF_EXT = ".tif"
 
