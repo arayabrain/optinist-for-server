@@ -1,8 +1,10 @@
-import { memo } from "react"
+import { memo, useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { Handle, Position, NodeProps } from "reactflow"
 
-import { FileSelect } from "components/Workspace/FlowChart/FlowChartNode/FileSelect"
+import { Button, Typography } from "@mui/material"
+
+import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbNode"
 import {
   toHandleId,
   isValidConnection,
@@ -11,12 +13,10 @@ import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/Han
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
 import { HANDLE_STYLE } from "const/flowchart"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
-import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
 import {
   selectMicroscopeInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
-import { FILE_TYPE_SET } from "store/slice/InputNode/InputNodeType"
 
 export const MicroscopeFileNode = memo(function MicroscopeFileNode(
   element: NodeProps,
@@ -34,12 +34,6 @@ const MicroscopeFileNodeImple = memo(function MicroscopeFileNodeImple({
   selected: elementSelected,
 }: NodeProps) {
   const dispatch = useDispatch()
-  const filePath = useSelector(
-    selectMicroscopeInputNodeSelectedFilePath(nodeId),
-  )
-  const onChangeFilePath = (path: string) => {
-    dispatch(setInputNodeFilePath({ nodeId, filePath: path }))
-  }
 
   const returnType = "MicroscopeData"
   const microscopeColor = useHandleColor(returnType)
@@ -57,26 +51,35 @@ const MicroscopeFileNodeImple = memo(function MicroscopeFileNodeImple({
       >
         ×
       </button>
-      <FileSelect
-        nodeId={nodeId}
-        onChangeFilePath={(path) => {
-          if (!Array.isArray(path)) {
-            onChangeFilePath(path)
-          }
-        }}
-        fileType={FILE_TYPE_SET.MICROSCOPE}
-        filePath={filePath ?? ""}
-      />
+      <ExpDbSelect nodeId={nodeId} />
       <Handle
         type="source"
         position={Position.Right}
         id={toHandleId(nodeId, "microscope", returnType)}
-        style={{
-          ...HANDLE_STYLE,
-          background: microscopeColor,
-        }}
+        style={{ ...HANDLE_STYLE, background: microscopeColor }}
         isValidConnection={isValidConnection}
       />
     </NodeContainer>
+  )
+})
+
+const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
+  const [open, setOpen] = useState(false)
+  const experimentId = useSelector(
+    selectMicroscopeInputNodeSelectedFilePath(nodeId),
+  )
+
+  return (
+    <div>
+      <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
+        Select
+      </Button>
+      <ExpDbSelectDialog nodeId={nodeId} open={open} setOpen={setOpen} />
+      <Typography>
+        {experimentId
+          ? `Selected experiment id: ${experimentId}`
+          : "No experiment selected"}
+      </Typography>
+    </div>
   )
 })
