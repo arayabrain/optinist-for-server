@@ -99,6 +99,7 @@ type DatabaseProps = {
   cellPath: string
   handleRowClick?: GridEventListener<"rowClick">
   readonly?: boolean
+  metadataEditable?: boolean
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -481,6 +482,7 @@ const DatabaseExperiments = ({
   cellPath,
   handleRowClick,
   readonly,
+  metadataEditable,
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -1187,7 +1189,7 @@ const DatabaseExperiments = ({
         handleClose={handleCloseDialog}
         onSubmit={onSubmitAttributes}
         role={!!adminOrManager && !!user}
-        readonly={readonly}
+        readonly={!metadataEditable}
       />
       {loading ? <Loading /> : null}
       {openShare.open && openShare.id ? (
