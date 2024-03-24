@@ -3,7 +3,8 @@ import numpy as np
 
 def stack_average(stack: np.ndarray, period, runs=None) -> np.ndarray:
     """
-    Average stack over repeats
+    Based on Ohki Lab's stackAverage.m.
+    Average stack over repeats.
 
     Parameters
     ----------

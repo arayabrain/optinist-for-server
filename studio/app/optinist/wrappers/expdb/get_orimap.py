@@ -18,7 +18,7 @@ class MapParams:
     tune: np.array = None
 
 
-def sortStim(
+def sort_stim(
     stack: np.ndarray,
     stim_log_input: list,
     nframes_per_stim,
@@ -26,6 +26,7 @@ def sortStim(
     Nrep: int,
 ) -> None:
     """
+    Based on Ohki Lab's MATLAB code sortStim.m.
     Sorting of stacks by stimulus order.
     Used to analyze experiments in which the order of application
     of visual stimuli was randomized (TS.fragRandomize = 1).
@@ -102,7 +103,7 @@ def generate_gaussian_filter(kernel_size: int, sigma: int) -> np.ndarray:
 
     from scipy.signal import gaussian
 
-    # 標準偏差が1の1次元ガウシアンフィルター
+    # 標準偏差がsigmaの1次元ガウシアンフィルター
     kernel_1d = gaussian(kernel_size, sigma)
 
     # 1次元フィルターから2次元ガウシアンフィルターを生成
@@ -115,6 +116,9 @@ def generate_gaussian_filter(kernel_size: int, sigma: int) -> np.ndarray:
 
 
 def filter2_nd(filter: np.ndarray, stack: np.ndarray, mode: str = "same") -> np.ndarray:
+    """
+    Based on Ohki Lab's MATLAB code filter2n.m.
+    """
     from scipy.signal import convolve2d
 
     stack_dim = stack.shape
@@ -150,6 +154,7 @@ def calc_F(
     ave: np.ndarray, stim_inds: list, nframes_per_stim: int, nstim_per_run: int
 ) -> np.ndarray:
     """
+    Based on Ohki Lab's MATLAB code calc_F.m.
     calculate images to each stimulation
     stim_inds specify activation frames in one trial. e.g. [5:9].
     one trial starts from frame 1 and end at frame 'nframes_per_stim'.
@@ -179,6 +184,7 @@ def calc_dF(
     use_eachbase: bool = False,
 ) -> list:
     """
+    Based on Ohki Lab's MATLAB code calc_dF.m.
     calculate dF images (and their smoothed images) to each direction.
     """
 
@@ -217,6 +223,7 @@ def calc_ratio_change(
     dir_dF_sm: np.ndarray, bases_sm: np.ndarray, use_eachbase: bool = False
 ) -> np.ndarray:
     """
+    Based on Ohki Lab's MATLAB code calc_ratio_change.m.
     calculate dF/F images to each direction and orientation.
     """
 
@@ -248,6 +255,9 @@ def calc_ratio_change(
 
 
 def calc_ori_dF(dir_dF: np.ndarray) -> np.ndarray:
+    """
+    Based on Ohki Lab's MATLAB code calc_ori_dF.m.
+    """
     dim = dir_dF.shape
     ndim = dir_dF.ndim
     ndir = dim[-1]
@@ -263,6 +273,7 @@ def calc_ori_dF(dir_dF: np.ndarray) -> np.ndarray:
 
 def calc_map_params_fast2D(dir: np.ndarray) -> MapParams:
     """
+    Based on Ohki Lab's MATLAB code calc_map_params_fast2D.m.
     a set of parameters of direction (orientation) selectivity are obtained
     by vector averaging.
     th: preferred angle obtained by vector averaging, normalized to 0-1.
@@ -366,6 +377,7 @@ def writetiff8(
     normalize: bool = True,
 ) -> None:
     """
+    Based on Ohki Lab's MATLAB code writetiff8.m.
     write an image (or volume) as a 8bit tif
     map 0-1 in original image to 0-255, with and without normalization
     Kenichi Ohki
@@ -381,6 +393,9 @@ def writetiff8(
 
 
 def hsv2rgbKO_fast2D(hueKO_stack: np.array) -> np.ndarray:
+    """
+    Based on Ohki Lab's MATLAB code hsv2rgbKO_fast2D.m.
+    """
     import matplotlib.colors as mcolors
 
     hueKO_stack_copy = hueKO_stack.copy()
@@ -404,6 +419,7 @@ def write_dF_images(
     prefix: str,
 ) -> list:
     """
+    Based on Ohki Lab's MATLAB code write_dF_images.m.
     write dF images & ratio change images as tif files
     auto scaled between zero and max value
     """
@@ -450,6 +466,7 @@ def write_intensity_maps(
     max: float,
 ) -> None:
     """
+    Based on Ohki Lab's MATLAB code write_intensity_maps.m.
     write selectivity parameter images as tif files
     auto scaled between zero and max value (for mag, ave_change, max_change)
     tune is between 0-1, without normalization.
@@ -462,6 +479,9 @@ def write_intensity_maps(
 
 
 def write_angle_map_fast2D(th: np.ndarray, output_dir: str, prefix: str) -> np.ndarray:
+    """
+    Based on Ohki Lab's MATLAB code write_angle_map_fast2D.m.
+    """
     dim = th.shape
 
     th_map = np.ones((dim[0], dim[1], 3))
@@ -482,6 +502,7 @@ def write_polar_map_fast2D(
     max: float,
 ) -> np.ndarray:
     """
+    Based on Ohki Lab's MATLAB code write_polar_map_fast2D.m.
     hue: preferred angle
     intenisity: vector magnitude
     polar_hc: high contrast polar map
@@ -518,6 +539,7 @@ def write_HLS_map_fast2D(
     tune_max: float,
 ) -> np.ndarray:
     """
+    Based on Ohki Lab's MATLAB code write_HLS_map_fast2D.m.
     hue: preferred angle
     intenisity: max_change
     saturation: tune (0-tune_max)
@@ -563,6 +585,9 @@ def get_orimap(
     params: dict = None,
     **kwargs,
 ) -> None:
+    """
+    Based on Ohki Lab's MATLAB code scriptGetOrimap.m.
+    """
     ts = expdb.ts
     assert ts is not None, "ts should not be None"
 
@@ -585,7 +610,7 @@ def get_orimap(
         # TODO: test for 4D pattern
         stack = stack.transpose(2, 3, 1, 0)  # (y, x, z, t)
 
-    stack = sortStim(
+    stack = sort_stim(
         stack,
         ts.stim_log,
         ts.nframes_per_stim,
