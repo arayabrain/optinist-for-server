@@ -5,6 +5,7 @@ from studio.app.optinist.wrappers.expdb.stack_register import stack_register_nD
 
 def stack_phase_correct(stack: np.ndarray, fov: np.ndarray, first_dim):
     """
+    Based on Ohki Lab's stackPhaseCorrect.m.
     Correct phase mismatch in bidirectional scanning with galvano and resonant mirrors
 
     Parameters
