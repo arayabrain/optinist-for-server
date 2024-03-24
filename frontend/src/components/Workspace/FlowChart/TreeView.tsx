@@ -115,20 +115,21 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileType={FILE_TYPE_SET.BEHAVIOR}
         /> */}
         <InputNodeComponent
-          fileName={"expdb"}
-          nodeName={"expdbData"}
-          fileType={FILE_TYPE_SET.EXPDB}
-        />
-        <InputNodeComponent
           fileName={"microscope"}
           nodeName={"microscopeData"}
           fileType={FILE_TYPE_SET.MICROSCOPE}
         />
         <InputNodeComponent
+          fileName={"expdb"}
+          nodeName={"expdbData"}
+          fileType={FILE_TYPE_SET.EXPDB}
+          displayName="preprocessed_data"
+        />
+        {/* <InputNodeComponent
           fileName={"matlab"}
           nodeName={"matlabData"}
           fileType={FILE_TYPE_SET.MATLAB}
-        />
+        /> */}
       </TreeItem>
       <TreeItem nodeId="Algorithm" label="Algorithm">
         {Object.entries(algoList).map(([name, node], i) => (
@@ -148,12 +149,14 @@ interface InputNodeComponentProps {
   fileName: string
   nodeName: string
   fileType: FILE_TYPE
+  displayName?: string
 }
 
 const InputNodeComponent = memo(function InputNodeComponent({
   fileName,
   nodeName,
   fileType,
+  displayName,
 }: InputNodeComponentProps) {
   const dispatch = useDispatch()
 
@@ -228,7 +231,7 @@ const InputNodeComponent = memo(function InputNodeComponent({
       nodeId={fileName}
       label={
         <AddButton
-          name={fileName}
+          name={displayName ?? fileName}
           onClick={() => onAddDataNode(NODE_TYPE_SET.INPUT, nodeName, fileType)}
         />
       }
