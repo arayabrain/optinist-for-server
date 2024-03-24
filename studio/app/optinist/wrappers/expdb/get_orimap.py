@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import tifffile
+from skimage import img_as_ubyte
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass.image import ImageData
@@ -384,12 +385,9 @@ def writetiff8(
     """
 
     if normalize:
-        image = image / np.max(image[:])
+        image = img_as_ubyte(image / np.max(np.abs(image)))
 
-    tifffile.imwrite(
-        join_filepath([output_dir, f"{fname}.tif"]),
-        (image * 255).astype(np.uint8),
-    )
+    tifffile.imwrite(join_filepath([output_dir, f"{fname}.tif"]), image)
 
 
 def hsv2rgbKO_fast2D(hueKO_stack: np.array) -> np.ndarray:
@@ -632,7 +630,7 @@ def get_orimap(
 
     fov = np.sum(ave, ave.ndim - 1)
     writetiff8(fov, output_dir, f"{exp_id}_FOV")
-    save_mat(f"{exp_id}_FOV", fov, output_dir)
+    save_mat("FOV", fov, output_dir)
     del fov
 
     base_inds = np.arange(
@@ -669,10 +667,10 @@ def get_orimap(
 
     dir_angle = write_angle_map_fast2D(dir_dF_params.th, output_dir, f"{exp_id}_dir")
     dir_dF_polar = write_polar_map_fast2D(
-        dir_dF_params, output_dir, f"{exp_id}_dir_dF_polar", max_dir_dF
+        dir_dF_params, output_dir, f"{exp_id}_dir_dF", max_dir_dF
     )
     dir_ratio_polar = write_polar_map_fast2D(
-        dir_ratio_params, output_dir, f"{exp_id}_dir_ratio_polar", max_dir_ratio_change
+        dir_ratio_params, output_dir, f"{exp_id}_dir_ratio", max_dir_ratio_change
     )
     save_mat("dir_angle", dir_angle, output_dir)
     save_mat("dir_dF_polar", dir_dF_polar, output_dir)
@@ -704,7 +702,8 @@ def get_orimap(
         dir_ratio / (np.mean(dir_ratio[:]) + (3 * np.std(dir_ratio[:]))), 0
     )
     for n in range(dir_ratio_hc.shape[2]):
-        writetiff8(dir_ratio_hc[:, :, n], output_dir, f"{exp_id}_dir_ratio_hc_{n}")
+        img_no = n + 1
+        writetiff8(dir_ratio_hc[:, :, n], output_dir, f"{exp_id}_dir_ratio_hc_{img_no}")
 
     ori_dF = calc_ori_dF(dir_dF)
     ori_dF_sm = calc_ori_dF(dir_dF_sm)
@@ -729,7 +728,8 @@ def get_orimap(
         ori_ratio / (np.mean(ori_ratio[:]) + (3 * np.std(ori_ratio[:]))), 0
     )
     for n in range(ori_ratio_hc.shape[2]):
-        writetiff8(ori_ratio_hc[:, :, n], output_dir, f"{exp_id}_ori_ratio_hc_{n}")
+        img_no = n + 1
+        writetiff8(ori_ratio_hc[:, :, n], output_dir, f"{exp_id}_ori_ratio_hc_{img_no}")
     del ori_dF_sm, ori_angle, ori_ratio, ori_ratio_hc
 
     ori_dF_polar = write_polar_map_fast2D(
