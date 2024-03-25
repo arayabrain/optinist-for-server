@@ -1,10 +1,11 @@
 import numpy as np
-from scipy.stats import f_oneway, tukey_hsd
 
 from studio.app.optinist.dataclass import StatData
 
 
 def multi_compare(data):
+    from scipy.stats import tukey_hsd
+
     _, size = data.shape
     tukey = tukey_hsd(*data.T).confidence_interval()
     sig = tukey.high * tukey.low
@@ -26,6 +27,8 @@ def multi_compare(data):
 def anova1_mult(
     stat: StatData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
+    from scipy.stats import f_oneway
+
     stat.p_value_threshold = params["p_value_threshold"]
     stat.r_best_threshold = params["r_best_threshold"]
     stat.si_threshold = params["si_threshold"]

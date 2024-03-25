@@ -18,4 +18,12 @@ patch_params:
 
 merge_params:
   thr: 0.9
-  merge_thr: 0.85
+  merge_thr: 0.80
+
+quality:
+  min_SNR: 2.0
+
+temporal:
+  nb: 2
+  rval_thr: 0.5
+  min_cnn_thr: 0.2

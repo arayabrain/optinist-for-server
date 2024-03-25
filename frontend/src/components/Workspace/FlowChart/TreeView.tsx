@@ -89,12 +89,12 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        {/* <InputNodeComponent
-          fileName={'image'}
-          nodeName={'imageData'}
+        <InputNodeComponent
+          fileName={"image"}
+          nodeName={"imageData"}
           fileType={FILE_TYPE_SET.IMAGE}
         />
-        <InputNodeComponent
+        {/* <InputNodeComponent
           fileName={"csv"}
           nodeName={"csvData"}
           fileType={FILE_TYPE_SET.CSV}
