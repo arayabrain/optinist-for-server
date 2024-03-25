@@ -1,3 +1,4 @@
+from studio.app.optinist.wrappers.caiman.cnmf import caiman_cnmf
 from studio.app.optinist.wrappers.expdb.analyze_stats import analyze_stats
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
@@ -13,10 +14,6 @@ expdb_wrapper_dict = {
         },
     },
     "preset_components": {
-        "preprocessing": {
-            "function": preprocessing,
-            "conda_name": "expdb",
-        },
         "stat_file_convert": {
             "function": stat_file_convert,
             "conda_name": "expdb",
@@ -32,6 +29,16 @@ expdb_wrapper_dict = {
         "curvefit_tuning": {
             "function": curvefit_tuning,
             "conda_name": "expdb",
+        },
+    },
+    "preprocess_components": {
+        "preprocessing": {
+            "function": preprocessing,
+            "conda_name": "expdb",
+        },
+        "caiman_cnmf": {
+            "function": caiman_cnmf,
+            "conda_name": "caiman",
         },
     },
 }
