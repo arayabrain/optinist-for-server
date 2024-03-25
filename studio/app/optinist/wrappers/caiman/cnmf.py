@@ -66,6 +66,7 @@ def get_roi(A, thr, thr_method, swap_dim, dims):
 def caiman_cnmf(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData):
+    # TODO: Return expdb dataclass
     import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
@@ -259,7 +260,9 @@ def caiman_cnmf(
             non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
         ),
         "edit_roi_data": EditRoiData(mmap_images, im),
-        "nwbfile": nwbfile,
+        # TODO: nwbfileを戻す(microscopeなどのImageをInputに返さないと
+        # acquisitionでエラーになるためコメントアウトしている)
+        # "nwbfile": nwbfile,
     }
 
     return info
