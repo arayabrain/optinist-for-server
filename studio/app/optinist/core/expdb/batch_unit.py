@@ -131,10 +131,10 @@ class ExpDbBatch:
         self.expdb_paths = [self.raw_path, self.pub_path]
         self.nwbfile = {}
 
-    def __stopwatch_callback(watch, function):
+    def __stopwatch_callback(watch, function=None):
         logging.getLogger().info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
-            function.__name__,
+            (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
@@ -162,6 +162,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
+        self.logger_.info("process 'preprocess' start.")
+
         preprocess_results = preprocessing(
             microscope=MicroscopeData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
@@ -181,6 +183,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_orimaps(self, stack: ImageData):
+        self.logger_.info("process 'generate_orimaps' start.")
+
         create_directory(self.raw_path.orimaps_dir)
 
         expdb = ExpDbData(paths=[self.raw_path.ts_file])
@@ -194,10 +198,14 @@ class ExpDbBatch:
     # TODO: implement cell_detection_cnmf
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection_cnmf(self):
+        self.logger_.info("process 'cell_detection_cnmf' start.")
+
         pass
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
+        self.logger_.info("process 'generate_statdata' start.")
+
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         stat: StatData = analyze_stats(
             expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
@@ -217,6 +225,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_cellmasks(self) -> int:
+        self.logger_.info("process 'generate_cellmasks' start.")
+
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.cellmask_dir)
 
@@ -259,6 +269,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_plots(self, stat_data: Optional[StatData] = None):
+        self.logger_.info("process 'generate_plots' start.")
+
         if stat_data is None:
             stat_data = StatData.load_from_hdf5(self.raw_path.stat_file)
 
@@ -283,6 +295,8 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self):
+        self.logger_.info("process 'generate_pixelmaps' start.")
+
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.pixelmap_dir)
 

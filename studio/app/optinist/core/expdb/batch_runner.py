@@ -83,10 +83,10 @@ class ExpDbBatchRunner:
 
         self.logger_ = logging.getLogger()
 
-    def __stopwatch_callback(watch, function):
+    def __stopwatch_callback(watch, function=None):
         logging.getLogger().info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
-            function.__name__,
+            (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
