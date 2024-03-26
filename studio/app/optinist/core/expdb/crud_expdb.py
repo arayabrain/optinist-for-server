@@ -79,19 +79,23 @@ def delete_experiment(db: Session, id: int):
 def extract_experiment_view_attributes(attributes: dict) -> dict:
     try:
         attributes_metadata_attr = attributes["metadata"]["metadata"]
+        modality_imaging = attributes_metadata_attr["Modality Imaging"]
+
+        specimen_type_brain_region = attributes_metadata_attr[
+            "Specimen type Brain region"
+        ]
+        if "Brain region Marmoset" in specimen_type_brain_region:
+            brain_region = specimen_type_brain_region["Brain region Marmoset"]
+        elif "Brain region Mouse" in specimen_type_brain_region:
+            brain_region = specimen_type_brain_region["Brain region Mouse"]
+        else:
+            raise KeyError()
+
         view_attributes = {
-            "brain_area": attributes_metadata_attr["Specimen type Brain region"][
-                "Brain region Marmoset"
-            ][-1]["label"],
-            "imaging_depth": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Depth"
-            ],
-            "promoter": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Promoter"
-            ],
-            "indicator": attributes_metadata_attr["Modality Imaging"][
-                "Ca Imaging>Indicator"
-            ],
+            "brain_area": brain_region[-1]["label"],
+            "imaging_depth": modality_imaging["Ca Imaging>Depth"],
+            "promoter": modality_imaging["Ca Imaging>Promoter"],
+            "indicator": modality_imaging["Ca Imaging>Indicator"],
         }
 
         return view_attributes
