@@ -8,7 +8,8 @@ ext_source = f"{name}.extensions.yaml"
 SPECIMEN_KEY = "Specimen type Brain region"
 SPECIMEN_TYPES = {
     "Specimen type": "text",
-    "Brain region Marmoset": ("text", (None, None)),
+    # NOTE: json data's key is "Brain region Marmoset" or "Brain region Mouse"
+    "Brain region": ("text", (None, None)),
 }
 
 specimen_type_ext = NWBGroupSpec(
@@ -71,7 +72,8 @@ TECHNIQUE_VIRUS_INJECTION_TYPES = {
     "Virus type": "text",
     "serotypes": "text",
     "Virus": ("text", (None, None)),
-    "Injection region Marmoset": ("text", (None, None)),
+    # NOTE: json data's key is "Injection region Marmoset" or "Injection region Mouse"
+    "Injection region": ("text", (None, None)),
     "Injection age": "text",
     "Incubation period": "text",
 }
@@ -114,7 +116,7 @@ LAB_SPECIFIC_TYPES = {
 
 lab_specific_ext = NWBGroupSpec(
     doc="Lab specific metadata",
-    name="Lab specific metaData",
+    name="Lab specific metadata",
     datasets=[
         (
             NWBDatasetSpec(doc=k, name=k, dtype=v[0], shape=v[1])

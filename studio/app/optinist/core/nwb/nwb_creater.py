@@ -18,6 +18,7 @@ from pynwb.ophys import (
 
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import PostProcess
+from studio.app.optinist.dataclass.stat import StatData
 
 
 class NWBCreater:
@@ -277,9 +278,9 @@ class NWBCreater:
         return nwbfile
 
     @classmethod
-    def oristats(cls, nwbfile, data):
-        # data is Oristats instance
-        nwbfile.add_analysis(data)
+    def oristats(cls, nwbfile, data: StatData):
+        # GUI実行の際、Oristatsオブジェクトがpickle化不可のためStatDataから生成
+        nwbfile.add_analysis(data.nwb_data)
         return nwbfile
 
     @classmethod
@@ -466,6 +467,9 @@ def merge_nwbfile(old_nwbfile, new_nwbfile):
         NWBDATASET.FLUORESCENCE,
         NWBDATASET.BEHAVIOR,
         NWBDATASET.IMAGE_SERIES,
+        NWBDATASET.ORISTATS,
+        NWBDATASET.SUBJECT_METADATA,
+        NWBDATASET.LAB_METADATA,
     ]:
         if pattern in old_nwbfile and pattern in new_nwbfile:
             for function_id in new_nwbfile[pattern]:

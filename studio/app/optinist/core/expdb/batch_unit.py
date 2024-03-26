@@ -212,7 +212,7 @@ class ExpDbBatch:
         ).get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        self.nwbfile[NWBDATASET.ORISTATS] = stat.nwb_data
+        self.nwbfile[NWBDATASET.ORISTATS] = stat
 
         for expdb_path in self.expdb_paths:
             # TODO: save in NWB

@@ -1,7 +1,7 @@
 from pynwb import get_class, load_namespaces
 from pynwb.spec import NWBDatasetSpec, NWBGroupSpec, NWBNamespaceBuilder
 
-name = "behavior_subject"
+name = "subject_mouse"
 ns_path = f"{name}.namespace.yaml"
 ext_source = f"{name}.extensions.yaml"
 
@@ -10,15 +10,14 @@ SUBJECT_TYPES = {
     "Scientific name": "text",
     "Genetic Background": "text",
     "Stage": "text",
-    "Family": "text",
-    "RIKEN ID": "text",
+    "Vendor": "text",
 }
 
 subject_ext = NWBGroupSpec(
-    name="Species Marmoset",
-    doc="meta data for subject",
+    name="Species Mouse",
+    doc="meta data for mouse subject",
     datasets=[NWBDatasetSpec(doc=k, name=k, dtype=v) for k, v in SUBJECT_TYPES.items()],
-    neurodata_type_def="BehaviorSubject",
+    neurodata_type_def="SubjectMouse",
     neurodata_type_inc="Subject",
 )
 
@@ -27,4 +26,4 @@ ns_builder.add_spec(ext_source, subject_ext)
 ns_builder.export(ns_path)
 load_namespaces(ns_path)
 
-BehaviorSubject = get_class("BehaviorSubject", name)
+SubjectMouse = get_class("SubjectMouse", name)

@@ -16,7 +16,14 @@ from studio.app.optinist.core.nwb.lab_metadata import (
     SpecimenTypeMetaData,
     TechniqueVirusInjectionMetaData,
 )
-from studio.app.optinist.core.nwb.subject_metadata import SUBJECT_TYPES, BehaviorSubject
+from studio.app.optinist.core.nwb.subject.marmoset import (
+    SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
+)
+from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
+from studio.app.optinist.core.nwb.subject.mouse import (
+    SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
+)
+from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
 from studio.app.optinist.models import Experiment as ExperimentModel
 from studio.app.optinist.models.expdb.experiment import (
     ExperimentShareUser as ExperimentShareUserModel,
@@ -94,11 +101,9 @@ def delete_experiment(db: Session, id: int):
 def extract_experiment_view_attributes(attributes: dict) -> dict:
     try:
         attributes_metadata_attr = attributes["metadata"]["metadata"]
-        modality_imaging = attributes_metadata_attr["Modality Imaging"]
+        modality_imaging = attributes_metadata_attr[MODALITY_IMAGING_KEY]
 
-        specimen_type_brain_region = attributes_metadata_attr[
-            "Specimen type Brain region"
-        ]
+        specimen_type_brain_region = attributes_metadata_attr[SPECIMEN_KEY]
         if "Brain region Marmoset" in specimen_type_brain_region:
             brain_region = specimen_type_brain_region["Brain region Marmoset"]
         elif "Brain region Mouse" in specimen_type_brain_region:
@@ -122,24 +127,52 @@ def extract_experiment_view_attributes(attributes: dict) -> dict:
 def extract_experiment_nwb(attributes: dict):
     try:
         metadata = attributes["metadata"]["metadata"]
-
-        speceis_marmoset = metadata["Species Marmoset"]
-        subject_extended = {k: speceis_marmoset[k] for k in SUBJECT_TYPES.keys()}
-        subject_nwb = BehaviorSubject(
-            # NWB's Subject fields
-            age=speceis_marmoset["Age"],
-            sex=speceis_marmoset["Sex"],
-            species=speceis_marmoset["Species"],
-            subject_id=attributes["name"].split("_")[0],
-            date_of_birth=datetime.datetime.strptime(
-                speceis_marmoset["Date of birth"][0], "%Y-%m-%d"
-            ),
-            weight=speceis_marmoset["Body weight"],
-            strain=speceis_marmoset["Strain"],
-            # NWB's Subject extended fields
-            **subject_extended,
-        )
         specimen_type = metadata[SPECIMEN_KEY]
+        technique_virus_injection = metadata[TECHNIQUE_VIRUS_INJECTION_KEY]
+
+        if "Species Marmoset" in metadata:
+            species = metadata["Species Marmoset"]
+            subject_extended = {k: species[k] for k in SUBJECT_MARMOSET_TYPES.keys()}
+            subject_nwb = SubjectMarmoset(
+                # NWB's Subject fields
+                age=species["Age"],
+                sex=species["Sex"],
+                species=species["Species"],
+                subject_id=attributes["name"].split("_")[0],
+                date_of_birth=datetime.datetime.strptime(
+                    species["Date of birth"][0], "%Y-%m-%d"
+                ),
+                weight=species["Body weight"],
+                strain=species["Strain"],
+                # NWB's Subject extended fields
+                **subject_extended,
+            )
+
+            brain_region = specimen_type.pop("Brain region Marmoset")
+            injection_region = technique_virus_injection.pop(
+                "Injection region Marmoset"
+            )
+
+        elif "Species Mouse" in metadata:
+            species = metadata["Species Mouse"]
+            subject_extended = {k: species[k] for k in SUBJECT_MOUSE_TYPES.keys()}
+            subject_nwb = SubjectMouse(
+                # NWB's Subject fields
+                age=species["Age"],
+                sex=species["Sex"],
+                species=species["Species"],
+                subject_id=attributes["name"].split("_")[0],
+                strain=species["Strain"],
+                # NWB's Subject extended fields
+                **subject_extended,
+            )
+
+            brain_region = specimen_type.pop("Brain region Mouse")
+            injection_region = technique_virus_injection.pop("Injection region Mouse")
+
+        specimen_type["Brain region"] = brain_region
+        technique_virus_injection["Injection region"] = injection_region
+
         specimen_type_nwb = SpecimenTypeMetaData(
             **{k: specimen_type[k] for k in SPECIMEN_TYPES.keys()}
         )
@@ -149,7 +182,6 @@ def extract_experiment_nwb(attributes: dict):
             **{k: modality_imaging[k] for k in MODALITY_IMAGING_TYPES.keys()}
         )
 
-        technique_virus_injection = metadata[TECHNIQUE_VIRUS_INJECTION_KEY]
         technique_virus_injection_nwb = TechniqueVirusInjectionMetaData(
             **{
                 k: technique_virus_injection[k]
