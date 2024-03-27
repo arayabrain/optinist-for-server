@@ -35,7 +35,6 @@ from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
-    extract_experiment_nwb,
     extract_experiment_view_attributes,
     get_experiment,
 )
@@ -114,7 +113,6 @@ class ExpDbPath:
             self.output_dir = self.exp_dir
 
         # outputs
-        self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
         self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
         self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
@@ -215,13 +213,6 @@ class ExpDbBatch:
 
         self.nwbfile[NWBDATASET.ORISTATS] = result["nwbfile"][NWBDATASET.ORISTATS]
 
-        for expdb_path in self.expdb_paths:
-            # TODO: save in NWB
-            stat.save_as_hdf5(expdb_path.stat_file)
-            assert os.path.exists(
-                expdb_path.stat_file
-            ), f"save statfile failed: {expdb_path.stat_file}"
-
         return stat
 
     @stopwatch(callback=__stopwatch_callback)
@@ -269,11 +260,8 @@ class ExpDbBatch:
         return ncells
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_plots(self, stat_data: Optional[StatData] = None):
+    def generate_plots(self, stat_data: StatData):
         self.logger_.info("process 'generate_plots' start.")
-
-        if stat_data is None:
-            stat_data = StatData.load_from_hdf5(self.raw_path.stat_file)
 
         for expdb_path in self.expdb_paths:
             dir_path = expdb_path.plot_dir
@@ -329,9 +317,6 @@ class ExpDbBatch:
             with open(self.raw_path.exp_metadata_file) as f:
                 attributes = json.load(f)
                 view_attributes = extract_experiment_view_attributes(attributes)
-                subject_nwb, lab_specific_nwb = extract_experiment_nwb(attributes)
-                self.nwbfile[NWBDATASET.SUBJECT_METADATA] = subject_nwb
-                self.nwbfile[NWBDATASET.LAB_METADATA] = lab_specific_nwb
 
                 if not view_attributes:
                     raise KeyError("Invalid metadata format")
@@ -339,6 +324,11 @@ class ExpDbBatch:
         return (attributes, view_attributes)
 
     @stopwatch(callback=__stopwatch_callback)
-    def save_nwb(self):
+    def save_nwb(self, metadata: dict):
         input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
+        input_config[NWBDATASET.IMAGE_SERIES][
+            "external_file"
+        ] = self.raw_path.microscope_file
+        input_config[NWBDATASET.LAB_METADATA] = metadata
+
         save_nwb(self.raw_path.nwb_file, input_config, self.nwbfile)

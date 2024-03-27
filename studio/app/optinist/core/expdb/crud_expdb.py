@@ -2,28 +2,7 @@ import datetime
 
 from sqlmodel import Session
 
-from studio.app.optinist.core.nwb.lab_metadata import (
-    LAB_SPECIFIC_KEY,
-    LAB_SPECIFIC_TYPES,
-    MODALITY_IMAGING_KEY,
-    MODALITY_IMAGING_TYPES,
-    SPECIMEN_KEY,
-    SPECIMEN_TYPES,
-    TECHNIQUE_VIRUS_INJECTION_KEY,
-    TECHNIQUE_VIRUS_INJECTION_TYPES,
-    LabSpecificMetaData,
-    ModalityImagingMetaData,
-    SpecimenTypeMetaData,
-    TechniqueVirusInjectionMetaData,
-)
-from studio.app.optinist.core.nwb.subject.marmoset import (
-    SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
-)
-from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
-from studio.app.optinist.core.nwb.subject.mouse import (
-    SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
-)
-from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
+from studio.app.optinist.core.nwb.lab_metadata import MODALITY_IMAGING_KEY, SPECIMEN_KEY
 from studio.app.optinist.models import Experiment as ExperimentModel
 from studio.app.optinist.models.expdb.experiment import (
     ExperimentShareUser as ExperimentShareUserModel,
@@ -122,84 +101,3 @@ def extract_experiment_view_attributes(attributes: dict) -> dict:
 
     except KeyError:
         return None
-
-
-def extract_experiment_nwb(attributes: dict):
-    try:
-        metadata = attributes["metadata"]["metadata"]
-        specimen_type = metadata[SPECIMEN_KEY]
-        technique_virus_injection = metadata[TECHNIQUE_VIRUS_INJECTION_KEY]
-
-        if "Species Marmoset" in metadata:
-            species = metadata["Species Marmoset"]
-            subject_extended = {k: species[k] for k in SUBJECT_MARMOSET_TYPES.keys()}
-            subject_nwb = SubjectMarmoset(
-                # NWB's Subject fields
-                age=species["Age"],
-                sex=species["Sex"],
-                species=species["Species"],
-                subject_id=attributes["name"].split("_")[0],
-                date_of_birth=datetime.datetime.strptime(
-                    species["Date of birth"][0], "%Y-%m-%d"
-                ),
-                weight=species["Body weight"],
-                strain=species["Strain"],
-                # NWB's Subject extended fields
-                **subject_extended,
-            )
-
-            brain_region = specimen_type.pop("Brain region Marmoset")
-            injection_region = technique_virus_injection.pop(
-                "Injection region Marmoset"
-            )
-
-        elif "Species Mouse" in metadata:
-            species = metadata["Species Mouse"]
-            subject_extended = {k: species[k] for k in SUBJECT_MOUSE_TYPES.keys()}
-            subject_nwb = SubjectMouse(
-                # NWB's Subject fields
-                age=species["Age"],
-                sex=species["Sex"],
-                species=species["Species"],
-                subject_id=attributes["name"].split("_")[0],
-                strain=species["Strain"],
-                # NWB's Subject extended fields
-                **subject_extended,
-            )
-
-            brain_region = specimen_type.pop("Brain region Mouse")
-            injection_region = technique_virus_injection.pop("Injection region Mouse")
-
-        specimen_type["Brain region"] = brain_region
-        technique_virus_injection["Injection region"] = injection_region
-
-        specimen_type_nwb = SpecimenTypeMetaData(
-            **{k: specimen_type[k] for k in SPECIMEN_TYPES.keys()}
-        )
-
-        modality_imaging = metadata[MODALITY_IMAGING_KEY]
-        modality_imaging_nwb = ModalityImagingMetaData(
-            **{k: modality_imaging[k] for k in MODALITY_IMAGING_TYPES.keys()}
-        )
-
-        technique_virus_injection_nwb = TechniqueVirusInjectionMetaData(
-            **{
-                k: technique_virus_injection[k]
-                for k in TECHNIQUE_VIRUS_INJECTION_TYPES.keys()
-            }
-        )
-        common = metadata[LAB_SPECIFIC_KEY]
-        lab_specific_nwb = LabSpecificMetaData(
-            **{
-                SPECIMEN_KEY: specimen_type_nwb,
-                MODALITY_IMAGING_KEY: modality_imaging_nwb,
-                TECHNIQUE_VIRUS_INJECTION_KEY: technique_virus_injection_nwb,
-            },
-            **{k: common[k] for k in LAB_SPECIFIC_TYPES.keys()},
-        )
-
-        return subject_nwb, lab_specific_nwb
-
-    except KeyError as e:
-        print("==== Key error found ===", e)
-        return None, None

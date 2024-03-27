@@ -1,4 +1,3 @@
-import h5py
 import numpy as np
 
 from studio.app.common.dataclass.base import BaseData
@@ -267,19 +266,6 @@ class StatData(BaseData):
             **self.nwb_dict_vector_average,
             **self.nwb_dict_curvefit,
         }
-
-    def save_as_hdf5(self, filepath):
-        with h5py.File(filepath, "w") as f:
-            for k, v in self.__dict__.items():
-                f.create_dataset(k, data=v)
-
-    @classmethod
-    def load_from_hdf5(cls, file_path):
-        cls = cls()
-        with h5py.File(file_path, "r") as f:
-            for k, v in f.items():
-                cls.__dict__[k] = v[()]
-        return cls
 
     @classmethod
     def fill_nan_with_none(cls, data):

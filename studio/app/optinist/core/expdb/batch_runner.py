@@ -284,7 +284,7 @@ class ExpDbBatchRunner:
             # Read metadata
             (attributes, view_attributes) = expdb_batch.load_exp_metadata()
 
-            expdb_batch.save_nwb()
+            expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
             exp = create_experiment(
                 db,
