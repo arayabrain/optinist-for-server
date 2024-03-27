@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from studio.app.common.dataclass.image import ImageData
@@ -20,6 +22,7 @@ def preprocessing(
     params = params_flatten
 
     reader = microscope.reader
+    exp_id = os.path.basename(os.path.dirname(microscope.path))
     ome_meta = reader.ome_metadata
     raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
     microscope.set_data(raw_stack)
@@ -43,12 +46,14 @@ def preprocessing(
 
             fov = np.squeeze(stack_average(stack, period, runs))  # (y, x, (z))
             info["avg"] = ImageData(
-                fov.copy(), output_dir=output_dir, file_name=f"avg_ch{ch + 1}"
+                fov.copy(), output_dir=output_dir, file_name=f"{exp_id}_avg_ch{ch + 1}"
             )
             stack, dx = stack_phase_correct(stack, fov, first_dim)
             fov = np.squeeze(stack_average(stack, period, runs))
             info["p_avg"] = ImageData(
-                fov.copy(), output_dir=output_dir, file_name=f"p_avg_ch{ch + 1}"
+                fov.copy(),
+                output_dir=output_dir,
+                file_name=f"{exp_id}_p_avg_ch{ch + 1}",
             )
 
             if params["do_realign"]:
@@ -66,7 +71,7 @@ def preprocessing(
                 info["rp_avg"] = ImageData(
                     fov,
                     output_dir=output_dir,
-                    file_name=f"rp_avg_img_ch{ch + 1}",
+                    file_name=f"{exp_id}_rp_avg_img_ch{ch + 1}",
                 )
                 info["stack"] = ImageData(  # (t, y, x) or (t, z, y, x)
                     # TODO: test for 4D stack
@@ -76,7 +81,7 @@ def preprocessing(
                         else stack.transpose(3, 2, 0, 1)
                     ),
                     output_dir=output_dir,
-                    file_name=f"realigned_stack_ch{ch + 1}",
+                    file_name=f"{exp_id}_realigned_stack_ch{ch + 1}",
                 )
 
             else:
@@ -88,25 +93,25 @@ def preprocessing(
                         else stack.transpose(3, 2, 0, 1)
                     ),
                     output_dir=output_dir,
-                    file_name=f"corrected_stack_ch{ch + 1}",
+                    file_name=f"{exp_id}_corrected_stack_ch{ch + 1}",
                 )
 
         else:  # for anatomy (non-timeseries)
             info["avg"] = ImageData(
                 stack.copy(),
                 output_dir=output_dir,
-                file_name=f"avg_ch{ch + 1}",
+                file_name=f"{exp_id}_avg_ch{ch + 1}",
             )
             stack, dx = stack_phase_correct(stack, stack, first_dim)
             info["p_avg"] = ImageData(
                 stack,
                 output_dir=output_dir,
-                file_name=f"p_avg_ch{ch + 1}",
+                file_name=f"{exp_id}_p_avg_ch{ch + 1}",
             )
             info["stack"] = ImageData(
                 stack,
                 output_dir=output_dir,
-                file_name=f"corrected_stack_ch{ch + 1}",
+                file_name=f"{exp_id}_corrected_stack_ch{ch + 1}",
             )
 
         return info
