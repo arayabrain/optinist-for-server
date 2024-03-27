@@ -1,11 +1,13 @@
 import gc
 
 import numpy as np
+import scipy
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
+from studio.app.optinist.dataclass.expdb import ExpDbData
 
 
 def get_roi(A, roi_thr, thr_method, swap_dim, dims):
@@ -78,9 +80,60 @@ def util_recursive_flatten_params(params, result_params: dict, nest_counter=0):
             result_params[key] = nested_param
 
 
+def mm_fun(A: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    """
+    This code is a port of the CaImAn-MATLAB function (mm_fun.m).
+    However, the porting is limited to the functions
+    assumed to be used in this application.
+    """
+
+    # multiply A*Y or A'*Y or Y*A or Y*C' depending on the dimension for loaded
+    # or memory mapped Y.
+
+    (d1a, d2a) = A.shape[0:2]
+
+    d1y = np.prod(Y.shape[0:-1])
+    d2y = Y.shape[-1]
+
+    if d1a == d1y:  # A'*Y
+        AY = A.T @ Y
+    elif d1a == d2y:
+        AY = Y @ A
+    elif d2a == d1y:
+        AY = A @ Y
+    elif d2a == d2y:  # Y*C'
+        AY = Y.T @ A
+    else:
+        assert False, "matrix dimensions do not match"
+
+    return AY
+
+
+def calculate_AY(
+    A_or: scipy.sparse.csc_matrix, C_or: np.ndarray, Yr: np.ndarray, stack_shape: list
+) -> np.ndarray:
+    A_or_full = A_or.toarray()
+    A_or_full = np.reshape(
+        A_or_full, (stack_shape[0], stack_shape[1], A_or_full.shape[1])
+    )
+    nA = np.asarray(np.sqrt(A_or.power(2).sum(axis=0))).ravel()
+    K2 = C_or.shape[0]
+
+    # normalize spatial components to unit energy
+    nA_D = scipy.sparse.spdiags(nA, [0], K2, K2)
+    A_or2 = A_or.dot(np.linalg.inv(nA_D.toarray()))
+
+    # spdiags(nA,0,K,K)*C;
+    # C_or2 = C_or * nA[:, np.newaxis]
+    AY = mm_fun(A_or2, Yr)
+    AY = AY.T
+
+    return AY
+
+
 def caiman_cnmf(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
-) -> dict(fluorescence=FluoData, iscell=IscellData):
+) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
     # TODO: Return expdb dataclass
     import scipy
     from caiman import local_correlations, stop_server
@@ -153,6 +206,16 @@ def caiman_cnmf(
         cnm = cnm.refit(mmap_images, dview=dview)
 
     stop_server(dview=dview)
+
+    Yr = mmap_images.reshape(dims[0] * dims[1], T, order="F")
+    scipy.io.savemat(join_filepath([output_dir, "Yr.mat"]), {"Yr": Yr})
+    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
+    scipy.io.savemat(
+        join_filepath([output_dir, "cellmask.mat"]), {"cellmask": cnm.estimates.A}
+    )
+    timecourse_path = join_filepath([output_dir, "timecourse.mat"])
+    scipy.io.savemat(timecourse_path, {"timecourse": AY})
+    scipy.io.savemat(join_filepath([output_dir, "C_or.mat"]), {"C_or": cnm.estimates.C})
 
     # contours plot
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
@@ -258,6 +321,7 @@ def caiman_cnmf(
     }
 
     info = {
+        "processed_data": ExpDbData([timecourse_path]),
         "images": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,
@@ -277,9 +341,7 @@ def caiman_cnmf(
             non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
         ),
         "edit_roi_data": EditRoiData(mmap_images, im),
-        # TODO: nwbfileを戻す(microscopeなどのImageをInputに返さないと
-        # acquisitionでエラーになるためコメントアウトしている)
-        # "nwbfile": nwbfile,
+        "nwbfile": nwbfile,
     }
 
     return info
