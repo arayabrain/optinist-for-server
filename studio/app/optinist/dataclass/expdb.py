@@ -71,6 +71,7 @@ class ExpDbData(BaseData):
         super().__init__(file_name)
         self.tc = None
         self.ts = None
+        self.path = paths
 
         for path in paths:
             assert isinstance(path, str), "path should be str"

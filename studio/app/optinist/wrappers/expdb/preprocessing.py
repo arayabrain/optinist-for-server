@@ -19,9 +19,10 @@ def preprocessing(
         params_flatten.update(segment)
     params = params_flatten
 
-    microscope_data = microscope.data
-    ome_meta = microscope_data.ome_metadata
-    raw_stack = microscope_data.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
+    reader = microscope.reader
+    ome_meta = reader.ome_metadata
+    raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
+    microscope.set_data(raw_stack)
     is_timeseries = ome_meta.size_t > 1
 
     # set common params to variables

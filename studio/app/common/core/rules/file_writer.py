@@ -62,8 +62,9 @@ class FileWriter:
 
     @classmethod
     def microscope(cls, rule_config: Rule):
-        nwbfile = rule_config.nwbfile
         info = {rule_config.return_arg: MicroscopeData(rule_config.input)}
+        nwbfile = rule_config.nwbfile
+        nwbfile["image_series"]["external_file"] = info[rule_config.return_arg]
         info["nwbfile"] = {"input": nwbfile}
         return info
 
@@ -103,5 +104,6 @@ class FileWriter:
             rule_config.return_arg: ExpDbData(rule_config.input, rule_config.params)
         }
         nwbfile = rule_config.nwbfile
+        nwbfile["image_series"]["external_file"] = info[rule_config.return_arg]
         info["nwbfile"] = {"input": nwbfile}
         return info

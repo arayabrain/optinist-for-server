@@ -82,6 +82,8 @@ class NWBCreater:
                 elif isinstance(starting_frames, str):
                     starting_frames = starting_frames.split(",")
                     starting_frames = list(map(int, starting_frames))
+            elif isinstance(image_path, str):
+                image_path = [image_path]
 
             image_series = TwoPhotonSeries(
                 name="TwoPhotonSeries",
