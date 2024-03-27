@@ -6,7 +6,17 @@ from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.common.dataclass.line import LineData
 from studio.app.common.dataclass.pie import PieData
 from studio.app.common.dataclass.polar import PolarData
-from studio.app.optinist.core.nwb.oristat import Oristats
+from studio.app.optinist.core.nwb.oristat import (
+    ANOVA_PROPS,
+    ANOVA_TYPES,
+    CURVEFIT_PROPS,
+    CURVEFIT_TYPES,
+    FILE_CONVERT_PROPS,
+    FILE_CONVERT_TYPES,
+    PARAM_TYPES,
+    VECTOR_AVERAGE_PROPS,
+    VECTOR_AVERAGE_TYPES,
+)
 
 
 class StatData(BaseData):
@@ -92,25 +102,19 @@ class StatData(BaseData):
         self.ori_a1 = np.full(self.ncells, np.NaN)
 
     # --- stat_file_convert ---
-    def set_si(self):
+    def set_file_convert_props(self):
         self.dsi = (self.r_best_dir - np.maximum(self.r_null_dir, 0)) / (
             self.r_best_dir + np.maximum(self.r_null_dir, 0)
         )
         self.osi = (self.r_best_ori - np.maximum(self.r_null_ori, 0)) / (
             self.r_best_ori + np.maximum(self.r_null_ori, 0)
         )
-
-    @property
-    def tuning_curve(self):
-        return LineData(
+        self.tuning_curve = LineData(
             data=self.dir_ratio_change,
             columns=np.arange(0, 360, 360 / self.nstim_per_trial),
             file_name="tuning_curve",
         )
-
-    @property
-    def tuning_curve_polar(self):
-        return PolarData(
+        self.tuning_curve_polar = PolarData(
             data=self.dir_ratio_change,
             thetas=np.linspace(
                 0, 360, self.dir_ratio_change[0].shape[0], endpoint=False
@@ -119,7 +123,7 @@ class StatData(BaseData):
         )
 
     # --- anova ---
-    def set_responsivity_and_selectivity(self):
+    def set_anova_props(self):
         self.index_visually_responsive_cell = np.where(
             (self.p_value_resp < self.p_value_threshold)
             & (self.r_best_dir >= self.r_best_threshold),
@@ -149,9 +153,7 @@ class StatData(BaseData):
             self.index_orientation_selective_cell
         )
 
-    @property
-    def direction_responsivity_ratio(self):
-        return PieData(
+        self.direction_responsivity_ratio = PieData(
             data=np.array(
                 (
                     self.ncells_direction_selective_cell,
@@ -164,9 +166,7 @@ class StatData(BaseData):
             file_name="direction_responsivity_ratio",
         )
 
-    @property
-    def orientation_responsivity_ratio(self):
-        return PieData(
+        self.orientation_responsivity_ratio = PieData(
             data=np.array(
                 (
                     self.ncells_orientation_selective_cell,
@@ -179,77 +179,94 @@ class StatData(BaseData):
             file_name="orientation_responsivity_ratio",
         )
 
-    @property
-    def direction_selectivity(self):
-        return HistogramData(
+        self.direction_selectivity = HistogramData(
             data=self.dsi[self.index_direction_selective_cell],
             file_name="direction_selectivity",
         )
 
-    @property
-    def orientation_selectivity(self):
-        return HistogramData(
+        self.orientation_selectivity = HistogramData(
             data=self.osi[self.index_orientation_selective_cell],
             file_name="orientation_selectivity",
         )
 
-    @property
-    def best_responsivity(self):
-        return HistogramData(
+        self.best_responsivity = HistogramData(
             data=self.r_best_dir[self.index_visually_responsive_cell] * 100,
             file_name="best_responsivity",
         )
 
     # --- vector_average ---
-    @property
-    def preferred_direction(self):
-        return HistogramData(
+    def set_vector_average_props(self):
+        self.preferred_direction = HistogramData(
             data=self.dir_vector_angle[self.index_direction_selective_cell],
             file_name="preferred_direction",
         )
 
-    @property
-    def preferred_orientation(self):
-        return HistogramData(
+        self.preferred_orientation = HistogramData(
             data=self.ori_vector_angle[self.index_orientation_selective_cell],
             file_name="preferred_orientation",
         )
 
     # --- curvefit_tuning ---
-    @property
-    def direction_tuning_width(self):
-        return HistogramData(
+    def set_curvefit_props(self):
+        self.direction_tuning_width = HistogramData(
             data=self.dir_tuning_width[self.index_direction_selective_cell],
             file_name="direction_tuning_width",
         )
 
-    @property
-    def orientation_tuning_width(self):
-        return HistogramData(
+        self.orientation_tuning_width = HistogramData(
             data=self.ori_tuning_width[self.index_orientation_selective_cell],
             file_name="orientation_tuning_width",
         )
 
     @property
-    def nwb_data(self):
-        stats_dict = self.__dict__.copy()
-        stats_dict.pop("file_name")
-        stats_dict.update(
-            {
-                "tuning_curve": self.tuning_curve.data,
-                "tuning_curve_polar": self.tuning_curve_polar.data,
-                "direction_responsivity_ratio": self.direction_responsivity_ratio.data,
-                "orientation_responsivity_ratio": self.orientation_responsivity_ratio.data,  # noqa: E501
-                "direction_selectivity": self.direction_selectivity.data,
-                "orientation_selectivity": self.orientation_selectivity.data,
-                "best_responsivity": self.best_responsivity.data,
-                "preferred_direction": self.preferred_direction.data,
-                "preferred_orientation": self.preferred_orientation.data,
-                "direction_tuning_width": self.direction_tuning_width.data,
-                "orientation_tuning_width": self.orientation_tuning_width.data,
-            }
-        )
-        return Oristats(**stats_dict)
+    def nwb_dict_file_convert(self) -> dict:
+        nwb_dict = {
+            key: self.__dict__[key]
+            for key in [*PARAM_TYPES.keys(), *FILE_CONVERT_TYPES.keys()]
+        }
+
+        for k in FILE_CONVERT_PROPS.keys():
+            nwb_dict[k] = self.__dict__[k].data
+
+        return nwb_dict
+
+    @property
+    def nwb_dict_anova(self) -> dict:
+        nwb_dict = {key: self.__dict__[key] for key in list(ANOVA_TYPES.keys())}
+
+        for k in ANOVA_PROPS.keys():
+            nwb_dict[k] = self.__dict__[k].data
+
+        return nwb_dict
+
+    @property
+    def nwb_dict_vector_average(self) -> dict:
+        nwb_dict = {
+            key: self.__dict__[key] for key in list(VECTOR_AVERAGE_TYPES.keys())
+        }
+
+        for k in VECTOR_AVERAGE_PROPS.keys():
+            nwb_dict[k] = self.__dict__[k].data
+
+        return nwb_dict
+
+    @property
+    def nwb_dict_curvefit(self) -> dict:
+        nwb_dict = {key: self.__dict__[key] for key in list(CURVEFIT_TYPES.keys())}
+
+        for k in CURVEFIT_PROPS.keys():
+            nwb_dict[k] = self.__dict__[k].data
+
+        return nwb_dict
+
+    @property
+    def nwb_dict_all(self) -> dict:
+        return {
+            **self.nwb_dict_file_convert,
+            **self.nwb_dict_anova,
+            **self.nwb_dict_vector_average,
+            **self.nwb_dict_curvefit,
+        }
 
     def save_as_hdf5(self, filepath):
         with h5py.File(filepath, "w") as f:

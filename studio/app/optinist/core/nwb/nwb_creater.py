@@ -18,7 +18,7 @@ from pynwb.ophys import (
 
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import PostProcess
-from studio.app.optinist.dataclass.stat import StatData
+from studio.app.optinist.core.nwb.oristat import Oristats
 
 
 class NWBCreater:
@@ -278,9 +278,8 @@ class NWBCreater:
         return nwbfile
 
     @classmethod
-    def oristats(cls, nwbfile, data: StatData):
-        # GUI実行の際、Oristatsオブジェクトがpickle化不可のためStatDataから生成
-        nwbfile.add_analysis(data.nwb_data)
+    def oristats(cls, nwbfile, data: dict):
+        nwbfile.add_analysis(Oristats(**data))
         return nwbfile
 
     @classmethod

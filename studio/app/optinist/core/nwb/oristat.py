@@ -5,273 +5,133 @@ name = "oristats"
 ns_path = f"{name}.namespace.yaml"
 ext_source = f"{name}.extensions.yaml"
 
+PARAM_TYPES = {
+    "ncells": "int",
+    "ntrials": "int",
+    "nstimplus": "int",
+    "data_table": (
+        "float",
+        [(None, None), (None, None, None), (None, None, None, None)],
+    ),
+    "nstim": "int",
+    "p_value_threshold": "float",
+    "r_best_threshold": "float",
+    "si_threshold": "float",
+}
+
+FILE_CONVERT_TYPES = {
+    "nstim_per_trial": "int",
+    "dir_ratio_change": ("float", (None, None)),
+    "best_dir": ("float", (None,)),
+    "null_dir": ("float", (None,)),
+    "r_best_dir": ("float", (None,)),
+    "r_null_dir": ("float", (None,)),
+    "r_min_dir": ("float", (None,)),
+    "di": ("float", (None,)),
+    "dsi": ("float", (None,)),
+    "ori_ratio_change": ("float", (None, None)),
+    "best_ori": ("float", (None,)),
+    "null_ori": ("float", (None,)),
+    "r_best_ori": ("float", (None,)),
+    "r_null_ori": ("float", (None,)),
+    "r_min_ori": ("float", (None,)),
+    "oi": ("float", (None,)),
+    "osi": ("float", (None,)),
+}
+FILE_CONVERT_PROPS = {
+    "tuning_curve": ("float", (None, None)),
+    "tuning_curve_polar": ("float", (None, None)),
+}
+
+ANOVA_TYPES = {
+    "p_value_resp": ("float", (None,)),
+    "sig_epochs_resp": ("float", (None, None, None)),
+    "p_value_sel": ("float", (None,)),
+    "sig_epochs_sel": ("float", (None, None, None)),
+    "dir_sig": ("float", (None,)),
+    "p_value_ori_resp": ("float", (None,)),
+    "sig_epochs_ori_resp": ("float", (None, None, None)),
+    "p_value_ori_sel": ("float", (None,)),
+    "sig_epochs_ori_sel": ("float", (None, None, None)),
+    "index_visually_responsive_cell": ("bool", (None,)),
+    "ncells_visually_responsive_cell": "int",
+    "index_direction_selective_cell": ("bool", (None,)),
+    "ncells_direction_selective_cell": "int",
+    "index_orientation_selective_cell": ("bool", (None,)),
+    "ncells_orientation_selective_cell": "int",
+}
+ANOVA_PROPS = {
+    "direction_responsivity_ratio": ("float", (None, None)),
+    "orientation_responsivity_ratio": ("float", (None, None)),
+    "direction_selectivity": ("float", (None, None)),
+    "orientation_selectivity": ("float", (None, None)),
+    "best_responsivity": ("float", (None, None)),
+}
+
+VECTOR_AVERAGE_TYPES = {
+    "dir_vector_angle": ("float", (None,)),
+    "dir_vector_mag": ("float", (None,)),
+    "dir_vector_tune": ("float", (None,)),
+    "ori_vector_angle": ("float", (None,)),
+    "ori_vector_mag": ("float", (None,)),
+    "ori_vector_tune": ("float", (None,)),
+}
+VECTOR_AVERAGE_PROPS = {
+    "preferred_direction": ("float", (None, None)),
+    "preferred_orientation": ("float", (None, None)),
+}
+
+CURVEFIT_TYPES = {
+    "best_dir_interp": ("float", (None,)),
+    "null_dir_interp": ("float", (None,)),
+    "r_best_dir_interp": ("float", (None,)),
+    "r_null_dir_interp": ("float", (None,)),
+    "di_interp": ("float", (None,)),
+    "best_dir_fit": ("float", (None,)),
+    "null_dir_fit": ("float", (None,)),
+    "r_best_dir_fit": ("float", (None,)),
+    "r_null_dir_fit": ("float", (None,)),
+    "di_fit": ("float", (None,)),
+    "ds": ("float", (None,)),
+    "dir_tuning_width": ("float", (None,)),
+    "dir_a1": ("float", (None,)),
+    "dir_a2": ("float", (None,)),
+    "dir_k1": ("float", (None,)),
+    "dir_k2": ("float", (None,)),
+    "best_ori_fit": ("float", (None,)),
+    "ori_tuning_width": ("float", (None,)),
+    "ori_a1": ("float", (None,)),
+    "ori_k1": ("float", (None,)),
+}
+CURVEFIT_PROPS = {
+    "direction_tuning_width": ("float", (None, None)),
+    "orientation_tuning_width": ("float", (None, None)),
+}
+
+
+def get_dataset_list(types: dict) -> list:
+    return [
+        (
+            NWBDatasetSpec(doc=k, name=k, dtype=v[0], shape=v[1], quantity="?")
+            if isinstance(v, tuple)
+            else NWBDatasetSpec(doc=k, name=k, dtype=v, quantity="?")
+        )
+        for k, v in types.items()
+    ]
+
+
 oristat_ext = NWBGroupSpec(
     doc="oristats",
     datasets=[
-        NWBDatasetSpec(doc="best_dir", name="best_dir", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="best_dir_fit", name="best_dir_fit", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="best_dir_interp", name="best_dir_interp", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="best_ori", name="best_ori", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="best_ori_fit", name="best_ori_fit", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="data_table",
-            name="data_table",
-            dtype="float",
-            shape=[(None, None), (None, None, None), (None, None, None, None)],
-        ),
-        NWBDatasetSpec(doc="di", name="di", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="di_fit", name="di_fit", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="di_interp", name="di_interp", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="dir_a1", name="dir_a1", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="dir_a2", name="dir_a2", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="dir_k1", name="dir_k1", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="dir_k2", name="dir_k2", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="dir_ratio_change",
-            name="dir_ratio_change",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(doc="dir_sig", name="dir_sig", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="dir_tuning_width",
-            name="dir_tuning_width",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="dir_vector_angle",
-            name="dir_vector_angle",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="dir_vector_mag", name="dir_vector_mag", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="dir_vector_tune", name="dir_vector_tune", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="ds", name="ds", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="dsi", name="dsi", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="index_direction_selective_cell",
-            name="index_direction_selective_cell",
-            dtype="bool",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="index_orientation_selective_cell",
-            name="index_orientation_selective_cell",
-            dtype="bool",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="index_visually_responsive_cell",
-            name="index_visually_responsive_cell",
-            dtype="bool",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(doc="ncells", name="ncells", dtype="int"),
-        NWBDatasetSpec(
-            doc="ncells_direction_selective_cell",
-            name="ncells_direction_selective_cell",
-            dtype="int",
-        ),
-        NWBDatasetSpec(
-            doc="ncells_orientation_selective_cell",
-            name="ncells_orientation_selective_cell",
-            dtype="int",
-        ),
-        NWBDatasetSpec(
-            doc="ncells_visually_responsive_cell",
-            name="ncells_visually_responsive_cell",
-            dtype="int",
-        ),
-        NWBDatasetSpec(doc="nstim", name="nstim", dtype="int"),
-        NWBDatasetSpec(doc="nstim_per_trial", name="nstim_per_trial", dtype="int"),
-        NWBDatasetSpec(doc="nstimplus", name="nstimplus", dtype="int"),
-        NWBDatasetSpec(doc="ntrials", name="ntrials", dtype="int"),
-        NWBDatasetSpec(doc="null_dir", name="null_dir", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="null_dir_fit", name="null_dir_fit", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="null_dir_interp", name="null_dir_interp", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="null_ori", name="null_ori", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="oi", name="oi", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="ori_a1", name="ori_a1", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="ori_k1", name="ori_k1", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="ori_ratio_change",
-            name="ori_ratio_change",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="ori_tuning_width",
-            name="ori_tuning_width",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="ori_vector_angle",
-            name="ori_vector_angle",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="ori_vector_mag", name="ori_vector_mag", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="ori_vector_tune", name="ori_vector_tune", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="osi", name="osi", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="p_value_ori_resp",
-            name="p_value_ori_resp",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="p_value_ori_sel", name="p_value_ori_sel", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="p_value_resp", name="p_value_resp", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="p_value_sel", name="p_value_sel", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="p_value_threshold", name="p_value_threshold", dtype="float"
-        ),
-        NWBDatasetSpec(
-            doc="r_best_dir", name="r_best_dir", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="r_best_dir_fit", name="r_best_dir_fit", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="r_best_dir_interp",
-            name="r_best_dir_interp",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="r_best_ori", name="r_best_ori", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="r_best_threshold", name="r_best_threshold", dtype="float"),
-        NWBDatasetSpec(doc="r_min_dir", name="r_min_dir", dtype="float", shape=(None,)),
-        NWBDatasetSpec(doc="r_min_ori", name="r_min_ori", dtype="float", shape=(None,)),
-        NWBDatasetSpec(
-            doc="r_null_dir", name="r_null_dir", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="r_null_dir_fit", name="r_null_dir_fit", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(
-            doc="r_null_dir_interp",
-            name="r_null_dir_interp",
-            dtype="float",
-            shape=(None,),
-        ),
-        NWBDatasetSpec(
-            doc="r_null_ori", name="r_null_ori", dtype="float", shape=(None,)
-        ),
-        NWBDatasetSpec(doc="si_threshold", name="si_threshold", dtype="float"),
-        NWBDatasetSpec(
-            doc="sig_epochs_ori_resp",
-            name="sig_epochs_ori_resp",
-            dtype="float",
-            shape=(None, None, None),
-        ),
-        NWBDatasetSpec(
-            doc="sig_epochs_ori_sel",
-            name="sig_epochs_ori_sel",
-            dtype="float",
-            shape=(None, None, None),
-        ),
-        NWBDatasetSpec(
-            doc="sig_epochs_resp",
-            name="sig_epochs_resp",
-            dtype="float",
-            shape=(None, None, None),
-        ),
-        NWBDatasetSpec(
-            doc="sig_epochs_sel",
-            name="sig_epochs_sel",
-            dtype="float",
-            shape=(None, None, None),
-        ),
-        NWBDatasetSpec(
-            doc="tuning_curve", name="tuning_curve", dtype="float", shape=(None, None)
-        ),
-        NWBDatasetSpec(
-            doc="tuning_curve_polar",
-            name="tuning_curve_polar",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="direction_responsivity_ratio",
-            name="direction_responsivity_ratio",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="orientation_responsivity_ratio",
-            name="orientation_responsivity_ratio",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="direction_selectivity",
-            name="direction_selectivity",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="orientation_selectivity",
-            name="orientation_selectivity",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="best_responsivity",
-            name="best_responsivity",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="preferred_direction",
-            name="preferred_direction",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="preferred_orientation",
-            name="preferred_orientation",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="direction_tuning_width",
-            name="direction_tuning_width",
-            dtype="float",
-            shape=(None, None),
-        ),
-        NWBDatasetSpec(
-            doc="orientation_tuning_width",
-            name="orientation_tuning_width",
-            dtype="float",
-            shape=(None, None),
-        ),
+        *get_dataset_list(PARAM_TYPES),
+        *get_dataset_list(FILE_CONVERT_TYPES),
+        *get_dataset_list(FILE_CONVERT_PROPS),
+        *get_dataset_list(ANOVA_TYPES),
+        *get_dataset_list(ANOVA_PROPS),
+        *get_dataset_list(VECTOR_AVERAGE_TYPES),
+        *get_dataset_list(VECTOR_AVERAGE_PROPS),
+        *get_dataset_list(CURVEFIT_TYPES),
+        *get_dataset_list(CURVEFIT_PROPS),
     ],
     name="oristats",
     neurodata_type_def="Oristats",

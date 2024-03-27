@@ -207,12 +207,13 @@ class ExpDbBatch:
         self.logger_.info("process 'generate_statdata' start.")
 
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
-        stat: StatData = analyze_stats(
+        result = analyze_stats(
             expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
-        ).get("stat")
+        )
+        stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        self.nwbfile[NWBDATASET.ORISTATS] = stat
+        self.nwbfile[NWBDATASET.ORISTATS] = result["nwbfile"][NWBDATASET.ORISTATS]
 
         for expdb_path in self.expdb_paths:
             # TODO: save in NWB

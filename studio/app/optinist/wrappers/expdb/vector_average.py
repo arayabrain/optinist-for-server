@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.stat import StatData
 
 
@@ -37,9 +38,15 @@ def vector_average(
         ) = get_1d_vector_average(stat.ori_ratio_change[i])
 
     stat.ori_vector_angle /= 2
+    stat.set_vector_average_props()
+
+    nwbfile = kwargs.get("nwbfile", {})
+    nwbfile = nwbfile.get(NWBDATASET.ORISTATS, {})
+    nwbfile = {NWBDATASET.ORISTATS: {**nwbfile, **stat.nwb_dict_vector_average}}
 
     return {
         "stat": stat,
         "preferred_direction": stat.preferred_direction,
         "preferred_orientation": stat.preferred_orientation,
+        "nwbfile": nwbfile,
     }

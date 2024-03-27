@@ -13,7 +13,6 @@ def analyze_stats(
     stat = anova1_mult(stat, output_dir, params).get("stat")
     stat = vector_average(stat, output_dir, params).get("stat")
     stat = curvefit_tuning(stat, output_dir, params).get("stat")
-    nwbfile = {NWBDATASET.ORISTATS: stat.nwb_data}
 
     return {
         "stat": stat,
@@ -28,5 +27,5 @@ def analyze_stats(
         "preferred_orientation": stat.preferred_orientation,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
-        "nwbfile": nwbfile,
+        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }
