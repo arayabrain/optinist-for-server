@@ -1,10 +1,13 @@
 import gc
+import os
 
 import numpy as np
 import scipy
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
+from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
@@ -158,6 +161,8 @@ def caiman_cnmf(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
+    image_path = images.path[0] if isinstance(images.path, list) else images.path
+    exp_id = os.path.basename(image_path).split("_")[0]
     images = images.data
 
     # np.arrayをmmapへ変換
@@ -213,7 +218,15 @@ def caiman_cnmf(
     scipy.io.savemat(
         join_filepath([output_dir, "cellmask.mat"]), {"cellmask": cnm.estimates.A}
     )
-    timecourse_path = join_filepath([output_dir, "timecourse.mat"])
+    timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+    trialstructure_path = join_filepath(
+        [
+            DIRPATH.EXPDB_DIR,
+            exp_id.split("_")[0],
+            exp_id,
+            f"{exp_id}_{TS_SUFFIX}.mat",
+        ]
+    )
     scipy.io.savemat(timecourse_path, {"timecourse": AY})
     scipy.io.savemat(join_filepath([output_dir, "C_or.mat"]), {"C_or": cnm.estimates.C})
 
@@ -321,7 +334,7 @@ def caiman_cnmf(
     }
 
     info = {
-        "processed_data": ExpDbData([timecourse_path]),
+        "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
         "images": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,
