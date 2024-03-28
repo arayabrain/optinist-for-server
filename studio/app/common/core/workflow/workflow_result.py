@@ -46,10 +46,15 @@ class WorkflowResult:
                         message=error_message,
                     )
 
-            glob_pickle_filepath = join_filepath(
-                [self.workflow_dirpath, node_id, "*.pkl"]
+            glob_pickle_filepath = glob(
+                join_filepath([self.workflow_dirpath, node_id, "*.pkl"])
             )
-            for pickle_filepath in glob(glob_pickle_filepath):
+            tmp_glob_pickle_filepath = glob(
+                join_filepath([self.workflow_dirpath, node_id, "tmp_*.pkl"])
+            )
+            for pickle_filepath in list(
+                set(glob_pickle_filepath) - set(tmp_glob_pickle_filepath)
+            ):
                 results[node_id] = NodeResult(
                     self.workflow_dirpath,
                     node_id,
@@ -86,7 +91,6 @@ class WorkflowResult:
 
     def cancel(self):
         """
-
         The algorithm function of this workflow is being executed at the line:
         https://github.com/snakemake/snakemake/blob/27b224ed12448df8aebc7d1ff8f25e3bf7622232/snakemake/shell.py#L258
         ```
@@ -110,10 +114,8 @@ class WorkflowResult:
         ```
         Interrupt the conda activate at the beginning of the process is impossible
         because it is only called when each algorithm function executes.
-
         This workflow is cancelled by killing process via PID of algorithm function
         saved in pid.json file
-
         Raises:
             HTTPException: if pid_filepath or last_script_file does not exist
         """

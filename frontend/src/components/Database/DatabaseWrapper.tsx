@@ -1,15 +1,16 @@
-import { Box, Button, styled } from '@mui/material'
-import { FC } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { FC, ReactNode } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 
-const DatabaseWrapper: FC = ({ children }) => {
+import { Box, Button, styled } from "@mui/material"
+
+const DatabaseWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const handleClickExperiments = () => {
-    navigate('/console/experiments')
+    navigate("/console/experiments")
   }
   const handleClickCells = () => {
-    navigate('/console/cells')
+    navigate("/console/cells")
   }
 
   return (
@@ -23,7 +24,7 @@ const DatabaseWrapper: FC = ({ children }) => {
         <Button
           variant="text"
           onClick={handleClickExperiments}
-          disabled={location.pathname === '/console/experiments'}
+          disabled={location.pathname === "/console/experiments"}
         >
           Experiments
         </Button>
@@ -31,7 +32,7 @@ const DatabaseWrapper: FC = ({ children }) => {
         <Button
           variant="text"
           onClick={handleClickCells}
-          disabled={location.pathname === '/console/cells'}
+          disabled={location.pathname === "/console/cells"}
         >
           Cells
         </Button>
@@ -41,9 +42,9 @@ const DatabaseWrapper: FC = ({ children }) => {
   )
 }
 
-const DataBaseContent = styled(Box)(({ theme }) => ({
-  width: '94vw',
-  margin: 'auto',
+const DataBaseContent = styled(Box)(() => ({
+  width: "94vw",
+  margin: "auto",
   marginTop: 15,
 }))
 

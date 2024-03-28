@@ -1,34 +1,48 @@
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.dataclass.roi import EditRoiData
 
 
-def set_nwbfile(lccd_data, roi_list, fluorescence=None):
+def set_nwbfile(edit_roi_data: EditRoiData, iscell, function_id, fluorescence=None):
+    # NWBの追加
     nwbfile = {}
 
-    nwbfile[NWBDATASET.ROI] = {"roi_list": roi_list}
+    # NWBにROIを追加
+    roi_list = []
+    n_cells = edit_roi_data.im.shape[0]
+    for i in range(n_cells):
+        kargs = {}
+        kargs["image_mask"] = edit_roi_data.im[i, :]
+        roi_list.append(kargs)
+    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
 
     if fluorescence is not None:
-        nwbfile[NWBDATASET.FLUORESCENCE] = {}
-        nwbfile[NWBDATASET.FLUORESCENCE]["Fluorescence"] = {
-            "table_name": "Fluorescence",
-            "region": list(range(len(fluorescence))),
-            "name": "Fluorescence",
-            "data": fluorescence,
-            "unit": "lumens",
+        nwbfile[NWBDATASET.FLUORESCENCE] = {
+            function_id: {
+                "Fluorescence": {
+                    "table_name": "ROIs",
+                    "region": list(range(len(fluorescence))),
+                    "name": "Fluorescence",
+                    "data": fluorescence,
+                    "unit": "lumens",
+                }
+            }
         }
 
     nwbfile[NWBDATASET.COLUMN] = {
-        "roi_column": {
+        function_id: {
             "name": "iscell",
-            "discription": "two columns - iscell & probcell",
-            "data": lccd_data.get("is_cell"),
+            "description": "two columns - iscell & probcell",
+            "data": iscell,
         }
     }
 
     # NWB追加
     nwbfile[NWBDATASET.POSTPROCESS] = {
-        "add_roi": lccd_data.get("add_roi", []),
-        "delete_roi": lccd_data.get("delete_roi", []),
-        "merge_roi": lccd_data.get("merge_roi", []),
+        function_id: {
+            "add_roi": edit_roi_data.add_roi,
+            "delete_roi": edit_roi_data.delete_roi,
+            "merge_roi": edit_roi_data.merge_roi,
+        }
     }
 
     return nwbfile

@@ -1,16 +1,17 @@
-export const INPUT_NODE_SLICE_NAME = 'inputNode'
+export const INPUT_NODE_SLICE_NAME = "inputNode"
 
 export const FILE_TYPE_SET = {
-  CSV: 'csv',
-  IMAGE: 'image',
-  HDF5: 'hdf5',
-  FLUO: 'fluo',
-  BEHAVIOR: 'behavior',
-  MATLAB: 'matlab',
-  EXPDB: 'expdb',
+  CSV: "csv",
+  IMAGE: "image",
+  HDF5: "hdf5",
+  FLUO: "fluo",
+  BEHAVIOR: "behavior",
+  MATLAB: "matlab",
+  MICROSCOPE: "microscope",
+  EXPDB: "expdb",
 } as const
 
-export type FILE_TYPE = typeof FILE_TYPE_SET[keyof typeof FILE_TYPE_SET]
+export type FILE_TYPE = (typeof FILE_TYPE_SET)[keyof typeof FILE_TYPE_SET]
 
 export type InputNode = {
   [nodeId: string]: InputNodeType
@@ -21,6 +22,7 @@ export type InputNodeType =
   | ImageInputNode
   | HDF5InputNode
   | MatlabInputNode
+  | MicroscopeInputNode
   | ExpDbInputNode
 
 interface InputNodeBaseType<
@@ -39,29 +41,33 @@ export type CsvInputParamType = {
 }
 
 export interface CsvInputNode
-  extends InputNodeBaseType<'csv', CsvInputParamType> {
+  extends InputNodeBaseType<"csv", CsvInputParamType> {
   selectedFilePath?: string
 }
 
-export interface ImageInputNode extends InputNodeBaseType<'image', {}> {
+export interface MatlabInputNode
+  extends InputNodeBaseType<"matlab", Record<never, never>> {
+  selectedFilePath?: string
+  matPath?: string
+}
+
+export interface ImageInputNode
+  extends InputNodeBaseType<"image", Record<never, never>> {
   selectedFilePath?: string[]
 }
 
-export interface HDF5InputNode extends InputNodeBaseType<'hdf5', {}> {
+export interface HDF5InputNode
+  extends InputNodeBaseType<"hdf5", Record<never, never>> {
   selectedFilePath?: string
   hdf5Path?: string
 }
 
-export type MatlabInputParamType = {
-  fieldName?: string
-  index?: number[]
-}
-
-export interface MatlabInputNode
-  extends InputNodeBaseType<'matlab', MatlabInputParamType> {
+export interface MicroscopeInputNode
+  extends InputNodeBaseType<"microscope", Record<never, never>> {
   selectedFilePath?: string
 }
 
-export interface ExpDbInputNode extends InputNodeBaseType<'expdb', {}> {
+export interface ExpDbInputNode
+  extends InputNodeBaseType<"expdb", Record<never, never>> {
   selectedFilePath?: string
 }

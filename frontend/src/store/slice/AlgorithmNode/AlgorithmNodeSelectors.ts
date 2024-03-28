@@ -1,6 +1,5 @@
-import { RootState } from 'store/store'
-
-import { getChildParam } from 'utils/param/ParamUtils'
+import { RootState } from "store/store"
+import { getChildParam } from "utils/param/ParamUtils"
 
 export const selectAlgorithmNode = (state: RootState) => state.algorithmNode
 
@@ -19,12 +18,17 @@ export const selectAlgorithmName = (nodeId: string) => (state: RootState) =>
   selectAlgorithmNodeById(nodeId)(state).name
 
 export const selectAlgorithmParams = (nodeId: string) => (state: RootState) =>
-  selectAlgorithmNodeById(nodeId)(state).params
+  selectAlgorithmNodeById(nodeId)(state)?.params
 
 export const selectAlgorithmIsUpdated =
-  (nodeId: string) => (state: RootState) =>
-    selectAlgorithmNodeById(nodeId)(state).isUpdated
-
+  (nodeId: string) => (state: RootState) => {
+    const isUpdate = selectAlgorithmNodeById(nodeId)(state).isUpdate
+    const originalValue = selectAlgorithmNodeById(nodeId)(state).originalValue
+    const param = selectAlgorithmParams(nodeId)(state)
+    return (
+      !(JSON.stringify(originalValue) === JSON.stringify(param)) && isUpdate
+    )
+  }
 export const selectAlgorithmParamsExit =
   (nodeId: string) => (state: RootState) =>
     selectAlgorithmNodeById(nodeId)(state).params !== null
@@ -40,7 +44,7 @@ export const selectAlgorithmParamsValue =
       const target = getChildParam(path, params)
       return target?.value
     } else {
-      throw new Error('AlgorithmParam is null')
+      throw new Error("AlgorithmParam is null")
     }
   }
 
@@ -50,7 +54,7 @@ export const selectAlgorithmParam =
     if (params != null) {
       return params[paramKey]
     } else {
-      throw new Error('AlgorithmParam is null')
+      throw new Error("AlgorithmParam is null")
     }
   }
 

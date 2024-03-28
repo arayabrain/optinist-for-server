@@ -9,13 +9,17 @@ def TSNE(
     output_dir: str,
     iscell: IscellData = None,
     params: dict = None,
+    **kwargs,
 ) -> dict():
     import numpy as np
     from sklearn.manifold import TSNE
 
+    function_id = output_dir.split("/")[-1]
+    print("start TSNE:", function_id)
+
     neural_data = neural_data.data
 
-    # data shold be time x component matrix
+    # data should be time x component matrix
     if params["transpose"]:
         X = neural_data.transpose()
     else:
@@ -36,7 +40,7 @@ def TSNE(
 
     # NWB追加
     nwbfile = {}
-    nwbfile[NWBDATASET.POSTPROCESS] = {"projectedNd": proj_X}
+    nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"projectedNd": proj_X}}
 
     info = {
         "projectedNd": ScatterData(proj_X, file_name="projectedNd"),

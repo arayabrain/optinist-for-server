@@ -1,6 +1,9 @@
-import { DATA_TYPE, DATA_TYPE_SET } from '../DisplayData/DisplayDataType'
+import {
+  DATA_TYPE,
+  DATA_TYPE_SET,
+} from "store/slice/DisplayData/DisplayDataType"
 
-export const VISUALIZE_ITEM_SLICE_NAME = 'visualaizeItem'
+export const VISUALIZE_ITEM_SLICE_NAME = "visualaizeItem"
 
 export type VisualaizeItem = {
   selectedItemId: number | null
@@ -26,11 +29,11 @@ export type ColorType = {
 }
 
 export const VISUALIZE_ITEM_TYPE_SET = {
-  DISPLAY_DATA: 'displayData',
+  DISPLAY_DATA: "displayData",
 } as const
 
 export type VISUALIZE_ITEM_TYPE =
-  typeof VISUALIZE_ITEM_TYPE_SET[keyof typeof VISUALIZE_ITEM_TYPE_SET]
+  (typeof VISUALIZE_ITEM_TYPE_SET)[keyof typeof VISUALIZE_ITEM_TYPE_SET]
 
 export type DisplayDataItem =
   | ImageItem
@@ -50,7 +53,7 @@ export type DisplayDataItem =
   | PolarItem
   | MatlabItem
 
-export interface DisplayDataItemBaseType extends ItemBaseType<'displayData'> {
+export interface DisplayDataItemBaseType extends ItemBaseType<"displayData"> {
   filePath: string | null
   nodeId: string | null
   dataType: DATA_TYPE | null
@@ -79,7 +82,7 @@ export interface ImageItem extends DisplayDataItemBaseType {
 
 export interface TimeSeriesItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.TIME_SERIES
-  offset: boolean
+  stdBool: boolean
   span: number
   showgrid: boolean
   showline: boolean
@@ -89,6 +92,7 @@ export interface TimeSeriesItem extends DisplayDataItemBaseType {
     left: number | undefined
     right: number | undefined
   }
+  rangeUnit: "frames" | "time"
   maxIndex: number
   refImageItemId: number | null
   drawOrderList: string[]
@@ -105,6 +109,14 @@ export interface CsvItem extends DisplayDataItemBaseType {
   setIndex: boolean
   transpose: boolean
 }
+
+export interface MatlabItem extends DisplayDataItemBaseType {
+  dataType: typeof DATA_TYPE_SET.MATLAB
+  setHeader: number | null
+  setIndex: boolean
+  transpose: boolean
+}
+
 export interface RoiItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.ROI
   outputKey?: string
@@ -155,8 +167,4 @@ export interface PieItem extends DisplayDataItemBaseType {
 export interface PolarItem extends DisplayDataItemBaseType {
   dataType: typeof DATA_TYPE_SET.POLAR
   selectedIndex: number
-}
-
-export interface MatlabItem extends DisplayDataItemBaseType {
-  dataType: typeof DATA_TYPE_SET.MATLAB
 }

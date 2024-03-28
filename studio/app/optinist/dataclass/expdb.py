@@ -26,13 +26,15 @@ class TsData(MatlabData):
         self.nstim_per_trial = int(self.data["Nstim_per_trial"].item())
         self.ntrials = int(self.data["Ntrials"].item())
         self.stim_log = self.data["stim_log"].item()
-        self.framarate = self.data["frameRate"].item()
+        self.framerate = self.data["frameRate"].item()
 
         if "Nframes_base" in [descr[0] for descr in self.data.dtype.descr]:
+            # ORI
             self.has_base = True
             self.nframes_base = int(self.data["Nframes_base"].item())
             self.nframes_post = 0
         else:
+            # OF_PRC
             self.has_base = False
             self.nframes_base = int(self.data["pre_stim"].item())
             self.nframes_post = int(self.data["post_stim"].item())
@@ -51,16 +53,25 @@ class TsData(MatlabData):
         self.stim_index = np.arange(self.nframes_base + 1, 2 * self.nframes_base + 1)
         self.nframes_epoch = self.nframes_base + self.nframes_stim + self.nframes_post
 
+    @property
+    def nframes_per_stim(self):
+        return self.nframes_epoch
+
+    @property
+    def nstim_per_run(self):
+        return self.nstim_per_trial if self.has_base else self.nstim_per_trial_planar
+
+    @property
+    def nframes_per_trial(self):
+        return self.nframes_per_stim * self.nstim_per_run
+
 
 class ExpDbData(BaseData):
     def __init__(self, paths, params={}, file_name="expdb"):
         super().__init__(file_name)
-        assert (
-            isinstance(paths, list) and len(paths) == 2
-        ), "ExpDb Data requires tc and ts paths"
-
         self.tc = None
         self.ts = None
+        self.path = paths
 
         for path in paths:
             assert isinstance(path, str), "path should be str"
@@ -68,4 +79,3 @@ class ExpDbData(BaseData):
                 self.tc = TcData(path)
             elif path.endswith(f"{TS_SUFFIX}.mat"):
                 self.ts = TsData(path)
-        assert self.tc is not None and self.ts is not None, "tc and ts should be given"

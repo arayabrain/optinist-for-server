@@ -1,4 +1,4 @@
-export const FILES_TREE_SLICE_NAME = 'filesTree'
+export const FILES_TREE_SLICE_NAME = "filesTree"
 
 export type TreeNodeType = DirNode | FileNode
 
@@ -6,6 +6,7 @@ export interface NodeBase {
   path: string
   name: string
   isDir: boolean
+  shape: []
 }
 
 export interface DirNode extends NodeBase {

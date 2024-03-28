@@ -5,6 +5,8 @@ import traceback
 from dataclasses import asdict
 from datetime import datetime
 
+from filelock import FileLock
+
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
 from studio.app.common.core.snakemake.smk import Rule
 from studio.app.common.core.utils.config_handler import ConfigWriter
@@ -12,7 +14,11 @@ from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.pickle_handler import PickleReader, PickleWriter
 from studio.app.const import DATE_FORMAT
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
+from studio.app.optinist.core.nwb.nwb_creater import (
+    merge_nwbfile,
+    overwrite_nwbfile,
+    save_nwb,
+)
 from studio.app.wrappers import wrapper_dict
 
 
@@ -35,7 +41,11 @@ class Runner:
 
             # output_info
             output_info = cls.execute_function(
-                __rule.path, __rule.params, os.path.dirname(__rule.output), input_info
+                __rule.path,
+                __rule.params,
+                nwbfile.get("input"),
+                os.path.dirname(__rule.output),
+                input_info,
             )
 
             # nwbfileの設定
@@ -53,7 +63,7 @@ class Runner:
             if __rule.output in last_output:
                 # 全体の結果を保存する
                 path = join_filepath(os.path.dirname(os.path.dirname(__rule.output)))
-                path = join_filepath([path, f"whole_{__rule.type}.nwb"])
+                path = join_filepath([path, "whole.nwb"])
                 cls.save_all_nwb(path, output_info["nwbfile"])
 
             print("output: ", __rule.output)
@@ -62,10 +72,11 @@ class Runner:
             gc.collect()
 
         except Exception as e:
-            PickleWriter.write(
-                __rule.output,
-                list(traceback.TracebackException.from_exception(e).format())[-2:],
-            )
+            err_msg = list(traceback.TracebackException.from_exception(e).format())
+            # show full trace to console
+            print(*err_msg, sep="\n")
+            # save msg for GUI
+            PickleWriter.write(__rule.output, err_msg)
 
     @classmethod
     def set_func_start_timestamp(cls, output_dirpath):
@@ -96,16 +107,26 @@ class Runner:
     def save_all_nwb(cls, save_path, all_nwbfile):
         input_nwbfile = all_nwbfile["input"]
         all_nwbfile.pop("input")
-        nwbfile = {}
+        nwbconfig = {}
         for x in all_nwbfile.values():
-            nwbfile = merge_nwbfile(nwbfile, x)
-        save_nwb(save_path, input_nwbfile, nwbfile)
+            nwbconfig = merge_nwbfile(nwbconfig, x)
+        # 同一のnwbfileに対して、複数の関数を実行した場合、h5pyエラーが発生する
+        lock_path = save_path + ".lock"
+        timeout = 30  # ロック取得のタイムアウト時間（秒）
+        with FileLock(lock_path, timeout=timeout):
+            # ロックが取得できたら、ファイルに書き込みを行う
+            if os.path.exists(save_path):
+                overwrite_nwbfile(save_path, nwbconfig)
+            else:
+                save_nwb(save_path, input_nwbfile, nwbconfig)
 
     @classmethod
-    def execute_function(cls, path, params, output_dir, input_info):
+    def execute_function(cls, path, params, nwb_params, output_dir, input_info):
         wrapper = cls.dict2leaf(wrapper_dict, path.split("/"))
         func = copy.deepcopy(wrapper["function"])
-        output_info = func(params=params, output_dir=output_dir, **input_info)
+        output_info = func(
+            params=params, nwbfile=nwb_params, output_dir=output_dir, **input_info
+        )
         del func
         gc.collect()
 
@@ -122,8 +143,24 @@ class Runner:
         input_info = {}
         for filepath in input_files:
             load_data = PickleReader.read(filepath)
+            merged_nwb = cls.deep_merge(
+                load_data.pop("nwbfile", {}), input_info.pop("nwbfile", {})
+            )
             input_info = dict(list(load_data.items()) + list(input_info.items()))
+            input_info["nwbfile"] = merged_nwb
         return input_info
+
+    @classmethod
+    def deep_merge(cls, dict1, dict2):
+        if not isinstance(dict1, dict) or not isinstance(dict2, dict):
+            return dict2
+        merged = dict1.copy()
+        for k, v in dict2.items():
+            if k in merged and isinstance(merged[k], dict):
+                merged[k] = cls.deep_merge(merged[k], v)
+            else:
+                merged[k] = v
+        return merged
 
     @classmethod
     def dict2leaf(cls, root_dict: dict, path_list):

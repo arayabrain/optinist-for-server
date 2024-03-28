@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import lfilter
 
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import ExpDbData, StatData
 
 
@@ -207,7 +208,7 @@ def get_stat_data(data_tables) -> StatData:
 
 
 def stat_file_convert(
-    expdb: ExpDbData, output_dir: str, params: dict = None
+    expdb: ExpDbData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     tc = expdb.tc
     ts = expdb.ts
@@ -247,10 +248,13 @@ def stat_file_convert(
 
     stat = get_stat_data(data_tables)
     stat.nstim_per_trial = _nstim_per_trial
-    stat.set_si()
+    stat.set_file_convert_props()
 
     return {
         "stat": stat,
         "tuning_curve": stat.tuning_curve,
         "tuning_curve_polar": stat.tuning_curve_polar,
+        "nwbfile": {
+            NWBDATASET.ORISTATS: stat.nwb_dict_file_convert,
+        },
     }

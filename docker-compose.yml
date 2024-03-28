@@ -32,14 +32,16 @@ services:
     command: >
         bash -c "
           sh init_docker_services.sh &&
-          alembic upgrade head &&
-          python main.py --host 0.0.0.0 --port 8000
+          poetry run alembic upgrade head &&
+          poetry run python main.py --host 0.0.0.0 --port 8000
         "
     user: optinist
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
       OPTINIST_DIR: /app/studio_data
+      POETRY_VIRTUALENVS_CREATE: false
+      CONDA_CHANNEL_PRIORITY: strict
     depends_on:
       - db
     restart: always

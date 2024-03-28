@@ -5,13 +5,13 @@ from sqlmodel import Session
 from studio.app.common.core.auth.auth_dependencies import get_admin_user
 from studio.app.common.core.users import crud_users
 from studio.app.common.db.database import get_db
+from studio.app.common.schemas.base import SortOptions
 from studio.app.common.schemas.users import (
     User,
     UserCreate,
     UserSearchOptions,
     UserUpdate,
 )
-from studio.app.optinist.schemas.base import SortOptions
 
 router = APIRouter(prefix="/admin/users", tags=["users/admin"])
 

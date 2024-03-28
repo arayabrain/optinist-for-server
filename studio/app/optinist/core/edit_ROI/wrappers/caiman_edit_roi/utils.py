@@ -1,49 +1,49 @@
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.dataclass.roi import EditRoiData
 
 
-def set_nwbfile(cnmf_data):
-    im = cnmf_data.get("im")
-    is_cell = cnmf_data.get("is_cell")
-    fluorescence = cnmf_data.get("fluorescence")
-
+def set_nwbfile(edit_roi_data: EditRoiData, iscell, function_id, fluorescence=None):
     # NWBの追加
     nwbfile = {}
+
     # NWBにROIを追加
     roi_list = []
-    n_cells = im.shape[0]
+    n_cells = edit_roi_data.im.shape[0]
     for i in range(n_cells):
         kargs = {}
-        kargs["image_mask"] = im[i, :]
+        kargs["image_mask"] = edit_roi_data.im[i, :]
         roi_list.append(kargs)
+    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
 
-    nwbfile[NWBDATASET.ROI] = {"roi_list": roi_list}
-
-    # iscellを追加
     nwbfile[NWBDATASET.COLUMN] = {
-        "roi_column": {
+        function_id: {
             "name": "iscell",
-            "discription": "two columns - iscell & probcell",
-            "data": is_cell,
+            "description": "two columns - iscell & probcell",
+            "data": iscell,
         }
     }
 
     # Fluorescence
 
     nwbfile[NWBDATASET.FLUORESCENCE] = {
-        "RoiResponseSeries": {
-            "table_name": "ROIs",
-            "region": list(range(n_cells)),
-            "name": "RoiResponseSeries",
-            "data": fluorescence.T,
-            "unit": "lumens",
-        },
+        function_id: {
+            "Fluorescence": {
+                "table_name": "ROIs",
+                "region": list(range(n_cells)),
+                "name": "Fluorescence",
+                "data": fluorescence.T,
+                "unit": "lumens",
+            },
+        }
     }
 
     # NWB追加
     nwbfile[NWBDATASET.POSTPROCESS] = {
-        "add_roi": cnmf_data.get("add_roi", []),
-        "delete_roi": cnmf_data.get("delete_roi", []),
-        "merge_roi": cnmf_data.get("merge_roi", []),
+        function_id: {
+            "add_roi": edit_roi_data.add_roi,
+            "delete_roi": edit_roi_data.delete_roi,
+            "merge_roi": edit_roi_data.merge_roi,
+        }
     }
 
     return nwbfile

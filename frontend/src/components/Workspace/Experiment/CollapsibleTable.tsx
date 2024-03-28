@@ -1,30 +1,34 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
-import Box from '@mui/material/Box'
-import Collapse from '@mui/material/Collapse'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import Typography from '@mui/material/Typography'
+import { memo, useContext } from "react"
+import { useSelector } from "react-redux"
 
-import { ExperimentUidContext } from './ExperimentTable'
+import Box from "@mui/material/Box"
+import Collapse from "@mui/material/Collapse"
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableHead from "@mui/material/TableHead"
+import TableRow from "@mui/material/TableRow"
+import Typography from "@mui/material/Typography"
+
+import { NWBDownloadButton } from "components/Workspace/Experiment/Button/DownloadButton"
+import { ExperimentStatusIcon } from "components/Workspace/Experiment/ExperimentStatusIcon"
+import { ExperimentUidContext } from "components/Workspace/Experiment/ExperimentTable"
 import {
   selectExperimentFunctionHasNWB,
   selectExperimentFunctionMessage,
   selectExperimentFunctionName,
   selectExperimentFunctionNodeIdList,
   selectExperimentFunctionStatus,
-} from 'store/slice/Experiments/ExperimentsSelectors'
-import { ExperimentStatusIcon } from './ExperimentStatusIcon'
-import { arrayEqualityFn } from 'utils/EqualityUtils'
-import { NWBDownloadButton } from './Button/DownloadButton'
-import { IconButton, Popover } from '@mui/material'
+} from "store/slice/Experiments/ExperimentsSelectors"
+import { arrayEqualityFn } from "utils/EqualityUtils"
 
-export const CollapsibleTable = React.memo<{
+interface CollapsibleTableProps {
   open: boolean
-}>(({ open }) => {
+}
+
+export const CollapsibleTable = memo(function CollapsibleTable({
+  open,
+}: CollapsibleTableProps) {
   return (
     <TableRow>
       <TableCell sx={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
@@ -44,7 +48,7 @@ export const CollapsibleTable = React.memo<{
   )
 })
 
-const Head = React.memo(() => {
+const Head = memo(function Head() {
   return (
     <TableHead>
       <TableRow>
@@ -57,8 +61,8 @@ const Head = React.memo(() => {
   )
 })
 
-const Body = React.memo(() => {
-  const uid = React.useContext(ExperimentUidContext)
+const Body = memo(function Body() {
+  const uid = useContext(ExperimentUidContext)
   const nodeIdList = useSelector(
     selectExperimentFunctionNodeIdList(uid),
     arrayEqualityFn,
@@ -66,28 +70,24 @@ const Body = React.memo(() => {
   return (
     <TableBody>
       {nodeIdList.map((nodeId) => (
-        <TableRowOfFunction nodeId={nodeId} />
+        <TableRowOfFunction key={nodeId} nodeId={nodeId} />
       ))}
     </TableBody>
   )
 })
 
-const TableRowOfFunction = React.memo<{
+interface TableRowOfFunctionProps {
   nodeId: string
-}>(({ nodeId }) => {
-  const uid = React.useContext(ExperimentUidContext)
+}
+
+const TableRowOfFunction = memo(function TableRowOfFunction({
+  nodeId,
+}: TableRowOfFunctionProps) {
+  const uid = useContext(ExperimentUidContext)
   const name = useSelector(selectExperimentFunctionName(uid, nodeId))
   const status = useSelector(selectExperimentFunctionStatus(uid, nodeId))
   const hasNWB = useSelector(selectExperimentFunctionHasNWB(uid, nodeId))
   const message = useSelector(selectExperimentFunctionMessage(uid, nodeId))
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-  const handleClose = () => {
-    setAnchorEl(null)
-  }
-  const open = Boolean(anchorEl)
 
   return (
     <TableRow key={nodeId}>
@@ -96,23 +96,7 @@ const TableRowOfFunction = React.memo<{
       </TableCell>
       <TableCell>{nodeId}</TableCell>
       <TableCell>
-        <IconButton onClick={handleClick} disabled={!message}>
-          <ExperimentStatusIcon status={status} />
-        </IconButton>
-        <Popover
-          id="function-error-message"
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-        >
-          <Typography sx={{ p: 1, color: 'crimson', fontSize: 14 }}>
-            {message}
-          </Typography>
-        </Popover>
+        <ExperimentStatusIcon status={status} message={message} />
       </TableCell>
       <TableCell>
         <NWBDownloadButton name={name} nodeId={nodeId} hasNWB={hasNWB} />

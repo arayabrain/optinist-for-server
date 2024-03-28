@@ -1,5 +1,5 @@
-import { TreeNodeTypeDTO } from 'api/files/Files'
-import { TreeNodeType } from './FilesTreeType'
+import { TreeNodeTypeDTO } from "api/files/Files"
+import { TreeNodeType } from "store/slice/FilesTree/FilesTreeType"
 
 export function convertToTreeNodeType(dto: TreeNodeTypeDTO[]): TreeNodeType[] {
   return dto.map((node) =>
@@ -9,11 +9,13 @@ export function convertToTreeNodeType(dto: TreeNodeTypeDTO[]): TreeNodeType[] {
           name: node.name,
           isDir: true,
           nodes: convertToTreeNodeType(node.nodes),
+          shape: node.shape,
         }
       : {
           path: node.path,
           name: node.name,
           isDir: false,
+          shape: node.shape,
         },
   )
 }

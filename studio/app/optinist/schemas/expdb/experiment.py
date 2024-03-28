@@ -28,9 +28,9 @@ class PublishStatus(int, Enum):
 
 class ExpDbExperimentFields(BaseModel):
     brain_area: Optional[str]
-    cre_driver: Optional[str]
-    reporter_line: Optional[str]
-    imaging_depth: Optional[int]
+    imaging_depth: Optional[str]
+    promoter: Optional[str]
+    indicator: Optional[str]
 
 
 class ExpDbExperimentHeader(BaseModel):
@@ -53,6 +53,7 @@ class ExpDbExperiment(BaseModel):
     experiment_id: str
     fields: ExpDbExperimentFields = None
     attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
     cell_image_urls: List[ImageInfo] = None
     graph_urls: List[ImageInfo] = None
     share_type: int = Field(description="1: default(per users), 2: for organization")
@@ -68,30 +69,27 @@ class ExpDbExperimentCreate(BaseModel):
     experiment_id: str
     organization_id: int
     attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
 
 
 class ExpDbExperimentUpdate(BaseModel):
     experiment_id: Optional[str]
     organization_id: Optional[int]
     attributes: Optional[dict]
+    view_attributes: Optional[dict]
     share_type: Optional[int]
     publish_status: Optional[int]
+    updated_at: Optional[datetime]
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")
     )
-    brain_area: Optional[List[str]] = Field(
-        Query(default=None, description="complete match")
-    )
-    cre_driver: Optional[List[str]] = Field(
-        Query(default=None, description="complete match")
-    )
-    reporter_line: Optional[List[str]] = Field(
-        Query(default=None, description="complete match")
-    )
-    imaging_depth: Optional[List[int]] = Field(Query(default=None))
+    brain_area: Optional[List[str]] = Field(Query(default=None))
+    imaging_depth: Optional[List[str]] = Field(Query(default=None))
+    promoter: Optional[List[str]] = Field(Query(default=None))
+    indicator: Optional[List[str]] = Field(Query(default=None))
 
 
 class ExpDbExperimentShareStatus(BaseModel):

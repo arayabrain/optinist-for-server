@@ -1,59 +1,81 @@
-import { Box, Input, styled } from '@mui/material'
-import {ChangeEvent, useCallback, useEffect, useMemo, useState} from 'react'
-import { useSearchParams } from 'react-router-dom'
-import DialogImage from '../common/DialogImage'
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { useSearchParams } from "react-router-dom"
+
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import { Box, Input, styled, Tooltip } from "@mui/material"
 import {
-  GridFilterModel,
-  GridSortModel,
   DataGrid,
+  GridColDef,
+  GridFilterInputValueProps,
+  GridFilterItem,
+  GridFilterModel,
   GridSortDirection,
-  GridSortItem
-} from '@mui/x-data-grid'
-import {
-  DatabaseType,
-  DATABASE_SLICE_NAME,
-  ImageUrls,
-} from '../../store/slice/Database/DatabaseType'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '../../store/store'
+  GridSortItem,
+  GridSortModel,
+} from "@mui/x-data-grid"
+
+import { WAITING_TIME } from "@types"
+import DialogImage from "components/common/DialogImage"
+import Loading from "components/common/Loading"
+import PaginationCustom from "components/common/PaginationCustom"
+import SelectFilter from "components/common/SelectFilter"
+import { SpanCustom } from "components/Database/DatabaseExperiments"
 import {
   getCellsDatabase,
   getCellsPublicDatabase,
-} from '../../store/slice/Database/DatabaseActions'
-import Loading from 'components/common/Loading'
-import { TypeData } from 'store/slice/Database/DatabaseSlice'
-import PaginationCustom from "../common/PaginationCustom";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { WAITING_TIME } from "../../@types";
+  getOptionsFilter,
+} from "store/slice/Database/DatabaseActions"
+import { TypeData } from "store/slice/Database/DatabaseSlice"
+import {
+  DATABASE_SLICE_NAME,
+  DatabaseType,
+  FilterParams,
+  ImageUrls,
+} from "store/slice/Database/DatabaseType"
+import { AppDispatch, RootState } from "store/store"
 
 type CellProps = {
-  user?: Object
+  user?: unknown
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
-const columns = (user?: boolean, loading: boolean = false) => [
+const LIST_FILTER_IS = [
+  "publish_status",
+  "brain_area",
+  "promoter",
+  "indicator",
+  "imaging_depth",
+]
+
+const columns = (
+  user?: boolean,
+  loading: boolean = false,
+  options?: FilterParams,
+) => [
   {
-    field: 'experiment_id',
-    headerName: 'Experiment ID',
+    field: "experiment_id",
+    headerName: "Experiment ID",
     filterOperators: [
       {
-        label: 'Contains', value: 'contains',
-        InputComponent: ({applyValue, item}: any) => {
+        label: "Contains",
+        value: "contains",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
           return (
             <Input
               autoFocus={!loading}
-              sx={{paddingTop: "16px"}}
-              defaultValue={item.value || ''}
+              sx={{ paddingTop: "16px" }}
+              defaultValue={item.value || ""}
               onChange={(e) => {
-                if(timeout) clearTimeout(timeout)
+                if (timeout) clearTimeout(timeout)
                 timeout = setTimeout(() => {
-                  applyValue({...item, value: e.target.value})
+                  applyValue({ ...item, value: e.target.value })
                 }, WAITING_TIME)
               }}
             />
           )
-        }
+        },
       },
     ],
     type: "string",
@@ -61,206 +83,380 @@ const columns = (user?: boolean, loading: boolean = false) => [
     renderCell: (params: { row: DatabaseType }) => params.row?.experiment_id,
   },
   user && {
-    field: 'published',
-    headerName: 'Published',
-    renderCell: (params: { row: DatabaseType }) => (
-      params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null
-    ),
-    valueOptions: ['Published', 'No_Published'],
-    type: 'singleSelect',
+    field: "published",
+    headerName: "Published",
+    renderCell: (params: { row: DatabaseType }) =>
+      params.row.publish_status ? <CheckCircleIcon color={"success"} /> : null,
+    valueOptions: ["Published", "No_Published"],
+    type: "singleSelect",
     width: 120,
   },
   {
-    field: 'id',
-    headerName: 'Cell ID',
+    field: "id",
+    headerName: "Cell ID",
     width: 120,
     filterable: false,
     renderCell: (params: { value: number }) => params.value,
   },
   {
-    field: 'brain_area',
-    headerName: 'Brain area',
+    field: "brain_area",
+    headerName: "Brain area",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.brain_area ?? 'NA',
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.brain_areas}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.brain_area}>
+          <SpanCustom>{params.row.fields?.brain_area ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'cre_driver',
-    headerName: 'Cre driver',
+    field: "promoter",
+    headerName: "Promoter",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.cre_driver ?? 'NA',
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.promoters}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.promoter}>
+          <SpanCustom>{params.row.fields?.promoter ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'reporter_line',
-    headerName: 'Reporter line',
+    field: "indicator",
+    headerName: "Indicator",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.reporter_line ?? 'NA',
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.indicators}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.indicator}>
+          <SpanCustom>{params.row.fields?.indicator ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'imaging_depth',
-    headerName: 'Imaging depth',
-    filterable: false,
+    field: "imaging_depth",
+    headerName: "Imaging depth",
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.fields?.imaging_depth ?? 'NA',
+    filterOperators: [
+      {
+        label: "Is any of",
+        value: "isAnyOf",
+        InputComponent: ({ applyValue, item }: GridFilterInputValueProps) => {
+          if (!options) return null
+          return (
+            <SelectFilter
+              options={options?.imaging_depths}
+              loading={loading}
+              applyValue={applyValue}
+              item={item}
+              timeout={timeout}
+            />
+          )
+        },
+      },
+    ],
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.fields?.imaging_depth}>
+          <SpanCustom>{params.row.fields?.imaging_depth ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
 ]
 
 const statistics = () => [
   {
-    field: 'p_value_resp',
-    headerName: 'p_value_resp',
+    field: "p_value_resp",
+    headerName: "p_value_resp",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_resp ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_resp}>
+          <SpanCustom>{params.row.statistics?.p_value_resp ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'p_value_sel',
-    headerName: 'p_value_sel',
+    field: "p_value_sel",
+    headerName: "p_value_sel",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_sel ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_sel}>
+          <SpanCustom>{params.row.statistics?.p_value_sel ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'p_value_ori_resp',
-    headerName: 'p_value_ori_resp',
+    field: "p_value_ori_resp",
+    headerName: "p_value_ori_resp",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_ori_resp ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_ori_resp}>
+          <SpanCustom>
+            {params.row.statistics?.p_value_ori_resp ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'p_value_ori_sel',
-    headerName: 'p_value_ori_sel',
+    field: "p_value_ori_sel",
+    headerName: "p_value_ori_sel",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.p_value_ori_sel ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.p_value_ori_sel}>
+          <SpanCustom>
+            {params.row.statistics?.p_value_ori_sel ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'dir_vector_angle',
-    headerName: 'dir_vector_angle',
+    field: "dir_vector_angle",
+    headerName: "dir_vector_angle",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dir_vector_angle ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dir_vector_angle}>
+          <SpanCustom>
+            {params.row.statistics?.dir_vector_angle ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'ori_vector_angle',
-    headerName: 'ori_vector_angle',
+    field: "ori_vector_angle",
+    headerName: "ori_vector_angle",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.ori_vector_angle ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.ori_vector_angle}>
+          <SpanCustom>
+            {params.row.statistics?.ori_vector_angle ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'di',
-    headerName: 'di',
+    field: "di",
+    headerName: "di",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.di ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.di}>
+          <SpanCustom>{params.row.statistics?.di ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'oi',
-    headerName: 'oi',
+    field: "oi",
+    headerName: "oi",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.oi ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.oi}>
+          <SpanCustom>{params.row.statistics?.oi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'dsi',
-    headerName: 'dsi',
+    field: "dsi",
+    headerName: "dsi",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dsi ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dsi}>
+          <SpanCustom>{params.row.statistics?.dsi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'osi',
-    headerName: 'osi',
+    field: "osi",
+    headerName: "osi",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.osi ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.osi}>
+          <SpanCustom>{params.row.statistics?.osi ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'r_best_dir',
-    headerName: 'r_best_dir',
+    field: "r_best_dir",
+    headerName: "r_best_dir",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.r_best_dir ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.r_best_dir}>
+          <SpanCustom>{params.row.statistics?.r_best_dir ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'dir_tuning_width',
-    headerName: 'dir_tuning_width',
+    field: "dir_tuning_width",
+    headerName: "dir_tuning_width",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.dir_tuning_width ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.dir_tuning_width}>
+          <SpanCustom>
+            {params.row.statistics?.dir_tuning_width ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
   {
-    field: 'ori_tuning_width',
-    headerName: 'ori_tuning_width',
+    field: "ori_tuning_width",
+    headerName: "ori_tuning_width",
     filterable: false,
     sortable: false,
     width: 120,
-    renderCell: (params: { row: DatabaseType }) =>
-      params.row.statistics?.ori_tuning_width ?? 'NA',
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.ori_tuning_width}>
+          <SpanCustom>
+            {params.row.statistics?.ori_tuning_width ?? "NA"}
+          </SpanCustom>
+        </Tooltip>
+      )
+    },
   },
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
-  const type: keyof TypeData = user ? 'private' : 'public'
+  const type: keyof TypeData = user ? "private" : "public"
 
-  const { data: dataCells, loading } = useSelector(
-    (state: RootState) => ({
-      data: state[DATABASE_SLICE_NAME].data[type],
-      loading: state[DATABASE_SLICE_NAME].loading,
-    }),
+  const {
+    data: dataCells,
+    loading,
+    filterParams,
+  } = useSelector((state: RootState) => ({
+    data: state[DATABASE_SLICE_NAME].data[type],
+    loading: state[DATABASE_SLICE_NAME].loading,
+    filterParams: state[DATABASE_SLICE_NAME].filterParams,
+  }))
+
+  const [newParams, setNewParams] = useState(
+    window.location.search.replace("?", ""),
   )
-
-  const [newParams, setNewParams] = useState(window.location.search.replace("?", ""))
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data?: string | string[]
     expId?: string
     nameCol?: string
   }>({
-    type: '',
+    type: "",
     data: undefined,
   })
+  const [fieldFilter, setFieldFilter] = useState("")
+  const [valueFilter, setValueFilter] = useState<string | string[]>("")
 
   const [searchParams, setParams] = useSearchParams()
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
 
-  const id = searchParams.get('id')
-  const offset = searchParams.get('offset')
-  const limit = searchParams.get('limit') || 50
-  const sort = searchParams.getAll('sort')
+  const id = searchParams.get("id")
+  const offset = searchParams.get("offset")
+  const limit = searchParams.get("limit") || 50
+  const sort = searchParams.getAll("sort")
 
   const dataParams = useMemo(() => {
     return {
       exp_id: Number(id) || undefined,
-      sort: [sort[0]?.replace('published', 'publish_status'), sort[1]] || [],
+      sort: [sort[0]?.replace("published", "publish_status"), sort[1]] || [],
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }
@@ -269,36 +465,52 @@ const DatabaseCells = ({ user }: CellProps) => {
 
   const dataParamsFilter = useMemo(
     () => ({
-      experiment_id: searchParams.get('experiment_id') || undefined,
-      publish_status: searchParams.get('published') || undefined,
-      brain_area: searchParams.get('brain_area') || undefined,
-      cre_driver: searchParams.get('cre_driver') || undefined,
-      reporter_line: searchParams.get('reporter_line') || undefined,
-      imaging_depth: Number(searchParams.get('imaging_depth')) || undefined,
+      experiment_id: searchParams.get("experiment_id") || undefined,
+      publish_status: searchParams.get("published") || undefined,
+      brain_area: searchParams.getAll("brain_area") || undefined,
+      promoter: searchParams.getAll("promoter") || undefined,
+      indicator: searchParams.getAll("indicator") || undefined,
+      imaging_depth: searchParams.getAll("imaging_depth") || undefined,
     }),
     [searchParams],
   )
 
-  const [model, setModel] = useState<{filter: GridFilterModel, sort: any}>({
+  const [model, setModel] = useState<{
+    filter: GridFilterModel
+    sort: GridSortModel
+  }>({
     filter: {
       items: [
         {
-          field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
-          operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
-          value: Object.values(dataParamsFilter).find(value => value) || null,
+          field:
+            Object.keys(dataParamsFilter)
+              .find(
+                (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
+              )
+              ?.replace("publish_status", "published") || "",
+          operator: LIST_FILTER_IS.includes(
+            Object.keys(dataParamsFilter).find(
+              (key) => dataParamsFilter[key as keyof typeof dataParamsFilter],
+            ) || "publish_status",
+          )
+            ? "isAnyOf"
+            : "contains",
+          value: Object.values(dataParamsFilter).find((value) => value) || null,
         },
       ],
     },
-    sort: [{
-      field: dataParams.sort[0]?.replace('publish_status', 'published') || '',
-      sort: dataParams.sort[1] as GridSortDirection
-    }]
+    sort: [
+      {
+        field: dataParams.sort[0]?.replace("publish_status", "published") || "",
+        sort: dataParams.sort[1] as GridSortDirection,
+      },
+    ],
   })
 
   const pagiFilter = useCallback(
     (page?: number) => {
       return `limit=${limit}&offset=${
-          page ? (Number(limit) * (page - 1)) : offset || dataCells.offset
+        page ? Number(limit) * (page - 1) : offset || dataCells.offset
       }`
     },
     //eslint-disable-next-line
@@ -308,91 +520,168 @@ const DatabaseCells = ({ user }: CellProps) => {
   const fetchApi = () => {
     const api = !user ? getCellsPublicDatabase : getCellsDatabase
     let newPublish: number | undefined
-    if(!dataParamsFilter.publish_status) newPublish = undefined
+    if (!dataParamsFilter.publish_status) newPublish = undefined
     else {
-      if(dataParamsFilter.publish_status === 'Published') newPublish = 1
+      if (dataParamsFilter.publish_status === "Published") newPublish = 1
       else newPublish = 0
     }
-    dispatch(api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }))
+    dispatch(
+      api({ ...dataParamsFilter, publish_status: newPublish, ...dataParams }),
+    )
   }
 
   useEffect(() => {
-    if(Object.keys(dataParamsFilter).every(key => !(dataParamsFilter as any)[key])) return
+    const key = Object.keys(dataParamsFilter).find((key) => {
+      const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+      return (
+        (!Array.isArray(value) && value) ||
+        (Array.isArray(value) && value.length)
+      )
+    }) as keyof typeof dataParamsFilter
+    if (key) {
+      setFieldFilter(key)
+      setValueFilter(dataParamsFilter[key] as string[])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      Object.keys(dataParamsFilter).every(
+        (key) => !dataParamsFilter[key as keyof typeof dataParamsFilter],
+      )
+    ) {
+      return
+    }
+    if (!fieldFilter?.trim()?.length) return
     setModel({
       filter: {
         items: [
           {
-            field: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key])?.replace('publish_status', 'published') || '' ,
-            operator: Object.keys(dataParamsFilter).find(key => (dataParamsFilter as any)[key]) === 'publish_status' ? 'is' : 'contains',
-            value: Object.values(dataParamsFilter).find(value => value) || null,
+            field: fieldFilter?.replace("publish_status", "published") || "",
+            operator: LIST_FILTER_IS.includes(fieldFilter || "publish_status")
+              ? "isAnyOf"
+              : "contains",
+            value: valueFilter || null,
           },
         ],
       },
-      sort: [{
-        field: dataParams.sort[0]?.replace('publish_status', 'published') || '',
-        sort: dataParams.sort[1] as GridSortDirection
-      }]
+      sort: [
+        {
+          field:
+            dataParams.sort[0]?.replace("publish_status", "published") || "",
+          sort: dataParams.sort[1] as GridSortDirection,
+        },
+      ],
     })
     //eslint-disable-next-line
-  }, [dataParams, dataParamsFilter])
+  }, [dataParams, dataParamsFilter, fieldFilter, valueFilter])
 
   useEffect(() => {
     let param = newParams
-    if(newParams[0] === '&') param = newParams.slice(1, param.length)
-    if(param === window.location.search.replace("?", "")) return;
-    setParams(param)
+    if (newParams[0] === "&") param = newParams.slice(1, param.length)
+    if (param === window.location.search.replace("?", "")) return
+    setParams(param.replaceAll("+", "%2B"))
     //eslint-disable-next-line
   }, [newParams])
+
+  useEffect(() => {
+    if (newParams && newParams !== window.location.search.replace("?", "")) {
+      setNewParams(window.location.search.replace("?", ""))
+    }
+    //eslint-disable-next-line
+  }, [searchParams])
+
+  useEffect(() => {
+    dispatch(getOptionsFilter())
+    //eslint-disable-next-line
+  }, [])
 
   useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
 
-  const handleOpenDialog = (data: ImageUrls[] | ImageUrls, expId?: string, graphTitle?: string) => {
-    let newData: string | (string[]) = []
-    if(Array.isArray(data)) {
-      newData = data.map(d => d.url);
+  const handleOpenDialog = (
+    data: ImageUrls[] | ImageUrls,
+    expId?: string,
+    graphTitle?: string,
+  ) => {
+    let newData: string | string[] = []
+    if (Array.isArray(data)) {
+      newData = data.map((d) => d.url)
     } else newData = data.url
-    setDataDialog({ type: 'image', data: newData, expId: expId, nameCol: graphTitle })
+    setDataDialog({
+      type: "image",
+      data: newData,
+      expId: expId,
+      nameCol: graphTitle,
+    })
   }
 
   const handleCloseDialog = () => {
-    setDataDialog({ type: '', data: undefined })
+    setDataDialog({ type: "", data: undefined })
   }
 
   const getParamsData = () => {
     const dataFilter = Object.keys(dataParamsFilter)
-      .filter((key) => (dataParamsFilter as any)[key])
-      .map((key) => `${key}=${(dataParamsFilter as any)[key]}`)
-      .join('&')
-      .replaceAll('publish_status', 'published')
+      .filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return !!value[0]
+        }
+        return value
+      })
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
+      .join("&")
+      .replaceAll("publish_status", "published")
     return dataFilter
   }
 
   const handlePage = (e: ChangeEvent<unknown>, page: number) => {
-    if(!dataCells) return
+    if (!dataCells) return
     const filter = getParamsData()
-    const param = `${filter}${dataParams.sort[0] ? `${filter ? '&' : ''}sort=${dataParams.sort[0]}&sort=${dataParams.sort[1]}` : ''}&${pagiFilter(page)}`
+    const param = `${filter}${
+      dataParams.sort[0]
+        ? `${filter ? "&" : ""}sort=${dataParams.sort[0]}&sort=${
+            dataParams.sort[1]
+          }`
+        : ""
+    }&${pagiFilter(page)}`
     setNewParams(param)
   }
 
   const handleSort = useCallback(
     (rowSelectionModel: GridSortModel) => {
       setModel({
-        ...model, sort: rowSelectionModel
+        ...model,
+        sort: rowSelectionModel,
       })
       let param
       const filter = getParamsData()
       if (!rowSelectionModel[0]) {
-        param = filter || dataParams.sort[0] || offset ? `${filter ? `${filter}&` : ''}${pagiFilter()}` : ''
+        param =
+          filter || dataParams.sort[0] || offset
+            ? `${filter ? `${filter}&` : ""}${pagiFilter()}`
+            : ""
         setNewParams(param)
         return
       }
-      param = `${filter}${rowSelectionModel[0] ? `${filter ? '&' : ''}sort=${rowSelectionModel[0].field?.replaceAll(
-          'publish_status',
-          'published'
-      )}&sort=${rowSelectionModel[0].sort}&` : ''}${pagiFilter()}`
+      param = `${filter}${
+        rowSelectionModel[0]
+          ? `${filter ? "&" : ""}sort=${rowSelectionModel[0].field?.replaceAll(
+              "publish_status",
+              "published",
+            )}&sort=${rowSelectionModel[0].sort}&`
+          : ""
+      }${pagiFilter()}`
       setNewParams(param)
     },
     //eslint-disable-next-line
@@ -400,94 +689,142 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 
   const handleFilter = (modelFilter: GridFilterModel) => {
+    if (modelFilter.items.length === 0) {
+      const data = Object.keys(dataParamsFilter).filter((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value) && value.length === 0) {
+          return false
+        }
+        return !!value
+      })
+      setModel({
+        ...model,
+        filter: {
+          items: [
+            {
+              field: data[0],
+              operator: "isAnyOf",
+              value:
+                dataParamsFilter[data[0] as keyof typeof dataParamsFilter] ||
+                "",
+            },
+          ],
+        },
+      })
+      return
+    }
     setModel({
-      ...model, filter: modelFilter
+      ...model,
+      filter: modelFilter,
     })
-    let filter = ''
-    if (!!modelFilter.items[0]?.value) {
+    setFieldFilter(modelFilter.items[0]?.field)
+    setValueFilter(modelFilter.items[0]?.value)
+    let filter = ""
+    if (modelFilter.items[0]?.value) {
       filter = modelFilter.items
         .filter((item) => item.value)
-        .map((item: any) => {
+        .map((item: GridFilterItem) => {
+          if (Array.isArray(item.value)) {
+            return item.value.map((value) => `${item.field}=${value}`).join("&")
+          }
           return `${item.field}=${item?.value}`
-        })
-        .join('&').replace('publish_status', 'published')
+        })[0]
+        .replace("publish_status", "published")
     }
     const { sort } = dataParams
-    const param = sort[0] || filter || offset ? `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&${pagiFilter()}` : ''
-    setNewParams(param.replace('publish_status', 'published'))
+    const param =
+      sort[0] || filter || offset
+        ? `${filter}${
+            sort[0] ? `${filter ? "&" : ""}sort=${sort[0]}&sort=${sort[1]}` : ""
+          }&${pagiFilter()}`
+        : ""
+    setNewParams(param.replace("publish_status", "published"))
   }
 
   const handleLimit = (event: ChangeEvent<HTMLSelectElement>) => {
-    if(!dataCells) return
-    let filter = ''
-    filter = Object.keys(dataParamsFilter).filter(key => (dataParamsFilter as any)[key])
-      .map((item: any) => `${item}=${(dataParamsFilter as any)[item]}`)
-      .join('&').replace('publish_status', 'published')
+    if (!dataCells) return
+    let filter = ""
+    filter = Object.keys(dataParamsFilter)
+      .filter((key) => dataParamsFilter[key as keyof typeof dataParamsFilter])
+      .map((key) => {
+        const value = dataParamsFilter[key as keyof typeof dataParamsFilter]
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}=${item}`).join("&")
+        }
+        return `${key}=${
+          dataParamsFilter[key as keyof typeof dataParamsFilter]
+        }`
+      })
+      .join("&")
+      .replace("publish_status", "published")
     const { sort } = dataParams
-    const param = `${filter}${sort[0] ? `${filter ? '&' : ''}sort=${sort[0]}&sort=${sort[1]}` : ''}&limit=${Number(event.target.value)}&offset=0`
+    const param = `${filter}${
+      sort[0] ? `${filter ? "&" : ""}sort=${sort[0]}&sort=${sort[1]}` : ""
+    }&limit=${Number(event.target.value)}&offset=0`
     setNewParams(param)
   }
 
   const getColumns = useMemo(() => {
-    return (dataCells.header?.graph_titles || []).map(
-      (graphTitle, index) => ({
+    return (dataCells.header?.graph_titles || []).map((graphTitle, index) => ({
       field: `graph_urls.${index}`,
       headerName: graphTitle,
       filterable: false,
       sortable: false,
       renderCell: (params: { row: DatabaseType }) => {
-        const {row} = params
-        const {graph_urls} = row
+        const { row } = params
+        const { graph_urls } = row
         const graph_url = graph_urls[index]
-        if(!graph_url) return null
+        if (!graph_url) return null
         return (
           <Box
-            sx={{ display: 'flex', cursor: "pointer" }}
-            onClick={() => handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)}
+            sx={{ display: "flex", cursor: "pointer" }}
+            onClick={() =>
+              handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)
+            }
           >
             <img
               src={graph_url.thumb_url}
-              alt={''}
-              width={'100%'}
-              height={'100%'}
+              alt={""}
+              width={"100%"}
+              height={"100%"}
             />
           </Box>
         )
       },
       width: 160,
-    }),
-    )
+    }))
   }, [dataCells.header?.graph_titles])
 
-  const columnsTable = [...columns(!!user, loading), ...getColumns, ...statistics()].filter(
-    Boolean,
-  ) as any
+  const columnsTable = [
+    ...columns(!!user, loading, filterParams),
+    ...getColumns,
+    ...statistics(),
+  ].filter(Boolean) as GridColDef[]
 
   return (
     <DatabaseExperimentsWrapper>
       <DataGrid
-        columns={[...columnsTable] as any}
+        columns={[...columnsTable]}
         rows={dataCells?.items || []}
         rowHeight={128}
         hideFooter={true}
-        filterMode={'server'}
-        sortingMode={'server'}
+        filterMode={"server"}
+        sortingMode={"server"}
         onSortModelChange={handleSort}
         filterModel={model.filter}
         sortModel={model.sort as GridSortItem[]}
-        onFilterModelChange={handleFilter as any}
+        onFilterModelChange={handleFilter}
       />
-      {
-        dataCells?.items.length > 0 ?
+      {dataCells?.items.length > 0 ? (
         <PaginationCustom
           data={dataCells}
           handlePage={handlePage}
           handleLimit={handleLimit}
           limit={Number(limit)}
-        /> : null
-      }
+        />
+      ) : null}
       <DialogImage
-        open={dataDialog.type === 'image'}
+        open={dataDialog.type === "image"}
         data={dataDialog.data}
         nameCol={dataDialog.nameCol}
         expId={dataDialog.expId}
@@ -498,9 +835,9 @@ const DatabaseCells = ({ user }: CellProps) => {
   )
 }
 
-const DatabaseExperimentsWrapper = styled(Box)(({ theme }) => ({
-  width: '100%',
-  height: 'calc(100vh - 250px)',
+const DatabaseExperimentsWrapper = styled(Box)(() => ({
+  width: "100%",
+  height: "calc(100vh - 250px)",
 }))
 
 export default DatabaseCells

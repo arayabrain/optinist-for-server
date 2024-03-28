@@ -1,20 +1,26 @@
-import { Box, keyframes, styled } from '@mui/material'
+import { Box, keyframes, styled } from "@mui/material"
 
-const Loading = () => {
+type Props = {
+  position?: "fixed" | "absolute"
+}
+
+const Loading = ({ position = "fixed" }: Props) => {
   return (
-    <LoaderWrapper>
+    <LoaderWrapper position={position}>
       <Loader />
     </LoaderWrapper>
   )
 }
 
-const LoaderWrapper = styled(Box)(({ theme }) => ({
+const LoaderWrapper = styled(Box, {
+  shouldForwardProp: (props) => props !== "position",
+})<{ position?: "fixed" | "absolute" }>(({ position }) => ({
   top: 0,
   bottom: 0,
   left: 0,
   right: 0,
-  position: 'fixed',
-  backgroundColor: 'rgba(255,255,255,0.6)',
+  position: position,
+  backgroundColor: "rgba(255,255,255,0.6)",
   zIndex: 100000,
 }))
 
@@ -30,23 +36,23 @@ const prixClipFix = keyframes`
   100% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 0)}
 `
 
-const Loader = styled('span')(({ theme }) => ({
-  display: 'block',
+const Loader = styled("span")(() => ({
+  display: "block",
   width: 48,
   height: 48,
-  borderRadius: '50%',
-  position: 'relative',
+  borderRadius: "50%",
+  position: "relative",
   zIndex: 100,
-  top: 'calc(50% - 24px)',
-  left: 'calc(50% - 24px)',
+  top: "calc(50% - 24px)",
+  left: "calc(50% - 24px)",
   animation: `${rotate} 1s linear infinite`,
-  '&:before': {
+  "&:before": {
     content: "''",
-    boxSizing: 'border-box',
-    position: 'absolute',
+    boxSizing: "border-box",
+    position: "absolute",
     inset: 0,
-    borderRadius: '50%',
-    border: '3px solid rgba(0,0,0,0.8)',
+    borderRadius: "50%",
+    border: "3px solid rgba(0,0,0,0.8)",
     animation: `${prixClipFix} 2s linear infinite`,
   },
 }))

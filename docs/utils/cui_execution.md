@@ -2,18 +2,19 @@ CUI execution
 =================
 This section describes how to run a workflow created in GUI on a cluster or in CUI.
 
-* [1. Config file settings](#1-config-file-settings)
-* [2. Set environment variables for save paths](#2-set-environment-variables-for-save-paths)
-* [3. Input File Settings](#3-input-file-settings)
-* [4. Execution](#4-execution)
-* [5.Output result](#5output-result)
+- [CUI execution](#cui-execution)
+  - [1. Config file settings](#1-config-file-settings)
+  - [2. Set environment variables for save paths](#2-set-environment-variables-for-save-paths)
+  - [3. Input File Settings](#3-input-file-settings)
+  - [4. Execution](#4-execution)
+  - [5.Output result](#5output-result)
 
 ## 1. Config file settings
 Place the config file required by Snakemake at the appropriate location.
 The config file can be downloaded from **Record** on the GUI.
 
 ## 2. Set environment variables for save paths
-Change environment variables. Change the environment variable as follows, because the default setting refers to the directory under `/tmp/optinist`.
+Change environment variables. Change the environment variable as follows, because the default setting refers to the directory under `/tmp/studio`.
 ```bash
 export OPTINIST_DIR="your_saving_dir"
 ```
@@ -29,7 +30,7 @@ It can be executed in CUI by running `run_cluster.py`.
 
 The parameter arguments are as follows.
 - config(string): path of config.yaml file set in step 1
-- cores(int): Specifies the number of CPU cores. (defalt: 2, cores >= 2)
+- cores(int): Specifies the number of CPU cores. (default: 2, cores >= 2)
 - forceall(bool): Whether to overwrite existing results or not. (default: false)
 - use_conda(bool): Whether to use the conda virtual environment or not. If not, it is necessary to have caiman, suite2p, etc. INSTALL the current environment into the execution environment.
 

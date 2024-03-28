@@ -10,6 +10,7 @@ from studio.app.common.models import Role as RoleModel
 from studio.app.common.models import User as UserModel
 from studio.app.common.models import UserRole as UserRoleModel
 from studio.app.common.schemas.auth import UserAuth
+from studio.app.common.schemas.base import SortOptions
 from studio.app.common.schemas.users import (
     User,
     UserCreate,
@@ -17,7 +18,6 @@ from studio.app.common.schemas.users import (
     UserSearchOptions,
     UserUpdate,
 )
-from studio.app.optinist.schemas.base import SortOptions
 
 
 async def get_user(db: Session, user_id: int, organization_id: int) -> User:
@@ -51,11 +51,12 @@ async def list_user(
     try:
         sa_sort_list = sortOptions.get_sa_sort_list(
             sa_table=UserModel,
-            mapping={"role_id": UserRoleModel.role_id, "role": RoleModel.role},
+            mapping={"role_id": RoleModel.id, "role": RoleModel.role},
         )
         users = paginate(
             db,
             query=select(UserModel)
+            .join(UserModel.role)
             .filter(
                 UserModel.active.is_(True),
                 UserModel.organization_id == organization_id,

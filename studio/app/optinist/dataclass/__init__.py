@@ -5,7 +5,8 @@ from studio.app.optinist.dataclass.fluo import FluoData
 from studio.app.optinist.dataclass.iscell import IscellData
 from studio.app.optinist.dataclass.lccd import LccdData
 from studio.app.optinist.dataclass.nwb import NWBFile
-from studio.app.optinist.dataclass.roi import RoiData
+from studio.app.optinist.dataclass.roi import EditRoiData, RoiData
+from studio.app.optinist.dataclass.spiking_activity import SpikingActivityData
 from studio.app.optinist.dataclass.stat import StatData
 from studio.app.optinist.dataclass.suite2p import Suite2pData
 
@@ -20,6 +21,8 @@ __all__ = [
     "LccdData",
     "NWBFile",
     "RoiData",
+    "SpikingActivityData",
     "StatData",
     "Suite2pData",
+    "EditRoiData",
 ]

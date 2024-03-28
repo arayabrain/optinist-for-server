@@ -53,8 +53,13 @@ class DIRPATH:
     SNAKEMAKE_CONFIG_YML = "snakemake.yaml"
     WORKFLOW_YML = "workflow.yaml"
 
+    IS_TEST = os.environ.get("IS_TEST", False)
     FIREBASE_PRIVATE_PATH = f"{CONFIG_DIR}/auth/firebase_private.json"
-    FIREBASE_CONFIG_PATH = f"{CONFIG_DIR}/auth/firebase_config.json"
+    FIREBASE_CONFIG_PATH = (
+        f"{CONFIG_DIR}/auth/firebase_config.json"
+        if not IS_TEST
+        else f"{CONFIG_DIR}/auth/firebase_config.example.json"
+    )
 
 
 class CORE_PARAM_PATH(Enum):

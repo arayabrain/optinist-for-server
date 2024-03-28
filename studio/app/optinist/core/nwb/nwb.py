@@ -11,3 +11,5 @@ class NWBDATASET:
     FLUORESCENCE: str = "FLUORESCENCE"
     BEHAVIOR: str = "BEHAVIOR"
     IMAGE_SERIES: str = "image_series"
+    ORISTATS: str = "ORISTATS"
+    LAB_METADATA: str = "LAB_METADATA"

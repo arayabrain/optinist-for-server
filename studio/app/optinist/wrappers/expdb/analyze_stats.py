@@ -1,3 +1,4 @@
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
@@ -6,7 +7,7 @@ from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 
 
 def analyze_stats(
-    expdb: ExpDbData, output_dir: str, params: dict = None
+    expdb: ExpDbData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
     stat = stat_file_convert(expdb, output_dir, params).get("stat")
     stat = anova1_mult(stat, output_dir, params).get("stat")
@@ -26,4 +27,5 @@ def analyze_stats(
         "preferred_orientation": stat.preferred_orientation,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
+        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }
