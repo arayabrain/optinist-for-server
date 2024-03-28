@@ -77,13 +77,17 @@ class ExpDbPath:
             microscope_files = []
             for ext in ACCEPT_MICROSCOPE_EXT:
                 microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
-            assert (
-                len(microscope_files) > 0
-            ), f"microscope files not found: {self.exp_dir}"
-            assert (
-                len(microscope_files) == 1
-            ), f"multiple microscope files found: {microscope_files}"
-            self.microscope_file = microscope_files[0]
+            # TODO: 本番環境にファイルがないため一度コメントアウト
+            # assert (
+            #     len(microscope_files) > 0
+            # ), f"microscope files not found: {self.exp_dir}"
+            # assert (
+            #     len(microscope_files) == 1
+            # ), f"multiple microscope files found: {microscope_files}"
+            # self.microscope_file = microscope_files[0]
+            self.microscope_file = (
+                microscope_files[0] if len(microscope_files) > 0 else None
+            )
             # NOTE: Metadata file is allowed to be missing.
             self.exp_metadata_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
@@ -164,6 +168,10 @@ class ExpDbBatch:
         self.logger_.info("process 'preprocess' start.")
         create_directory(self.raw_path.preprocess_dir, delete_dir=True)
 
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if self.raw_path.microscope_file is None:
+            return None
+
         preprocess_results = preprocessing(
             microscope=MicroscopeData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
@@ -184,6 +192,12 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def generate_orimaps(self, stack: ImageData):
         self.logger_.info("process 'generate_orimaps' start.")
+
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if stack is None:
+            # 出力されたorimapsがないので、ユーザーアップロードのファイルを参照する
+            self.raw_path.orimaps_dir = self.raw_path.exp_dir
+            return
 
         create_directory(self.raw_path.orimaps_dir)
 
@@ -328,9 +342,11 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def save_nwb(self, metadata: dict):
         input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
-        input_config[NWBDATASET.IMAGE_SERIES][
-            "external_file"
-        ] = self.raw_path.microscope_file
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if self.raw_path.microscope_file is not None:
+            input_config[NWBDATASET.IMAGE_SERIES][
+                "external_file"
+            ] = self.raw_path.microscope_file
         input_config[NWBDATASET.LAB_METADATA] = metadata
 
         for expdb_path in self.expdb_paths:
