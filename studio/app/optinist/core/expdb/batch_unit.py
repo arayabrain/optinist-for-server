@@ -73,6 +73,7 @@ class ExpDbPath:
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
 
+            # input_files
             microscope_files = []
             for ext in ACCEPT_MICROSCOPE_EXT:
                 microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
@@ -83,28 +84,30 @@ class ExpDbPath:
                 len(microscope_files) == 1
             ), f"multiple microscope files found: {microscope_files}"
             self.microscope_file = microscope_files[0]
-
-            self.preprocess_dir = join_filepath([self.exp_dir, "preprocess"])
-            self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
-
-            # TODO: timecourse.matをCNMFの結果から取得する
-            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+            # NOTE: Metadata file is allowed to be missing.
+            self.exp_metadata_file = join_filepath(
+                [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
+            )
             self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
             assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
 
-            # TODO: cellmask.matをCNMFの結果から取得する
-            self.cellmask_file = join_filepath(
-                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
-            )
+            # preprocess
+            # TODO: output_dir配下から分離
+            self.preprocess_dir = join_filepath([self.output_dir, "preprocess"])
+            self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
+
+            # TODO: ORIMAPSをpreprocess_dirに保存する
             self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
             self.fov_file = join_filepath(
                 [self.orimaps_dir, f"{exp_id}_{FOV_SUFFIX}.tif"]
             )
-            self.exp_metadata_file = join_filepath(
-                [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
+
+            # TODO: TCをCNMFの結果(preprocess_dir)から取得する
+            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+            # TODO: cellmaskをCNMFの結果(preprocess_dir)から取得する
+            self.cellmask_file = join_filepath(
+                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
-            # Note: Metadata file is allowed to be missing.
-            self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
             self.output_dir = self.exp_dir
@@ -113,6 +116,7 @@ class ExpDbPath:
         self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
         self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
+        self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
 
 
 class ExpDbBatch:
@@ -195,7 +199,7 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection_cnmf(self):
         self.logger_.info("process 'cell_detection_cnmf' start.")
-
+        # TODO: 出力ファイルはpreprocess_dirに保存する
         pass
 
     @stopwatch(callback=__stopwatch_callback)
@@ -329,4 +333,5 @@ class ExpDbBatch:
         ] = self.raw_path.microscope_file
         input_config[NWBDATASET.LAB_METADATA] = metadata
 
-        save_nwb(self.raw_path.nwb_file, input_config, self.nwbfile)
+        for expdb_path in self.expdb_paths:
+            save_nwb(expdb_path.nwb_file, input_config, self.nwbfile)
