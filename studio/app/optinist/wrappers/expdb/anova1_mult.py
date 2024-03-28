@@ -1,10 +1,12 @@
 import numpy as np
-from scipy.stats import f_oneway, tukey_hsd
 
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import StatData
 
 
 def multi_compare(data):
+    from scipy.stats import tukey_hsd
+
     _, size = data.shape
     tukey = tukey_hsd(*data.T).confidence_interval()
     sig = tukey.high * tukey.low
@@ -26,6 +28,8 @@ def multi_compare(data):
 def anova1_mult(
     stat: StatData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stat=StatData):
+    from scipy.stats import f_oneway
+
     stat.p_value_threshold = params["p_value_threshold"]
     stat.r_best_threshold = params["r_best_threshold"]
     stat.si_threshold = params["si_threshold"]
@@ -61,7 +65,11 @@ def anova1_mult(
         stat.p_value_ori_sel[i] = f_oneway(*half_temp_data.T)[1]
         # stat.sig_epochs_ori_sel[i] = multi_compare(half_temp_data)
 
-    stat.set_responsivity_and_selectivity()
+    stat.set_anova_props()
+
+    nwbfile = kwargs.get("nwbfile", {})
+    nwbfile = nwbfile.get(NWBDATASET.ORISTATS, {})
+    nwbfile = {NWBDATASET.ORISTATS: {**nwbfile, **stat.nwb_dict_anova}}
 
     return {
         "stat": stat,
@@ -70,4 +78,5 @@ def anova1_mult(
         "direction_selectivity": stat.direction_selectivity,
         "orientation_selectivity": stat.orientation_selectivity,
         "best_responsivity": stat.best_responsivity,
+        "nwbfile": nwbfile,
     }

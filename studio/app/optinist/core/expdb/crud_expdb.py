@@ -2,6 +2,7 @@ import datetime
 
 from sqlmodel import Session
 
+from studio.app.optinist.core.nwb.lab_metadata import MODALITY_IMAGING_KEY, SPECIMEN_KEY
 from studio.app.optinist.models import Experiment as ExperimentModel
 from studio.app.optinist.models.expdb.experiment import (
     ExperimentShareUser as ExperimentShareUserModel,
@@ -79,11 +80,9 @@ def delete_experiment(db: Session, id: int):
 def extract_experiment_view_attributes(attributes: dict) -> dict:
     try:
         attributes_metadata_attr = attributes["metadata"]["metadata"]
-        modality_imaging = attributes_metadata_attr["Modality Imaging"]
+        modality_imaging = attributes_metadata_attr[MODALITY_IMAGING_KEY]
 
-        specimen_type_brain_region = attributes_metadata_attr[
-            "Specimen type Brain region"
-        ]
+        specimen_type_brain_region = attributes_metadata_attr[SPECIMEN_KEY]
         if "Brain region Marmoset" in specimen_type_brain_region:
             brain_region = specimen_type_brain_region["Brain region Marmoset"]
         elif "Brain region Mouse" in specimen_type_brain_region:

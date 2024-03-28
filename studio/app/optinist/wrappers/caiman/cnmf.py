@@ -1,14 +1,19 @@
 import gc
+import os
 
 import numpy as np
+import scipy
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
+from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
+from studio.app.optinist.dataclass.expdb import ExpDbData
 
 
-def get_roi(A, thr, thr_method, swap_dim, dims):
+def get_roi(A, roi_thr, thr_method, swap_dim, dims):
     from scipy.ndimage import binary_fill_holes
     from skimage.measure import find_contours
 
@@ -52,7 +57,7 @@ def get_roi(A, thr, thr_method, swap_dim, dims):
             Bmat = np.reshape(Bvec, dims, order="F")
 
         r_mask = np.zeros_like(Bmat, dtype="bool")
-        contour = find_contours(Bmat, thr)
+        contour = find_contours(Bmat, roi_thr)
         for c in contour:
             r_mask[np.round(c[:, 0]).astype("int"), np.round(c[:, 1]).astype("int")] = 1
 
@@ -63,9 +68,76 @@ def get_roi(A, thr, thr_method, swap_dim, dims):
     return ims
 
 
+def util_recursive_flatten_params(params, result_params: dict, nest_counter=0):
+    """
+    Recursively flatten node parameters (operation for CaImAn CNMFParams)
+    """
+    # avoid infinite loops
+    assert nest_counter <= 2, f"Nest depth overflow. [{nest_counter}]"
+    nest_counter += 1
+
+    for key, nested_param in params.items():
+        if type(nested_param) is dict:
+            util_recursive_flatten_params(nested_param, result_params, nest_counter)
+        else:
+            result_params[key] = nested_param
+
+
+def mm_fun(A: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    """
+    This code is a port of the CaImAn-MATLAB function (mm_fun.m).
+    However, the porting is limited to the functions
+    assumed to be used in this application.
+    """
+
+    # multiply A*Y or A'*Y or Y*A or Y*C' depending on the dimension for loaded
+    # or memory mapped Y.
+
+    (d1a, d2a) = A.shape[0:2]
+
+    d1y = np.prod(Y.shape[0:-1])
+    d2y = Y.shape[-1]
+
+    if d1a == d1y:  # A'*Y
+        AY = A.T @ Y
+    elif d1a == d2y:
+        AY = Y @ A
+    elif d2a == d1y:
+        AY = A @ Y
+    elif d2a == d2y:  # Y*C'
+        AY = Y.T @ A
+    else:
+        assert False, "matrix dimensions do not match"
+
+    return AY
+
+
+def calculate_AY(
+    A_or: scipy.sparse.csc_matrix, C_or: np.ndarray, Yr: np.ndarray, stack_shape: list
+) -> np.ndarray:
+    A_or_full = A_or.toarray()
+    A_or_full = np.reshape(
+        A_or_full, (stack_shape[0], stack_shape[1], A_or_full.shape[1])
+    )
+    nA = np.asarray(np.sqrt(A_or.power(2).sum(axis=0))).ravel()
+    K2 = C_or.shape[0]
+
+    # normalize spatial components to unit energy
+    nA_D = scipy.sparse.spdiags(nA, [0], K2, K2)
+    A_or2 = A_or.dot(np.linalg.inv(nA_D.toarray()))
+
+    # spdiags(nA,0,K,K)*C;
+    # C_or2 = C_or * nA[:, np.newaxis]
+    AY = mm_fun(A_or2, Yr)
+    AY = AY.T
+
+    return AY
+
+
 def caiman_cnmf(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
-) -> dict(fluorescence=FluoData, iscell=IscellData):
+) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
+    # TODO: Return expdb dataclass
     import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
@@ -77,20 +149,20 @@ def caiman_cnmf(
     function_id = output_dir.split("/")[-1]
     print("start caiman_cnmf:", function_id)
 
-    # flatten params segments.
-    params_flatten = {}
-    for params_segment in params.values():
-        params_flatten.update(params_segment)
-    params = params_flatten
+    # flatten cmnf params segments.
+    reshaped_params = {}
+    util_recursive_flatten_params(params, reshaped_params)
 
-    Ain = params.pop("Ain", None)
-    do_refit = params.pop("do_refit", None)
-    thr = params.pop("thr", None)
+    Ain = reshaped_params.pop("Ain", None)
+    do_refit = reshaped_params.pop("do_refit", None)
+    roi_thr = reshaped_params.pop("roi_thr", None)
 
     file_path = images.path
     if isinstance(file_path, list):
         file_path = file_path[0]
 
+    image_path = images.path[0] if isinstance(images.path, list) else images.path
+    exp_id = os.path.basename(image_path).split("_")[0]
     images = images.data
 
     # np.arrayをmmapへ変換
@@ -120,10 +192,10 @@ def caiman_cnmf(
     nwbfile = kwargs.get("nwbfile", {})
     fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
 
-    if params is None:
+    if reshaped_params is None:
         ops = CNMFParams()
     else:
-        ops = CNMFParams(params_dict={**params, "fr": fr})
+        ops = CNMFParams(params_dict={**reshaped_params, "fr": fr})
 
     if "dview" in locals():
         stop_server(dview=dview)  # noqa: F821
@@ -138,7 +210,27 @@ def caiman_cnmf(
     if do_refit:
         cnm = cnm.refit(mmap_images, dview=dview)
 
+    cnm.estimates.evaluate_components(mmap_images, cnm.params, dview=dview)
+
     stop_server(dview=dview)
+
+    Yr = mmap_images.reshape(dims[0] * dims[1], T, order="F")
+    scipy.io.savemat(join_filepath([output_dir, "Yr.mat"]), {"Yr": Yr})
+    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
+    scipy.io.savemat(
+        join_filepath([output_dir, "cellmask.mat"]), {"cellmask": cnm.estimates.A}
+    )
+    timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+    trialstructure_path = join_filepath(
+        [
+            DIRPATH.EXPDB_DIR,
+            exp_id.split("_")[0],
+            exp_id,
+            f"{exp_id}_{TS_SUFFIX}.mat",
+        ]
+    )
+    scipy.io.savemat(timecourse_path, {"timecourse": AY})
+    scipy.io.savemat(join_filepath([output_dir, "C_or.mat"]), {"C_or": cnm.estimates.C})
 
     # contours plot
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
@@ -147,22 +239,26 @@ def caiman_cnmf(
     thr_method = "nrg"
     swap_dim = False
 
-    iscell = np.concatenate(
-        [
-            np.ones(len(cnm.estimates.C)),
-            np.zeros(cnm.estimates.b.shape[-1] if cnm.estimates.b is not None else 0),
-        ]
-    )
+    idx_good = cnm.estimates.idx_components
+    idx_bad = cnm.estimates.idx_components_bad
+    if not isinstance(idx_good, list):
+        idx_good = idx_good.tolist()
+    if not isinstance(idx_bad, list):
+        idx_bad = idx_bad.tolist()
 
-    cell_ims = get_roi(cnm.estimates.A, thr, thr_method, swap_dim, dims)
+    iscell = np.concatenate([np.ones(len(idx_good)), np.zeros(len(idx_bad))])
+
+    cell_ims = get_roi(
+        cnm.estimates.A[:, idx_good], roi_thr, thr_method, swap_dim, dims
+    )
     cell_ims = np.stack(cell_ims).astype(float)
     cell_ims[cell_ims == 0] = np.nan
     cell_ims -= 1
     n_rois = len(cell_ims)
 
-    if cnm.estimates.b is not None and cnm.estimates.b.size != 0:
+    if len(idx_bad) > 0:
         non_cell_ims = get_roi(
-            scipy.sparse.csc_matrix(cnm.estimates.b), thr, thr_method, swap_dim, dims
+            cnm.estimates.A[:, idx_bad], roi_thr, thr_method, swap_dim, dims
         )
         non_cell_ims = np.stack(non_cell_ims).astype(float)
         for i, j in enumerate(range(n_rois, n_rois + len(non_cell_ims))):
@@ -174,7 +270,7 @@ def caiman_cnmf(
         non_cell_roi[non_cell_roi == 0] = np.nan
     non_cell_ims[non_cell_ims == 0] = np.nan
 
-    n_bg = len(non_cell_ims)
+    n_noncell_rois = len(non_cell_ims)
 
     im = np.vstack([cell_ims, non_cell_ims])
 
@@ -192,17 +288,6 @@ def caiman_cnmf(
             kargs["rejected"] = i in cnm.estimates.rejected_list
         roi_list.append(kargs)
 
-    # backgroundsを追加
-    if cnm.estimates.b is not None:
-        for bg in cnm.estimates.b.T:
-            kargs = {}
-            kargs["image_mask"] = bg.reshape(dims)
-            if hasattr(cnm.estimates, "accepted_list"):
-                kargs["accepted"] = False
-            if hasattr(cnm.estimates, "rejected_list"):
-                kargs["rejected"] = False
-            roi_list.append(kargs)
-
     nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
     nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"all_roi_img": im}}
 
@@ -216,22 +301,13 @@ def caiman_cnmf(
     }
 
     # Fluorescence
-    fluorescence = (
-        np.concatenate(
-            [
-                cnm.estimates.C,
-                cnm.estimates.f,
-            ]
-        )
-        if cnm.estimates.f is not None
-        else cnm.estimates.C
-    )
+    fluorescence = cnm.estimates.C
 
     nwbfile[NWBDATASET.FLUORESCENCE] = {
         function_id: {
             "Fluorescence": {
                 "table_name": "ROIs",
-                "region": list(range(n_rois + n_bg)),
+                "region": list(range(n_rois + n_noncell_rois)),
                 "name": "Fluorescence",
                 "data": fluorescence.T,
                 "unit": "lumens",
@@ -240,6 +316,7 @@ def caiman_cnmf(
     }
 
     info = {
+        "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
         "images": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,

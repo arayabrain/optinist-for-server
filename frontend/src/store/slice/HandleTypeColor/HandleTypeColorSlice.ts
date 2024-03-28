@@ -20,6 +20,7 @@ const initialState: HandleTypeColor = {
     BehaviorData: MuiColors.yellow[500],
     ExpDbData: MuiColors.blue[300],
     StatData: MuiColors.blue[800],
+    MicroscopeData: MuiColors.purple[500],
   },
   nextKey: 0,
 }

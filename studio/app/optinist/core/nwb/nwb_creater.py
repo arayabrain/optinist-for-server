@@ -16,8 +16,31 @@ from pynwb.ophys import (
     TwoPhotonSeries,
 )
 
+from studio.app.optinist.core.nwb.lab_metadata import (
+    LAB_SPECIFIC_KEY,
+    LAB_SPECIFIC_TYPES,
+    MODALITY_IMAGING_KEY,
+    MODALITY_IMAGING_TYPES,
+    SPECIMEN_KEY,
+    SPECIMEN_TYPES,
+    TECHNIQUE_VIRUS_INJECTION_KEY,
+    TECHNIQUE_VIRUS_INJECTION_TYPES,
+    LabSpecificMetaData,
+    ModalityImagingMetaData,
+    SpecimenTypeMetaData,
+    TechniqueVirusInjectionMetaData,
+)
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import PostProcess
+from studio.app.optinist.core.nwb.oristat import Oristats
+from studio.app.optinist.core.nwb.subject.marmoset import (
+    SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
+)
+from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
+from studio.app.optinist.core.nwb.subject.mouse import (
+    SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
+)
+from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
 
 
 class NWBCreater:
@@ -54,7 +77,7 @@ class NWBCreater:
             excitation_lambda=float(
                 config["imaging_plane"]["excitation_lambda"]
             ),  # 励起（れいき）波長
-            indicator=config["imaging_plane"]["indicator"],  # カルシウムインディケーター
+            indicator=config["imaging_plane"]["indicator"],  # カルシウムインジケーター
             location=config["imaging_plane"]["location"],
         )
 
@@ -64,7 +87,10 @@ class NWBCreater:
             and "external_file" in config[NWBDATASET.IMAGE_SERIES]
         ):
             external_file = config[NWBDATASET.IMAGE_SERIES]["external_file"]
-            image_path = external_file.path
+            try:
+                image_path = external_file.path
+            except AttributeError:
+                image_path = external_file
 
             starting_frames = (
                 config[NWBDATASET.IMAGE_SERIES]["starting_frame"]
@@ -81,6 +107,8 @@ class NWBCreater:
                 elif isinstance(starting_frames, str):
                     starting_frames = starting_frames.split(",")
                     starting_frames = list(map(int, starting_frames))
+            elif isinstance(image_path, str):
+                image_path = [image_path]
 
             image_series = TwoPhotonSeries(
                 name="TwoPhotonSeries",
@@ -93,6 +121,9 @@ class NWBCreater:
                 data=external_file.data if save_raw_image_to_nwb else None,
             )
             nwbfile.add_acquisition(image_series)
+
+        if NWBDATASET.LAB_METADATA in config:
+            nwbfile = cls.lab_metadata(nwbfile, config[NWBDATASET.LAB_METADATA])
 
         nwbfile.create_processing_module(
             name="ophys", description="optical physiology processed data"
@@ -277,6 +308,82 @@ class NWBCreater:
         return nwbfile
 
     @classmethod
+    def oristats(cls, nwbfile, data: dict):
+        nwbfile.add_analysis(Oristats(**data))
+        return nwbfile
+
+    @classmethod
+    def lab_metadata(cls, nwbfile, metadata: dict):
+        specimen_type = metadata[SPECIMEN_KEY]
+        technique_virus_injection = metadata[TECHNIQUE_VIRUS_INJECTION_KEY]
+
+        if "Species Marmoset" in metadata:
+            species = metadata["Species Marmoset"]
+            subject_extended = {k: species[k] for k in SUBJECT_MARMOSET_TYPES.keys()}
+            nwbfile.subject = SubjectMarmoset(
+                # NWB's Subject fields
+                age=species["Age"],
+                sex=species["Sex"],
+                species=species["Species"],
+                date_of_birth=datetime.strptime(
+                    species["Date of birth"][0], "%Y-%m-%d"
+                ),
+                weight=species["Body weight"],
+                strain=species["Strain"],
+                # NWB's Subject extended fields
+                **subject_extended,
+            )
+
+            brain_region = specimen_type["Brain region Marmoset"]
+            injection_region = technique_virus_injection["Injection region Marmoset"]
+
+        elif "Species Mouse" in metadata:
+            species = metadata["Species Mouse"]
+            subject_extended = {k: species[k] for k in SUBJECT_MOUSE_TYPES.keys()}
+            nwbfile.subject = SubjectMouse(
+                # NWB's Subject fields
+                age=species["Age"],
+                sex=species["Sex"],
+                species=species["Species"],
+                strain=species["Strain"],
+                # NWB's Subject extended fields
+                **subject_extended,
+            )
+            brain_region = specimen_type["Brain region Mouse"]
+            injection_region = technique_virus_injection["Injection region Mouse"]
+
+        specimen_type["Brain region"] = brain_region
+        technique_virus_injection["Injection region"] = injection_region
+
+        specimen_type_nwb = SpecimenTypeMetaData(
+            **{k: specimen_type[k] for k in SPECIMEN_TYPES.keys()}
+        )
+
+        modality_imaging = metadata[MODALITY_IMAGING_KEY]
+        modality_imaging_nwb = ModalityImagingMetaData(
+            **{k: modality_imaging[k] for k in MODALITY_IMAGING_TYPES.keys()}
+        )
+
+        technique_virus_injection_nwb = TechniqueVirusInjectionMetaData(
+            **{
+                k: technique_virus_injection[k]
+                for k in TECHNIQUE_VIRUS_INJECTION_TYPES.keys()
+            }
+        )
+        common = metadata[LAB_SPECIFIC_KEY]
+        lab_specific_nwb = LabSpecificMetaData(
+            **{
+                SPECIMEN_KEY: specimen_type_nwb,
+                MODALITY_IMAGING_KEY: modality_imaging_nwb,
+                TECHNIQUE_VIRUS_INJECTION_KEY: technique_virus_injection_nwb,
+            },
+            **{k: common[k] for k in LAB_SPECIFIC_TYPES.keys()},
+        )
+
+        nwbfile.add_lab_meta_data(lab_meta_data=lab_specific_nwb)
+        return nwbfile
+
+    @classmethod
     def reaqcuisition(cls, nwbfile):
         new_nwbfile = NWBFile(
             session_description=nwbfile.session_description,
@@ -389,6 +496,12 @@ def set_nwbconfig(nwbfile, config):
                 config[NWBDATASET.FLUORESCENCE][function_key],
             )
 
+    if NWBDATASET.ORISTATS in config:
+        nwbfile = NWBCreater.oristats(nwbfile, config[NWBDATASET.ORISTATS])
+
+    if NWBDATASET.LAB_METADATA in config:
+        nwbfile = NWBCreater.lab_metadata(nwbfile, config[NWBDATASET.LAB_METADATA])
+
     return nwbfile
 
 
@@ -444,6 +557,8 @@ def merge_nwbfile(old_nwbfile, new_nwbfile):
         NWBDATASET.FLUORESCENCE,
         NWBDATASET.BEHAVIOR,
         NWBDATASET.IMAGE_SERIES,
+        NWBDATASET.ORISTATS,
+        NWBDATASET.LAB_METADATA,
     ]:
         if pattern in old_nwbfile and pattern in new_nwbfile:
             for function_id in new_nwbfile[pattern]:

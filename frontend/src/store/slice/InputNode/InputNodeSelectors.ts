@@ -4,6 +4,7 @@ import {
   isImageInputNode,
   isMatlabInputNode,
   isExpDbInputNode,
+  isMicroscopeInputNode,
 } from "store/slice/InputNode/InputNodeUtils"
 import { RootState } from "store/store"
 
@@ -57,6 +58,16 @@ export const selectMatlabInputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {
     const node = selectInputNodeById(nodeId)(state)
     if (isMatlabInputNode(node)) {
+      return node.selectedFilePath
+    } else {
+      throw new Error("invalid input node type")
+    }
+  }
+
+export const selectMicroscopeInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const node = selectInputNodeById(nodeId)(state)
+    if (isMicroscopeInputNode(node)) {
       return node.selectedFilePath
     } else {
       throw new Error("invalid input node type")

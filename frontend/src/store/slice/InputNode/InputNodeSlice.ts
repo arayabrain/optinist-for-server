@@ -144,6 +144,12 @@ export const inputNodeSlice = createSlice({
                 param: {},
               }
               break
+            case FILE_TYPE_SET.MICROSCOPE:
+              state[node.id] = {
+                fileType,
+                param: {},
+              }
+              break
             case FILE_TYPE_SET.EXPDB:
               state[node.id] = {
                 fileType,
@@ -205,6 +211,11 @@ export const inputNodeSlice = createSlice({
                   fileType: FILE_TYPE_SET.HDF5,
                   param: {},
                 }
+              } else if (node.data.fileType === FILE_TYPE_SET.MICROSCOPE) {
+                newState[node.id] = {
+                  fileType: FILE_TYPE_SET.MICROSCOPE,
+                  param: {},
+                }
               } else if (node.data.fileType === FILE_TYPE_SET.EXPDB) {
                 newState[node.id] = {
                   fileType: FILE_TYPE_SET.EXPDB,
@@ -246,6 +257,12 @@ export const inputNodeSlice = createSlice({
                   newState[node.id] = {
                     fileType: FILE_TYPE_SET.HDF5,
                     hdf5Path: node.data.hdf5Path,
+                    selectedFilePath: node.data.path as string,
+                    param: {},
+                  }
+                } else if (node.data.fileType === FILE_TYPE_SET.MICROSCOPE) {
+                  newState[node.id] = {
+                    fileType: FILE_TYPE_SET.MICROSCOPE,
                     selectedFilePath: node.data.path as string,
                     param: {},
                   }

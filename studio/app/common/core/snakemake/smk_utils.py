@@ -1,8 +1,9 @@
 import os
+from glob import glob
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.filepath_finder import find_condaenv_filepath
-from studio.app.const import FILETYPE, TC_SUFFIX, TS_SUFFIX
+from studio.app.const import ACCEPT_MICROSCOPE_EXT, FILETYPE, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
 from studio.app.wrappers import wrapper_dict
 
@@ -19,7 +20,7 @@ class SmkUtils:
             FILETYPE.MATLAB,
         ]:
             return join_filepath([DIRPATH.INPUT_DIR, details["input"]])
-        elif details["type"] in [FILETYPE.EXPDB]:
+        elif details["type"] == FILETYPE.EXPDB:
             exp_id = details["input"]
             subject_id = exp_id.split("_")[0]
             return [
@@ -28,6 +29,15 @@ class SmkUtils:
                 )
                 for k in [TC_SUFFIX, TS_SUFFIX]
             ]
+        elif details["type"] == FILETYPE.MICROSCOPE:
+            exp_id = details["input"]
+            subject_id = exp_id.split("_")[0]
+            exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
+
+            microscope_files = []
+            for ext in ACCEPT_MICROSCOPE_EXT:
+                microscope_files.extend(glob(join_filepath([exp_dir, f"*{ext}"])))
+            return microscope_files
         else:
             return [join_filepath([DIRPATH.OUTPUT_DIR, x]) for x in details["input"]]
 
@@ -43,6 +53,7 @@ class SmkUtils:
             FILETYPE.BEHAVIOR,
             FILETYPE.HDF5,
             FILETYPE.MATLAB,
+            FILETYPE.MICROSCOPE,
             FILETYPE.EXPDB,
         ]:
             return None

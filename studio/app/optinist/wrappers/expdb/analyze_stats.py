@@ -1,3 +1,4 @@
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
@@ -26,4 +27,5 @@ def analyze_stats(
         "preferred_orientation": stat.preferred_orientation,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
+        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }

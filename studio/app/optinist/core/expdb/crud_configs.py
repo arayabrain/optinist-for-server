@@ -48,12 +48,18 @@ def update_expdb_config(
 ) -> ExpDbConfig:
     id = 1  # Fixed at "1"
     config = db.query(ConfigModel).get(id)
-    assert config is not None, "ExpDbConfig not found"
+
+    # auto generated if data does not exist
+    if config is None:
+        config = ConfigModel(id=id)
+        db.add(config)
 
     data.updated_at = datetime.datetime.now()
     new_data = data.dict(exclude_unset=True)
     for key, value in new_data.items():
         setattr(config, key, value)
+
     db.flush()
     db.refresh(config)
+
     return ExpDbConfig.from_orm(config)

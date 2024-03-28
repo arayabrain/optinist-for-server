@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import tifffile
 from lauda import stopwatch
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
 from studio.app.common.core.utils.config_handler import ConfigReader
@@ -19,7 +19,9 @@ from studio.app.common.core.utils.filepath_creater import (
     join_filepath,
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
+    ACCEPT_MICROSCOPE_EXT,
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
     EXP_METADATA_SUFFIX,
@@ -36,8 +38,13 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     extract_experiment_view_attributes,
     get_experiment,
 )
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
+from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.wrappers.expdb import analyze_stats
+from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
+from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 
 
 @dataclass
@@ -65,31 +72,55 @@ class ExpDbPath:
             self.exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
-            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
-            self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
-            self.cellmask_file = join_filepath(
-                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
+
+            # input_files
+            microscope_files = []
+            for ext in ACCEPT_MICROSCOPE_EXT:
+                microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
+            # TODO: 本番環境にファイルがないため一度コメントアウト
+            # assert (
+            #     len(microscope_files) > 0
+            # ), f"microscope files not found: {self.exp_dir}"
+            # assert (
+            #     len(microscope_files) == 1
+            # ), f"multiple microscope files found: {microscope_files}"
+            # self.microscope_file = microscope_files[0]
+            self.microscope_file = (
+                microscope_files[0] if len(microscope_files) > 0 else None
             )
-            self.fov_file = join_filepath([self.exp_dir, f"{exp_id}_{FOV_SUFFIX}.tif"])
+            # NOTE: Metadata file is allowed to be missing.
             self.exp_metadata_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"]
             )
-            assert os.path.exists(self.tc_file), f"tc_file not found: {self.tc_file}"
+            self.ts_file = join_filepath([self.exp_dir, f"{exp_id}_{TS_SUFFIX}.mat"])
             assert os.path.exists(self.ts_file), f"ts_file not found: {self.ts_file}"
-            assert os.path.exists(
-                self.cellmask_file
-            ), f"cellmask_file not found: {self.cellmask_file}"
-            assert os.path.exists(self.fov_file), f"fov_file not found: {self.fov_file}"
-            # Note: Metadata file is allowed to be missing.
+
+            # preprocess
+            # TODO: output_dir配下から分離
+            self.preprocess_dir = join_filepath([self.output_dir, "preprocess"])
+            self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
+
+            # TODO: ORIMAPSをpreprocess_dirに保存する
+            self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
+            self.fov_file = join_filepath(
+                [self.orimaps_dir, f"{exp_id}_{FOV_SUFFIX}.tif"]
+            )
+
+            # TODO: TCをCNMFの結果(preprocess_dir)から取得する
+            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+            # TODO: cellmaskをCNMFの結果(preprocess_dir)から取得する
+            self.cellmask_file = join_filepath(
+                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
+            )
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
             self.output_dir = self.exp_dir
 
         # outputs
-        self.stat_file = join_filepath([self.output_dir, f"{exp_id}_oristats.hdf5"])
         self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
         self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
+        self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
 
 
 class ExpDbBatch:
@@ -101,11 +132,12 @@ class ExpDbBatch:
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbPath(self.exp_id)
         self.expdb_paths = [self.raw_path, self.pub_path]
+        self.nwbfile = {}
 
-    def __stopwatch_callback(watch, function):
+    def __stopwatch_callback(watch, function=None):
         logging.getLogger().info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
-            function.__name__,
+            (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
@@ -132,23 +164,77 @@ class ExpDbBatch:
         return (cellmask, imxx, ncells)
 
     @stopwatch(callback=__stopwatch_callback)
+    def preprocess(self) -> ImageData:
+        self.logger_.info("process 'preprocess' start.")
+        create_directory(self.raw_path.preprocess_dir, delete_dir=True)
+
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if self.raw_path.microscope_file is None:
+            return None
+
+        preprocess_results = preprocessing(
+            microscope=MicroscopeData(self.raw_path.microscope_file),
+            output_dir=self.raw_path.preprocess_dir,
+            params=get_default_params("preprocessing"),
+        )
+
+        savemat(
+            join_filepath([self.raw_path.info_file]),
+            {
+                k: v.data
+                for k, v in preprocess_results.items()
+                if isinstance(v, ImageData)
+            },
+        )
+
+        return preprocess_results["stack"]
+
+    @stopwatch(callback=__stopwatch_callback)
+    def generate_orimaps(self, stack: ImageData):
+        self.logger_.info("process 'generate_orimaps' start.")
+
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if stack is None:
+            # 出力されたorimapsがないので、ユーザーアップロードのファイルを参照する
+            self.raw_path.orimaps_dir = self.raw_path.exp_dir
+            return
+
+        create_directory(self.raw_path.orimaps_dir)
+
+        expdb = ExpDbData(paths=[self.raw_path.ts_file])
+        get_orimap(
+            stack=stack,
+            expdb=expdb,
+            output_dir=self.raw_path.orimaps_dir,
+            params={**get_default_params("get_orimap"), "exp_id": self.exp_id},
+        )
+
+    # TODO: implement cell_detection_cnmf
+    @stopwatch(callback=__stopwatch_callback)
+    def cell_detection_cnmf(self):
+        self.logger_.info("process 'cell_detection_cnmf' start.")
+        # TODO: 出力ファイルはpreprocess_dirに保存する
+        pass
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
+        self.logger_.info("process 'generate_statdata' start.")
+
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
-        stat: StatData = analyze_stats(
+        result = analyze_stats(
             expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
-        ).get("stat")
+        )
+        stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        for expdb_path in self.expdb_paths:
-            stat.save_as_hdf5(expdb_path.stat_file)
-            assert os.path.exists(
-                expdb_path.stat_file
-            ), f"save statfile failed: {expdb_path.stat_file}"
+        self.nwbfile[NWBDATASET.ORISTATS] = result["nwbfile"][NWBDATASET.ORISTATS]
 
         return stat
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_cellmasks(self) -> int:
+        self.logger_.info("process 'generate_cellmasks' start.")
+
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.cellmask_dir)
 
@@ -190,9 +276,8 @@ class ExpDbBatch:
         return ncells
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_plots(self, stat_data: Optional[StatData] = None):
-        if stat_data is None:
-            stat_data = StatData.load_from_hdf5(self.raw_path.stat_file)
+    def generate_plots(self, stat_data: StatData):
+        self.logger_.info("process 'generate_plots' start.")
 
         for expdb_path in self.expdb_paths:
             dir_path = expdb_path.plot_dir
@@ -215,11 +300,15 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self):
+        self.logger_.info("process 'generate_pixelmaps' start.")
+
         for expdb_path in self.expdb_paths:
             create_directory(expdb_path.pixelmap_dir)
 
-        pixelmaps = glob(join_filepath([self.raw_path.exp_dir, "*_hc.tif"]))
-        pixlemaps_with_num = glob(join_filepath([self.raw_path.exp_dir, "*_hc_*.tif"]))
+        pixelmaps = glob(join_filepath([self.raw_path.orimaps_dir, "*_hc.tif"]))
+        pixlemaps_with_num = glob(
+            join_filepath([self.raw_path.orimaps_dir, "*_hc_*.tif"])
+        )
         for pixelmap in [*pixelmaps, *pixlemaps_with_num]:
             img = tifffile.imread(pixelmap)
             file_name = os.path.splitext(os.path.basename(pixelmap))[0]
@@ -249,3 +338,16 @@ class ExpDbBatch:
                     raise KeyError("Invalid metadata format")
 
         return (attributes, view_attributes)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def save_nwb(self, metadata: dict):
+        input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
+        # TODO: 本番環境にファイルがないためスキップ用の処理
+        if self.raw_path.microscope_file is not None:
+            input_config[NWBDATASET.IMAGE_SERIES][
+                "external_file"
+            ] = self.raw_path.microscope_file
+        input_config[NWBDATASET.LAB_METADATA] = metadata
+
+        for expdb_path in self.expdb_paths:
+            save_nwb(expdb_path.nwb_file, input_config, self.nwbfile)

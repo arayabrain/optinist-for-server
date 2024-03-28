@@ -61,9 +61,20 @@ class SmkRule:
             .build()
         )
 
+    def microscope(self) -> Rule:
+        return (
+            self.builder.set_input(self._node.data.path)
+            .set_type(FILETYPE.MICROSCOPE)
+            .build()
+        )
+
     def expdb(self) -> Rule:
         # set exp_id as input, so do not pass workspace_id
-        return self.builder.set_input(self._node.data.path).set_type("expdb").build()
+        return (
+            self.builder.set_input(self._node.data.path)
+            .set_type(FILETYPE.EXPDB)
+            .build()
+        )
 
     def algo(self, nodeDict: Dict[str, Node]) -> Rule:
         algo_input = []

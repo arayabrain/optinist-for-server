@@ -83,10 +83,10 @@ class ExpDbBatchRunner:
 
         self.logger_ = logging.getLogger()
 
-    def __stopwatch_callback(watch, function):
+    def __stopwatch_callback(watch, function=None):
         logging.getLogger().info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
-            function.__name__,
+            (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
@@ -271,6 +271,11 @@ class ExpDbBatchRunner:
             db.commit()
 
             # Analyze & Plotting
+            stack = expdb_batch.preprocess()
+            expdb_batch.generate_orimaps(stack)
+            del stack
+            # TODO: add CNMF processing
+            # expdb_batch.cell_detection_cnmf()
             stat_data = expdb_batch.generate_statdata()
             expdb_batch.generate_plots(stat_data=stat_data)
             expdb_batch.generate_cellmasks()
@@ -278,6 +283,8 @@ class ExpDbBatchRunner:
 
             # Read metadata
             (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+
+            expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
             exp = create_experiment(
                 db,

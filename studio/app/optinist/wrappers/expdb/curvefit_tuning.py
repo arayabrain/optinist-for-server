@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d, make_interp_spline
 from scipy.optimize import curve_fit
 
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.stat import StatData
 
 
@@ -300,8 +301,15 @@ def curvefit_tuning(
                 stat.ori_tuning_width[i],
             ) = ori_curvefit_results
 
+    stat.set_curvefit_props()
+
+    nwbfile = kwargs.get("nwbfile", {})
+    nwbfile = nwbfile.get(NWBDATASET.ORISTATS, {})
+    nwbfile = {NWBDATASET.ORISTATS: {**nwbfile, **stat.nwb_dict_curvefit}}
+
     return {
         "stat": stat,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
+        "nwbfile": nwbfile,
     }
