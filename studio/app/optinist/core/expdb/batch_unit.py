@@ -84,7 +84,7 @@ class ExpDbPath:
             ), f"multiple microscope files found: {microscope_files}"
             self.microscope_file = microscope_files[0]
 
-            self.preprocess_dir = join_filepath([self.output_dir, "preprocess"])
+            self.preprocess_dir = join_filepath([self.exp_dir, "preprocess"])
             self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
 
             # TODO: timecourse.matをCNMFの結果から取得する
@@ -96,10 +96,7 @@ class ExpDbPath:
             self.cellmask_file = join_filepath(
                 [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
-            # TODO: 専用のディレクトリに変更
-            # 前半実装時はexp_dir直下の想定でファイルの移動が必要になるため保留
-            # self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
-            self.orimaps_dir = self.exp_dir
+            self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
             self.fov_file = join_filepath(
                 [self.orimaps_dir, f"{exp_id}_{FOV_SUFFIX}.tif"]
             )
@@ -161,6 +158,7 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
         self.logger_.info("process 'preprocess' start.")
+        create_directory(self.raw_path.preprocess_dir, delete_dir=True)
 
         preprocess_results = preprocessing(
             microscope=MicroscopeData(self.raw_path.microscope_file),
