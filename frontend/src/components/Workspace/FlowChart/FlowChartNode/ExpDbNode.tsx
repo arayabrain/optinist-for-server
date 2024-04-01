@@ -1,4 +1,4 @@
-import { memo, useState } from "react"
+import { memo, useContext, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Handle, NodeProps, Position } from "reactflow"
 
@@ -15,6 +15,7 @@ import {
 import { GridEventListener, GridRowParams } from "@mui/x-data-grid"
 
 import DatabaseExperiments from "components/Database/DatabaseExperiments"
+import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
 import { toHandleId } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
 import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
@@ -26,7 +27,9 @@ import {
   selectExpDbInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
+import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
 import { selectCurrentUser } from "store/slice/User/UserSelector"
+import { RootState } from "store/store"
 
 export const ExpDbNode = memo(function ExpDbNode(element: NodeProps) {
   const defined = useSelector(selectInputNodeDefined(element.id))
@@ -79,7 +82,12 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
         Select
       </Button>
-      <ExpDbSelectDialog nodeId={nodeId} open={open} setOpen={setOpen} />
+      <ExpDbSelectDialog
+        nodeId={nodeId}
+        open={open}
+        setOpen={setOpen}
+        experimentIdSelector={selectExpDbInputNodeSelectedFilePath}
+      />
       <Typography>
         {experimentId
           ? `Selected experiment id: ${experimentId}`
@@ -92,14 +100,21 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
 interface ExpDbSelectDialogProps {
   nodeId: string
   open: boolean
+  experimentIdSelector: (
+    nodeId: string,
+  ) => (state: RootState) => string | undefined
   setOpen: (open: boolean) => void
 }
 
 export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   nodeId,
   open,
+  experimentIdSelector,
   setOpen,
 }: ExpDbSelectDialogProps) {
+  const { onOpenClearWorkflowIdDialog } = useContext(DialogContext)
+  const currentPipelineUid = useSelector(selectPipelineLatestUid)
+  const currentExperimentId = useSelector(experimentIdSelector(nodeId))
   const user = useSelector(selectCurrentUser)
   const [experimentId, setExperimentId] = useState<string | undefined>(
     undefined,
@@ -120,8 +135,19 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
 
   const onClickOk = () => {
     try {
-      setOpen(false)
-      dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
+      if (currentPipelineUid && currentExperimentId !== experimentId) {
+        onOpenClearWorkflowIdDialog({
+          open: true,
+          handleOk: () => {
+            dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
+            setOpen(false)
+          },
+          handleCancel: () => {},
+        })
+      } else {
+        dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
+        setOpen(false)
+      }
     } catch (e) {
       enqueueSnackbar("Select experiment failed", { variant: "error" })
     }

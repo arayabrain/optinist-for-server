@@ -74,7 +74,12 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
         Select
       </Button>
-      <ExpDbSelectDialog nodeId={nodeId} open={open} setOpen={setOpen} />
+      <ExpDbSelectDialog
+        nodeId={nodeId}
+        open={open}
+        setOpen={setOpen}
+        experimentIdSelector={selectMicroscopeInputNodeSelectedFilePath}
+      />
       <Typography>
         {experimentId
           ? `Selected experiment id: ${experimentId}`
