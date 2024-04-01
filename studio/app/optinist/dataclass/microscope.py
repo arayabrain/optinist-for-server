@@ -12,9 +12,17 @@ class MicroscopeData(BaseData):
         super().__init__(file_name)
         self.path = path
         self.json_path = None
+        self.__reader = None
+        self.__data = None
 
-    @property
-    def reader(self):
+    def initialize(self):
+        """
+        Since ctypes-using objects cannot be pikle-ized (in this case, reader),
+          the initialization process is separated from __init__().
+        """
+        if self.__reader is not None:
+            return self.__reader
+
         ext = os.path.splitext(self.path)[1]
         if ext == ".nd2":
             reader = ND2Reader()
@@ -30,7 +38,26 @@ class MicroscopeData(BaseData):
             raise Exception(f"Unsupported file type: {ext}")
 
         reader.load(self.path)
+        self.__reader = reader
+
         return reader
 
-    def set_data(self, data):
-        self.data = data
+    def load_data(self):
+        self.__data = self.__reader.get_image_stacks()
+        return self.__data
+
+    def release(self):
+        """
+        Since ctypes use objects cannot be pikle-ized (in this case, reader),
+          an explicit release process is provided.
+        """
+        self.__reader = None
+        self.__data = None
+
+    @property
+    def reader(self):
+        return self.__reader
+
+    @property
+    def data(self):
+        return self.__data

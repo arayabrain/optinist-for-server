@@ -21,11 +21,10 @@ def preprocessing(
         params_flatten.update(segment)
     params = params_flatten
 
-    reader = microscope.reader
     exp_id = os.path.basename(os.path.dirname(microscope.path))
-    ome_meta = reader.ome_metadata
-    raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
-    microscope.set_data(raw_stack)
+    microscope.initialize()
+    ome_meta = microscope.reader.ome_metadata
+    raw_stack = microscope.load_data()  # (ch, t, y, x) or (ch, t, z, y, x)
     is_timeseries = ome_meta.size_t > 1
 
     # set common params to variables
@@ -113,5 +112,8 @@ def preprocessing(
                 output_dir=output_dir,
                 file_name=f"{exp_id}_corrected_stack_ch{ch + 1}",
             )
+
+        # Explicitly release MicroscopeData
+        microscope.release()
 
         return info
