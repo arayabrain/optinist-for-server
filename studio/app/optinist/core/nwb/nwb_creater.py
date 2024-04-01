@@ -19,6 +19,7 @@ from pynwb.ophys import (
 from studio.app.optinist.core.nwb.device_metadata import (
     DeviceMetaData,
     ImagingMetaData,
+    LabMicroscopeMetaData,
     ObjectiveMetaData,
     PixelsMetaData,
 )
@@ -61,10 +62,21 @@ class NWBCreater:
 
         # 顕微鏡情報を登録
         device_metadata = config["device"].get("metadata", {})
+        image_meta = device_metadata.get("Image")
+        pixels_meta = device_metadata.get("Pixels")
+        objective_mata = device_metadata.get("Objective")
+        lab_specific_meta = config["device"].get("lab_specific_metadata")
         device = DeviceMetaData(
-            Image=ImagingMetaData(**device_metadata.get("Image", {})),
-            Pixels=PixelsMetaData(**device_metadata.get("Pixels", {})),
-            Objective=ObjectiveMetaData(**device_metadata.get("Objective", {})),
+            Image=None if image_meta is None else ImagingMetaData(**image_meta),
+            Pixels=None if pixels_meta is None else PixelsMetaData(**pixels_meta),
+            Objective=(
+                None if objective_mata is None else ObjectiveMetaData(**objective_mata)
+            ),
+            LabMicroscopeMetaData=(
+                None
+                if lab_specific_meta is None
+                else LabMicroscopeMetaData(**lab_specific_meta)
+            ),
             name=config["device"]["name"],
             description=config["device"]["description"],
             manufacturer=config["device"]["manufacturer"],

@@ -28,6 +28,8 @@ def preprocessing(
     nwbfile = kwargs.get("nwbfile", {})
     nwbfile["imaging_plane"]["imaging_rate"] = ome_meta.imaging_rate
     nwbfile["device"]["metadata"] = ome_meta.get_ome_values()
+    if reader.lab_specific_metadata is not None:
+        nwbfile["device"]["lab_specific_metadata"] = reader.lab_specific_metadata
     info = {"nwbfile": {"input": nwbfile}}
 
     raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
