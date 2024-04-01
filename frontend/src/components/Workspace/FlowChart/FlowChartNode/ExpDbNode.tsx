@@ -27,6 +27,7 @@ import {
   selectExpDbInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
+import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
 import { selectCurrentUser } from "store/slice/User/UserSelector"
 import { RootState } from "store/store"
 
@@ -112,6 +113,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   setOpen,
 }: ExpDbSelectDialogProps) {
   const { onOpenClearWorkflowIdDialog } = useContext(DialogContext)
+  const currentPipelineUid = useSelector(selectPipelineLatestUid)
   const currentExperimentId = useSelector(experimentIdSelector(nodeId))
   const user = useSelector(selectCurrentUser)
   const [experimentId, setExperimentId] = useState<string | undefined>(
@@ -133,7 +135,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
 
   const onClickOk = () => {
     try {
-      if (currentExperimentId != null && currentExperimentId !== experimentId) {
+      if (currentPipelineUid && currentExperimentId !== experimentId) {
         onOpenClearWorkflowIdDialog({
           open: true,
           handleOk: () => {
