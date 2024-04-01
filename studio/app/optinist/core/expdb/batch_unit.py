@@ -132,6 +132,7 @@ class ExpDbBatch:
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbPath(self.exp_id)
         self.expdb_paths = [self.raw_path, self.pub_path]
+        self.nwb_input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
         self.nwbfile = {}
 
     def __stopwatch_callback(watch, function=None):
@@ -176,6 +177,7 @@ class ExpDbBatch:
             microscope=MicroscopeData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
             params=get_default_params("preprocessing"),
+            nwbfile=self.nwb_input_config,
         )
 
         savemat(
@@ -186,6 +188,7 @@ class ExpDbBatch:
                 if isinstance(v, ImageData)
             },
         )
+        self.nwb_input_config = preprocess_results["nwbfile"]["input"]
 
         return preprocess_results["stack"]
 
@@ -212,6 +215,7 @@ class ExpDbBatch:
     # TODO: implement cell_detection_cnmf
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection_cnmf(self):
+        # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
         # TODO: 出力ファイルはpreprocess_dirに保存する
         pass
@@ -341,13 +345,12 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def save_nwb(self, metadata: dict):
-        input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
         # TODO: 本番環境にファイルがないためスキップ用の処理
         if self.raw_path.microscope_file is not None:
-            input_config[NWBDATASET.IMAGE_SERIES][
+            self.nwb_input_config[NWBDATASET.IMAGE_SERIES][
                 "external_file"
             ] = self.raw_path.microscope_file
-        input_config[NWBDATASET.LAB_METADATA] = metadata
+        self.nwb_input_config[NWBDATASET.LAB_METADATA] = metadata
 
         for expdb_path in self.expdb_paths:
-            save_nwb(expdb_path.nwb_file, input_config, self.nwbfile)
+            save_nwb(expdb_path.nwb_file, self.nwb_input_config, self.nwbfile)

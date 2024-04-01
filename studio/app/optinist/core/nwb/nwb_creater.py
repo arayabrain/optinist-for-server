@@ -16,6 +16,12 @@ from pynwb.ophys import (
     TwoPhotonSeries,
 )
 
+from studio.app.optinist.core.nwb.device_metadata import (
+    DeviceMetaData,
+    ImagingMetaData,
+    ObjectiveMetaData,
+    PixelsMetaData,
+)
 from studio.app.optinist.core.nwb.lab_metadata import (
     LAB_SPECIFIC_KEY,
     LAB_SPECIFIC_TYPES,
@@ -54,11 +60,16 @@ class NWBCreater:
         )
 
         # 顕微鏡情報を登録
-        device = nwbfile.create_device(
+        device_metadata = config["device"].get("metadata", {})
+        device = DeviceMetaData(
+            Image=ImagingMetaData(**device_metadata.get("Image", {})),
+            Pixels=PixelsMetaData(**device_metadata.get("Pixels", {})),
+            Objective=ObjectiveMetaData(**device_metadata.get("Objective", {})),
             name=config["device"]["name"],
             description=config["device"]["description"],
             manufacturer=config["device"]["manufacturer"],
         )
+        nwbfile.add_device(device)
 
         # 光チャネルを登録
         optical_channel = OpticalChannel(
@@ -394,7 +405,10 @@ class NWBCreater:
 
         devices = []
         for key in nwbfile.devices.keys():
-            device = new_nwbfile.create_device(
+            device = DeviceMetaData(
+                Image=nwbfile.devices[key].Image,
+                Pixels=nwbfile.devices[key].Pixels,
+                Objective=nwbfile.devices[key].Objective,
                 name=key,
                 description=nwbfile.devices[key].description,
                 manufacturer=nwbfile.devices[key].manufacturer,
