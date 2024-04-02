@@ -4,6 +4,9 @@ import numpy as np
 
 from studio.app.common.dataclass.image import ImageData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
+from studio.app.optinist.microscopes.MicroscopeDataReaderUtils import (
+    MicroscopeDataReaderUtils,
+)
 from studio.app.optinist.wrappers.expdb.stack_average import stack_average
 from studio.app.optinist.wrappers.expdb.stack_phase_correct import stack_phase_correct
 from studio.app.optinist.wrappers.expdb.stack_register import (
@@ -21,11 +24,19 @@ def preprocessing(
         params_flatten.update(segment)
     params = params_flatten
 
-    reader = microscope.reader
     exp_id = os.path.basename(os.path.dirname(microscope.path))
+    reader = MicroscopeDataReaderUtils.get_reader(microscope.path)
     ome_meta = reader.ome_metadata
+
+    nwbfile = kwargs.get("nwbfile", {})
+    nwbfile["imaging_plane"]["imaging_rate"] = ome_meta.imaging_rate
+    nwbfile["device"]["metadata"] = ome_meta.get_ome_values()
+    if reader.lab_specific_metadata is not None:
+        nwbfile["device"]["lab_specific_metadata"] = reader.lab_specific_metadata
+    info = {"nwbfile": {"input": nwbfile}}
+
     raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
-    microscope.set_data(raw_stack)
+    microscope.data = raw_stack
     is_timeseries = ome_meta.size_t > 1
 
     # set common params to variables
@@ -37,8 +48,6 @@ def preprocessing(
             stack = raw_stack[ch].transpose(2, 3, 1, 0)  # (y, x, z, t)
         else:
             stack = raw_stack[ch].transpose(1, 2, 0)  # (y, x, t)
-
-        info = {}
 
         if is_timeseries:
             period = params["period"]
