@@ -16,6 +16,14 @@ from pynwb.ophys import (
     TwoPhotonSeries,
 )
 
+from studio.app.optinist.core.nwb.device_metadata import (
+    DeviceMetaData,
+    ImagingMetaData,
+    MicroscopeLabMetaData,
+    MicroscopeOMEMetaData,
+    ObjectiveMetaData,
+    PixelsMetaData,
+)
 from studio.app.optinist.core.nwb.lab_metadata import (
     LAB_SPECIFIC_KEY,
     LAB_SPECIFIC_TYPES,
@@ -54,11 +62,31 @@ class NWBCreater:
         )
 
         # 顕微鏡情報を登録
-        device = nwbfile.create_device(
+        device_metadata = config["device"].get("metadata", {})
+        image_meta = device_metadata.get("Image")
+        pixels_meta = device_metadata.get("Pixels")
+        objective_mata = device_metadata.get("Objective")
+        lab_specific_meta = config["device"].get("lab_specific_metadata")
+        device = DeviceMetaData(
+            MicroscopeOMEMetaData=MicroscopeOMEMetaData(
+                Image=None if image_meta is None else ImagingMetaData(**image_meta),
+                Pixels=None if pixels_meta is None else PixelsMetaData(**pixels_meta),
+                Objective=(
+                    None
+                    if objective_mata is None
+                    else ObjectiveMetaData(**objective_mata)
+                ),
+            ),
+            MicroscopeLabMetaData=(
+                None
+                if lab_specific_meta is None
+                else MicroscopeLabMetaData(**lab_specific_meta)
+            ),
             name=config["device"]["name"],
             description=config["device"]["description"],
             manufacturer=config["device"]["manufacturer"],
         )
+        nwbfile.add_device(device)
 
         # 光チャネルを登録
         optical_channel = OpticalChannel(
@@ -394,7 +422,10 @@ class NWBCreater:
 
         devices = []
         for key in nwbfile.devices.keys():
-            device = new_nwbfile.create_device(
+            device = DeviceMetaData(
+                Image=nwbfile.devices[key].Image,
+                Pixels=nwbfile.devices[key].Pixels,
+                Objective=nwbfile.devices[key].Objective,
                 name=key,
                 description=nwbfile.devices[key].description,
                 manufacturer=nwbfile.devices[key].manufacturer,

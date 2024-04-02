@@ -27,6 +27,14 @@ def preprocessing(
     exp_id = os.path.basename(os.path.dirname(microscope.path))
     reader = MicroscopeDataReaderUtils.get_reader(microscope.path)
     ome_meta = reader.ome_metadata
+
+    nwbfile = kwargs.get("nwbfile", {})
+    nwbfile["imaging_plane"]["imaging_rate"] = ome_meta.imaging_rate
+    nwbfile["device"]["metadata"] = ome_meta.get_ome_values()
+    if reader.lab_specific_metadata is not None:
+        nwbfile["device"]["lab_specific_metadata"] = reader.lab_specific_metadata
+    info = {"nwbfile": {"input": nwbfile}}
+
     raw_stack = reader.get_image_stacks()  # (ch, t, y, x) or (ch, t, z, y, x)
     microscope.data = raw_stack
     is_timeseries = ome_meta.size_t > 1
@@ -40,8 +48,6 @@ def preprocessing(
             stack = raw_stack[ch].transpose(2, 3, 1, 0)  # (y, x, z, t)
         else:
             stack = raw_stack[ch].transpose(1, 2, 0)  # (y, x, t)
-
-        info = {}
 
         if is_timeseries:
             period = params["period"]

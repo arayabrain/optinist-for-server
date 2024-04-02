@@ -48,6 +48,9 @@ class Runner:
                 input_info,
             )
 
+            if "input" in output_info.get("nwbfile", {}):
+                nwbfile["input"] = output_info["nwbfile"]["input"]
+
             # nwbfileの設定
             output_info["nwbfile"] = cls.save_func_nwb(
                 f"{__rule.output.split('.')[0]}.nwb",
