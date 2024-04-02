@@ -61,20 +61,23 @@ RUN poetry install --no-root --with dev
 # Note: In this section, a batch-only conda environment is created
 # with the privileges of a working user (optinist).
 
+USER optinist
+
 # create conda environment for batch processing.
 # TODO:
 #   - 最終的に "/studio/app/optinist/wrappers/caiman/conda/caiman.yaml" を利用し、caiman環境を構築する
-RUN sudo -u optinist sh -c " \
-    /opt/miniconda3/bin/conda create -n studio_batch -y && \
-    /opt/miniconda3/bin/conda init bash"
+RUN /opt/miniconda3/bin/conda create -n studio_batch -y && \
+    /opt/miniconda3/bin/conda init bash
 
 # pip install to conda environment for batch processing
 # TODO:
 #   - 最終的に "poetry install --no-root --with dev" の実行に置き換える
-RUN sudo -u optinist sh -c " \
-    . ~/.bashrc && \
+RUN . ~/.bashrc && \
     conda activate studio_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install lauda"
+#    pip3 install lauda
+    pip3 install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-root --with dev
 
 EXPOSE 8000
