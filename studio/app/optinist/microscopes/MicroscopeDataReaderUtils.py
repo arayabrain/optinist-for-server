@@ -1,9 +1,13 @@
 import os
+import re
+from enum import Enum
 
-from studio.app.optinist.microscopes.IsxdReader import IsxdReader
-from studio.app.optinist.microscopes.ND2Reader import ND2Reader
-from studio.app.optinist.microscopes.OIRReader import OIRReader
-from studio.app.optinist.microscopes.ThorlabsReader import ThorlabsReader
+
+class MicroscopeDataFileExt(Enum):
+    ND2_FILE_EXT = ".*\\.nd2$"
+    OIR_FILE_EXT = ".*\\.oir$"
+    ISX_FILE_EXT = ".*\\.isx$"
+    THOR_FILE_EXT = ".*\\.thor.zip$"
 
 
 class MicroscopeDataReaderUtils:
@@ -14,22 +18,26 @@ class MicroscopeDataReaderUtils:
         """
         Automatic generation of Reader from file type information
         """
-        ext = os.path.splitext(data_file_path)[1]
+        from studio.app.optinist.microscopes.IsxdReader import IsxdReader
+        from studio.app.optinist.microscopes.ND2Reader import ND2Reader
+        from studio.app.optinist.microscopes.OIRReader import OIRReader
+        from studio.app.optinist.microscopes.ThorlabsReader import ThorlabsReader
 
-        if ext == ".nd2":
+        if re.match(MicroscopeDataFileExt.ND2_FILE_EXT.value, data_file_path):
             assert ND2Reader.is_available(), "ND2Reader is not available."
             reader = ND2Reader()
-        elif ext == ".oir":
+        elif re.match(MicroscopeDataFileExt.OIR_FILE_EXT.value, data_file_path):
             assert OIRReader.is_available(), "OIRReader is not available."
             reader = OIRReader()
-        elif ext == ".isxd":
+        elif re.match(MicroscopeDataFileExt.ISX_FILE_EXT.value, data_file_path):
             assert IsxdReader.is_available(), "IsxdReader is not available."
             reader = IsxdReader()
-        elif ext == ".thor.zip":
+        elif re.match(MicroscopeDataFileExt.THOR_FILE_EXT.value, data_file_path):
             assert ThorlabsReader.is_available(), "ThorlabsReader is not available."
             reader = ThorlabsReader()
         else:
-            raise Exception(f"Unsupported file type: {ext}")
+            filename = os.path.basename(data_file_path)
+            raise Exception(f"Unsupported file type: {filename}")
 
         reader.load(data_file_path)
 
