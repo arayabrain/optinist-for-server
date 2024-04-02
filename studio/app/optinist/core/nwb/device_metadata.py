@@ -56,6 +56,15 @@ objective_ext = NWBGroupSpec(
     quantity="?",
 )
 
+ome_ext = NWBGroupSpec(
+    doc="OME metadata",
+    name="MicroscopeOMEMetaData",
+    groups=[img_ext, pixels_ext, objective_ext],
+    neurodata_type_def="MicroscopeOMEMetaData",
+    neurodata_type_inc="NWBContainer",
+    quantity="?",
+)
+
 LAB_SPECIFIC_TYPES = {
     # Common
     "uiWidth": "numeric",
@@ -106,21 +115,21 @@ LAB_SPECIFIC_TYPES = {
     "CommentByUser": "text",
 }
 
-lab_specific_ext = NWBGroupSpec(
+lab_ext = NWBGroupSpec(
     doc="Lab specific microscope metadata",
-    name="LabMicroscopeMetaData",
+    name="MicroscopeLabMetaData",
     datasets=[
         NWBDatasetSpec(doc=k, name=k, dtype=v, quantity="?")
         for k, v in LAB_SPECIFIC_TYPES.items()
     ],
-    neurodata_type_def="LabMicroscopeMetaData",
+    neurodata_type_def="MicroscopeLabMetaData",
     neurodata_type_inc="NWBContainer",
     quantity="?",
 )
 
 device_ext = NWBGroupSpec(
     doc="Device metadata",
-    groups=[img_ext, pixels_ext, objective_ext, lab_specific_ext],
+    groups=[ome_ext, lab_ext],
     neurodata_type_def="DeviceMetaData",
     neurodata_type_inc="Device",
 )
@@ -133,5 +142,6 @@ load_namespaces(ns_path)
 ImagingMetaData = get_class("ImagingMetaData", name)
 PixelsMetaData = get_class("PixelsMetaData", name)
 ObjectiveMetaData = get_class("ObjectiveMetaData", name)
-LabMicroscopeMetaData = get_class("LabMicroscopeMetaData", name)
+MicroscopeOMEMetaData = get_class("MicroscopeOMEMetaData", name)
+MicroscopeLabMetaData = get_class("MicroscopeLabMetaData", name)
 DeviceMetaData = get_class("DeviceMetaData", name)

@@ -19,7 +19,8 @@ from pynwb.ophys import (
 from studio.app.optinist.core.nwb.device_metadata import (
     DeviceMetaData,
     ImagingMetaData,
-    LabMicroscopeMetaData,
+    MicroscopeLabMetaData,
+    MicroscopeOMEMetaData,
     ObjectiveMetaData,
     PixelsMetaData,
 )
@@ -67,15 +68,19 @@ class NWBCreater:
         objective_mata = device_metadata.get("Objective")
         lab_specific_meta = config["device"].get("lab_specific_metadata")
         device = DeviceMetaData(
-            Image=None if image_meta is None else ImagingMetaData(**image_meta),
-            Pixels=None if pixels_meta is None else PixelsMetaData(**pixels_meta),
-            Objective=(
-                None if objective_mata is None else ObjectiveMetaData(**objective_mata)
+            MicroscopeOMEMetaData=MicroscopeOMEMetaData(
+                Image=None if image_meta is None else ImagingMetaData(**image_meta),
+                Pixels=None if pixels_meta is None else PixelsMetaData(**pixels_meta),
+                Objective=(
+                    None
+                    if objective_mata is None
+                    else ObjectiveMetaData(**objective_mata)
+                ),
             ),
-            LabMicroscopeMetaData=(
+            MicroscopeLabMetaData=(
                 None
                 if lab_specific_meta is None
-                else LabMicroscopeMetaData(**lab_specific_meta)
+                else MicroscopeLabMetaData(**lab_specific_meta)
             ),
             name=config["device"]["name"],
             description=config["device"]["description"],
