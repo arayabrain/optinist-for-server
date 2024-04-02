@@ -63,11 +63,15 @@ RUN poetry install --no-root --with dev
 
 USER optinist
 
-# create conda environment for batch processing.
-# TODO:
-#   - 最終的に "/studio/app/optinist/wrappers/caiman/conda/caiman.yaml" を利用し、caiman環境を構築する
-RUN /opt/miniconda3/bin/conda create -n studio_batch -y && \
+# conda init
+RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
     /opt/miniconda3/bin/conda init bash
+
+# conda env create
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+RUN . ~/.bashrc && \
+#    conda create -n studio_batch -y
+    conda env create -n studio_batch -f /app/studio/conda_caiman.yaml
 
 # pip install to conda environment for batch processing
 # TODO:
@@ -75,9 +79,12 @@ RUN /opt/miniconda3/bin/conda create -n studio_batch -y && \
 RUN . ~/.bashrc && \
     conda activate studio_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-#    pip3 install lauda
-    pip3 install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root --with dev
+    pip3 install lauda
+#    pip3 install poetry && \
+#    poetry config virtualenvs.create false && \
+#    poetry install --no-root --with dev
+
+# Return to root user
+USER root
 
 EXPOSE 8000
