@@ -8,6 +8,7 @@ type DialogImageProps = {
   data?: string | string[]
   handleCloseDialog: () => void
   expId?: string
+  cellId?: number
   nameCol?: string
 }
 
@@ -16,6 +17,7 @@ const DialogImage = ({
   handleCloseDialog,
   open,
   expId,
+  cellId,
   nameCol,
 }: DialogImageProps) => {
   useEffect(() => {
@@ -69,25 +71,29 @@ const DialogImage = ({
                     }}
                   >
                     <DialogImageTitle>{nameCol}</DialogImageTitle>
-                    <DialogImageLabel>Experiment ID: {expId}</DialogImageLabel>
-                    <DialogImageLabel>{data}</DialogImageLabel>
+                    {cellId ? (
+                        <DialogImageLabel>Cell ID: {cellId} ({expId})</DialogImageLabel>
+                      ) : (
+                        <DialogImageLabel>Experiment ID: {expId}</DialogImageLabel>
+                      )
+                    }
 
                     <img src={data} alt={""} width={"100%"} height={"100%"} />
                   </Box>
                 ) : Array.isArray(data) ? (
-                  data.filter(Boolean).map((item, index) => (
+                  data.filter(Boolean).map((url, index) => (
                     <Box
-                      key={`${item}_${index}`}
+                      key={`${url}_${index}`}
                       sx={{ display: "flex", flexDirection: "column" }}
                     >
                       <img
                         key={index}
-                        src={item}
+                        src={url}
                         alt={""}
                         width={"100%"}
                         height={"100%"}
                       />
-                      <span>{item}</span>
+                      <span style={{textAlign: "center"}}>[{url.split("/").at(-1)}]</span>
                     </Box>
                   ))
                 ) : null}
