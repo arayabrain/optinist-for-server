@@ -170,7 +170,7 @@ def caiman_cnmf(
         file_path = file_path[0]
 
     image_path = images.path[0] if isinstance(images.path, list) else images.path
-    exp_id = os.path.basename(image_path).split("_")[0]
+    exp_id = "_".join(os.path.basename(image_path).split("_")[:2])
     images = images.data
 
     # np.arrayをmmapへ変換
