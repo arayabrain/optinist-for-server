@@ -1,5 +1,6 @@
 import gc
 import os
+import shutil
 
 import numpy as np
 import scipy
@@ -148,6 +149,13 @@ def caiman_cnmf(
 
     function_id = output_dir.split("/")[-1]
     print("start caiman_cnmf:", function_id)
+
+    # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
+    caiman_data_dir = os.path.join(os.path.expanduser("~"), "caiman_data")
+    if not os.path.exists(caiman_data_dir):
+        shutil.copytree(
+            f"{DIRPATH.APP_DIR}/optinist/wrappers/caiman/caiman_data", caiman_data_dir
+        )
 
     # flatten cmnf params segments.
     reshaped_params = {}
