@@ -222,6 +222,8 @@ class ThorlabsReader(MicroscopeDataReaderBase):
             size_t=int(ome_metadata_image_pixcels["@SizeT"]),
             size_z=int(ome_metadata_image_pixcels["@SizeZ"]),
             size_c=int(ome_metadata_image_pixcels["@SizeC"]),
+            physical_sizex=float(ome_metadata_image_pixcels["@PhysicalSizeX"]),
+            physical_sizey=float(ome_metadata_image_pixcels["@PhysicalSizeY"]),
             depth=OMEDataModel.get_depth_from_pixel_type(
                 ome_metadata_image_pixcels["@Type"]
             ),
