@@ -55,6 +55,14 @@ class OIRReader(MicroscopeDataReaderBase):
     }
 
     @staticmethod
+    def unpack_libs():
+        """Unpack library files"""
+        if not os.path.isdir(DIRPATH.MICROSCOPE_LIB_DIR):
+            shutil.unpack_archive(
+                DIRPATH.MICROSCOPE_LIB_ZIP, DIRPATH.MICROSCOPE_LIB_DIR
+            )
+
+    @staticmethod
     def get_library_path() -> str:
         """Returns the path of the library (dll) file"""
         platform_name = platform.system()
@@ -73,14 +81,12 @@ class OIRReader(MicroscopeDataReaderBase):
     @staticmethod
     def is_available() -> bool:
         """Determine if library is available"""
+        __class__.unpack_libs()
         return os.path.isfile(__class__.get_library_path())
 
     def _init_library(self):
         # load sdk libraries (dependencies)
-        if not os.path.isdir(DIRPATH.MICROSCOPE_LIB_DIR):
-            shutil.unpack_archive(
-                DIRPATH.MICROSCOPE_LIB_ZIP, DIRPATH.MICROSCOPE_LIB_DIR
-            )
+        __class__.unpack_libs()
 
         if "dependencies" in __class__.SDK_LIBRARY_FILES[platform.system()]:
             platform_library_dir = os.path.dirname(__class__.get_library_path())
