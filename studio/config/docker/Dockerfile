@@ -66,7 +66,7 @@ RUN . ~/.bashrc && \
 USER root
 
 # ----------------------------------------
-# setup optinist application
+# setup optinist application environment
 # ----------------------------------------
 
 # pip install
@@ -89,6 +89,9 @@ RUN rm -rf /app/studio/config.production
 # ----------------------------------------
 # setup optinist batch environment #2
 # ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
 
 USER optinist
 

@@ -27,6 +27,12 @@ services:
     working_dir: /app
     volumes:
       - .:/app
+
+      # optinist data outputs directories
+      - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
+      - ../optinist-docker-volumes/logs/:/app/logs
+      - ../optinist-docker-volumes/studio_data/:/app/studio_data
+
       # external datasets directories
       - ../experiments_datasets/:/data/experiments_datasets
       - ../experiments_public/:/data/experiments_public

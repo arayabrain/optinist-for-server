@@ -34,6 +34,7 @@ RUN mkdir -p /opt/miniconda3 && \
     conda upgrade -y --all && \
     conda config --set channel_priority strict && \
     conda clean -y --tarballs
+
 ENV PATH $PATH:/opt/miniconda3/bin
 
 # setup cron
@@ -43,19 +44,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
     echo 'sudo service rsyslog start''\n''sudo service cron start' >> ./init_docker_services.sh
 
 # ----------------------------------------
-# setup optinist application environment
-# ----------------------------------------
-
-# pip install
-# * copy only minimal files to enable docker run cache.
-COPY --chown=optinist pyproject.toml poetry.lock ./
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry && \
-    poetry config virtualenvs.create false
-RUN poetry install --no-root --with dev
-
-# ----------------------------------------
-# setup optinist batch environment
+# setup optinist batch environment #1
 # ----------------------------------------
 
 # Note: In this section, a batch-only conda environment is created
@@ -72,6 +61,30 @@ COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app
 RUN . ~/.bashrc && \
 #    conda create -n studio_batch -y
     conda env create -n studio_batch -f /app/studio/conda_caiman.yaml
+
+# Return to root user
+USER root
+
+# ----------------------------------------
+# setup optinist application environment
+# ----------------------------------------
+
+# pip install
+# * copy only minimal files to enable docker run cache.
+COPY --chown=optinist pyproject.toml poetry.lock ./
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install poetry && \
+    poetry config virtualenvs.create false
+RUN poetry install --no-root --with dev
+
+# ----------------------------------------
+# setup optinist batch environment #2
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
 
 # pip install to conda environment for batch processing
 # TODO:
