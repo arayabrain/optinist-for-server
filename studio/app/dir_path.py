@@ -61,6 +61,9 @@ class DIRPATH:
         else f"{CONFIG_DIR}/auth/firebase_config.example.json"
     )
 
+    MICROSCOPE_LIB_DIR = f"{APP_DIR}/optinist/microscopes/libs"
+    MICROSCOPE_LIB_ZIP = f"{APP_DIR}/optinist/microscopes/libs.zip"
+
 
 class CORE_PARAM_PATH(Enum):
     nwb = f"{DIRPATH.APP_DIR}/optinist/core/nwb/nwb.yaml"
