@@ -44,6 +44,28 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
     echo 'sudo service rsyslog start''\n''sudo service cron start' >> ./init_docker_services.sh
 
 # ----------------------------------------
+# setup optinist batch environment #1
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
+
+# conda init
+RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
+    /opt/miniconda3/bin/conda init bash
+
+# conda env create
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+RUN . ~/.bashrc && \
+#    conda create -n studio_batch -y
+    conda env create -n studio_batch -f /app/studio/conda_caiman.yaml
+
+# Return to root user
+USER root
+
+# ----------------------------------------
 # setup optinist application
 # ----------------------------------------
 
@@ -63,6 +85,26 @@ COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
 # copy production-mode config files.
 COPY --chown=optinist studio/config.production/ /app/studio/config/
 RUN rm -rf /app/studio/config.production
+
+# ----------------------------------------
+# setup optinist batch environment #2
+# ----------------------------------------
+
+USER optinist
+
+# pip install to conda environment for batch processing
+# TODO:
+#   - 最終的に "poetry install --no-root --with dev" の実行に置き換える
+RUN . ~/.bashrc && \
+    conda activate studio_batch && \
+    pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install lauda
+#    pip3 install poetry && \
+#    poetry config virtualenvs.create false && \
+#    poetry install --no-root --with dev
+
+# Return to root user
+USER root
 
 # set cron script.
 RUN echo '*/5 * * * * optinist cd /app; /usr/local/bin/python run_expdb_batch.py -o 1 > /dev/null 2>&1' > /etc/cron.d/optinist-svr-expdb-batch
