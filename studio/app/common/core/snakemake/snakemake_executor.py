@@ -66,7 +66,7 @@ def delete_dependencies(
                 ),
             ]
         )
-        # print(pickle_filepath)
+        # logger.debug(pickle_filepath)
 
         if os.path.exists(pickle_filepath):
             os.remove(pickle_filepath)

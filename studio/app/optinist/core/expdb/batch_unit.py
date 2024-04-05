@@ -124,8 +124,10 @@ class ExpDbPath:
 
 
 class ExpDbBatch:
+    LOGGER_NAME = None  # Note: use root logger (empty name)
+
     def __init__(self, exp_id: str, org_id: int) -> None:
-        self.logger_ = logging.getLogger()
+        self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
         self.exp_id = exp_id
         self.org_id = org_id
 
@@ -136,7 +138,7 @@ class ExpDbBatch:
         self.nwbfile = {}
 
     def __stopwatch_callback(watch, function=None):
-        logging.getLogger().info(
+        logging.getLogger(__class__.LOGGER_NAME).info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
             (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
