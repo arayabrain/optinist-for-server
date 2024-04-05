@@ -59,8 +59,8 @@ RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
 # conda env create
 COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
 RUN . ~/.bashrc && \
-#    conda create -n studio_batch -y
-    conda env create -n studio_batch -f /app/studio/conda_caiman.yaml
+#    conda create -n expdb_batch -y
+    conda env create -n expdb_batch -f /app/studio/conda_caiman.yaml
 
 # Return to root user
 USER root
@@ -99,7 +99,7 @@ USER optinist
 # TODO:
 #   - 最終的に "poetry install --no-root --with dev" の実行に置き換える
 RUN . ~/.bashrc && \
-    conda activate studio_batch && \
+    conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install lauda
 #    pip3 install poetry && \
