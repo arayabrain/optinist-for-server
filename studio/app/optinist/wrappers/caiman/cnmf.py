@@ -199,6 +199,22 @@ def caiman_cnmf(
 
     nwbfile = kwargs.get("nwbfile", {})
     fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+    # Get physical size (µm/pixel)
+    pixels = nwbfile.get("device", {}).get("metadata", {}).get("Pixels", {})
+    physical_size_x = pixels.get("PhysicalSizeX")
+    physical_size_y = pixels.get("PhysicalSizeY")
+    if physical_size_x is not None and physical_size_y is not None:
+        EXPECTED_CELL_SIZE = 12.5 / 2  # Half size of neuron in µm
+        gSig = [
+            # cast to int because non-integer gSig would cause error.
+            # https://github.com/flatironinstitute/CaImAn/issues/1072
+            int(EXPECTED_CELL_SIZE / physical_size)
+            for physical_size in [physical_size_y, physical_size_x]  # raw x col
+        ]
+        # FIXME: DEBUG用のため削除(SigKillでprintが出力されないため)
+        with open(f"{output_dir}/gSig.txt", "w") as f:
+            f.write(str(gSig))
+        reshaped_params["gSig"] = gSig
 
     if reshaped_params is None:
         ops = CNMFParams()
