@@ -7,6 +7,7 @@ import numpy as np
 from fastapi import HTTPException, status
 from snakemake import snakemake
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.rules.runner import Runner
 from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import join_filepath
@@ -19,6 +20,8 @@ from studio.app.optinist.core.edit_ROI.wrappers import edit_roi_wrapper_dict
 from studio.app.optinist.core.nwb.nwb_creater import overwrite_nwb
 from studio.app.optinist.dataclass import EditRoiData, IscellData, RoiData
 from studio.app.optinist.schemas.roi import RoiStatus
+
+logger = AppLogger.get_logger()
 
 
 @dataclass
@@ -89,7 +92,7 @@ class EditROI:
             "iscell", self.output_info.get("iscell")
         ).data
 
-        print("start edit roi:", self.function_id)
+        logger.info("start edit roi:", self.function_id)
 
     @property
     def pickle_file_path(self):
