@@ -29,6 +29,10 @@ PIXEL_TYPES = {
     "SizeX": "numeric",
     "SizeY": "numeric",
     "SizeZ": "numeric",
+    "PhysicalSizeX": "numeric",
+    "PhysicalSizeXUnit": "text",
+    "PhysicalSizeY": "numeric",
+    "PhysicalSizeYUnit": "text",
     "SignificantBits": "numeric",
     "Type": "text",
 }
