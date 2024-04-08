@@ -1,9 +1,11 @@
 import gc
 import os
+import shutil
 
 import numpy as np
 import scipy
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
 from studio.app.const import TC_SUFFIX, TS_SUFFIX
@@ -11,6 +13,8 @@ from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
+
+logger = AppLogger.get_logger()
 
 
 def get_roi(A, roi_thr, thr_method, swap_dim, dims):
@@ -147,7 +151,14 @@ def caiman_cnmf(
     from caiman.source_extraction.cnmf.params import CNMFParams
 
     function_id = output_dir.split("/")[-1]
-    print("start caiman_cnmf:", function_id)
+    logger.info(f"start caiman_cnmf: {function_id}")
+
+    # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
+    caiman_data_dir = os.path.join(os.path.expanduser("~"), "caiman_data")
+    if not os.path.exists(caiman_data_dir):
+        shutil.copytree(
+            f"{DIRPATH.APP_DIR}/optinist/wrappers/caiman/caiman_data", caiman_data_dir
+        )
 
     # flatten cmnf params segments.
     reshaped_params = {}
@@ -162,7 +173,7 @@ def caiman_cnmf(
         file_path = file_path[0]
 
     image_path = images.path[0] if isinstance(images.path, list) else images.path
-    exp_id = os.path.basename(image_path).split("_")[0]
+    exp_id = "_".join(os.path.basename(image_path).split("_")[:2])
     images = images.data
 
     # np.arrayをmmapへ変換

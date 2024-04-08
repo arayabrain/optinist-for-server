@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.dataclass.image import ImageData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
 from studio.app.optinist.microscopes.MicroscopeDataReaderUtils import (
@@ -14,10 +15,14 @@ from studio.app.optinist.wrappers.expdb.stack_register import (
     stack_register_3d,
 )
 
+logger = AppLogger.get_logger()
+
 
 def preprocessing(
     microscope: MicroscopeData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(stack=ImageData):
+    logger.info("start preprocessing.")
+
     # convert_onefileの処理を実装
     params_flatten = {}
     for segment in params.values():
