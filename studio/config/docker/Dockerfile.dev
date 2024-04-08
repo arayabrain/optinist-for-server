@@ -87,15 +87,12 @@ RUN poetry install --no-root --with dev
 USER optinist
 
 # pip install to conda environment for batch processing
-# TODO:
-#   - 最終的に "poetry install --no-root --with dev" の実行に置き換える
 RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install lauda
-#    pip3 install poetry && \
-#    poetry config virtualenvs.create false && \
-#    poetry install --no-root --with dev
+    pip3 install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-root --with dev
 
 # Return to root user
 USER root

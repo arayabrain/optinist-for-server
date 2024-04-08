@@ -47,7 +47,7 @@ services:
     environment:
       PYTHONPATH: /app/
       TZ: Asia/Tokyo
-      OPTINIST_DIR: /tmp
+      OPTINIST_DIR: /app/studio_data
       POETRY_VIRTUALENVS_CREATE: false
       CONDA_CHANNEL_PRIORITY: strict
     depends_on:
