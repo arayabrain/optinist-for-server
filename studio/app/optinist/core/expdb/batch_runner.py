@@ -59,6 +59,8 @@ class ProcessResult:
 
 
 class ExpDbBatchRunner:
+    LOGGER_NAME = None  # Note: use root logger (empty name)
+
     def __init__(self, organization_id: int):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
@@ -81,10 +83,10 @@ class ExpDbBatchRunner:
 
         logging.config.dictConfig(logging_config)
 
-        self.logger_ = logging.getLogger()
+        self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
 
     def __stopwatch_callback(watch, function=None):
-        logging.getLogger().info(
+        logging.getLogger(__class__.LOGGER_NAME).info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
             (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
