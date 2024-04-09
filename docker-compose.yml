@@ -46,6 +46,44 @@ services:
       - db
     restart: always
 
+  expdb_batch:
+    build:
+      context: .
+      dockerfile: studio/config/docker/Dockerfile
+    working_dir: /app
+    volumes:
+      # optinist data outputs directories
+      - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
+      - ../optinist-docker-volumes/logs/:/app/logs
+      - ../optinist-docker-volumes/studio_data/:/app/studio_data
+
+      # external datasets directories
+      - ../experiments_datasets/:/app/experiments_datasets
+      - ../experiments_public/:/app/experiments_public
+
+    # Note: No ports exposed for batch processing containers.
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    tty: true
+    stdin_open: true
+
+    command: >
+        bash -c "
+          sh init_docker_services.sh &&
+          poetry run alembic upgrade head &&
+          /bin/sh
+        "
+    user: optinist
+    environment:
+      PYTHONPATH: /app/
+      TZ: Asia/Tokyo
+      OPTINIST_DIR: /app/studio_data
+      POETRY_VIRTUALENVS_CREATE: false
+      CONDA_CHANNEL_PRIORITY: strict
+    depends_on:
+      - db
+    restart: always
+
   db-cron:
     build:
       context: studio/
