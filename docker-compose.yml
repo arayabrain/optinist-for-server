@@ -71,6 +71,7 @@ services:
         bash -c "
           sh init_docker_services.sh &&
           poetry run alembic upgrade head &&
+          sh cron/deploy_crontab.sh &&
           /bin/sh
         "
     user: optinist

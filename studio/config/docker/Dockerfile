@@ -106,7 +106,7 @@ RUN . ~/.bashrc && \
 # Return to root user
 USER root
 
-# set cron script.
-RUN echo '*/5 * * * * optinist cd /app; /usr/local/bin/python run_expdb_batch.py -o 1 > /dev/null 2>&1' > /etc/cron.d/optinist-svr-expdb-batch
+# copy cron scripts.
+COPY --chown=optinist cron /app/cron
 
 EXPOSE 8000
