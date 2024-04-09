@@ -241,7 +241,7 @@ def caiman_cnmf(
 
     stop_server(dview=dview)
 
-    Yr = mmap_images.reshape(dims[0] * dims[1], T, order="F")
+    Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
     scipy.io.savemat(join_filepath([output_dir, "Yr.mat"]), {"Yr": Yr})
     AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     scipy.io.savemat(
