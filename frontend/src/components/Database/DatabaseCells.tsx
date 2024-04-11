@@ -543,6 +543,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       setFieldFilter(key)
       setValueFilter(dataParamsFilter[key] as string[])
     }
+    // eslint-disable-next-line
   }, [])
 
   useEffect(() => {
