@@ -16,14 +16,11 @@ if __name__ == "__main__":
 
     from studio.app.optinist.microscopes.ND2Reader import ND2Reader
 
-    # Note:
+    # Note: @v1.2.0
     # optinist と caiman を同時インストールした環境（conda環境想定）では、
     # MicroscopeReader と caiman 間で .so (libtiff) のバージョン競合が生じることから、
     # ここで事前に（ExpDbBatchRunnerのimport前に） MicroscopeReader を 初期化し、
     # MicroscopeReader に必要な .so を先行loadする対処をとっている。
-    #
-    # TODO:
-    # - この対応により、逆に caiman 側で libtiff バージョン不整合が生じないか、要確認
     ND2Reader()
 
     main(parser.parse_args())
