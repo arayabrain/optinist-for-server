@@ -11,7 +11,7 @@ data_params:
 
 init_params:
   # Ain: null  # TBD: need to support 2D array type.
-  use_online: True  # If True, use CNMF Online instead of CNMF.
+  use_online: False  # If True, use CNMF Online instead of CNMF.
   do_refit: False
 
   K: 20
@@ -31,7 +31,7 @@ patch_params:
   stride: 6
 
 merge_params:
-  merge_thr: 0.85
+  merge_thr: 0.80
 
 quality_params:
   min_SNR: 2.0
@@ -121,10 +121,7 @@ advanced:
     SNR_lowest: 0.5
     cnn_lowest: 0.1
     gSig_range: null
-    min_SNR: 2.5
-    min_cnn_thr: 0.9
     rval_lowest: -1
-    rval_thr: 0.8
     use_cnn: True
     use_ecc: False
     max_ecc: 3

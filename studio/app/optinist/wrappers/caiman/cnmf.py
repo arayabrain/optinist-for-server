@@ -170,7 +170,8 @@ def calculate_AY(
 
 def caiman_cnmf(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
-) -> dict(fluorescence=FluoData, iscell=IscellData):
+) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
+    import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
@@ -199,8 +200,7 @@ def caiman_cnmf(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
-    image_path = images.path[0] if isinstance(images.path, list) else images.path
-    exp_id = "_".join(os.path.basename(image_path).split("_")[:2])
+    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
     images = images.data
     T = images.shape[0]
     mmap_images, dims, mmap_path = util_get_memmap(images, file_path)
@@ -210,6 +210,22 @@ def caiman_cnmf(
 
     nwbfile = kwargs.get("nwbfile", {})
     fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+
+    # Get physical size (µm/pixel)
+    pixels = nwbfile.get("device", {}).get("metadata", {}).get("Pixels", {})
+    physical_size_x = pixels.get("PhysicalSizeX")
+    physical_size_y = pixels.get("PhysicalSizeY")
+    if physical_size_x is not None and physical_size_y is not None:
+        EXPECTED_CELL_SIZE = 12.5 / 2  # Half size of neuron in µm
+        gSig = [
+            # cast to int because non-integer gSig would cause error.
+            # https://github.com/flatironinstitute/CaImAn/issues/1072
+            int(EXPECTED_CELL_SIZE / physical_size)
+            for physical_size in [physical_size_y, physical_size_x]  # raw x col
+        ]
+        logger.info(f"physical_size: {physical_size_x}, {physical_size_y}")
+        logger.info(f"use {gSig} as gSig")
+        reshaped_params["gSig"] = gSig
 
     if reshaped_params is None:
         ops = CNMFParams()
@@ -248,12 +264,12 @@ def caiman_cnmf(
     stop_server(dview=dview)
 
     Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
-    scipy.io.savemat(join_filepath([output_dir, f"{exp_id}_Yr.mat"]), {"Yr": Yr})
-    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
-        {"cellmask": cnm.estimates.A},
+        join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
+        {"Yr": Yr},
     )
+
+    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
     trialstructure_path = join_filepath(
         [
@@ -264,6 +280,11 @@ def caiman_cnmf(
         ]
     )
     scipy.io.savemat(timecourse_path, {"timecourse": AY})
+
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
+        {"cellmask": cnm.estimates.A},
+    )
     scipy.io.savemat(
         join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
         {"C_or": cnm.estimates.C},
