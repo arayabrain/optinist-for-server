@@ -66,25 +66,22 @@ RUN . ~/.bashrc && \
 USER root
 
 # ----------------------------------------
-# setup optinist application environment
+# setup optinist application environment #1
 # ----------------------------------------
 
 # pip install
 # * copy only minimal files to enable docker run cache.
-COPY --chown=optinist pyproject.toml ./
+COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false
-RUN poetry install --no-root
 
-# copy application sources.
-COPY --chown=optinist frontend/build /app/frontend/build
-COPY --chown=optinist studio /app/studio
-COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
+# export requirements.txt from poetry and
+# * Some module versions are adjusted directly for batch environments.
+RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
+    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
 
-# copy production-mode config files.
-COPY --chown=optinist studio/config.production/ /app/studio/config/
-RUN rm -rf /app/studio/config.production
+RUN pip3 install -r requirements.studio.txt
 
 # ----------------------------------------
 # setup optinist batch environment #2
@@ -99,14 +96,25 @@ USER optinist
 RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root
+    pip3 install -r requirements.batch.txt
 
 # Return to root user
 USER root
 
 # copy cron scripts.
 COPY --chown=optinist cron /app/cron
+
+# ----------------------------------------
+# setup optinist application environment #2
+# ----------------------------------------
+
+# copy application sources.
+COPY --chown=optinist frontend/build /app/frontend/build
+COPY --chown=optinist studio /app/studio
+COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
+
+# copy production-mode config files.
+COPY --chown=optinist studio/config.production/ /app/studio/config/
+RUN rm -rf /app/studio/config.production
 
 EXPOSE 8000
