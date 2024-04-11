@@ -42,6 +42,7 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
+from studio.app.optinist.wrappers.caiman.cnmf import caiman_cnmf
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
@@ -101,16 +102,18 @@ class ExpDbPath:
             self.info_file = join_filepath([self.preprocess_dir, f"{exp_id}_info.mat"])
 
             # TODO: ORIMAPSをpreprocess_dirに保存する
-            self.orimaps_dir = join_filepath([self.output_dir, "orimaps"])
+            self.orimaps_dir = join_filepath([self.preprocess_dir, "orimaps"])
             self.fov_file = join_filepath(
                 [self.orimaps_dir, f"{exp_id}_{FOV_SUFFIX}.tif"]
             )
 
             # TODO: TCをCNMFの結果(preprocess_dir)から取得する
-            self.tc_file = join_filepath([self.exp_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+            self.tc_file = join_filepath(
+                [self.preprocess_dir, f"{exp_id}_{TC_SUFFIX}.mat"]
+            )
             # TODO: cellmaskをCNMFの結果(preprocess_dir)から取得する
             self.cellmask_file = join_filepath(
-                [self.exp_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
+                [self.preprocess_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
         else:
             self.exp_dir = join_filepath([DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id])
@@ -216,11 +219,16 @@ class ExpDbBatch:
 
     # TODO: implement cell_detection_cnmf
     @stopwatch(callback=__stopwatch_callback)
-    def cell_detection_cnmf(self):
+    def cell_detection_cnmf(self, stack: ImageData):
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
         # TODO: 出力ファイルはpreprocess_dirに保存する
-        pass
+        caiman_cnmf(
+            images=stack,
+            output_dir=self.raw_path.preprocess_dir,
+            params=get_default_params("caiman_cnmf"),
+            nwbfile=self.nwb_input_config,
+        )
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
