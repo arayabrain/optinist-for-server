@@ -101,7 +101,7 @@ RUN . ~/.bashrc && \
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-root --with dev
+    poetry install --no-root
 
 # Return to root user
 USER root
