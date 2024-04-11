@@ -8,7 +8,7 @@ import scipy
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
-from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
@@ -248,10 +248,11 @@ def caiman_cnmf(
     stop_server(dview=dview)
 
     Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
-    scipy.io.savemat(join_filepath([output_dir, "Yr.mat"]), {"Yr": Yr})
+    scipy.io.savemat(join_filepath([output_dir, f"{exp_id}_Yr.mat"]), {"Yr": Yr})
     AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     scipy.io.savemat(
-        join_filepath([output_dir, "cellmask.mat"]), {"cellmask": cnm.estimates.A}
+        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
+        {"cellmask": cnm.estimates.A},
     )
     timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
     trialstructure_path = join_filepath(
@@ -263,7 +264,10 @@ def caiman_cnmf(
         ]
     )
     scipy.io.savemat(timecourse_path, {"timecourse": AY})
-    scipy.io.savemat(join_filepath([output_dir, "C_or.mat"]), {"C_or": cnm.estimates.C})
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
+        {"C_or": cnm.estimates.C},
+    )
 
     # contours plot
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
