@@ -11,11 +11,22 @@ data_params:
 
 init_params:
   # Ain: null  # TBD: need to support 2D array type.
+
+  # NOTE: CNMF Online Mode has the following features
+  # - Advantages
+  #   - Light memory consumption load
+  # - Notice
+  #   - Processing time is slightly longer than in batch mode
+  #   - Processing results are slightly different from those in batch mode.
+  # Useful in environments with limited memory resources, etc. (eg., for development)
   use_online: False  # If True, use CNMF Online instead of CNMF.
+
   do_refit: False
 
-  # NOTE: K would affect performance. Set lower values (like 4) for faster processing.
+  # NOTE: K would affect performance.
+  # Set lower values (like 4) for faster processing. (eg., for development)
   K: 2000
+
   gSig: [4, 4]
   ssub: 1
   tsub: 1
