@@ -273,11 +273,15 @@ class ExpDbBatchRunner:
             db.commit()
 
             # Analyze & Plotting
-            stack = expdb_batch.preprocess()
-            expdb_batch.generate_orimaps(stack)
-            del stack
-            # TODO: add CNMF processing
-            # expdb_batch.cell_detection_cnmf()
+            if expdb_batch.raw_path.microscope_file is None:
+                # 顕微鏡データがない場合、以下の処理をスキップ
+                self.logger_.warn("No microscope data found. Skip preprocessing.")
+            else:
+                stack = expdb_batch.preprocess()
+                expdb_batch.generate_orimaps(stack)
+                expdb_batch.cell_detection_cnmf(stack)
+                del stack
+
             stat_data = expdb_batch.generate_statdata()
             expdb_batch.generate_plots(stat_data=stat_data)
             expdb_batch.generate_cellmasks()

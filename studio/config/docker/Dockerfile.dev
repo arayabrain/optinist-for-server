@@ -34,6 +34,7 @@ RUN mkdir -p /opt/miniconda3 && \
     conda upgrade -y --all && \
     conda config --set channel_priority strict && \
     conda clean -y --tarballs
+
 ENV PATH $PATH:/opt/miniconda3/bin
 
 # setup cron
@@ -43,7 +44,29 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
     echo 'sudo service rsyslog start''\n''sudo service cron start' >> ./init_docker_services.sh
 
 # ----------------------------------------
-# setup optinist application
+# setup optinist batch environment #1
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
+
+# conda init
+RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
+    /opt/miniconda3/bin/conda init bash
+
+# conda env create
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+RUN . ~/.bashrc && \
+#    conda create -n expdb_batch -y
+    conda env create -n expdb_batch -f /app/studio/conda_caiman.yaml
+
+# Return to root user
+USER root
+
+# ----------------------------------------
+# setup optinist application environment
 # ----------------------------------------
 
 # pip install
@@ -52,6 +75,30 @@ COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false
-RUN poetry install --no-root --with dev
+
+# export requirements.txt from poetry and
+# * Some module versions are adjusted directly for batch environments.
+RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
+    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
+
+RUN pip3 install -r requirements.studio.txt
+
+# ----------------------------------------
+# setup optinist batch environment #2
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
+
+# pip install to conda environment for batch processing
+RUN . ~/.bashrc && \
+    conda activate expdb_batch && \
+    pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install -r requirements.batch.txt
+
+# Return to root user
+USER root
 
 EXPOSE 8000
