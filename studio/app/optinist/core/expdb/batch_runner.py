@@ -283,7 +283,7 @@ class ExpDbBatchRunner:
                 del stack
 
             stat_data = expdb_batch.generate_statdata()
-            # expdb_batch.generate_plots(stat_data=stat_data)
+            expdb_batch.generate_plots(stat_data=stat_data)
             expdb_batch.generate_cellmasks()
             expdb_batch.generate_pixelmaps()
 
