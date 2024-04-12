@@ -75,7 +75,13 @@ COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false
-RUN poetry install --no-root --with dev
+
+# export requirements.txt from poetry and
+# * Some module versions are adjusted directly for batch environments.
+RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
+    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
+
+RUN pip3 install -r requirements.studio.txt
 
 # ----------------------------------------
 # setup optinist batch environment #2
@@ -90,9 +96,7 @@ USER optinist
 RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root --with dev
+    pip3 install -r requirements.batch.txt
 
 # Return to root user
 USER root
