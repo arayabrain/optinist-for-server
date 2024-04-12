@@ -16,7 +16,7 @@ import { GridEventListener, GridRowParams } from "@mui/x-data-grid"
 
 import DatabaseExperiments from "components/Database/DatabaseExperiments"
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
-import { toHandleId } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
+import { isValidConnection, toHandleId } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
 import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
 import { HANDLE_STYLE } from "const/flowchart"
@@ -68,6 +68,7 @@ const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
         position={Position.Right}
         id={toHandleId(nodeId, "expdb", returnType)}
         style={{ ...HANDLE_STYLE, background: expdbColor }}
+        isValidConnection={isValidConnection}
       />
     </NodeContainer>
   )
@@ -79,6 +80,7 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
 
   return (
     <div>
+      <Typography>preprocessed_data</Typography>
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
         Select
       </Button>

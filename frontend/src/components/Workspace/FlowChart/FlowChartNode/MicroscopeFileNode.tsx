@@ -44,6 +44,7 @@ const MicroscopeFileNodeImple = memo(function MicroscopeFileNodeImple({
 
   return (
     <NodeContainer nodeId={nodeId} selected={elementSelected}>
+      <Typography>microscope</Typography>
       <button
         className="flowbutton"
         onClick={onClickDeleteIcon}
