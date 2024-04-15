@@ -8,6 +8,7 @@ from datetime import datetime
 from filelock import FileLock
 
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.snakemake.smk import Rule
 from studio.app.common.core.utils.config_handler import ConfigWriter
 from studio.app.common.core.utils.filepath_creater import join_filepath
@@ -21,11 +22,15 @@ from studio.app.optinist.core.nwb.nwb_creater import (
 )
 from studio.app.wrappers import wrapper_dict
 
+logger = AppLogger.get_logger()
+
 
 class Runner:
     @classmethod
     def run(cls, __rule: Rule, last_output):
         try:
+            logger.info("start rule runner")
+
             input_info = cls.read_input_info(__rule.input)
 
             cls.change_dict_key_exist(input_info, __rule)
@@ -48,6 +53,9 @@ class Runner:
                 input_info,
             )
 
+            if "input" in output_info.get("nwbfile", {}):
+                nwbfile["input"] = output_info["nwbfile"]["input"]
+
             # nwbfileの設定
             output_info["nwbfile"] = cls.save_func_nwb(
                 f"{__rule.output.split('.')[0]}.nwb",
@@ -66,15 +74,17 @@ class Runner:
                 path = join_filepath([path, "whole.nwb"])
                 cls.save_all_nwb(path, output_info["nwbfile"])
 
-            print("output: ", __rule.output)
+            logger.info("rule output: %s", __rule.output)
 
             del input_info, output_info
             gc.collect()
 
         except Exception as e:
             err_msg = list(traceback.TracebackException.from_exception(e).format())
+
             # show full trace to console
-            print(*err_msg, sep="\n")
+            logger.error("\n".join(err_msg))
+
             # save msg for GUI
             PickleWriter.write(__rule.output, err_msg)
 

@@ -476,7 +476,6 @@ const ImagePlotChart = memo(function ImagePlotChart({
   }
 
   const setSelectRoi = (point: PointClick) => {
-    if (![MERGE_ROI, DELETE_ROI].includes(action)) return
     if (isNaN(Number(point.z))) return
 
     let newPoints

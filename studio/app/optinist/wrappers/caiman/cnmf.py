@@ -1,16 +1,20 @@
 import gc
 import os
+import shutil
 
 import numpy as np
 import scipy
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
-from studio.app.const import TC_SUFFIX, TS_SUFFIX
+from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
+
+logger = AppLogger.get_logger()
 
 
 def get_roi(A, roi_thr, thr_method, swap_dim, dims):
@@ -66,6 +70,36 @@ def get_roi(A, roi_thr, thr_method, swap_dim, dims):
         ims.append(r_mask + (i * r_mask))
 
     return ims
+
+
+def util_get_memmap(images: np.ndarray, file_path: str):
+    """
+    convert np.ndarray to mmap
+    """
+    from caiman.mmapping import prepare_shape
+    from caiman.paths import memmap_frames_filename
+
+    order = "C"
+    dims = images.shape[1:]
+    T = images.shape[0]
+    shape_mov = (np.prod(dims), T)
+
+    dir_path = join_filepath(file_path.split("/")[:-1])
+    basename = file_path.split("/")[-1]
+    fname_tot = memmap_frames_filename(basename, dims, T, order)
+    mmap_path = join_filepath([dir_path, fname_tot])
+
+    mmap_images = np.memmap(
+        mmap_path,
+        mode="w+",
+        dtype=np.float32,
+        shape=prepare_shape(shape_mov),
+        order=order,
+    )
+
+    mmap_images = np.reshape(mmap_images.T, [T] + list(dims), order="F")
+    mmap_images[:] = images[:]
+    return mmap_images, dims, mmap_path
 
 
 def util_recursive_flatten_params(params, result_params: dict, nest_counter=0):
@@ -137,17 +171,21 @@ def calculate_AY(
 def caiman_cnmf(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
-    # TODO: Return expdb dataclass
     import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
-    from caiman.mmapping import prepare_shape
-    from caiman.paths import memmap_frames_filename
-    from caiman.source_extraction.cnmf import cnmf
+    from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
 
     function_id = output_dir.split("/")[-1]
-    print("start caiman_cnmf:", function_id)
+    logger.info(f"start caiman_cnmf: {function_id}")
+
+    # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
+    caiman_data_dir = os.path.join(os.path.expanduser("~"), "caiman_data")
+    if not os.path.exists(caiman_data_dir):
+        shutil.copytree(
+            f"{DIRPATH.APP_DIR}/optinist/wrappers/caiman/caiman_data", caiman_data_dir
+        )
 
     # flatten cmnf params segments.
     reshaped_params = {}
@@ -156,41 +194,38 @@ def caiman_cnmf(
     Ain = reshaped_params.pop("Ain", None)
     do_refit = reshaped_params.pop("do_refit", None)
     roi_thr = reshaped_params.pop("roi_thr", None)
+    use_online = reshaped_params.pop("use_online", False)
 
     file_path = images.path
     if isinstance(file_path, list):
         file_path = file_path[0]
 
-    image_path = images.path[0] if isinstance(images.path, list) else images.path
-    exp_id = os.path.basename(image_path).split("_")[0]
+    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
     images = images.data
-
-    # np.arrayをmmapへ変換
-    order = "C"
-    dims = images.shape[1:]
     T = images.shape[0]
-    shape_mov = (np.prod(dims), T)
-
-    dir_path = join_filepath(file_path.split("/")[:-1])
-    basename = file_path.split("/")[-1]
-    fname_tot = memmap_frames_filename(basename, dims, T, order)
-
-    mmap_images = np.memmap(
-        join_filepath([dir_path, fname_tot]),
-        mode="w+",
-        dtype=np.float32,
-        shape=prepare_shape(shape_mov),
-        order=order,
-    )
-
-    mmap_images = np.reshape(mmap_images.T, [T] + list(dims), order="F")
-    mmap_images[:] = images[:]
+    mmap_images, dims, mmap_path = util_get_memmap(images, file_path)
 
     del images
     gc.collect()
 
     nwbfile = kwargs.get("nwbfile", {})
     fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+
+    # Get physical size (µm/pixel)
+    pixels = nwbfile.get("device", {}).get("metadata", {}).get("Pixels", {})
+    physical_size_x = pixels.get("PhysicalSizeX")
+    physical_size_y = pixels.get("PhysicalSizeY")
+    if physical_size_x is not None and physical_size_y is not None:
+        EXPECTED_CELL_SIZE = 12.5 / 2  # Half size of neuron in µm
+        gSig = [
+            # cast to int because non-integer gSig would cause error.
+            # https://github.com/flatironinstitute/CaImAn/issues/1072
+            int(EXPECTED_CELL_SIZE / physical_size)
+            for physical_size in [physical_size_y, physical_size_x]  # raw x col
+        ]
+        logger.info(f"physical_size: {physical_size_x}, {physical_size_y}")
+        logger.info(f"use {gSig} as gSig")
+        reshaped_params["gSig"] = gSig
 
     if reshaped_params is None:
         ops = CNMFParams()
@@ -204,22 +239,37 @@ def caiman_cnmf(
         backend="local", n_processes=None, single_thread=True
     )
 
-    cnm = cnmf.CNMF(n_processes=n_processes, dview=dview, Ain=Ain, params=ops)
-    cnm = cnm.fit(mmap_images)
+    if use_online:
+        ops.change_params(
+            {
+                "fnames": [mmap_path],
+                # NOTE: These params uses np.inf as default in CaImAn.
+                # Yaml cannot serialize np.inf, so default value in yaml is None.
+                "max_comp_update_shape": reshaped_params["max_comp_update_shape"]
+                or np.inf,
+                "num_times_comp_updated": reshaped_params["update_num_comps"] or np.inf,
+            }
+        )
+        cnm = online_cnmf.OnACID(dview=dview, Ain=Ain, params=ops)
+        cnm.fit_online()
+    else:
+        cnm = cnmf.CNMF(n_processes=n_processes, dview=dview, Ain=Ain, params=ops)
+        cnm = cnm.fit(mmap_images)
 
-    if do_refit:
-        cnm = cnm.refit(mmap_images, dview=dview)
+        if do_refit:
+            cnm = cnm.refit(mmap_images, dview=dview)
 
     cnm.estimates.evaluate_components(mmap_images, cnm.params, dview=dview)
 
     stop_server(dview=dview)
 
-    Yr = mmap_images.reshape(dims[0] * dims[1], T, order="F")
-    scipy.io.savemat(join_filepath([output_dir, "Yr.mat"]), {"Yr": Yr})
-    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
+    Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
     scipy.io.savemat(
-        join_filepath([output_dir, "cellmask.mat"]), {"cellmask": cnm.estimates.A}
+        join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
+        {"Yr": Yr},
     )
+
+    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
     trialstructure_path = join_filepath(
         [
@@ -230,7 +280,15 @@ def caiman_cnmf(
         ]
     )
     scipy.io.savemat(timecourse_path, {"timecourse": AY})
-    scipy.io.savemat(join_filepath([output_dir, "C_or.mat"]), {"C_or": cnm.estimates.C})
+
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
+        {"cellmask": cnm.estimates.A},
+    )
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
+        {"C_or": cnm.estimates.C},
+    )
 
     # contours plot
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
@@ -246,7 +304,12 @@ def caiman_cnmf(
     if not isinstance(idx_bad, list):
         idx_bad = idx_bad.tolist()
 
-    iscell = np.concatenate([np.ones(len(idx_good)), np.zeros(len(idx_bad))])
+    iscell = np.concatenate(
+        [
+            np.ones(len(idx_good), dtype=int),
+            np.zeros(len(idx_bad), dtype=int),
+        ]
+    )
 
     cell_ims = get_roi(
         cnm.estimates.A[:, idx_good], roi_thr, thr_method, swap_dim, dims

@@ -437,6 +437,7 @@ const DatabaseCells = ({ user }: CellProps) => {
     type: string
     data?: string | string[]
     expId?: string
+    cellId?: number
     nameCol?: string
   }>({
     type: "",
@@ -542,6 +543,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       setFieldFilter(key)
       setValueFilter(dataParamsFilter[key] as string[])
     }
+    // eslint-disable-next-line
   }, [])
 
   useEffect(() => {
@@ -604,9 +606,11 @@ const DatabaseCells = ({ user }: CellProps) => {
   const handleOpenDialog = (
     data: ImageUrls[] | ImageUrls,
     expId?: string,
+    cellId?: number,
     graphTitle?: string,
   ) => {
     let newData: string | string[] = []
+
     if (Array.isArray(data)) {
       newData = data.map((d) => d.url)
     } else newData = data.url
@@ -614,6 +618,7 @@ const DatabaseCells = ({ user }: CellProps) => {
       type: "image",
       data: newData,
       expId: expId,
+      cellId: cellId,
       nameCol: graphTitle,
     })
   }
@@ -779,7 +784,7 @@ const DatabaseCells = ({ user }: CellProps) => {
           <Box
             sx={{ display: "flex", cursor: "pointer" }}
             onClick={() =>
-              handleOpenDialog(graph_url, params.row.experiment_id, graphTitle)
+              handleOpenDialog(graph_url, params.row.experiment_id, params.row.id, graphTitle)
             }
           >
             <img
@@ -828,6 +833,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         data={dataDialog.data}
         nameCol={dataDialog.nameCol}
         expId={dataDialog.expId}
+        cellId={dataDialog.cellId}
         handleCloseDialog={handleCloseDialog}
       />
       {loading ? <Loading /> : null}

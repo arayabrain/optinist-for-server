@@ -44,16 +44,69 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
     echo 'sudo service rsyslog start''\n''sudo service cron start' >> ./init_docker_services.sh
 
 # ----------------------------------------
-# setup optinist application
+# setup optinist batch environment #1
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
+
+# conda init
+RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
+    /opt/miniconda3/bin/conda init bash
+
+# conda env create
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+RUN . ~/.bashrc && \
+#    conda create -n expdb_batch -y
+    conda env create -n expdb_batch -f /app/studio/conda_caiman.yaml
+
+# Return to root user
+USER root
+
+# ----------------------------------------
+# setup optinist application environment #1
 # ----------------------------------------
 
 # pip install
 # * copy only minimal files to enable docker run cache.
-COPY --chown=optinist pyproject.toml ./
+COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false
-RUN poetry install --no-root
+
+# export requirements.txt from poetry and
+# * Some module versions are adjusted directly for batch environments.
+RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
+    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
+
+RUN pip3 install -r requirements.studio.txt
+
+# ----------------------------------------
+# setup optinist batch environment #2
+# ----------------------------------------
+
+# Note: In this section, a batch-only conda environment is created
+# with the privileges of a working user (optinist).
+
+USER optinist
+
+# pip install to conda environment for batch processing
+RUN . ~/.bashrc && \
+    conda activate expdb_batch && \
+    pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install -r requirements.batch.txt
+
+# Return to root user
+USER root
+
+# copy cron scripts.
+COPY --chown=optinist cron /app/cron
+
+# ----------------------------------------
+# setup optinist application environment #2
+# ----------------------------------------
 
 # copy application sources.
 COPY --chown=optinist frontend/build /app/frontend/build
@@ -63,8 +116,5 @@ COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
 # copy production-mode config files.
 COPY --chown=optinist studio/config.production/ /app/studio/config/
 RUN rm -rf /app/studio/config.production
-
-# set cron script.
-RUN echo '*/5 * * * * optinist cd /app; /usr/local/bin/python run_expdb_batch.py -o 1 > /dev/null 2>&1' > /etc/cron.d/optinist-svr-expdb-batch
 
 EXPOSE 8000

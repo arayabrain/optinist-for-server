@@ -59,6 +59,8 @@ class ProcessResult:
 
 
 class ExpDbBatchRunner:
+    LOGGER_NAME = None  # Note: use root logger (empty name)
+
     def __init__(self, organization_id: int):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
@@ -81,10 +83,10 @@ class ExpDbBatchRunner:
 
         logging.config.dictConfig(logging_config)
 
-        self.logger_ = logging.getLogger()
+        self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
 
     def __stopwatch_callback(watch, function=None):
-        logging.getLogger().info(
+        logging.getLogger(__class__.LOGGER_NAME).info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
             (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
@@ -271,11 +273,15 @@ class ExpDbBatchRunner:
             db.commit()
 
             # Analyze & Plotting
-            stack = expdb_batch.preprocess()
-            expdb_batch.generate_orimaps(stack)
-            del stack
-            # TODO: add CNMF processing
-            # expdb_batch.cell_detection_cnmf()
+            if expdb_batch.raw_path.microscope_file is None:
+                # 顕微鏡データがない場合、以下の処理をスキップ
+                self.logger_.warn("No microscope data found. Skip preprocessing.")
+            else:
+                stack = expdb_batch.preprocess()
+                expdb_batch.generate_orimaps(stack)
+                expdb_batch.cell_detection_cnmf(stack)
+                del stack
+
             stat_data = expdb_batch.generate_statdata()
             expdb_batch.generate_plots(stat_data=stat_data)
             expdb_batch.generate_cellmasks()
