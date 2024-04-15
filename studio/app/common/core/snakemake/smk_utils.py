@@ -25,9 +25,22 @@ class SmkUtils:
             subject_id = exp_id.split("_")[0]
             return [
                 join_filepath(
-                    [DIRPATH.EXPDB_DIR, subject_id, exp_id, f"{exp_id}_{k}.mat"]
-                )
-                for k in [TC_SUFFIX, TS_SUFFIX]
+                    [
+                        DIRPATH.EXPDB_DIR,
+                        subject_id,
+                        exp_id,
+                        f"{exp_id}_{TS_SUFFIX}.mat",
+                    ]
+                ),
+                join_filepath(
+                    [
+                        DIRPATH.EXPDB_DIR,
+                        subject_id,
+                        exp_id,
+                        "preprocess",
+                        f"{exp_id}_{TC_SUFFIX}.mat",
+                    ]
+                ),
             ]
         elif details["type"] == FILETYPE.MICROSCOPE:
             exp_id = details["input"]
