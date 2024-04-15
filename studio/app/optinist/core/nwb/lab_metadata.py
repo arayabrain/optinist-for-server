@@ -9,7 +9,7 @@ SPECIMEN_KEY = "Specimen type Brain region"
 SPECIMEN_TYPES = {
     "Specimen type": "text",
     # NOTE: json data's key is "Brain region Marmoset" or "Brain region Mouse"
-    "Brain region": ("text", (None, None)),
+    "Brain region": ("text", [(None,), (None, None)]),
 }
 
 specimen_type_ext = NWBGroupSpec(
@@ -71,9 +71,9 @@ TECHNIQUE_VIRUS_INJECTION_TYPES = {
     "Technique": "text",
     "Virus type": "text",
     "serotypes": "text",
-    "Virus": ("text", (None, None)),
+    "Virus": ("text", [(None,), (None, None)]),
     # NOTE: json data's key is "Injection region Marmoset" or "Injection region Mouse"
-    "Injection region": ("text", (None, None)),
+    "Injection region": ("text", [(None,), (None, None)]),
     "Injection age": "text",
     "Incubation period": "text",
 }
