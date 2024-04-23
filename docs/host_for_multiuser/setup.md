@@ -20,14 +20,16 @@ Follow the steps below to setup `multiuser` mode.
     cp studio/config/auth/firebase_config.example.json studio/config/auth/firebase_config.json
     ```
 
-### Create your Firebase Project
+### Setup Firebase Authentication
+
+#### Create your Firebase Project
 1. Go to [https://console.firebase.google.com/](https://console.firebase.google.com/)
 2. Click "Add project".
 3. Enter your project name, and click "Continue".
 4. Google Analytics is optional. You can choose "Enable Google Analytics for this project" or not.
 5. After your project is ready, click "Continue".
 
-### Setup Firebase Authentication
+#### Setup Firebase Authentication
 1. Select "Build > Authentication" from the left menu.
 2. Select "Get started".
 3. Select "Sign-in method" tab.
@@ -35,7 +37,7 @@ Follow the steps below to setup `multiuser` mode.
 5. Click "Email/Password" and enable it.
 6. Click "Save".
 
-### Create admin user for the project
+#### Create admin user for the project
 1. Select "Authentication" from the left menu.
 2. Select "Users" tab.
 3. Click "Add user" button.
@@ -45,7 +47,7 @@ Follow the steps below to setup `multiuser` mode.
 
 - Created user's "User UID" is required later.
 
-### Get Firebase tokens
+#### Get Firebase tokens
 1. Click setting icon(besides Project Overview), then select "Project settings" from the left menu.
 2. Select "General" tab.
 3. Select "web app" in "Your apps" section.
