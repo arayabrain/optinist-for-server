@@ -41,15 +41,15 @@ npm install -g yarn
 ### Clone repository
 
 ```
-git clone https://github.com/oist/optinist.git
-cd ./optinist
+git clone https://github.com/arayabrain/optinist-for-server.git
+cd ./optinist-for-server
 ```
 
 ### Create anaconda environment
 
 ```
-conda create -n optinist_dev python=3.8 poetry
-conda activate optinist_dev
+conda create -n optinist-for-server_dev python=3.8 poetry
+conda activate optinist-for-server_dev
 ```
 
 ```

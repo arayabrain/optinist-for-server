@@ -12,7 +12,7 @@ Follow the steps below to setup `multiuser` mode.
 ### Clone the repository
 1. In your hosting server, clone the OptiNiSt repository.
     ```bash
-    git clone git@github.com:oist/optinist.git -b main
+    git clone git@github.com:arayabrain/optinist-for-server.git -b main
     ```
 2. copy config files
     ```bash
