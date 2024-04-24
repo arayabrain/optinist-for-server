@@ -20,7 +20,7 @@ Please follow instructions below.
 ### Clone repository
 
 ```
-git clone https://github.com/oist/optinist.git
+git clone https://github.com/arayabrain/optinist-for-server.git
 cd ./optinist
 ```
 
