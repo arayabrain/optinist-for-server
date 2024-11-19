@@ -27,6 +27,8 @@ else:
             FILETYPE.EXPDB,
         ]:
             rule:
+                name:
+                    rule_name
                 input:
                     SmkUtils.input(details)
                 output:
@@ -37,6 +39,8 @@ else:
                     f"{DIRPATH.APP_DIR}/common/core/rules/data.py"
         else:
             rule:
+                name:
+                    rule_name
                 input:
                     SmkUtils.input(details)
                 output:
