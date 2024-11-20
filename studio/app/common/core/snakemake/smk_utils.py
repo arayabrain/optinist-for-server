@@ -21,7 +21,7 @@ class SmkUtils:
                 exp_dir = join_filepath([DIRPATH.EXPDB_DIR, subject_id, exp_id])
 
                 microscope_files = []
-                for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT:
+                for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT.value:
                     microscope_files.extend(glob(join_filepath([exp_dir, f"*{ext}"])))
                 return microscope_files
             elif details["type"] == FILETYPE.EXPDB:

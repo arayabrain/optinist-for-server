@@ -76,7 +76,7 @@ class ExpDbPath:
 
             # input_files
             microscope_files = []
-            for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT:
+            for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT.value:
                 microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
             self.microscope_file = (
                 microscope_files[0] if len(microscope_files) > 0 else None
