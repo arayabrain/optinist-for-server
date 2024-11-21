@@ -125,6 +125,7 @@ Make an initial sql entry
 ```sql
 INSERT INTO organization (name) VALUES ('{YOUR_ORGANIZATION_NAME}');
 INSERT INTO roles (id, role) VALUES (1, 'admin'), (20, 'operator');
+INSERT INTO roles (id, role) VALUES  (10, 'data manager'),  (30, 'guest operator'); -- Additions in optinist-for-server
 INSERT INTO users (uid, organization_id, name, email, active) VALUES ('{FIREBASE_USER_UID}', 1, '{YOUR_NAME}', '{YOUR_EMAIL}', true);
 INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
 ```
@@ -140,6 +141,11 @@ INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
       - can manage other users
     - "operator"
       - general user
+  - Additions in optinist-for-server
+    - "data admin"
+      - can manage database
+    - "guest operator"
+      - guest user  
   - More information is [here](usage.md).
 
 ##### Run OptiNiSt
