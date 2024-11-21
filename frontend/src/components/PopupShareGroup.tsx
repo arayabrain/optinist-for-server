@@ -565,7 +565,7 @@ const PopupShareGroup = ({
           </Button>
         </DialogActions>
       </DialogCustom>
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
       <ConfirmDialog
         title={"Bulk Update"}
         content={`Update the share settings of "${listCheck?.length} records" at once. Is this OK?`}

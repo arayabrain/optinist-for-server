@@ -1191,7 +1191,7 @@ const DatabaseExperiments = ({
         role={!!adminOrManager && !!user}
         readonly={!metadataEditable}
       />
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
       {openShare.open && openShare.id ? (
         <PopupShareGroup
           type={"share"}

@@ -271,7 +271,7 @@ const PopupShare = ({
           </Button>
         </DialogActions>
       </DialogCustom>
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
     </Box>
   )
 }

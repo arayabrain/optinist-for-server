@@ -597,7 +597,7 @@ const GroupManager = () => {
         handleClose={handleClose}
         dataParams={dataParams}
       />
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
     </GroupManagerWrapper>
   )
 }

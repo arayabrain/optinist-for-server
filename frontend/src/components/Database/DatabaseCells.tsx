@@ -784,7 +784,12 @@ const DatabaseCells = ({ user }: CellProps) => {
           <Box
             sx={{ display: "flex", cursor: "pointer" }}
             onClick={() =>
-              handleOpenDialog(graph_url, params.row.experiment_id, params.row.id, graphTitle)
+              handleOpenDialog(
+                graph_url,
+                params.row.experiment_id,
+                params.row.id,
+                graphTitle,
+              )
             }
           >
             <img
@@ -836,7 +841,7 @@ const DatabaseCells = ({ user }: CellProps) => {
         cellId={dataDialog.cellId}
         handleCloseDialog={handleCloseDialog}
       />
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
     </DatabaseExperimentsWrapper>
   )
 }

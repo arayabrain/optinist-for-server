@@ -378,7 +378,7 @@ const PopupSetGroupManager = ({
           </Button>
         </DialogActions>
       </DiaLogCustom>
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
     </div>
   )
 }
