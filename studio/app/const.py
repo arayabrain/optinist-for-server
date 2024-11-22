@@ -28,8 +28,6 @@ NOT_DISPLAY_ARGS_LIST = ["params", "output_dir", "nwbfile", "export_plot", "kwar
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-MAX_IMAGE_DATA_PART_SIZE = 1_000_000_000  # 1GB
-
 THUMBNAIL_HEIGHT = 128
 TC_SUFFIX = "timecourse"
 TC_FIELDNAME = "timecourse"
