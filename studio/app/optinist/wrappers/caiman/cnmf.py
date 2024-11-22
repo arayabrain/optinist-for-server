@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 import scipy
 
+from studio.app.common.core.experiment.experiment import ExptOutputPathIds
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
@@ -177,7 +178,7 @@ def caiman_cnmf(
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
 
-    function_id = output_dir.split("/")[-1]
+    function_id = ExptOutputPathIds(output_dir).function_id
     logger.info(f"start caiman_cnmf: {function_id}")
 
     # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
