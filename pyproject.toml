@@ -127,6 +127,11 @@ env = [
   "GRAPH_HOST=http://localhost:8000/datasets",
   "IS_TEST=True",
 ]
+filterwarnings = [
+    "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
+    "ignore:Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning",
+    "ignore:invalid escape sequence :DeprecationWarning",
+]
 
 [tool.codespell]
 skip = './frontend/build,./frontend/node_modules,./docs/_build,*.lock,*log,*.egg-info'
