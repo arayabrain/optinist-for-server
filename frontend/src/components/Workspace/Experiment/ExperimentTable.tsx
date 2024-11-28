@@ -14,6 +14,7 @@ import { useSelector, useDispatch } from "react-redux"
 
 import { useSnackbar } from "notistack"
 
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import DeleteIcon from "@mui/icons-material/Delete"
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
@@ -49,6 +50,7 @@ import { ReproduceButton } from "components/Workspace/Experiment/Button/Reproduc
 import { CollapsibleTable } from "components/Workspace/Experiment/CollapsibleTable"
 import { ExperimentStatusIcon } from "components/Workspace/Experiment/ExperimentStatusIcon"
 import {
+  copyExperimentByList,
   deleteExperimentByList,
   getExperiments,
 } from "store/slice/Experiments/ExperimentsActions"
@@ -136,6 +138,17 @@ const TableImple = memo(function TableImple() {
     const isAsc = sortTarget === property && order === "asc"
     setOrder(isAsc ? "desc" : "asc")
     setSortTarget(property)
+  }
+
+  const onClickCopy = () => {
+    dispatch(copyExperimentByList(checkedList))
+      .unwrap()
+      .then(() => {
+        // do nothing.
+      })
+      .catch(() => {
+        enqueueSnackbar("Failed to copy", { variant: "error" })
+      })
   }
 
   const onCheckBoxClick = (uid: string) => {
@@ -238,6 +251,16 @@ const TableImple = memo(function TableImple() {
             Delete
           </Button>
         )}
+        <Button
+          sx={{
+            margin: (theme) => theme.spacing(0, 1, 1, 1),
+          }}
+          variant="outlined"
+          endIcon={<ContentCopyIcon />}
+          onClick={onClickCopy}
+        >
+          COPY
+        </Button>
       </Box>
       <ConfirmDialog
         open={open}

@@ -10,6 +10,7 @@ from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
 from studio.app.common.core.experiment.experiment_writer import ExptDataWriter
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
+from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
     is_workspace_owner,
@@ -105,6 +106,31 @@ async def delete_experiment_list(workspace_id: str, deleteItem: DeleteItem):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="can not delete record.",
+        )
+
+
+@router.post(
+    "/copy/{workspace_id}",
+    response_model=bool,
+    dependencies=[Depends(is_workspace_owner)],
+)
+async def copy_experiment_list(workspace_id: str, copyItem: DeleteItem):
+    logger = AppLogger.get_logger()
+    logger.info(f"workspace_id: {workspace_id}, copyItem: {copyItem}")
+    try:
+        for unique_id in copyItem.uidList:
+            logger.info(f"unique_id: {unique_id}")
+            new_unique_id = WorkflowRunner.create_workflow_unique_id()
+            ExptDataWriter(
+                workspace_id,
+                unique_id,
+            ).copy_data(new_unique_id)
+        return True
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="can not copy record.",
         )
 
 

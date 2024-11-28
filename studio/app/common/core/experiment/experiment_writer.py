@@ -9,6 +9,7 @@ import yaml
 from studio.app.common.core.experiment.experiment import ExptConfig, ExptFunction
 from studio.app.common.core.experiment.experiment_builder import ExptConfigBuilder
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.config_handler import ConfigWriter
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
@@ -122,6 +123,23 @@ class ExptDataWriter:
         )
 
         return result
+
+    def copy_data(self, new_unique_id: str) -> bool:
+        output_filepath = join_filepath(
+            [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
+        )
+        input_filepath = join_filepath(
+            [DIRPATH.INPUT_DIR, self.workspace_id, self.unique_id]
+        )
+        # Create a copy of input_filepath with the new id
+
+        logger = AppLogger.get_logger()
+        logger.info(
+            f"new_workspace_id: {self.workspace_id}, new_unique_id: {self.unique_id}"
+        )
+        logger.info(f"output_filepath: {output_filepath}")
+        logger.info(f"input_filepath: {input_filepath}")
+        logger.info(f"new_unique_id: {new_unique_id}")
 
     def rename(self, new_name: str) -> ExptConfig:
         filepath = join_filepath(
