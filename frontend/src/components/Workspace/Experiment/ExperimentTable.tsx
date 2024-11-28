@@ -258,6 +258,7 @@ const TableImple = memo(function TableImple() {
           variant="outlined"
           endIcon={<ContentCopyIcon />}
           onClick={onClickCopy}
+          disabled={checkedList.length === 0 || isRunning}
         >
           COPY
         </Button>
