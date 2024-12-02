@@ -128,17 +128,17 @@ class ExptDataWriter:
         output_filepath = join_filepath(
             [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
         )
-        input_filepath = join_filepath(
-            [DIRPATH.INPUT_DIR, self.workspace_id, self.unique_id]
+        new_output_filepath = join_filepath(
+            [DIRPATH.OUTPUT_DIR, self.workspace_id, new_unique_id]
         )
-        # Create a copy of input_filepath with the new id
+
+        shutil.copytree(output_filepath, new_output_filepath)
 
         logger = AppLogger.get_logger()
         logger.info(
             f"new_workspace_id: {self.workspace_id}, new_unique_id: {self.unique_id}"
         )
         logger.info(f"output_filepath: {output_filepath}")
-        logger.info(f"input_filepath: {input_filepath}")
         logger.info(f"new_unique_id: {new_unique_id}")
 
     def rename(self, new_name: str) -> ExptConfig:
