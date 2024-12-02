@@ -125,6 +125,7 @@ class ExptDataWriter:
         return result
 
     def copy_data(self, new_unique_id: str) -> bool:
+        logger = AppLogger.get_logger()
         output_filepath = join_filepath(
             [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
         )
@@ -134,12 +135,26 @@ class ExptDataWriter:
 
         shutil.copytree(output_filepath, new_output_filepath)
 
-        logger = AppLogger.get_logger()
-        logger.info(
-            f"new_workspace_id: {self.workspace_id}, new_unique_id: {self.unique_id}"
-        )
+        # Update unique_id in experiment.yml
+        expt_filepath = join_filepath([new_output_filepath, DIRPATH.EXPERIMENT_YML])
+        try:
+            with open(expt_filepath, "r") as f:
+                config = yaml.safe_load(f)
+
+            config["unique_id"] = new_unique_id
+            original_name = config["name"]
+            config["name"] = f"{original_name}_copy"
+
+            with open(expt_filepath, "w") as f:
+                yaml.safe_dump(config, f)
+
+            logger.info("Unique ID updated successfully.")
+        except Exception as e:
+            logger.info(f"Error updating unique_id: {e}")
+
         logger.info(f"output_filepath: {output_filepath}")
         logger.info(f"new_unique_id: {new_unique_id}")
+        logger.info(f"expt_filepath: {expt_filepath}")
 
     def rename(self, new_name: str) -> ExptConfig:
         filepath = join_filepath(
