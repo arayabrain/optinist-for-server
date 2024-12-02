@@ -72,7 +72,6 @@ export async function copyExperimentByListApi(
   workspaceId: number,
   uidList: Array<string>,
 ): Promise<boolean> {
-  console.log("copyExperimentByListApi")
   const response = await axios.post(
     `${BASE_URL}/experiments/copy/${workspaceId}`,
     {

@@ -4,6 +4,7 @@ import {
   getExperiments,
   deleteExperimentByUid,
   deleteExperimentByList,
+  copyExperimentByList,
 } from "store/slice/Experiments/ExperimentsActions"
 import {
   EXPERIMENTS_SLICE_NAME,
@@ -110,6 +111,15 @@ export const experimentsSlice = createSlice({
         return {
           status: "uninitialized",
         }
+      })
+      .addMatcher(isAnyOf(copyExperimentByList.fulfilled), (state) => {
+        state.loading = false
+      })
+      .addMatcher(isAnyOf(copyExperimentByList.pending), (state) => {
+        state.loading = true
+      })
+      .addMatcher(isAnyOf(copyExperimentByList.rejected), (state) => {
+        state.loading = false
       })
   },
 })

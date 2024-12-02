@@ -152,10 +152,6 @@ class ExptDataWriter:
         except Exception as e:
             logger.info(f"Error updating unique_id: {e}")
 
-        logger.info(f"output_filepath: {output_filepath}")
-        logger.info(f"new_unique_id: {new_unique_id}")
-        logger.info(f"expt_filepath: {expt_filepath}")
-
     def rename(self, new_name: str) -> ExptConfig:
         filepath = join_filepath(
             [
