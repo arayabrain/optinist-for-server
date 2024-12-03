@@ -117,6 +117,7 @@ async def delete_experiment_list(workspace_id: str, deleteItem: DeleteItem):
 async def copy_experiment_list(workspace_id: str, copyItem: DeleteItem):
     logger = AppLogger.get_logger()
     logger.info(f"workspace_id: {workspace_id}, copyItem: {copyItem}")
+    created_unique_ids = []  # Keep track of successfully created unique IDs
     try:
         for unique_id in copyItem.uidList:
             logger.info(f"unique_id: {unique_id}")
@@ -125,12 +126,27 @@ async def copy_experiment_list(workspace_id: str, copyItem: DeleteItem):
                 workspace_id,
                 unique_id,
             ).copy_data(new_unique_id)
+            created_unique_ids.append(new_unique_id)  # Record successful copy
         return True
     except Exception as e:
         logger.error(e, exc_info=True)
+        # Clean up partially created data
+        for created_unique_id in created_unique_ids:
+            try:
+                ExptDataWriter(
+                    workspace_id,
+                    created_unique_id,
+                ).delete_data()
+                logger.info(f"Cleaned up data for unique_id: {created_unique_id}")
+            except Exception as cleanup_error:
+                logger.error(cleanup_error, exc_info=True)
+                logger.error(
+                    f"Failed to clean up data for unique_id: {created_unique_id}",
+                    exc_info=True,
+                )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="can not copy record.",
+            detail="Failed to copy record. Partially created files have been removed.",
         )
 
 
