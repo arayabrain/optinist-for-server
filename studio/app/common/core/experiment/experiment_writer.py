@@ -149,8 +149,10 @@ class ExptDataWriter:
                 yaml.safe_dump(config, f)
 
             logger.info("Unique ID updated successfully.")
+            return True
         except Exception as e:
             logger.info(f"Error updating unique_id: {e}")
+            return False
 
     def rename(self, new_name: str) -> ExptConfig:
         filepath = join_filepath(

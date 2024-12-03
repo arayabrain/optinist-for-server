@@ -144,7 +144,8 @@ const TableImple = memo(function TableImple() {
     dispatch(copyExperimentByList(checkedList))
       .unwrap()
       .then(() => {
-        // do nothing.
+        dispatch(getExperiments())
+        enqueueSnackbar("Record Copied", { variant: "success" })
       })
       .catch(() => {
         enqueueSnackbar("Failed to copy", { variant: "error" })
