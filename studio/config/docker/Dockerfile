@@ -56,10 +56,10 @@ RUN conda config --set channel_priority flexible && \
     conda init bash
 
 # conda env create
-COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman_with_expdb.yaml /app/studio/conda_expdb_batch.yaml
 RUN . ~/.bashrc && \
 #    conda create -n expdb_batch -y
-    conda env create -n expdb_batch -f /app/studio/conda_caiman.yaml
+    conda env create -n expdb_batch -f /app/studio/conda_expdb_batch.yaml
 
 # Return to root user
 USER root
