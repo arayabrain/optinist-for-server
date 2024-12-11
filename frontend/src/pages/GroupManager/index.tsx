@@ -315,7 +315,7 @@ const GroupManager = () => {
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: [sort[0], sort[1]] || [],
+      sort: sort.length > 0 ? [sort[0], sort[1]] : [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])

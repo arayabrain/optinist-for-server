@@ -89,9 +89,10 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        {/* <InputNodeComponent
-          fileName={'image'}
-          nodeName={'imageData'}
+        {/*
+        <InputNodeComponent 
+          fileName={"image"}
+          nodeName={"imageData"}
           fileType={FILE_TYPE_SET.IMAGE}
         />
         <InputNodeComponent
@@ -113,7 +114,13 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileName={"behavior"}
           nodeName={"behaviorData"}
           fileType={FILE_TYPE_SET.BEHAVIOR}
-        /> */}
+        />
+        <InputNodeComponent
+          fileName={"matlab"}
+          nodeName={"matlabData"}
+          fileType={FILE_TYPE_SET.MATLAB}
+        />        
+        */}
         <InputNodeComponent
           fileName={"microscope"}
           nodeName={"microscopeData"}
@@ -125,11 +132,6 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileType={FILE_TYPE_SET.EXPDB}
           displayName="preprocessed_data"
         />
-        {/* <InputNodeComponent
-          fileName={"matlab"}
-          nodeName={"matlabData"}
-          fileType={FILE_TYPE_SET.MATLAB}
-        /> */}
       </TreeItem>
       <TreeItem nodeId="Algorithm" label="Algorithm">
         {Object.entries(algoList).map(([name, node], i) => (

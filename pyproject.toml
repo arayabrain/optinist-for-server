@@ -37,7 +37,11 @@ include = [
   "sample_data/input/*",
   "sample_data/output/**/*.yaml",
 ]
-exclude = ["studio/tests/*", "studio/test_data/*", "conda.env.*"]
+exclude = [
+  "studio/tests/*",
+  "studio/test_data/*",
+  "conda.env.*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
@@ -133,7 +137,7 @@ filterwarnings = [
     "ignore:invalid escape sequence :DeprecationWarning",
 ]
 markers = [
-	"lighter_processing",
+    "lighter_processing",
     "heavier_processing",
 ]
 

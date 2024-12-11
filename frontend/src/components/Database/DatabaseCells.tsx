@@ -457,7 +457,10 @@ const DatabaseCells = ({ user }: CellProps) => {
   const dataParams = useMemo(() => {
     return {
       exp_id: Number(id) || undefined,
-      sort: [sort[0]?.replace("published", "publish_status"), sort[1]] || [],
+      sort:
+        sort.length > 0
+          ? [sort[0]?.replace("published", "publish_status"), sort[1]]
+          : [],
       limit: Number(limit) || 50,
       offset: Number(offset) || 0,
     }

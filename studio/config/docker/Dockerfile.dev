@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.18-slim
+FROM --platform=linux/amd64 python:3.8.20-slim
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 # ----------------------------------------
 
 RUN apt-get --allow-releaseinfo-change update && \
-    apt-get install --no-install-recommends -y sudo procps iproute2 iputils-ping less vim
+    apt-get install --no-install-recommends -y sudo procps iproute2 iputils-ping telnet wget curl unzip less vim
 
 # ----------------------------------------
 # add operational user
@@ -21,21 +21,20 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
     cp /root/.bashrc /root/.vimrc /home/optinist/
 
 # ----------------------------------------
-# install packages
+# install conda & packages
 # ----------------------------------------
 
-RUN mkdir -p /opt/miniconda3 && \
-    apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev libopencv-dev wget && \
-    wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh -O /opt/miniconda3/miniconda.sh && \
-    apt-get purge wget -y && apt-get autoremove -y && apt-get clean && \
-    bash /opt/miniconda3/miniconda.sh -b -u -p /opt/miniconda3 && \
-    rm /opt/miniconda3/miniconda.sh && \
-    export PATH="$PATH:/opt/miniconda3/bin" && \
+RUN apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev libopencv-dev && \
+    apt-get autoremove -y && apt-get clean
+RUN mkdir -p /opt/miniforge && \
+    curl -L "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -o /opt/miniforge/Miniforge3.sh && \
+    bash /opt/miniforge/Miniforge3.sh -b -u -p /opt/miniforge && \
+    rm /opt/miniforge/Miniforge3.sh && \
+    export PATH="$PATH:/opt/miniforge/bin" && \
     conda upgrade -y --all && \
-    conda config --set channel_priority strict && \
+    conda config --set channel_priority flexible && \
     conda clean -y --tarballs
-
-ENV PATH $PATH:/opt/miniconda3/bin
+ENV PATH $PATH:/opt/miniforge/bin
 
 # setup cron
 RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone && \
@@ -50,23 +49,24 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" >
 # Note: In this section, a batch-only conda environment is created
 # with the privileges of a working user (optinist).
 
+# Change to application user
 USER optinist
 
 # conda init
-RUN /opt/miniconda3/bin/conda config --set channel_priority strict && \
-    /opt/miniconda3/bin/conda init bash
+RUN conda config --set channel_priority flexible && \
+    conda init bash
 
 # conda env create
-COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman.yaml /app/studio/conda_caiman.yaml
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman_with_expdb.yaml /app/studio/conda_expdb_batch.yaml
 RUN . ~/.bashrc && \
 #    conda create -n expdb_batch -y
-    conda env create -n expdb_batch -f /app/studio/conda_caiman.yaml
+    conda env create -n expdb_batch -f /app/studio/conda_expdb_batch.yaml
 
 # Return to root user
 USER root
 
 # ----------------------------------------
-# setup optinist application environment
+# setup optinist application environment #1
 # ----------------------------------------
 
 # pip install
@@ -79,7 +79,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
 # export requirements.txt from poetry and
 # * Some module versions are adjusted directly for batch environments.
 RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
-    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
+    sed -e '/^h5py/d' -e '/^opencv-python/d' requirements.studio.txt > requirements.batch.txt
 
 RUN pip3 install -r requirements.studio.txt
 
@@ -90,6 +90,7 @@ RUN pip3 install -r requirements.studio.txt
 # Note: In this section, a batch-only conda environment is created
 # with the privileges of a working user (optinist).
 
+# Change to application user
 USER optinist
 
 # pip install to conda environment for batch processing
@@ -101,4 +102,18 @@ RUN . ~/.bashrc && \
 # Return to root user
 USER root
 
-EXPOSE 8000
+# ----------------------------------------
+# setup optinist application environment #2
+# ----------------------------------------
+
+# setup optinist: download caiman model files
+USER optinist
+COPY studio/app/optinist/wrappers/caiman/run_download_model_files.sh ./
+RUN bash run_download_model_files.sh && rm run_download_model_files.sh
+USER root
+
+# copy application sources.
+COPY --chown=optinist frontend/build /app/frontend/build
+COPY --chown=optinist studio /app/studio
+COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
+

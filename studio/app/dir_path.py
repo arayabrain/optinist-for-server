@@ -25,6 +25,8 @@ class DIRPATH:
     STUDIO_DIR = os.path.dirname(os.path.dirname(__file__))
     APP_DIR = os.path.dirname(__file__)
     CONFIG_DIR = f"{STUDIO_DIR}/config"
+    if os.path.isfile(f"{CONFIG_DIR}/.env"):
+        load_dotenv(f"{CONFIG_DIR}/.env")
 
     load_dotenv(f"{CONFIG_DIR}/.env")
     EXPDB_DIR = os.environ.get("EXPDB_DIR")
@@ -60,6 +62,9 @@ class DIRPATH:
         if not IS_TEST
         else f"{CONFIG_DIR}/auth/firebase_config.example.json"
     )
+
+    MICROSCOPE_LIB_DIR = f"{APP_DIR}/optinist/microscopes/libs"
+    MICROSCOPE_LIB_ZIP = f"{APP_DIR}/optinist/microscopes/libs.zip"
 
     MICROSCOPE_LIB_DIR = f"{APP_DIR}/optinist/microscopes/libs"
     MICROSCOPE_LIB_ZIP = f"{APP_DIR}/optinist/microscopes/libs.zip"
