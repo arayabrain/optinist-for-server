@@ -112,8 +112,3 @@ COPY studio/app/optinist/wrappers/caiman/run_download_model_files.sh ./
 RUN bash run_download_model_files.sh && rm run_download_model_files.sh
 USER root
 
-# copy application sources.
-COPY --chown=optinist frontend/build /app/frontend/build
-COPY --chown=optinist studio /app/studio
-COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
-
