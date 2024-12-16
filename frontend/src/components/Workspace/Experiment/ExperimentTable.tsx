@@ -121,6 +121,7 @@ const TableImple = memo(function TableImple() {
   const dispatch = useDispatch<AppDispatch>()
   const [checkedList, setCheckedList] = useState<string[]>([])
   const [open, setOpen] = useState(false)
+  const [openCopy, setOpenCopy] = useState(false)
   const isRunning = useSelector((state: RootState) => {
     const currentUid = selectPipelineLatestUid(state)
     const isPending = selectPipelineIsStartedSuccess(state)
@@ -141,6 +142,10 @@ const TableImple = memo(function TableImple() {
   }
 
   const onClickCopy = () => {
+    setOpenCopy(true)
+  }
+
+  const onClickOkCopy = () => {
     dispatch(copyExperimentByList(checkedList))
       .unwrap()
       .then(() => {
@@ -150,6 +155,8 @@ const TableImple = memo(function TableImple() {
       .catch(() => {
         enqueueSnackbar("Failed to copy", { variant: "error" })
       })
+    setCheckedList([])
+    setOpenCopy(false)
   }
 
   const onCheckBoxClick = (uid: string) => {
@@ -230,6 +237,17 @@ const TableImple = memo(function TableImple() {
         )}
         <Button
           sx={{
+            margin: (theme) => theme.spacing(0, 1, 1, 1),
+          }}
+          variant="outlined"
+          endIcon={<ContentCopyIcon />}
+          onClick={onClickCopy}
+          disabled={checkedList.length === 0 || isRunning}
+        >
+          COPY
+        </Button>
+        <Button
+          sx={{
             margin: (theme) => theme.spacing(0, 1, 1, 0),
           }}
           variant="outlined"
@@ -252,17 +270,6 @@ const TableImple = memo(function TableImple() {
             Delete
           </Button>
         )}
-        <Button
-          sx={{
-            margin: (theme) => theme.spacing(0, 1, 1, 1),
-          }}
-          variant="outlined"
-          endIcon={<ContentCopyIcon />}
-          onClick={onClickCopy}
-          disabled={checkedList.length === 0 || isRunning}
-        >
-          COPY
-        </Button>
       </Box>
       <ConfirmDialog
         open={open}
@@ -280,6 +287,23 @@ const TableImple = memo(function TableImple() {
         }
         iconType="warning"
         confirmLabel="delete"
+      />
+      <ConfirmDialog
+        open={openCopy}
+        setOpen={setOpenCopy}
+        onConfirm={onClickOkCopy}
+        title="Copy records?"
+        content={
+          <>
+            {checkedList.map((uid) => (
+              <Typography key={uid}>
+                ・{experimentList[uid].name} ({uid})
+              </Typography>
+            ))}
+          </>
+        }
+        iconType="warning"
+        confirmLabel="copy"
       />
       <Paper
         elevation={0}

@@ -124,36 +124,6 @@ class ExptDataWriter:
 
         return result
 
-    def copy_data(self, new_unique_id: str) -> bool:
-        logger = AppLogger.get_logger()
-        output_filepath = join_filepath(
-            [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
-        )
-        new_output_filepath = join_filepath(
-            [DIRPATH.OUTPUT_DIR, self.workspace_id, new_unique_id]
-        )
-
-        shutil.copytree(output_filepath, new_output_filepath)
-
-        # Update unique_id in experiment.yml
-        expt_filepath = join_filepath([new_output_filepath, DIRPATH.EXPERIMENT_YML])
-        try:
-            with open(expt_filepath, "r") as f:
-                config = yaml.safe_load(f)
-
-            config["unique_id"] = new_unique_id
-            original_name = config["name"]
-            config["name"] = f"{original_name}_copy"
-
-            with open(expt_filepath, "w") as f:
-                yaml.safe_dump(config, f)
-
-            logger.info("Unique ID updated successfully.")
-            return True
-        except Exception as e:
-            logger.info(f"Error updating unique_id: {e}")
-            return False
-
     def rename(self, new_name: str) -> ExptConfig:
         filepath = join_filepath(
             [
@@ -187,3 +157,59 @@ class ExptDataWriter:
             nwb=config.get("nwb"),
             snakemake=config.get("snakemake"),
         )
+
+    def copy_data(self, new_unique_id: str) -> bool:
+        logger = AppLogger.get_logger()
+
+        try:
+            # Define file paths
+            output_filepath = join_filepath(
+                [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
+            )
+            new_output_filepath = join_filepath(
+                [DIRPATH.OUTPUT_DIR, self.workspace_id, new_unique_id]
+            )
+
+            # Copy directory
+            shutil.copytree(output_filepath, new_output_filepath)
+
+            # Update experiment.yml
+            if not self._update_experiment_config(new_output_filepath, new_unique_id):
+                logger.error("Failed to update experiment.yml after copying.")
+                return False
+
+            logger.info(f"Data successfully copied to {new_output_filepath}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error copying data: {e}")
+            raise Exception("Error copying data")
+
+    def _update_experiment_config(
+        self, new_output_filepath: str, new_unique_id: str
+    ) -> bool:
+        logger = AppLogger.get_logger()
+        expt_filepath = join_filepath([new_output_filepath, DIRPATH.EXPERIMENT_YML])
+
+        try:
+            with open(expt_filepath, "r") as file:
+                config = yaml.safe_load(file)
+
+            if not config:
+                logger.error(f"Empty or invalid YAML in {expt_filepath}.")
+                return False
+
+            # Update config fields
+            config["unique_id"] = new_unique_id
+            config["name"] = f"{config.get('name', 'experiment')}_copy"
+
+            # Write back to the file
+            with open(expt_filepath, "w") as file:
+                yaml.safe_dump(config, file)
+
+            logger.info(f"experiment.yml updated successfully at {expt_filepath}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error updating experiment.yml: {e}")
+            raise Exception("Error updating experiment.yml")

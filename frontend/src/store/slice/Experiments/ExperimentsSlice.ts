@@ -112,14 +112,14 @@ export const experimentsSlice = createSlice({
           status: "uninitialized",
         }
       })
-      .addMatcher(isAnyOf(copyExperimentByList.fulfilled), (state) => {
-        state.loading = false
-      })
+      .addMatcher(
+        isAnyOf(copyExperimentByList.fulfilled, copyExperimentByList.rejected),
+        (state) => {
+          state.loading = false
+        },
+      )
       .addMatcher(isAnyOf(copyExperimentByList.pending), (state) => {
         state.loading = true
-      })
-      .addMatcher(isAnyOf(copyExperimentByList.rejected), (state) => {
-        state.loading = false
       })
   },
 })
