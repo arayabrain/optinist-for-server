@@ -98,7 +98,7 @@ export const getListUser = createAsyncThunk(
 export const getListUserSearch = createAsyncThunk<
   UserDTO[],
   { keyword: string | null }
->(`${USER_SLICE_NAME}/getUserListSearch`, async (params, thunkAPI) => {
+>(`${USER_SLICE_NAME}/getListUserSearch`, async (params, thunkAPI) => {
   try {
     const responseData = await getListUserSearchApi(params)
     return responseData
