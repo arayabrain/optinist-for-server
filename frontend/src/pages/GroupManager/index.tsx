@@ -40,7 +40,7 @@ import { UserDTO } from "api/users/UsersApiDTO"
 import { ConfirmDialog } from "components/common/ConfirmDialog"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
-import PopupSetGroupManager from "components/PopupSetGroupManager"
+import PopupSetGroupManager from "components/GroupManager/PopupSetGroupManager"
 import {
   changeNameGroupManager,
   deleteGroupManager,

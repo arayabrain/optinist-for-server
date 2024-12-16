@@ -45,7 +45,7 @@ import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
 import SelectFilter from "components/common/SelectFilter"
 import SwitchCustom from "components/common/SwitchCustom"
-import PopupShareGroup from "components/PopupShareGroup"
+import PopupShareGroup from "components/Database/PopupShareGroup"
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
