@@ -174,7 +174,9 @@ class ExptDataWriter:
             shutil.copytree(output_filepath, new_output_filepath)
 
             # Update experiment.yml
-            if not self._update_experiment_config(new_output_filepath, new_unique_id):
+            if not self.__update_experiment_config_unique_id(
+                new_output_filepath, new_unique_id
+            ):
                 logger.error("Failed to update experiment.yml after copying.")
                 return False
 
@@ -185,7 +187,7 @@ class ExptDataWriter:
             logger.error(f"Error copying data: {e}")
             raise Exception("Error copying data")
 
-    def _update_experiment_config(
+    def __update_experiment_config_unique_id(
         self, new_output_filepath: str, new_unique_id: str
     ) -> bool:
         logger = AppLogger.get_logger()
