@@ -203,9 +203,7 @@ class ExptDataWriter:
                     file_path = os.path.join(root, file_name)
 
                     # Only process text files
-                    if not file_name.endswith(
-                        (".txt", ".yml", ".yaml", ".json", ".cfg", ".ini")
-                    ):
+                    if not file_name.endswith((".yaml")):
                         continue
 
                     # Replace old unique_id with new_unique_id
