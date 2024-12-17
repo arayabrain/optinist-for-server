@@ -1,4 +1,6 @@
+import glob
 import os
+import re
 import shutil
 from dataclasses import asdict
 from datetime import datetime
@@ -198,25 +200,37 @@ class ExptDataWriter:
         logger = AppLogger.get_logger()
 
         try:
-            for root, _, files in os.walk(directory):
-                for file_name in files:
-                    file_path = os.path.join(root, file_name)
+            # Use glob to recursively search for all .yaml files
+            yaml_files = glob.glob(
+                os.path.join(directory, "**", "*.yaml"), recursive=True
+            )
 
-                    # Only process text files
-                    if not file_name.endswith((".yaml")):
-                        continue
+            # Define a regex pattern to safely match the unique_id in paths or keys
+            unique_id_pattern = rf"(\b{re.escape(old_unique_id)}\b)"
 
-                    # Replace old unique_id with new_unique_id
+            for file_path in yaml_files:
+                try:
+                    # Read the file content
                     with open(
                         file_path, "r", encoding="utf-8", errors="ignore"
                     ) as file:
                         content = file.read()
 
-                    if old_unique_id in content:
-                        content = content.replace(old_unique_id, new_unique_id)
+                    # Replace only exact matches of the unique_id with the new one
+                    updated_content, count = re.subn(
+                        unique_id_pattern, new_unique_id, content
+                    )
+
+                    if count > 0:  # If replacements were made
                         with open(file_path, "w", encoding="utf-8") as file:
-                            file.write(content)
-                        logger.info(f"Updated unique_id in {file_path}")
+                            file.write(updated_content)
+
+                        logger.info(
+                            f"Updated unique_id in {file_path} ({count} replacements)"
+                        )
+
+                except Exception as file_error:
+                    logger.warning(f"Failed to process {file_path}: {file_error}")
 
             logger.info("All relevant files updated successfully.")
             return True
