@@ -180,12 +180,54 @@ class ExptDataWriter:
                 logger.error("Failed to update experiment.yml after copying.")
                 return False
 
+            # Scan and replace old unique_id in all files
+            if not self.__replace_unique_id_in_files(
+                new_output_filepath, self.unique_id, new_unique_id
+            ):
+                logger.error("Failed to update unique_id in files after copying.")
+                return False
+
             logger.info(f"Data successfully copied to {new_output_filepath}")
             return True
 
         except Exception as e:
             logger.error(f"Error copying data: {e}")
             raise Exception("Error copying data")
+
+    def __replace_unique_id_in_files(
+        self, directory: str, old_unique_id: str, new_unique_id: str
+    ) -> bool:
+        logger = AppLogger.get_logger()
+
+        try:
+            for root, _, files in os.walk(directory):
+                for file_name in files:
+                    file_path = os.path.join(root, file_name)
+
+                    # Only process text files
+                    if not file_name.endswith(
+                        (".txt", ".yml", ".yaml", ".json", ".cfg", ".ini")
+                    ):
+                        continue
+
+                    # Replace old unique_id with new_unique_id
+                    with open(
+                        file_path, "r", encoding="utf-8", errors="ignore"
+                    ) as file:
+                        content = file.read()
+
+                    if old_unique_id in content:
+                        content = content.replace(old_unique_id, new_unique_id)
+                        with open(file_path, "w", encoding="utf-8") as file:
+                            file.write(content)
+                        logger.info(f"Updated unique_id in {file_path}")
+
+            logger.info("All relevant files updated successfully.")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error replacing unique_id in files: {e}")
+            return False
 
     def __update_experiment_config_unique_id(
         self, new_output_filepath: str, new_unique_id: str
@@ -214,4 +256,4 @@ class ExptDataWriter:
 
         except Exception as e:
             logger.error(f"Error updating experiment.yml: {e}")
-            raise Exception("Error updating experiment.yml")
+            return False

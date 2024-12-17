@@ -84,7 +84,11 @@ export const experimentsSlice = createSlice({
         }
       })
       .addMatcher(
-        isAnyOf(deleteExperimentByUid.pending, deleteExperimentByList.pending),
+        isAnyOf(
+          deleteExperimentByUid.pending,
+          deleteExperimentByList.pending,
+          copyExperimentByList.pending,
+        ),
         (state) => {
           state.loading = true
         },
@@ -93,6 +97,8 @@ export const experimentsSlice = createSlice({
         isAnyOf(
           deleteExperimentByUid.rejected,
           deleteExperimentByList.rejected,
+          copyExperimentByList.fulfilled,
+          copyExperimentByList.rejected,
         ),
         (state) => {
           state.loading = false
@@ -111,15 +117,6 @@ export const experimentsSlice = createSlice({
         return {
           status: "uninitialized",
         }
-      })
-      .addMatcher(
-        isAnyOf(copyExperimentByList.fulfilled, copyExperimentByList.rejected),
-        (state) => {
-          state.loading = false
-        },
-      )
-      .addMatcher(isAnyOf(copyExperimentByList.pending), (state) => {
-        state.loading = true
       })
   },
 })
