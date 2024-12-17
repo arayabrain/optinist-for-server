@@ -173,10 +173,8 @@ class ExptDataWriter:
             # Copy directory
             shutil.copytree(output_filepath, new_output_filepath)
 
-            # Update experiment.yml
-            if not self.__update_experiment_config_unique_id(
-                new_output_filepath, new_unique_id
-            ):
+            # Update experiment.yml experiment name
+            if not self.__update_experiment_config_name(new_output_filepath):
                 logger.error("Failed to update experiment.yml after copying.")
                 return False
 
@@ -229,9 +227,7 @@ class ExptDataWriter:
             logger.error(f"Error replacing unique_id in files: {e}")
             return False
 
-    def __update_experiment_config_unique_id(
-        self, new_output_filepath: str, new_unique_id: str
-    ) -> bool:
+    def __update_experiment_config_name(self, new_output_filepath: str) -> bool:
         logger = AppLogger.get_logger()
         expt_filepath = join_filepath([new_output_filepath, DIRPATH.EXPERIMENT_YML])
 
@@ -243,8 +239,6 @@ class ExptDataWriter:
                 logger.error(f"Empty or invalid YAML in {expt_filepath}.")
                 return False
 
-            # Update config fields
-            config["unique_id"] = new_unique_id
             config["name"] = f"{config.get('name', 'experiment')}_copy"
 
             # Write back to the file
