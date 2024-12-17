@@ -27,6 +27,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
+      - ../optinist-docker-volumes/.conda/pkgs:/app/.conda/pkgs
 
       # optinist data outputs directories
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake

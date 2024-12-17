@@ -1,8 +1,8 @@
 from typing import Optional
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.io as pio
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.json_writer import JsonWriter
@@ -33,14 +33,20 @@ class PolarData(BaseData):
 
     def save_plot(self, output_dir):
         for i in range(len(self.data)):
-            fig = px.line_polar(
-                r=self.data[i],
-                theta=self.columns,
-                direction="counterclockwise",
-                start_angle=0,
-                line_close=True,
+            # Convert theta to radians
+            theta = np.linspace(0, 2 * np.pi, len(self.columns))
+            plt.figure()
+            ax = plt.subplot(111, polar=True)
+            ax.plot(theta, self.data[i])
+            ax.set_theta_direction(-1)  # Counterclockwise
+            ax.set_theta_offset(np.pi / 2.0)  # Start angle at 0
+            ax.plot(
+                [theta[-1], theta[0]],
+                [self.data[i][-1], self.data[i][0]],
+                linestyle="-",
+                linewidth=2,
             )
             plot_file = join_filepath([output_dir, f"{self.file_name}_{i}.png"])
-            pio.write_image(fig, plot_file)
-
+            plt.savefig(plot_file)
+            plt.close()
             save_thumbnail(plot_file)
