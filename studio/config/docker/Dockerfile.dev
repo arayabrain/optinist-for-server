@@ -37,6 +37,23 @@ RUN mkdir -p /opt/miniconda3 && \
 
 ENV PATH $PATH:/opt/miniconda3/bin
 
+ENV CONDA_ALWAYS_COPY=1
+
+# Setup conda dir
+RUN mkdir -p /app/.conda/pkgs \
+    && mkdir -p /app/.conda/envs \
+    && chown -R optinist:www-data /app/.conda \
+    && su optinist -c 'cat > /home/optinist/.condarc << EOF
+pkgs_dirs:
+  - /app/.conda/pkgs
+envs_dirs:
+  - /app/.conda/envs
+channels:
+  - conda-forge
+  - defaults
+channel_priority: flexible
+EOF'
+
 # setup cron
 RUN ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && echo "Asia/Tokyo" > /etc/timezone && \
     apt-get install --no-install-recommends -y cron rsyslog && \
