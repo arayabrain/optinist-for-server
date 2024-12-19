@@ -26,7 +26,7 @@ import Workspaces from "pages/Workspace"
 import Workspace from "pages/Workspace/Workspace"
 import { getModeStandalone } from "store/slice/Standalone/StandaloneActions"
 import {
-  selectLoadingMode,
+  selectLoading,
   selectModeStandalone,
 } from "store/slice/Standalone/StandaloneSeclector"
 import { AppDispatch } from "store/store"
@@ -34,7 +34,7 @@ import { AppDispatch } from "store/store"
 const App: FC = () => {
   const dispatch = useDispatch<AppDispatch>()
   const isStandalone = useSelector(selectModeStandalone)
-  const loading = useSelector(selectLoadingMode)
+  const loading = useSelector(selectLoading)
   const getMode = () => {
     dispatch(getModeStandalone())
       .unwrap()
@@ -51,7 +51,7 @@ const App: FC = () => {
   }, [])
 
   return loading ? (
-    <Loading />
+    <Loading loading={true} />
   ) : (
     <SnackbarProvider
       maxSnack={5}

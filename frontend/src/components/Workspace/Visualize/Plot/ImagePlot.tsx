@@ -455,7 +455,6 @@ const ImagePlotChart = memo(function ImagePlotChart({
   }
 
   const onChartClick = (event: PlotMouseEvent) => {
-    if (![MERGE_ROI, DELETE_ROI].includes(action)) return
     // use as unknown because original PlotDatum does not have z property
     const point: PlotDatum = event.points[0] as unknown as PlotDatum
     if (point.curveNumber >= 1 && outputKey === "cell_roi") {
@@ -476,6 +475,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
   }
 
   const setSelectRoi = (point: PointClick) => {
+    if (![MERGE_ROI, DELETE_ROI].includes(action)) return
     if (isNaN(Number(point.z))) return
 
     let newPoints
@@ -659,11 +659,18 @@ const ImagePlotChart = memo(function ImagePlotChart({
   const onCommitRoi = async () => {
     if (!roiFilePath || workspaceId === undefined) return
     try {
-      await dispatch(commitRoi({ path: roiFilePath, workspaceId }))
+      await dispatch(commitRoi({ path: roiFilePath, workspaceId })).unwrap()
       workspaceId &&
-        (await dispatch(getRoiData({ path: roiFilePath, workspaceId })))
-      enqueueSnackbar("Finished", { variant: "success" })
+        (await dispatch(
+          getRoiData({ path: roiFilePath, workspaceId }),
+        ).unwrap())
+
+      enqueueSnackbar("Successfully committed to Edit ROI.", {
+        variant: "success",
+      })
       resetTimeSeries()
+    } catch (error) {
+      enqueueSnackbar("Failed to commit Edit ROI.", { variant: "error" })
     } finally {
       setEdit(false)
       setAction("")

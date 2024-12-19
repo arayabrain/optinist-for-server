@@ -45,7 +45,7 @@ import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
 import SelectFilter from "components/common/SelectFilter"
 import SwitchCustom from "components/common/SwitchCustom"
-import PopupShareGroup from "components/PopupShareGroup"
+import PopupShareGroup from "components/Database/PopupShareGroup"
 import {
   getExperimentsDatabase,
   getExperimentsPublicDatabase,
@@ -560,7 +560,10 @@ const DatabaseExperiments = ({
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: [sort[0]?.replace("published", "publish_status"), sort[1]] || [],
+      sort:
+        sort.length > 0
+          ? [sort[0]?.replace("published", "publish_status"), sort[1]]
+          : [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
@@ -1191,7 +1194,7 @@ const DatabaseExperiments = ({
         role={!!adminOrManager && !!user}
         readonly={!metadataEditable}
       />
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
       {openShare.open && openShare.id ? (
         <PopupShareGroup
           type={"share"}

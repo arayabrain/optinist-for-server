@@ -1,17 +1,16 @@
 import gc
-import os
-import shutil
 
 import imageio
 import numpy as np
 
+from studio.app.common.core.experiment.experiment import ExptOutputPathIds
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.dataclass import ImageData
-from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.wrappers.caiman.cnmf import (
     get_roi,
+    util_download_model_files,
     util_get_memmap,
     util_recursive_flatten_params,
 )
@@ -28,15 +27,11 @@ def caiman_cnmf_multisession(
     from caiman.source_extraction.cnmf import cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
 
-    function_id = output_dir.split("/")[-1]
+    function_id = ExptOutputPathIds(output_dir).function_id
     logger.info(f"start caiman_cnmf_multisession: {function_id}")
 
     # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
-    caiman_data_dir = os.path.join(os.path.expanduser("~"), "caiman_data")
-    if not os.path.exists(caiman_data_dir):
-        shutil.copytree(
-            f"{DIRPATH.APP_DIR}/optinist/wrappers/caiman/caiman_data", caiman_data_dir
-        )
+    util_download_model_files()
 
     # flatten cmnf params segments.
     reshaped_params = {}
@@ -44,6 +39,11 @@ def caiman_cnmf_multisession(
 
     Ain = reshaped_params.pop("Ain", None)
     roi_thr = reshaped_params.pop("roi_thr", None)
+
+    # mulisiession params
+    n_reg_files = reshaped_params.pop("n_reg_files", 2)
+    if n_reg_files < 2:
+        raise Exception(f"Set n_reg_files to a integer value gte 2. Now {n_reg_files}.")
     reg_file_rate = reshaped_params.pop("reg_file_rate", 1.0)
     if reg_file_rate > 1.0:
         logger.warn(
@@ -51,7 +51,14 @@ def caiman_cnmf_multisession(
         )
         reg_file_rate = 1.0
 
-    split_image_paths = images.split_image(output_dir)
+    align_flag = reshaped_params.pop("align_flag", True)
+    max_thr = reshaped_params.pop("max_thr", 0)
+    use_opt_flow = reshaped_params.pop("use_opt_flow", True)
+    thresh_cost = reshaped_params.pop("thresh_cost", 0.7)
+    max_dist = reshaped_params.pop("max_dist", 10)
+    enclosed_thr = reshaped_params.pop("enclosed_thr", None)
+
+    split_image_paths = images.split_image(output_dir, n_files=n_reg_files)
     n_split_images = len(split_image_paths)
 
     logger.info(f"image was split into {n_split_images} parts.")
@@ -94,7 +101,15 @@ def caiman_cnmf_multisession(
     dims = templates[0].shape
 
     spatial_union, assignments, matchings = register_multisession(
-        A=spatial, dims=dims, templates=templates
+        A=spatial,
+        dims=dims,
+        templates=templates,
+        align_flag=align_flag,
+        max_thr=max_thr,
+        use_opt_flow=use_opt_flow,
+        thresh_cost=thresh_cost,
+        max_dist=max_dist,
+        enclosed_thr=enclosed_thr,
     )
 
     reg_files = int(len(split_image_paths) * reg_file_rate)

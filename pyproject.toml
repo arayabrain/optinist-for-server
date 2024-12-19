@@ -37,7 +37,11 @@ include = [
   "sample_data/input/*",
   "sample_data/output/**/*.yaml",
 ]
-exclude = ["studio/tests/*", "studio/test_data/*", "conda.env.*"]
+exclude = [
+  "studio/tests/*",
+  "studio/test_data/*",
+  "conda.env.*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
@@ -126,6 +130,15 @@ env = [
   "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
   "GRAPH_HOST=http://localhost:8000/datasets",
   "IS_TEST=True",
+]
+filterwarnings = [
+    "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
+    "ignore:Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning",
+    "ignore:invalid escape sequence :DeprecationWarning",
+]
+markers = [
+    "lighter_processing",
+    "heavier_processing",
 ]
 
 [tool.codespell]

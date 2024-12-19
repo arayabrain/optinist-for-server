@@ -21,7 +21,7 @@ from studio.app.common.core.utils.filepath_creater import (
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
-    ACCEPT_MICROSCOPE_EXT,
+    ACCEPT_FILE_EXT,
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
     EXP_METADATA_SUFFIX,
@@ -76,7 +76,7 @@ class ExpDbPath:
 
             # input_files
             microscope_files = []
-            for ext in ACCEPT_MICROSCOPE_EXT:
+            for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT.value:
                 microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
             self.microscope_file = (
                 microscope_files[0] if len(microscope_files) > 0 else None
