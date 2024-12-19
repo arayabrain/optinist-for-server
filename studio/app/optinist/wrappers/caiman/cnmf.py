@@ -154,6 +154,7 @@ def util_download_model_files():
                 with open(file_path, "wb") as f:
                     f.write(response.content)
 
+
 def mm_fun(A: np.ndarray, Y: np.ndarray) -> np.ndarray:
     """
     This code is a port of the CaImAn-MATLAB function (mm_fun.m).
