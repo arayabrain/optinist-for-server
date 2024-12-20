@@ -33,7 +33,7 @@ RUN mkdir -p /opt/miniforge && \
     export PATH="$PATH:/opt/miniforge/bin" && \
     conda upgrade -y --all && \
     conda config --set channel_priority flexible && \
-    conda clean -y --tarballs
+    conda clean -y --all
 ENV PATH $PATH:/opt/miniforge/bin
 
 # setup cron
@@ -59,8 +59,8 @@ RUN conda config --set channel_priority flexible && \
 # conda env create
 COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman_with_expdb.yaml /app/studio/conda_expdb_batch.yaml
 RUN . ~/.bashrc && \
-#    conda create -n expdb_batch -y
-    conda env create -n expdb_batch -f /app/studio/conda_expdb_batch.yaml
+    conda env create -n expdb_batch -f /app/studio/conda_expdb_batch.yaml && \
+    conda clean -y --all --force-pkgs-dirs
 
 # Return to root user
 USER root
