@@ -24,6 +24,12 @@ services:
     build:
       context: .
       dockerfile: studio/config/docker/Dockerfile.dev
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 8G
     working_dir: /app
     volumes:
       - .:/app
