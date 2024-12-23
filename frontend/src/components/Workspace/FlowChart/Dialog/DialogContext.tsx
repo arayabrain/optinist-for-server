@@ -35,10 +35,12 @@ export const DialogContext = createContext<{
   onOpenInputUrlDialog: (value: FileInputUrl) => void
   onOpenClearWorkflowIdDialog: (value: ClearWorkflowIdDialogValue) => void
   onMessageError: (value: ErrorDialogValue) => void
+  onOpenFilterDialog: (nodeId: string) => void
 }>({
   onOpenOutputDialog: () => null,
   onOpenFileSelectDialog: () => null,
   onOpenClearWorkflowIdDialog: () => null,
   onOpenInputUrlDialog: () => null,
   onMessageError: () => null,
+  onOpenFilterDialog: () => null,
 })

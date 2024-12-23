@@ -5,6 +5,7 @@ import { getAlgoParams } from "store/slice/AlgorithmNode/AlgorithmNodeActions"
 import {
   ALGORITHM_NODE_SLICE_NAME,
   AlgorithmNode,
+  TDataFilterParam,
 } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { addAlgorithmNode } from "store/slice/FlowElement/FlowElementActions"
 import {
@@ -48,6 +49,18 @@ export const algorithmNodeSlice = createSlice({
         }
       }
     },
+    updateFilterParams: (
+      state,
+      action: PayloadAction<{
+        nodeId: string
+        dataFilter: TDataFilterParam
+        isUpdateFilter: boolean
+      }>,
+    ) => {
+      const { nodeId, dataFilter, isUpdateFilter } = action.payload
+      state[nodeId].dataFilterParam = dataFilter
+      state[nodeId].isUpdateFilter = isUpdateFilter
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -65,6 +78,7 @@ export const algorithmNodeSlice = createSlice({
             params: convertToParamMap(params),
             originalValue: state[node.id]?.originalValue,
             isUpdate: runAlready ?? false,
+            isUpdateFilter: runAlready ?? false,
           }
         }
       })
@@ -99,6 +113,7 @@ export const algorithmNodeSlice = createSlice({
                   params: node.data.param,
                   originalValue: node.data.param,
                   isUpdate: false,
+                  isUpdateFilter: false,
                 }
               }
             })
@@ -113,11 +128,12 @@ export const algorithmNodeSlice = createSlice({
             .filter(isAlgorithmNodePostData)
             .forEach((node) => {
               state[node.id].isUpdate = false
+              state[node.id].isUpdateFilter = false
             })
         },
       )
   },
 })
 
-export const { updateParam } = algorithmNodeSlice.actions
+export const { updateParam, updateFilterParams } = algorithmNodeSlice.actions
 export default algorithmNodeSlice.reducer

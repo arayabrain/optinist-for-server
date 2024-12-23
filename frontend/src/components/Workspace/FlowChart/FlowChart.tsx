@@ -75,6 +75,7 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
   })
   const [fileViaUrl, setFileViaUrl] = useState("")
   const [errorUrl, setErrorUrl] = useState("")
+  const [dialogFilterNodeId, setFilterDialogNodeId] = useState("")
 
   const { enqueueSnackbar } = useSnackbar()
 
@@ -141,6 +142,7 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
           onOpenClearWorkflowIdDialog: setDialogClearWorkflowId,
           onOpenInputUrlDialog: setDialogViaUrl,
           onMessageError: setMessageError,
+          onOpenFilterDialog: setFilterDialogNodeId,
         }}
       >
         <DndProvider backend={HTML5Backend}>
@@ -165,6 +167,14 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
                 nodeId={dialogNodeId}
                 open
                 onClose={() => setDialogNodeId("")}
+              />
+            )}
+            {dialogFilterNodeId && (
+              <AlgorithmOutputDialog
+                nodeId={dialogFilterNodeId}
+                open
+                onClose={() => setFilterDialogNodeId("")}
+                allowFilter
               />
             )}
             {dialogFile.open && (
