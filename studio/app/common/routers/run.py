@@ -2,7 +2,9 @@ from typing import Dict
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
+from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
 from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.workflow.workflow import Message, NodeItem, RunItem
 from studio.app.common.core.workflow.workflow_result import WorkflowResult
 from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
@@ -10,6 +12,7 @@ from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
     is_workspace_owner,
 )
+from studio.app.dir_path import DIRPATH
 
 router = APIRouter(prefix="/run", tags=["run"])
 
@@ -46,6 +49,17 @@ async def run(workspace_id: str, runItem: RunItem, background_tasks: BackgroundT
 async def run_id(
     workspace_id: str, uid: str, runItem: RunItem, background_tasks: BackgroundTasks
 ):
+    path = join_filepath(
+        [DIRPATH.OUTPUT_DIR, workspace_id, uid, DIRPATH.EXPERIMENT_YML]
+    )
+    config = ExptConfigReader.read(path)
+
+    # validate data filter param
+    if config.success != "success":
+        for node in runItem.nodeDict.values():
+            if node.data.dataFilterParam:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
     try:
         WorkflowRunner(workspace_id, uid, runItem).run_workflow(background_tasks)
 

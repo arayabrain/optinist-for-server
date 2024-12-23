@@ -50,6 +50,7 @@ class Runner:
                 __rule.params,
                 nwbfile.get("input"),
                 os.path.dirname(__rule.output),
+                __rule.dataFilterParam,
                 input_info,
             )
 
@@ -128,11 +129,17 @@ class Runner:
                 save_nwb(save_path, input_nwbfile, nwbconfig)
 
     @classmethod
-    def execute_function(cls, path, params, nwb_params, output_dir, input_info):
+    def execute_function(
+        cls, path, params, nwb_params, output_dir, data_filter_param, input_info
+    ):
         wrapper = cls.dict2leaf(wrapper_dict, path.split("/"))
         func = copy.deepcopy(wrapper["function"])
         output_info = func(
-            params=params, nwbfile=nwb_params, output_dir=output_dir, **input_info
+            params=params,
+            nwbfile=nwb_params,
+            output_dir=output_dir,
+            data_filter_param=data_filter_param,
+            **input_info,
         )
         del func
         gc.collect()

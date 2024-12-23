@@ -73,6 +73,11 @@ def suite2p_roi(
         ).T
         roi_list.append(kargs)
 
+    data_filter_param = kwargs.get("data_filter_param")
+    if data_filter_param:
+        # TODO
+        ...
+
     # NWBを追加
     nwbfile = {}
 

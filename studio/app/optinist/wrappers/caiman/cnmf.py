@@ -270,6 +270,11 @@ def caiman_cnmf(
 
     im = np.vstack([cell_ims, non_cell_ims])
 
+    data_filter_param = kwargs.get("data_filter_param")
+    if data_filter_param:
+        # TODO
+        ...
+
     # NWBの追加
     nwbfile = {}
     # NWBにROIを追加

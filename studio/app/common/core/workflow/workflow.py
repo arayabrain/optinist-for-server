@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Union
 
 from pydantic import BaseModel
@@ -98,6 +98,20 @@ class Message:
 
 
 @dataclass
+class DataFilterRangeParam:
+    start: int
+    end: int
+
+
+@dataclass
+class DataFilterParam:
+    dim1: List[DataFilterRangeParam] = field(default_factory=list)
+    dim2: List[DataFilterRangeParam] = field(default_factory=list)
+    dim3: List[DataFilterRangeParam] = field(default_factory=list)
+    roi: List[DataFilterRangeParam] = field(default_factory=list)
+
+
+@dataclass
 class NodeData:
     label: str
     param: dict
@@ -106,6 +120,9 @@ class NodeData:
     fileType: str = None
     hdf5Path: str = None
     matPath: str = None
+    dataFilterParam: Union[DataFilterParam, None] = field(
+        default_factory=lambda: DataFilterParam(dim1=[], dim2=[], dim3=[], roi=[])
+    )
 
 
 @dataclass
@@ -146,8 +163,8 @@ class Edge:
 
 class RunItem(BaseModel):
     name: str = None
-    nodeDict: dict = {}
-    edgeDict: dict = {}
+    nodeDict: Dict[str, Node] = {}
+    edgeDict: Dict[str, Edge] = {}
     snakemakeParam: dict = {}
     nwbParam: dict = {}
     forceRunList: List[ForceRun]

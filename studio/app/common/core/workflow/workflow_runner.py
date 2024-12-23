@@ -13,7 +13,6 @@ from studio.app.common.core.snakemake.snakemake_rule import SmkRule
 from studio.app.common.core.snakemake.snakemake_writer import SmkConfigWriter
 from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil, RunItem
 from studio.app.common.core.workflow.workflow_params import get_typecheck_params
-from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.core.workflow.workflow_writer import WorkflowConfigWriter
 
 
@@ -22,8 +21,8 @@ class WorkflowRunner:
         self.workspace_id = workspace_id
         self.unique_id = unique_id
         self.runItem = runItem
-        self.nodeDict = WorkflowConfigReader.read_nodeDict(self.runItem.nodeDict)
-        self.edgeDict = WorkflowConfigReader.read_edgeDict(self.runItem.edgeDict)
+        self.nodeDict = self.runItem.nodeDict
+        self.edgeDict = self.runItem.edgeDict
 
         WorkflowConfigWriter(
             self.workspace_id,
