@@ -41,6 +41,19 @@ const RightDrawer: FC = () => {
         return "none"
     }
   })
+  const titleLink = useSelector((state: RootState) => {
+    const mode = selectRightDrawerMode(state)
+    switch (mode) {
+      case RIGHT_DRAWER_MODE.NWB:
+        return "https://optinist.readthedocs.io/en/latest/gui/workflow.html#nwb-setting"
+      case RIGHT_DRAWER_MODE.PARAM_FORM:
+        return "https://github.com/arayabrain/barebone-studio/blob/develop-main/docs/specifications/algorithm_nodes.md#algorithm_nodesalgorithm-nodes"
+      case RIGHT_DRAWER_MODE.SNAKEMAKE:
+        return "https://optinist.readthedocs.io/en/latest/gui/workflow.html#snakemane-settings"
+      default:
+        return ""
+    }
+  })
   return (
     <StyledDrawer open={open} anchor="right" variant="persistent">
       <Toolbar />
@@ -48,7 +61,14 @@ const RightDrawer: FC = () => {
         <IconButton color="inherit" onClick={onClick} size="large">
           <ChevronRightIcon />
         </IconButton>
-        <Typography variant="h6">{title}</Typography>
+        <a
+          href={titleLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          <Typography variant="h6">{title}</Typography>
+        </a>
       </Box>
       <Divider />
       <MainContents>

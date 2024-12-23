@@ -26,6 +26,7 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
     selectAlgorithmParamsKeyList(nodeId),
     arrayEqualityFn,
   )
+  const parameterUrl = `https://github.com/arayabrain/barebone-studio/blob/develop-main/docs/specifications/algorithm_nodes.md#${algoName.toLowerCase()}`
   useEffect(() => {
     if (!algoParamIsLoaded) {
       dispatch(getAlgoParams({ nodeId, algoName }))
@@ -33,7 +34,14 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
   }, [dispatch, nodeId, algoName, algoParamIsLoaded])
   return (
     <div style={{ padding: 24 }}>
-      <SectionTitle>{algoName}</SectionTitle>
+      <a
+        href={parameterUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+      >
+        <SectionTitle>{algoName}</SectionTitle>
+      </a>
       {paramKeyList.map((paramKey) => (
         <ParamItem key={paramKey} paramKey={paramKey} />
       ))}
