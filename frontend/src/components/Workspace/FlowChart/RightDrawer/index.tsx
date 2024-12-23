@@ -65,7 +65,7 @@ const RightDrawer: FC = () => {
           href={titleLink}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "none", color: "inherit" }}
+          style={{ textDecoration: "underline", color: "inherit" }}
         >
           <Typography variant="h6">{title}</Typography>
         </a>

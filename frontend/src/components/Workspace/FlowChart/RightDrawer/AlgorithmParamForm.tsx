@@ -38,7 +38,11 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
         href={parameterUrl}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+        style={{
+          textDecoration: "underline",
+          color: "inherit",
+          cursor: "pointer",
+        }}
       >
         <SectionTitle>{algoName}</SectionTitle>
       </a>
