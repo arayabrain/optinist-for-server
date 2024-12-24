@@ -2,6 +2,7 @@ import { memo, useContext, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 
 import { Launch } from "@mui/icons-material"
+import { Tooltip } from "@mui/material"
 
 import { createParamFormItemComponent } from "components/common/ParamFormItemCreator"
 import { SectionTitle } from "components/common/ParamSection"
@@ -36,20 +37,23 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
   }, [dispatch, nodeId, algoName, algoParamIsLoaded])
   return (
     <div style={{ padding: 24 }}>
-      <a
-        href={parameterUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          textDecoration: "underline",
-          color: "inherit",
-          cursor: "pointer",
-          display: "flex",
-        }}
-      >
+      <div style={{ display: "flex" }}>
         <SectionTitle>{algoName}</SectionTitle>
-        <Launch style={{ fontSize: "12px" }} />
-      </a>
+        <a
+          href={parameterUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            textDecoration: "underline",
+            color: "inherit",
+            cursor: "pointer",
+          }}
+        >
+          <Tooltip title="Check Documentation">
+            <Launch style={{ fontSize: "16px" }} />
+          </Tooltip>
+        </a>
+      </div>
       {paramKeyList.map((paramKey) => (
         <ParamItem key={paramKey} paramKey={paramKey} />
       ))}

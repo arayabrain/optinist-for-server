@@ -1,8 +1,9 @@
-import { FC, useState } from "react"
+import { FC } from "react"
 import { useSelector, useDispatch } from "react-redux"
 
 import { Launch } from "@mui/icons-material"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { Tooltip } from "@mui/material"
 import Box from "@mui/material/Box"
 import Divider from "@mui/material/Divider"
 import Drawer, { drawerClasses } from "@mui/material/Drawer"
@@ -49,9 +50,9 @@ const RightDrawer: FC = () => {
 
     const titleLink =
       mode === RIGHT_DRAWER_MODE.NWB
-        ? `${readTheDocsUrl}#nwb-settings`
+        ? `${readTheDocsUrl}#nwb-setting`
         : mode === RIGHT_DRAWER_MODE.SNAKEMAKE
-          ? `${readTheDocsUrl}#snakemake-settings`
+          ? `${readTheDocsUrl}#snakemane-settings`
           : ""
 
     const showLaunch =
@@ -74,14 +75,13 @@ const RightDrawer: FC = () => {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              marginLeft: "auto",
+              marginLeft: "5px",
               marginRight: "10px",
-              display: "flex",
-              alignItems: "center",
             }}
           >
-            <Typography style={{ fontSize: "12px" }}>Documentation</Typography>
-            <Launch style={{ fontSize: "12px" }} />
+            <Tooltip title="Check Documentation">
+              <Launch style={{ fontSize: "16px" }} />
+            </Tooltip>
           </a>
         )}
       </Box>
