@@ -1,6 +1,8 @@
 import { memo, useContext, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 
+import { Launch } from "@mui/icons-material"
+
 import { createParamFormItemComponent } from "components/common/ParamFormItemCreator"
 import { SectionTitle } from "components/common/ParamSection"
 import { ParamFormContext } from "components/Workspace/FlowChart/RightDrawer/ParamFormContents"
@@ -42,9 +44,11 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
           textDecoration: "underline",
           color: "inherit",
           cursor: "pointer",
+          display: "flex",
         }}
       >
         <SectionTitle>{algoName}</SectionTitle>
+        <Launch style={{ fontSize: "12px" }} />
       </a>
       {paramKeyList.map((paramKey) => (
         <ParamItem key={paramKey} paramKey={paramKey} />

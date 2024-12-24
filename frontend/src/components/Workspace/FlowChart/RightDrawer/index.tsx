@@ -1,6 +1,7 @@
-import { FC } from "react"
+import { FC, useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 
+import { Launch } from "@mui/icons-material"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import Box from "@mui/material/Box"
 import Divider from "@mui/material/Divider"
@@ -41,19 +42,24 @@ const RightDrawer: FC = () => {
         return "none"
     }
   })
-  const titleLink = useSelector((state: RootState) => {
-    const mode = selectRightDrawerMode(state)
-    switch (mode) {
-      case RIGHT_DRAWER_MODE.NWB:
-        return "https://optinist.readthedocs.io/en/latest/gui/workflow.html#nwb-setting"
-      case RIGHT_DRAWER_MODE.PARAM_FORM:
-        return "https://github.com/arayabrain/barebone-studio/blob/develop-main/docs/specifications/algorithm_nodes.md#algorithm_nodesalgorithm-nodes"
-      case RIGHT_DRAWER_MODE.SNAKEMAKE:
-        return "https://optinist.readthedocs.io/en/latest/gui/workflow.html#snakemane-settings"
-      default:
-        return ""
-    }
-  })
+  const readTheDocsUrl =
+    "https://optinist.readthedocs.io/en/latest/gui/workflow.html"
+  const useRightDrawerSettings = () => {
+    const mode = useSelector((state: RootState) => selectRightDrawerMode(state))
+
+    const titleLink =
+      mode === RIGHT_DRAWER_MODE.NWB
+        ? `${readTheDocsUrl}#nwb-settings`
+        : mode === RIGHT_DRAWER_MODE.SNAKEMAKE
+          ? `${readTheDocsUrl}#snakemake-settings`
+          : ""
+
+    const showLaunch =
+      mode === RIGHT_DRAWER_MODE.NWB || mode === RIGHT_DRAWER_MODE.SNAKEMAKE
+
+    return { titleLink, showLaunch }
+  }
+  const { titleLink, showLaunch } = useRightDrawerSettings()
   return (
     <StyledDrawer open={open} anchor="right" variant="persistent">
       <Toolbar />
@@ -61,14 +67,23 @@ const RightDrawer: FC = () => {
         <IconButton color="inherit" onClick={onClick} size="large">
           <ChevronRightIcon />
         </IconButton>
-        <a
-          href={titleLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textDecoration: "underline", color: "inherit" }}
-        >
-          <Typography variant="h6">{title}</Typography>
-        </a>
+        <Typography variant="h6">{title}</Typography>
+        {showLaunch && (
+          <a
+            href={titleLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              marginLeft: "auto",
+              marginRight: "10px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Typography style={{ fontSize: "12px" }}>Documentation</Typography>
+            <Launch style={{ fontSize: "12px" }} />
+          </a>
+        )}
       </Box>
       <Divider />
       <MainContents>
