@@ -9,7 +9,6 @@ from typing import Dict
 
 import numpy as np
 import yaml
-from fastapi import Path
 
 from studio.app.common.core.experiment.experiment import ExptConfig, ExptFunction
 from studio.app.common.core.experiment.experiment_builder import ExptConfigBuilder
