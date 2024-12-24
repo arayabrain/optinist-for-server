@@ -1,12 +1,15 @@
 import glob
 import os
+import pickle
 import re
 import shutil
 from dataclasses import asdict
 from datetime import datetime
 from typing import Dict
 
+import numpy as np
 import yaml
+from fastapi import Path
 
 from studio.app.common.core.experiment.experiment import ExptConfig, ExptFunction
 from studio.app.common.core.experiment.experiment_builder import ExptConfigBuilder
@@ -200,41 +203,108 @@ class ExptDataWriter:
         logger = AppLogger.get_logger()
 
         try:
-            # Use glob to recursively search for all .yaml files
-            yaml_files = glob.glob(
+            # Collect targeted files
+            targeted_files_yaml = glob.glob(
                 os.path.join(directory, "**", "*.yaml"), recursive=True
+            )
+            targeted_files_npy = glob.glob(
+                os.path.join(directory, "**", "*.npy"), recursive=True
+            )
+            targeted_files_pkl = glob.glob(
+                os.path.join(directory, "**", "*.pkl"), recursive=True
             )
 
             # Define a regex pattern to safely match the unique_id in paths or keys
             unique_id_pattern = rf"(\b{re.escape(old_unique_id)}\b)"
 
-            for file_path in yaml_files:
+            # Process .yaml files (unchanged)
+            for file_path in targeted_files_yaml:
                 try:
-                    # Read the file content
                     with open(
                         file_path, "r", encoding="utf-8", errors="ignore"
                     ) as file:
                         content = file.read()
-
-                    # Replace only exact matches of the unique_id with the new one
                     updated_content, count = re.subn(
                         unique_id_pattern, new_unique_id, content
                     )
-
-                    if count > 0:  # If replacements were made
+                    if count > 0:
                         with open(file_path, "w", encoding="utf-8") as file:
                             file.write(updated_content)
-
                         logger.info(
                             f"Updated unique_id in {file_path} ({count} replacements)"
                         )
+                except Exception as file_error:
+                    logger.warning(f"Failed to process {file_path}: {file_error}")
 
+            # Helper function for recursive replacement in complex objects
+            def replace_ids_recursive(obj):
+                try:
+                    if isinstance(obj, dict):
+                        return {
+                            key: replace_ids_recursive(value)
+                            for key, value in obj.items()
+                        }
+                    elif isinstance(obj, list):
+                        return [replace_ids_recursive(item) for item in obj]
+                    elif isinstance(obj, str) and old_unique_id in obj:
+                        return obj.replace(old_unique_id, new_unique_id)
+                    elif hasattr(obj, "__dict__"):
+                        for attr, value in obj.__dict__.items():
+                            logger.info(f"attr: {attr}, value: {value}")
+                            setattr(obj, attr, replace_ids_recursive(value))
+                            if hasattr(value, "__dict__"):
+                                for sub_attr, sub_value in value.__dict__.items():
+                                    setattr(
+                                        value,
+                                        sub_attr,
+                                        replace_ids_recursive(sub_value),
+                                    )
+                        logger.info(f"Replaced unique_id in object: {obj}")
+                        return obj
+                    else:
+                        return obj
+                except Exception as e:
+                    logger.error(f"Error replacing unique_id in object: {e}")
+                    return obj
+
+            # Process .pkl files
+            for file_path in targeted_files_pkl:
+                try:
+                    # Load the pickle file
+                    with open(file_path, "rb") as file:
+                        data = pickle.load(file)
+
+                    # Replace IDs recursively
+                    updated_data = replace_ids_recursive(data)
+
+                    # Save the updated data back to the pickle file
+                    with open(file_path, "wb") as file:
+                        pickle.dump(updated_data, file)
+
+                    logger.info(f"Updated unique_id in {file_path} (.pkl file)")
+                except Exception as file_error:
+                    logger.warning(f"Failed to process {file_path}: {file_error}")
+
+            # Process .npy files
+            for file_path in targeted_files_npy:
+                try:
+                    # Load the .npy file
+                    with open(file_path, "rb") as file:
+                        data = np.load(file, allow_pickle=True)
+
+                    # Replace IDs recursively
+                    updated_data = replace_ids_recursive(data)
+
+                    # Save the updated data back to the .npy file
+                    with open(file_path, "wb") as file:
+                        np.save(file, updated_data, allow_pickle=True)
+
+                    logger.info(f"Updated unique_id in {file_path} (.npy file)")
                 except Exception as file_error:
                     logger.warning(f"Failed to process {file_path}: {file_error}")
 
             logger.info("All relevant files updated successfully.")
             return True
-
         except Exception as e:
             logger.error(f"Error replacing unique_id in files: {e}")
             return False
