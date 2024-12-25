@@ -43,16 +43,15 @@ const RightDrawer: FC = () => {
         return "none"
     }
   })
-  const readTheDocsUrl =
-    "https://optinist.readthedocs.io/en/latest/gui/workflow.html"
+  const readTheDocsUrl = "https://optinist.readthedocs.io/en/latest"
   const useRightDrawerSettings = () => {
     const mode = useSelector((state: RootState) => selectRightDrawerMode(state))
 
     const titleLink =
       mode === RIGHT_DRAWER_MODE.NWB
-        ? `${readTheDocsUrl}#nwb-setting`
+        ? `${readTheDocsUrl}/gui/workflow.html#nwb-setting`
         : mode === RIGHT_DRAWER_MODE.SNAKEMAKE
-          ? `${readTheDocsUrl}#snakemane-settings`
+          ? `${readTheDocsUrl}/gui/workflow.html#snakemane-settings`
           : ""
 
     const showLaunch =

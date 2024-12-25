@@ -47,6 +47,7 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
             textDecoration: "underline",
             color: "inherit",
             cursor: "pointer",
+            marginLeft: "5px",
           }}
         >
           <Tooltip title="Check Documentation">
