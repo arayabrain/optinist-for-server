@@ -1,3 +1,4 @@
+import os
 import shutil
 
 from studio.app.common.core.experiment.experiment import ExptOutputPathIds
@@ -22,6 +23,19 @@ def caiman_mc(
     from caiman.cluster import setup_cluster
     from caiman.motion_correction import MotionCorrect
     from caiman.source_extraction.cnmf.params import CNMFParams
+
+    def move_file_safely(src: str, dest: str) -> None:
+        """
+        Moves a file from src to dest. If the destination already exists, it will be replaced.
+        """
+        if os.path.exists(dest):
+            # Remove the existing file
+            if os.path.isfile(dest):
+                os.remove(dest)
+            elif os.path.isdir(dest):
+                shutil.rmtree(dest)
+
+        shutil.move(src, dest)
 
     function_id = ExptOutputPathIds(output_dir).function_id
     logger.info(f"start caiman motion_correction: {function_id}")
@@ -97,7 +111,10 @@ def caiman_mc(
     mmap_output_dir = join_filepath([output_dir, "mmap"])
     create_directory(mmap_output_dir)
     for mmap_file in mc.mmap_file:
-        shutil.move(mmap_file, mmap_output_dir)
-    shutil.move(fname_new, mmap_output_dir)
+        dest_file = os.path.join(mmap_output_dir, os.path.basename(mmap_file))
+        move_file_safely(mmap_file, dest_file)
+
+    dest_fname_new = os.path.join(mmap_output_dir, os.path.basename(fname_new))
+    move_file_safely(fname_new, dest_fname_new)
 
     return info

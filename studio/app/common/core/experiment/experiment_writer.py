@@ -201,6 +201,56 @@ class ExptDataWriter:
     ) -> bool:
         logger = AppLogger.get_logger()
 
+        # Helper function for recursive replacement in complex objects
+        def replace_ids_recursive(obj, visited=None):
+            """
+            Recursively replaces old_unique_id with new_unique_id in the given object.
+            """
+            if visited is None:
+                visited = set()
+
+            try:
+                # Prevent cyclic references by checking if we've already processed this object
+                obj_id = id(obj)
+                if obj_id in visited:
+                    return obj
+                visited.add(obj_id)
+
+                if isinstance(obj, dict):
+                    return {
+                        key: replace_ids_recursive(value, visited)
+                        for key, value in obj.items()
+                    }
+                elif isinstance(obj, list):
+                    return [replace_ids_recursive(item, visited) for item in obj]
+                elif isinstance(obj, tuple):
+                    # Convert tuple to list, process, and convert back to tuple
+                    return tuple(replace_ids_recursive(item, visited) for item in obj)
+                elif isinstance(obj, np.ndarray):
+                    if obj.ndim == 0:  # Handle 0D (scalar-like) arrays
+                        return replace_ids_recursive(obj.item(), visited)
+                    else:  # Handle 1D or higher-dimensional arrays
+                        return np.array(
+                            [replace_ids_recursive(item, visited) for item in obj]
+                        )
+                elif isinstance(obj, str) and old_unique_id in obj:
+                    return obj.replace(old_unique_id, new_unique_id)
+                elif hasattr(obj, "__dict__"):
+                    # Process custom objects
+                    for attr, value in obj.__dict__.items():
+                        setattr(obj, attr, replace_ids_recursive(value, visited))
+                    return obj
+                elif obj is None:
+                    return None
+                else:
+                    return obj  # Leave other types (e.g., int, float) unchanged
+
+            except Exception as e:
+                logger.error(
+                    f"Error replacing unique_id in object: {e} | Object: {obj}"
+                )
+                return obj
+
         try:
             # Collect targeted files
             targeted_files_yaml = glob.glob(
@@ -209,6 +259,7 @@ class ExptDataWriter:
             targeted_files_npy = glob.glob(
                 os.path.join(directory, "**", "*.npy"), recursive=True
             )
+
             targeted_files_pkl = glob.glob(
                 os.path.join(directory, "**", "*.pkl"), recursive=True
             )
@@ -216,7 +267,7 @@ class ExptDataWriter:
             # Define a regex pattern to safely match the unique_id in paths or keys
             unique_id_pattern = rf"(\b{re.escape(old_unique_id)}\b)"
 
-            # Process .yaml files (unchanged)
+            # Process .yaml files
             for file_path in targeted_files_yaml:
                 try:
                     with open(
@@ -234,37 +285,6 @@ class ExptDataWriter:
                         )
                 except Exception as file_error:
                     logger.warning(f"Failed to process {file_path}: {file_error}")
-
-            # Helper function for recursive replacement in complex objects
-            def replace_ids_recursive(obj):
-                try:
-                    if isinstance(obj, dict):
-                        return {
-                            key: replace_ids_recursive(value)
-                            for key, value in obj.items()
-                        }
-                    elif isinstance(obj, list):
-                        return [replace_ids_recursive(item) for item in obj]
-                    elif isinstance(obj, str) and old_unique_id in obj:
-                        return obj.replace(old_unique_id, new_unique_id)
-                    elif hasattr(obj, "__dict__"):
-                        for attr, value in obj.__dict__.items():
-                            logger.info(f"attr: {attr}, value: {value}")
-                            setattr(obj, attr, replace_ids_recursive(value))
-                            if hasattr(value, "__dict__"):
-                                for sub_attr, sub_value in value.__dict__.items():
-                                    setattr(
-                                        value,
-                                        sub_attr,
-                                        replace_ids_recursive(sub_value),
-                                    )
-                        logger.info(f"Replaced unique_id in object: {obj}")
-                        return obj
-                    else:
-                        return obj
-                except Exception as e:
-                    logger.error(f"Error replacing unique_id in object: {e}")
-                    return obj
 
             # Process .pkl files
             for file_path in targeted_files_pkl:
