@@ -110,6 +110,34 @@ class DataFilterParam:
     dim3: List[DataFilterRangeParam] = field(default_factory=list)
     roi: List[DataFilterRangeParam] = field(default_factory=list)
 
+    @property
+    def is_empty(self):
+        return len(self.dim1 + self.dim2 + self.dim3 + self.roi) == 0
+
+    @staticmethod
+    def _get_mask(dim_range: List[DataFilterRangeParam], max_size: int):
+        import numpy as np
+
+        mask = np.zeros(max_size, dtype=bool)
+        for range in dim_range:
+            if isinstance(range, dict):
+                mask[range["start"] : min(range["end"], max_size)] = True
+            else:
+                mask[range.start : min(range.end, max_size)] = True
+        return mask
+
+    def dim1_mask(self, max_size):
+        return self._get_mask(self.dim1, max_size=max_size)
+
+    def dim2_mask(self, max_size):
+        return self._get_mask(self.dim2, max_size=max_size)
+
+    def dim3_mask(self, max_size):
+        return self._get_mask(self.dim3, max_size=max_size)
+
+    def roi_mask(self, max_size):
+        return self._get_mask(self.roi, max_size=max_size)
+
 
 @dataclass
 class NodeData:

@@ -4,7 +4,9 @@ import os
 import traceback
 from dataclasses import asdict
 from datetime import datetime
+from pathlib import Path
 
+import numpy as np
 from filelock import FileLock
 
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
@@ -13,6 +15,7 @@ from studio.app.common.core.snakemake.smk import Rule
 from studio.app.common.core.utils.config_handler import ConfigWriter
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.utils.pickle_handler import PickleReader, PickleWriter
+from studio.app.common.core.workflow.workflow import DataFilterParam
 from studio.app.const import DATE_FORMAT
 from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb_creater import (
@@ -20,6 +23,7 @@ from studio.app.optinist.core.nwb.nwb_creater import (
     overwrite_nwbfile,
     save_nwb,
 )
+from studio.app.optinist.dataclass import FluoData, IscellData, RoiData
 from studio.app.wrappers import wrapper_dict
 
 logger = AppLogger.get_logger()
@@ -44,15 +48,33 @@ class Runner:
 
             cls.set_func_start_timestamp(os.path.dirname(__rule.output))
 
-            # output_info
-            output_info = cls.execute_function(
-                __rule.path,
-                __rule.params,
-                nwbfile.get("input"),
-                os.path.dirname(__rule.output),
-                __rule.dataFilterParam,
-                input_info,
-            )
+            output_info = {}
+            dataFilterParam = DataFilterParam(**__rule.dataFilterParam)
+            bak_output = __rule.output + ".bak"
+            if not dataFilterParam.is_empty:
+                if not os.path.exists(bak_output):
+                    raise ValueError("Filter data failed")
+
+                bak_output_info = PickleReader.read(bak_output)
+
+                algorithm_output = Path(__rule.output).stem
+                if algorithm_output == "lccd_cell_detection":
+                    output_info = cls.filter_data(bak_output_info, dataFilterParam)
+                elif algorithm_output == "caiman_cnmf":
+                    output_info = {}
+                elif algorithm_output == "suite2p_roi":
+                    output_info = {}
+            else:
+                if os.path.exists(bak_output):
+                    os.remove(bak_output)
+                # output_info
+                output_info = cls.execute_function(
+                    __rule.path,
+                    __rule.params,
+                    nwbfile.get("input"),
+                    os.path.dirname(__rule.output),
+                    input_info,
+                )
 
             # nwbfileの設定
             output_info["nwbfile"] = cls.save_func_nwb(
@@ -129,16 +151,13 @@ class Runner:
                 save_nwb(save_path, input_nwbfile, nwbconfig)
 
     @classmethod
-    def execute_function(
-        cls, path, params, nwb_params, output_dir, data_filter_param, input_info
-    ):
+    def execute_function(cls, path, params, nwb_params, output_dir, input_info):
         wrapper = cls.dict2leaf(wrapper_dict, path.split("/"))
         func = copy.deepcopy(wrapper["function"])
         output_info = func(
             params=params,
             nwbfile=nwb_params,
             output_dir=output_dir,
-            data_filter_param=data_filter_param,
             **input_info,
         )
         del func
@@ -189,3 +208,64 @@ class Runner:
             return cls.dict2leaf(root_dict[path], path_list)
         else:
             return root_dict[path]
+
+    @classmethod
+    def filter_data(
+        cls,
+        output_info: dict,
+        data_filter_param: DataFilterParam,
+        output_dir=DIRPATH.OUTPUT_DIR,
+    ) -> dict:
+        im = output_info["edit_roi_data"].im
+        fluorescence = output_info["fluorescence"].data
+        dff = output_info["dff"].data if output_info.get("dff") else None
+        iscell = output_info["iscell"].data
+
+        if data_filter_param.dim1:
+            dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
+            im = im[:, dim1_filter_mask, :]
+
+        if data_filter_param.dim2:
+            dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
+            im = im[:, :, dim2_filter_mask]
+
+        if data_filter_param.dim3:
+            dim3_filter_mask = data_filter_param.dim3_mask(
+                max_size=fluorescence.shape[1]
+            )
+            fluorescence = fluorescence[:, dim3_filter_mask]
+            if dff:
+                dff = dff[:, dim3_filter_mask]
+
+        if data_filter_param.roi:
+            roi_filter_mask = data_filter_param.roi_mask(max_size=im.shape[0])
+            iscell[~roi_filter_mask] = False
+
+        output_info["edit_roi_data"].im = im
+
+        # TODO: update nwbfile
+
+        info = {
+            **output_info,
+            "cell_roi": RoiData(
+                np.nanmax(im[iscell != 0], axis=0),
+                output_dir=output_dir,
+                file_name="cell_roi",
+            ),
+            "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
+            "iscell": IscellData(iscell),
+        }
+
+        if dff is not None:
+            info["dff"] = FluoData(dff, file_name="dff")
+        else:
+            info["all_roi"] = RoiData(
+                np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
+            )
+            info["non_cell_roi"] = RoiData(
+                np.nanmax(im[iscell == 0], axis=0),
+                output_dir=output_dir,
+                file_name="non_cell_roi",
+            )
+
+        return info
