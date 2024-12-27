@@ -1,7 +1,6 @@
 import glob
 import os
 import pickle
-import re
 import shutil
 from dataclasses import asdict
 from datetime import datetime
