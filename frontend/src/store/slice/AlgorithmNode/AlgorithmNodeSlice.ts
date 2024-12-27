@@ -111,6 +111,7 @@ export const algorithmNodeSlice = createSlice({
                   name: node.data.label,
                   functionPath: node.data.path,
                   params: node.data.param,
+                  dataFilterParam: node.data.dataFilterParam,
                   originalValue: node.data.param,
                   isUpdate: false,
                   isUpdateFilter: false,
