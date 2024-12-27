@@ -270,7 +270,7 @@ class ExptDataWriter:
 
     def __replace_ids_recursive(
         self, obj: object, old_id: str, new_id: str, visited: set = None
-    ) -> object:
+    ):
 
         if visited is None:
             visited = set()
