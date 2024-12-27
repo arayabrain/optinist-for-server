@@ -4,8 +4,6 @@ import uuid
 from dataclasses import asdict
 from typing import Dict, List
 
-import numpy as np
-
 from studio.app.common.core.experiment.experiment_writer import ExptConfigWriter
 from studio.app.common.core.snakemake.smk import FlowConfig, Rule, SmkParam
 from studio.app.common.core.snakemake.snakemake_executor import (
@@ -16,18 +14,10 @@ from studio.app.common.core.snakemake.snakemake_reader import SmkParamReader
 from studio.app.common.core.snakemake.snakemake_rule import SmkRule
 from studio.app.common.core.snakemake.snakemake_writer import SmkConfigWriter
 from studio.app.common.core.utils.filepath_creater import get_pickle_file, join_filepath
-from studio.app.common.core.workflow.workflow import (
-    DataFilterParam,
-    NodeType,
-    NodeTypeUtil,
-    RunItem,
-)
+from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil, RunItem
 from studio.app.common.core.workflow.workflow_params import get_typecheck_params
 from studio.app.common.core.workflow.workflow_writer import WorkflowConfigWriter
 from studio.app.dir_path import DIRPATH
-from studio.app.optinist.dataclass.fluo import FluoData
-from studio.app.optinist.dataclass.iscell import IscellData
-from studio.app.optinist.dataclass.roi import RoiData
 
 
 class WorkflowRunner:
@@ -182,49 +172,3 @@ class WorkflowRunner:
             backup_node_pickle_file_path = node_pickle_file_path + ".bak"
             if not os.path.exists(backup_node_pickle_file_path):
                 shutil.copyfile(node_pickle_file_path, backup_node_pickle_file_path)
-
-    @staticmethod
-    def lccd_cell_detection_filter_data(
-        output_info: dict,
-        data_filter_param: DataFilterParam,
-        output_dir=DIRPATH.OUTPUT_DIR,
-    ) -> dict:
-        im = output_info["edit_roi_data"].im
-        fluorescence = output_info["fluorescence"].data
-        dff = output_info["dff"].data
-        iscell = output_info["iscell"].data
-
-        if data_filter_param.dim1:
-            dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
-            im = im[:, dim1_filter_mask, :]
-
-        if data_filter_param.dim2:
-            dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
-            im = im[:, :, dim2_filter_mask]
-
-        if data_filter_param.dim3:
-            dim3_filter_mask = data_filter_param.dim3_mask(
-                max_size=fluorescence.shape[1]
-            )
-            fluorescence = fluorescence[:, dim3_filter_mask]
-            dff = dff[:, dim3_filter_mask]
-
-        if data_filter_param.roi:
-            roi_filter_mask = data_filter_param.roi_mask(max_size=im.shape[0])
-            iscell[~roi_filter_mask] = False
-
-        output_info["edit_roi_data"].im = im
-
-        info = {
-            **output_info,
-            "cell_roi": RoiData(
-                np.nanmax(im[iscell != 0], axis=0),
-                output_dir=output_dir,
-                file_name="cell_roi",
-            ),
-            "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
-            "dff": FluoData(dff, file_name="dff"),
-            "iscell": IscellData(iscell),
-        }
-
-        return info

@@ -23,6 +23,7 @@ from studio.app.common.core.utils.pickle_handler import PickleReader, PickleWrit
 from studio.app.common.core.workflow.workflow import DataFilterParam
 from studio.app.const import DATE_FORMAT
 from studio.app.dir_path import DIRPATH
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import (
     merge_nwbfile,
     overwrite_nwbfile,
@@ -56,22 +57,13 @@ class Runner:
 
             cls.__set_func_start_timestamp(os.path.dirname(__rule.output))
 
-            output_info = {}
             dataFilterParam = DataFilterParam(**__rule.dataFilterParam)
             bak_output = __rule.output + ".bak"
-            if not dataFilterParam.is_empty:
-                if not os.path.exists(bak_output):
-                    raise ValueError("Filter data failed")
-
+            if not dataFilterParam.is_empty and os.path.exists(bak_output):
                 bak_output_info = PickleReader.read(bak_output)
-
-                algorithm_output = Path(__rule.output).stem
-                if algorithm_output == "lccd_cell_detection":
-                    output_info = cls.filter_data(bak_output_info, dataFilterParam)
-                elif algorithm_output == "caiman_cnmf":
-                    output_info = {}
-                elif algorithm_output == "suite2p_roi":
-                    output_info = {}
+                output_info = cls.__filter_data(
+                    bak_output_info, dataFilterParam, __rule.type
+                )
             else:
                 if os.path.exists(bak_output):
                     os.remove(bak_output)
@@ -194,10 +186,7 @@ class Runner:
         wrapper = cls.__dict2leaf(wrapper_dict, path.split("/"))
         func = copy.deepcopy(wrapper["function"])
         output_info = func(
-            params=params,
-            nwbfile=nwb_params,
-            output_dir=output_dir,
-            **input_info,
+            params=params, nwbfile=nwb_params, output_dir=output_dir, **input_info
         )
         del func
         gc.collect()
@@ -249,10 +238,11 @@ class Runner:
             return root_dict[path]
 
     @classmethod
-    def filter_data(
+    def __filter_data(
         cls,
         output_info: dict,
         data_filter_param: DataFilterParam,
+        type: str,
         output_dir=DIRPATH.OUTPUT_DIR,
     ) -> dict:
         im = output_info["edit_roi_data"].im
@@ -273,7 +263,7 @@ class Runner:
                 max_size=fluorescence.shape[1]
             )
             fluorescence = fluorescence[:, dim3_filter_mask]
-            if dff:
+            if dff is not None:
                 dff = dff[:, dim3_filter_mask]
 
         if data_filter_param.roi:
@@ -282,7 +272,13 @@ class Runner:
 
         output_info["edit_roi_data"].im = im
 
-        # TODO: update nwbfile
+        nwbfile = output_info["nwbfile"][type]
+        function_id = list(nwbfile[NWBDATASET.POSTPROCESS].keys())[0]
+        nwbfile[NWBDATASET.POSTPROCESS][function_id]["all_roi_img"] = im
+        nwbfile[NWBDATASET.COLUMN][function_id]["data"] = iscell
+        nwbfile[NWBDATASET.FLUORESCENCE][function_id]["Fluorescence"][
+            "data"
+        ] = fluorescence.T
 
         info = {
             **output_info,
@@ -293,6 +289,7 @@ class Runner:
             ),
             "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
             "iscell": IscellData(iscell),
+            "nwbfile": nwbfile,
         }
 
         if dff is not None:
