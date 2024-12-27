@@ -283,7 +283,7 @@ class Runner:
         info = {
             **output_info,
             "cell_roi": RoiData(
-                np.nanmax(im[iscell != 0], axis=0),
+                np.nanmax(im[iscell != 0], axis=0, initial=np.nan),
                 output_dir=output_dir,
                 file_name="cell_roi",
             ),
