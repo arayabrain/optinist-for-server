@@ -274,7 +274,6 @@ class ExptDataWriter:
         if visited is None:
             visited = set()
 
-        # Prevent cyclic references
         obj_id = id(obj)
         if obj_id in visited:
             return obj
