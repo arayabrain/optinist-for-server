@@ -167,188 +167,182 @@ class ExptDataWriter:
 
         try:
             # Define file paths
-            output_filepath = join_filepath(
+            output_dir = join_filepath(
                 [DIRPATH.OUTPUT_DIR, self.workspace_id, self.unique_id]
             )
-            new_output_filepath = join_filepath(
+            new_output_dir = join_filepath(
                 [DIRPATH.OUTPUT_DIR, self.workspace_id, new_unique_id]
             )
 
             # Copy directory
-            shutil.copytree(output_filepath, new_output_filepath)
+            shutil.copytree(output_dir, new_output_dir)
 
-            # Update experiment.yml experiment name
-            if not self.__update_experiment_config_name(new_output_filepath):
+            # Update experiment configuration and unique IDs
+            if not self.__update_experiment_config_name(new_output_dir):
                 logger.error("Failed to update experiment.yml after copying.")
                 return False
 
-            # Scan and replace old unique_id in all files
-            if not self.__replace_unique_id_in_files(
-                new_output_filepath, self.unique_id, new_unique_id
+            if not self.__replace_unique_id(
+                new_output_dir, self.unique_id, new_unique_id
             ):
-                logger.error("Failed to update unique_id in files after copying.")
+                logger.error("Failed to update unique_id in files.")
                 return False
 
-            logger.info(f"Data successfully copied to {new_output_filepath}")
+            logger.info(f"Data successfully copied to {new_output_dir}")
             return True
 
         except Exception as e:
             logger.error(f"Error copying data: {e}")
-            raise Exception("Error copying data")
+            return False
 
-    def __replace_unique_id_in_files(
-        self, directory: str, old_unique_id: str, new_unique_id: str
-    ) -> bool:
+    def __replace_unique_id(self, directory: str, old_id: str, new_id: str) -> bool:
         logger = AppLogger.get_logger()
 
-        # Helper function for recursive replacement in complex objects
-        def replace_ids_recursive(obj, visited=None):
-            """
-            Recursively replaces old_unique_id with new_unique_id in the given object.
-            """
-            if visited is None:
-                visited = set()
-
-            try:
-                # Prevent cyclic references by checking if we've already processed this object
-                obj_id = id(obj)
-                if obj_id in visited:
-                    return obj
-                visited.add(obj_id)
-
-                if isinstance(obj, dict):
-                    return {
-                        key: replace_ids_recursive(value, visited)
-                        for key, value in obj.items()
-                    }
-                elif isinstance(obj, list):
-                    return [replace_ids_recursive(item, visited) for item in obj]
-                elif isinstance(obj, tuple):
-                    # Convert tuple to list, process, and convert back to tuple
-                    return tuple(replace_ids_recursive(item, visited) for item in obj)
-                elif isinstance(obj, np.ndarray):
-                    if obj.ndim == 0:  # Handle 0D (scalar-like) arrays
-                        return replace_ids_recursive(obj.item(), visited)
-                    else:  # Handle 1D or higher-dimensional arrays
-                        return np.array(
-                            [replace_ids_recursive(item, visited) for item in obj]
-                        )
-                elif isinstance(obj, str) and old_unique_id in obj:
-                    return obj.replace(old_unique_id, new_unique_id)
-                elif hasattr(obj, "__dict__"):
-                    # Process custom objects
-                    for attr, value in obj.__dict__.items():
-                        setattr(obj, attr, replace_ids_recursive(value, visited))
-                    return obj
-                elif obj is None:
-                    return None
-                else:
-                    return obj  # Leave other types (e.g., int, float) unchanged
-
-            except Exception as e:
-                logger.error(
-                    f"Error replacing unique_id in object: {e} | Object: {obj}"
-                )
-                return obj
-
         try:
-            # Collect targeted files
-            targeted_files_yaml = glob.glob(
-                os.path.join(directory, "**", "*.yaml"), recursive=True
-            )
-            targeted_files_npy = glob.glob(
-                os.path.join(directory, "**", "*.npy"), recursive=True
-            )
+            targeted_files = {
+                "yaml": glob.glob(
+                    os.path.join(directory, "**", "*.yaml"), recursive=True
+                ),
+                "npy": glob.glob(
+                    os.path.join(directory, "**", "*.npy"), recursive=True
+                ),
+                "pkl": glob.glob(
+                    os.path.join(directory, "**", "*.pkl"), recursive=True
+                ),
+            }
 
-            targeted_files_pkl = glob.glob(
-                os.path.join(directory, "**", "*.pkl"), recursive=True
-            )
-
-            # Define a regex pattern to safely match the unique_id in paths or keys
-            unique_id_pattern = rf"(\b{re.escape(old_unique_id)}\b)"
-
-            # Process .yaml files
-            for file_path in targeted_files_yaml:
-                try:
-                    with open(
-                        file_path, "r", encoding="utf-8", errors="ignore"
-                    ) as file:
-                        content = file.read()
-                    updated_content, count = re.subn(
-                        unique_id_pattern, new_unique_id, content
-                    )
-                    if count > 0:
-                        with open(file_path, "w", encoding="utf-8") as file:
-                            file.write(updated_content)
-                        logger.info(
-                            f"Updated unique_id in {file_path} ({count} replacements)"
-                        )
-                except Exception as file_error:
-                    logger.warning(f"Failed to process {file_path}: {file_error}")
-
-            # Process .pkl files
-            for file_path in targeted_files_pkl:
-                try:
-                    # Load the pickle file
-                    with open(file_path, "rb") as file:
-                        data = pickle.load(file)
-
-                    # Replace IDs recursively
-                    updated_data = replace_ids_recursive(data)
-
-                    # Save the updated data back to the pickle file
-                    with open(file_path, "wb") as file:
-                        pickle.dump(updated_data, file)
-
-                    logger.info(f"Updated unique_id in {file_path} (.pkl file)")
-                except Exception as file_error:
-                    logger.warning(f"Failed to process {file_path}: {file_error}")
-
-            # Process .npy files
-            for file_path in targeted_files_npy:
-                try:
-                    # Load the .npy file
-                    with open(file_path, "rb") as file:
-                        data = np.load(file, allow_pickle=True)
-
-                    # Replace IDs recursively
-                    updated_data = replace_ids_recursive(data)
-
-                    # Save the updated data back to the .npy file
-                    with open(file_path, "wb") as file:
-                        np.save(file, updated_data, allow_pickle=True)
-
-                    logger.info(f"Updated unique_id in {file_path} (.npy file)")
-                except Exception as file_error:
-                    logger.warning(f"Failed to process {file_path}: {file_error}")
+            for file_type, files in targeted_files.items():
+                for file in files:
+                    if file_type == "yaml":
+                        self.__update_yaml(file, old_id, new_id)
+                    elif file_type == "pkl":
+                        self.__update_pickle(file, old_id, new_id)
+                    elif file_type == "npy":
+                        self.__update_npy(file, old_id, new_id)
 
             logger.info("All relevant files updated successfully.")
             return True
+
         except Exception as e:
             logger.error(f"Error replacing unique_id in files: {e}")
             return False
 
-    def __update_experiment_config_name(self, new_output_filepath: str) -> bool:
+    def __update_yaml(self, file_path: str, old_id: str, new_id: str) -> None:
         logger = AppLogger.get_logger()
-        expt_filepath = join_filepath([new_output_filepath, DIRPATH.EXPERIMENT_YML])
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+
+            updated_content = content.replace(old_id, new_id)
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(updated_content)
+
+            logger.info(f"Updated YAML: {file_path}")
+        except Exception as e:
+            logger.warning(f"Failed to update YAML {file_path}: {e}")
+
+    def __update_pickle(self, file_path: str, old_id: str, new_id: str) -> None:
+        logger = AppLogger.get_logger()
+        try:
+            with open(file_path, "rb") as file:
+                data = pickle.load(file)
+
+            updated_data = self.__replace_ids_recursive(data, old_id, new_id)
+            with open(file_path, "wb") as file:
+                pickle.dump(updated_data, file)
+
+            logger.info(f"Updated Pickle: {file_path}")
+        except Exception as e:
+            logger.warning(f"Failed to update Pickle {file_path}: {e}")
+
+    def __update_npy(self, file_path: str, old_id: str, new_id: str) -> None:
+        logger = AppLogger.get_logger()
+        try:
+            with open(file_path, "rb") as file:
+                data = np.load(file, allow_pickle=True)
+
+            updated_data = self.__replace_ids_recursive(data, old_id, new_id)
+            with open(file_path, "wb") as file:
+                np.save(file, updated_data, allow_pickle=True)
+
+            logger.info(f"Updated NPY: {file_path}")
+        except Exception as e:
+            logger.warning(f"Failed to update NPY {file_path}: {e}")
+
+    def __replace_ids_recursive(
+        self, obj: object, old_id: str, new_id: str, visited: set = None
+    ) -> object:
+
+        if visited is None:
+            visited = set()
+
+        # Prevent cyclic references
+        obj_id = id(obj)
+        if obj_id in visited:
+            return obj
+        visited.add(obj_id)
+
+        if isinstance(obj, dict):
+            return {
+                key: self.__replace_ids_recursive(value, old_id, new_id, visited)
+                for key, value in obj.items()
+            }
+        elif isinstance(obj, list):
+            return [
+                self.__replace_ids_recursive(item, old_id, new_id, visited)
+                for item in obj
+            ]
+        elif isinstance(obj, tuple):
+            # Convert tuple to list, process, and convert back to tuple
+            return tuple(
+                self.__replace_ids_recursive(item, old_id, new_id, visited)
+                for item in obj
+            )
+        elif isinstance(obj, np.ndarray):
+            if obj.ndim == 0:  # Handle 0D (scalar-like) arrays
+                return self.__replace_ids_recursive(obj.item(), old_id, new_id, visited)
+            else:  # Handle 1D or higher-dimensional arrays
+                return np.array(
+                    [
+                        self.__replace_ids_recursive(item, old_id, new_id, visited)
+                        for item in obj
+                    ]
+                )
+        elif isinstance(obj, str) and old_id in obj:
+            return obj.replace(old_id, new_id)
+        elif hasattr(obj, "__dict__"):
+            # Process custom objects
+            for attr, value in obj.__dict__.items():
+                setattr(
+                    obj,
+                    attr,
+                    self.__replace_ids_recursive(value, old_id, new_id, visited),
+                )
+            return obj
+        elif obj is None:
+            return None
+        else:
+            return obj
+
+    def __update_experiment_config_name(self, output_dir: str) -> bool:
+        logger = AppLogger.get_logger()
+        config_path = join_filepath([output_dir, DIRPATH.EXPERIMENT_YML])
 
         try:
-            with open(expt_filepath, "r") as file:
+            with open(config_path, "r") as file:
                 config = yaml.safe_load(file)
 
             if not config:
-                logger.error(f"Empty or invalid YAML in {expt_filepath}.")
+                logger.error(f"Invalid YAML at {config_path}")
                 return False
 
             config["name"] = f"{config.get('name', 'experiment')}_copy"
-
-            # Write back to the file
-            with open(expt_filepath, "w") as file:
+            with open(config_path, "w") as file:
                 yaml.safe_dump(config, file)
 
-            logger.info(f"experiment.yml updated successfully at {expt_filepath}")
+            logger.info(f"Updated experiment.yml: {config_path}")
             return True
 
         except Exception as e:
-            logger.error(f"Error updating experiment.yml: {e}")
+            logger.error(f"Failed to update experiment.yml: {e}")
             return False
