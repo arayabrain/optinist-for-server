@@ -53,13 +53,14 @@ export const algorithmNodeSlice = createSlice({
       state,
       action: PayloadAction<{
         nodeId: string
-        dataFilter: TDataFilterParam
-        isUpdateFilter: boolean
+        dataFilterParam: TDataFilterParam
       }>,
     ) => {
-      const { nodeId, dataFilter, isUpdateFilter } = action.payload
-      state[nodeId].dataFilterParam = dataFilter
-      state[nodeId].isUpdateFilter = isUpdateFilter
+      const { nodeId, dataFilterParam } = action.payload
+      state[nodeId].dataFilterParam = dataFilterParam
+      state[nodeId].isUpdateFilter =
+        JSON.stringify(dataFilterParam) !==
+        JSON.stringify(state[nodeId]?.originalDataFilterValue)
     },
   },
   extraReducers: (builder) => {
@@ -73,10 +74,10 @@ export const algorithmNodeSlice = createSlice({
         const params = action.payload
         if (node.data?.type === NODE_TYPE_SET.ALGORITHM) {
           state[node.id] = {
+            ...state[node.id],
             functionPath,
             name,
             params: convertToParamMap(params),
-            originalValue: state[node.id]?.originalValue,
             isUpdate: runAlready ?? false,
             isUpdateFilter: runAlready ?? false,
           }
@@ -113,6 +114,7 @@ export const algorithmNodeSlice = createSlice({
                   params: node.data.param,
                   dataFilterParam: node.data.dataFilterParam,
                   originalValue: node.data.param,
+                  originalDataFilterValue: node.data.dataFilterParam,
                   isUpdate: false,
                   isUpdateFilter: false,
                 }

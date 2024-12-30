@@ -170,8 +170,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
       dispatch(
         updateFilterParams({
           nodeId,
-          dataFilter: { ...dataFilterParams, [name]: values },
-          isUpdateFilter: true, // TODO Check update with data response
+          dataFilterParam: { ...dataFilterParams, [name]: values },
         }),
       )
     },

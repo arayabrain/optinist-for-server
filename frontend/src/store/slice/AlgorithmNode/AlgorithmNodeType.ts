@@ -21,6 +21,7 @@ type AlgorithmNodeType = {
   params: ParamMap | null
   dataFilterParam?: TDataFilterParam
   originalValue: unknown
+  originalDataFilterValue: unknown
   isUpdate: boolean
   isUpdateFilter?: boolean
 }
