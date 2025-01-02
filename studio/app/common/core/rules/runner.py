@@ -296,10 +296,12 @@ class Runner:
             info["dff"] = FluoData(dff, file_name="dff")
         else:
             info["all_roi"] = RoiData(
-                np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
+                np.nanmax(im, axis=0, initial=np.nan),
+                output_dir=output_dir,
+                file_name="all_roi",
             )
             info["non_cell_roi"] = RoiData(
-                np.nanmax(im[iscell == 0], axis=0),
+                np.nanmax(im[iscell == 0], axis=0, initial=np.nan),
                 output_dir=output_dir,
                 file_name="non_cell_roi",
             )

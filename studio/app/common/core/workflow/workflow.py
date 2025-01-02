@@ -162,9 +162,11 @@ class DataFilterParam:
         mask = np.zeros(max_size, dtype=bool)
         for range in dim_range:
             if isinstance(range, dict):
-                mask[range["start"] : min(range["end"], max_size)] = True
+                mask[
+                    range["start"] : range["end"] + int(range["start"] == range["end"])
+                ] = True
             else:
-                mask[range.start : min(range.end, max_size)] = True
+                mask[range.start : range.end + int(range.start == range.end)] = True
         return mask
 
     def dim1_mask(self, max_size):
