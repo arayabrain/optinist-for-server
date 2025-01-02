@@ -252,19 +252,19 @@ class Runner:
 
         if data_filter_param.dim1:
             dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
-            im = im[:, dim1_filter_mask, :]
+            im[:, ~dim1_filter_mask, :] = np.nan
 
         if data_filter_param.dim2:
             dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
-            im = im[:, :, dim2_filter_mask]
+            im[:, :, ~dim2_filter_mask] = np.nan
 
         if data_filter_param.dim3:
             dim3_filter_mask = data_filter_param.dim3_mask(
                 max_size=fluorescence.shape[1]
             )
-            fluorescence = fluorescence[:, dim3_filter_mask]
+            fluorescence[:, ~dim3_filter_mask] = np.nan
             if dff is not None:
-                dff = dff[:, dim3_filter_mask]
+                dff[:, ~dim3_filter_mask] = np.nan
 
         if data_filter_param.roi:
             roi_filter_mask = data_filter_param.roi_mask(max_size=im.shape[0])
