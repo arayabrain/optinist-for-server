@@ -14,7 +14,12 @@ from studio.app.common.core.snakemake.snakemake_reader import SmkParamReader
 from studio.app.common.core.snakemake.snakemake_rule import SmkRule
 from studio.app.common.core.snakemake.snakemake_writer import SmkConfigWriter
 from studio.app.common.core.utils.filepath_creater import get_pickle_file, join_filepath
-from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil, RunItem
+from studio.app.common.core.workflow.workflow import (
+    DataFilterParam,
+    NodeType,
+    NodeTypeUtil,
+    RunItem,
+)
 from studio.app.common.core.workflow.workflow_params import get_typecheck_params
 from studio.app.common.core.workflow.workflow_writer import WorkflowConfigWriter
 from studio.app.dir_path import DIRPATH
@@ -166,7 +171,7 @@ class WorkflowRunner:
                 ]
             )
             if not os.path.exists(node_pickle_file_path):
-                self.nodeDict[node.id].data.dataFilterParam = {}
+                self.nodeDict[node.id].data.dataFilterParam = DataFilterParam()
             else:
                 # backup current pkl cause snakemake removes it if detects param change
                 backup_node_pickle_file_path = node_pickle_file_path + ".bak"
