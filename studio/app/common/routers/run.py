@@ -49,7 +49,6 @@ async def run_id(
 ):
     try:
         workflow_runner = WorkflowRunner(workspace_id, uid, runItem)
-        workflow_runner.check_data_filter_param()
         workflow_runner.run_workflow(background_tasks)
 
         logger.info("run snakemake")

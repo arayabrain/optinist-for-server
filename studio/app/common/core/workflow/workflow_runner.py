@@ -28,6 +28,8 @@ class WorkflowRunner:
         self.nodeDict = self.runItem.nodeDict
         self.edgeDict = self.runItem.edgeDict
 
+        self.check_data_filter_param()
+
         WorkflowConfigWriter(
             self.workspace_id,
             self.unique_id,
@@ -163,12 +165,10 @@ class WorkflowRunner:
                     ),
                 ]
             )
-            if not os.path.isfile(node_pickle_file_path):
-                raise ValueError(
-                    f"No data available for filtering: {node_pickle_file_path}"
-                )
-
-            # backup current pkl, because snakemake removes it if detects param change
-            backup_node_pickle_file_path = node_pickle_file_path + ".bak"
-            if not os.path.exists(backup_node_pickle_file_path):
-                shutil.copyfile(node_pickle_file_path, backup_node_pickle_file_path)
+            if not os.path.exists(node_pickle_file_path):
+                self.nodeDict[node.id].data.dataFilterParam = {}
+            else:
+                # backup current pkl cause snakemake removes it if detects param change
+                backup_node_pickle_file_path = node_pickle_file_path + ".bak"
+                if not os.path.exists(backup_node_pickle_file_path):
+                    shutil.copyfile(node_pickle_file_path, backup_node_pickle_file_path)

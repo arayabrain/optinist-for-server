@@ -191,7 +191,7 @@ class NodeData:
     fileType: str = None
     hdf5Path: str = None
     matPath: str = None
-    dataFilterParam: Union[DataFilterParam, None] = field(
+    dataFilterParam: Union[DataFilterParam, dict, None] = field(
         default_factory=lambda: DataFilterParam(dim1=[], dim2=[], dim3=[], roi=[])
     )
 
