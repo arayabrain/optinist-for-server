@@ -62,7 +62,10 @@ class Runner:
             if not dataFilterParam.is_empty and os.path.exists(bak_output):
                 bak_output_info = PickleReader.read(bak_output)
                 output_info = cls.__filter_data(
-                    bak_output_info, dataFilterParam, __rule.type
+                    bak_output_info,
+                    dataFilterParam,
+                    __rule.type,
+                    output_dir=os.path.dirname(__rule.output),
                 )
             else:
                 if os.path.exists(bak_output):
