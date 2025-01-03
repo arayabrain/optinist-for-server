@@ -96,6 +96,16 @@ export const algorithmNodeSlice = createSlice({
           delete state[action.payload]
         }
       })
+      .addCase(run.fulfilled, (state, action) => {
+        const runPostData = action.meta.arg.runPostData
+        Object.values(runPostData.nodeDict)
+          .filter(isAlgorithmNodePostData)
+          .forEach((node) => {
+            if (state[node.id].dataFilterParam) {
+              state[node.id].dataFilterParam = undefined
+            }
+          })
+      })
       .addMatcher(
         isAnyOf(
           fetchWorkflow.fulfilled,
