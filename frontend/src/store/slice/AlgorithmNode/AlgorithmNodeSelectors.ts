@@ -22,7 +22,8 @@ export const selectAlgorithmParams = (nodeId: string) => (state: RootState) =>
 
 export const selectAlgorithmDataFilterParam =
   (nodeId: string) => (state: RootState) => {
-    const { dataFilterParam } = selectAlgorithmNodeById(nodeId)(state)
+    const dataFilterParam =
+      selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
     if (!dataFilterParam) return undefined
     const { dim1, dim2, dim3, roi } = dataFilterParam
     return {
