@@ -32,7 +32,10 @@ import {
   selectAlgorithmIsUpdated,
   selectAlgorithmNodeDefined,
 } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
-import { selectAncestorNodesOriginalValueById } from "store/slice/FlowElement/FlowElementSelectors"
+import {
+  isParentNodeUpdatedParams,
+  selectAncestorNodesOriginalValueById,
+} from "store/slice/FlowElement/FlowElementSelectors"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
 import { NodeData, NodeIdProps } from "store/slice/FlowElement/FlowElementType"
 import {
@@ -90,6 +93,7 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
     selectAncestorNodesOriginalValueById(nodeId),
   )
   const isUpdated = useSelector(selectAlgorithmIsUpdated(nodeId))
+  const isParamsUpdated = useSelector(isParentNodeUpdatedParams(nodeId))
   const updated =
     typeof workflowId !== "undefined" && (isUpdated || ancestorIsUpdated)
 
@@ -142,7 +146,7 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
           <Button
             size="small"
             onClick={onClickFilterButton}
-            disabled={status !== NODE_RESULT_STATUS.SUCCESS}
+            disabled={status !== NODE_RESULT_STATUS.SUCCESS || isParamsUpdated}
           >
             Filter
           </Button>
