@@ -1,4 +1,4 @@
-import { memo, useContext, useMemo, useRef, useState } from "react"
+import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Handle, Position, NodeProps } from "reactflow"
 
@@ -32,6 +32,7 @@ import {
   selectAlgorithmIsUpdated,
   selectAlgorithmNodeDefined,
 } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
+import { resetDataFilterParams } from "store/slice/AlgorithmNode/AlgorithmNodeSlice"
 import {
   isParentNodeUpdatedParams,
   selectAncestorNodesOriginalValueById,
@@ -93,7 +94,14 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
     selectAncestorNodesOriginalValueById(nodeId),
   )
   const isUpdated = useSelector(selectAlgorithmIsUpdated(nodeId))
-  const isParamsUpdated = useSelector(isParentNodeUpdatedParams(nodeId))
+  const isParentParamsUpdated = useSelector(isParentNodeUpdatedParams(nodeId))
+
+  useEffect(() => {
+    if (isParentParamsUpdated) {
+      dispatch(resetDataFilterParams(nodeId))
+    }
+  }, [dispatch, isParentParamsUpdated, nodeId])
+
   const updated =
     typeof workflowId !== "undefined" && (isUpdated || ancestorIsUpdated)
 
@@ -146,7 +154,9 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
           <Button
             size="small"
             onClick={onClickFilterButton}
-            disabled={status !== NODE_RESULT_STATUS.SUCCESS || isParamsUpdated}
+            disabled={
+              status !== NODE_RESULT_STATUS.SUCCESS || isParentParamsUpdated
+            }
           >
             Filter
           </Button>

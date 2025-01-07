@@ -62,6 +62,11 @@ export const algorithmNodeSlice = createSlice({
         JSON.stringify(dataFilterParam) !==
         JSON.stringify(state[nodeId]?.originalDataFilterValue)
     },
+    resetDataFilterParams: (state, action: PayloadAction<string>) => {
+      state[action.payload].dataFilterParam = state[action.payload]
+        .originalDataFilterValue as TDataFilterParam
+      state[action.payload].isUpdateFilter = false
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -157,5 +162,6 @@ export const algorithmNodeSlice = createSlice({
   },
 })
 
-export const { updateParam, updateFilterParams } = algorithmNodeSlice.actions
+export const { updateParam, updateFilterParams, resetDataFilterParams } =
+  algorithmNodeSlice.actions
 export default algorithmNodeSlice.reducer
