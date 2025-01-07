@@ -106,6 +106,15 @@ export const algorithmNodeSlice = createSlice({
             }
           })
       })
+      .addCase(runByCurrentUid.fulfilled, (state, action) => {
+        const runPostData = action.meta.arg.runPostData
+        Object.values(runPostData.nodeDict)
+          .filter(isAlgorithmNodePostData)
+          .forEach((node) => {
+            state[node.id].originalDataFilterValue =
+              state[node.id].dataFilterParam
+          })
+      })
       .addMatcher(
         isAnyOf(
           fetchWorkflow.fulfilled,

@@ -9,6 +9,7 @@ import {
 } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
+import styled from "@emotion/styled"
 import CloseIcon from "@mui/icons-material/Close"
 import { Input, InputProps } from "@mui/material"
 import Box from "@mui/material/Box"
@@ -88,11 +89,7 @@ const TitleWithCloseButton = memo(function TitleWithCloseButtonProps({
       {title ?? `Output of ${nodeName}`}
       <IconButton
         onClick={onClose}
-        sx={{
-          position: "absolute",
-          right: 8,
-          top: 10,
-        }}
+        sx={{ position: "absolute", right: 8, top: 10 }}
       >
         <CloseIcon />
       </IconButton>
@@ -118,15 +115,56 @@ const OutputViewer = memo(function OutputViewer({ nodeId }: NodeIdProps) {
   )
 })
 
-const InputDim = (props: { title: string } & InputProps) => {
-  const { title, ...p } = props
+const InputDim = (
+  props: { title: string } & InputProps & {
+      onChangeInput?: (value?: string) => void
+    },
+) => {
+  const { title, onChangeInput, ...p } = props
+  const [value, setValue] = useState(p.value)
+  const [valuePassed, setValuePassed] = useState<string>(p.value as string)
+
+  useEffect(() => {
+    setValue(p.value)
+  }, [p.value])
+
+  const onChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const regex = /[^0-9,:]/g
+    const value = event.target.value.replace(regex, "")
+    const regexTest = /^(\d+:\d+)(,\d+:\d+)*$/
+    if (regexTest.test(value) || !value) setValuePassed(value)
+    setValue(value)
+  }, [])
+
+  const _onBlur = useCallback(() => {
+    setValue(valuePassed)
+    onChangeInput?.(valuePassed)
+  }, [onChangeInput, valuePassed])
+
   return (
     <Box>
       <Box mb={1}>{title}</Box>
-      <Input inputProps={{ style: { textAlign: "center" } }} {...p} />
+      <InputStyled
+        {...p}
+        error={value !== valuePassed}
+        value={value}
+        onChange={onChange}
+        onBlur={_onBlur}
+      />
     </Box>
   )
 }
+
+const InputStyled = styled(Input, {
+  shouldForwardProp: (props) => props !== "error",
+})<{ error?: boolean }>`
+  input {
+    text-align: center;
+  }
+  &::after {
+    border-color: ${({ error }) => (error ? "#ff0000" : "#1976d2")};
+  }
+`
 
 const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const dataFilterParams = useSelector(selectAlgorithmDataFilterParam(nodeId))
@@ -155,22 +193,23 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   }, [dataFilterParams, getData])
 
   const onChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const regex = /[^0-9,:]/g
-      const value = event.target.value.replace(regex, "")
-      const values = value.split(",").map((v) => {
+    (name: string, value?: string) => {
+      const values = value?.split(",").map((v) => {
         if (!v) return ""
         const array = v.split(":")
         const dim: TDim = {}
-        if (array[0] !== undefined) dim.start = Number(array[0])
-        if (array[1] !== undefined) dim.end = Number(array[1])
+        if (array[0]) dim.start = Number(array[0])
+        if (array[1]) dim.end = Number(array[1])
         return dim
       })
-      const name = event.target.name
+
       dispatch(
         updateFilterParams({
           nodeId,
-          dataFilterParam: { ...dataFilterParams, [name]: values },
+          dataFilterParam: {
+            ...dataFilterParams,
+            [name]: values?.filter(Boolean),
+          },
         }),
       )
     },
@@ -184,28 +223,28 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
         name="dim1"
         placeholder="1:128"
         value={dim1 || ""}
-        onChange={onChange}
+        onChangeInput={(v) => onChange("dim1", v)}
       />
       <InputDim
         title="Dim 2"
         name="dim2"
         placeholder="1:128"
         value={dim2 || ""}
-        onChange={onChange}
+        onChangeInput={(v) => onChange("dim2", v)}
       />
       <InputDim
         title="Dim 3"
         name="dim3"
         placeholder="1:1000"
         value={dim3 || ""}
-        onChange={onChange}
+        onChangeInput={(v) => onChange("dim4", v)}
       />
       <InputDim
         title="ROI"
         name="roi"
         placeholder="1:23,50:52"
         value={roi || ""}
-        onChange={onChange}
+        onChangeInput={(v) => onChange("roi", v)}
       />
     </Box>
   )
