@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from glob import glob
 from typing import Optional, Tuple
 
-import cv2
 import numpy as np
 import tifffile
 from lauda import stopwatch
+from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
@@ -60,9 +60,15 @@ def get_default_params(name: str):
 
 
 def save_image_with_thumb(img_path: str, img):
-    cv2.imwrite(img_path, img)
-    thumb_img = cv2.resize(img, dsize=(THUMBNAIL_HEIGHT, THUMBNAIL_HEIGHT))
-    cv2.imwrite(img_path.replace(".png", ".thumb.png"), thumb_img)
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+        if img.mode == "F":
+            img = img.convert("RGB")
+    img.save(img_path)
+    w, h = img.size
+    new_width = int(w * (THUMBNAIL_HEIGHT / h))
+    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.LANCZOS)
+    thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
 class ExpDbPath:

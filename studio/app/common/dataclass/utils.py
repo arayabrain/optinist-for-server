@@ -1,7 +1,7 @@
 import copy
 
-import cv2
 import numpy as np
+from PIL import Image
 
 from studio.app.const import THUMBNAIL_HEIGHT
 
@@ -21,9 +21,10 @@ def create_images_list(data):
 
 
 def save_thumbnail(plot_file):
-    plot_img = cv2.imread(plot_file)
-    h, w = plot_img.shape[:2]
-    thumb_img = cv2.resize(
-        plot_img, dsize=(int(w * (THUMBNAIL_HEIGHT / h)), THUMBNAIL_HEIGHT)
-    )
-    cv2.imwrite(plot_file.replace(".png", ".thumb.png"), thumb_img)
+    with Image.open(plot_file) as img:
+        # Calculate new dimensions
+        w, h = img.size
+        new_width = int(w * (THUMBNAIL_HEIGHT / h))
+        # LANCZOS is high-quality downsampling filter
+        thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.LANCZOS)
+        thumb_img.save(plot_file.replace(".png", ".thumb.png"))
