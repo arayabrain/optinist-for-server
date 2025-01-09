@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 import numpy as np
 import tifffile
 from lauda import stopwatch
+from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
@@ -19,7 +20,6 @@ from studio.app.common.core.utils.filepath_creater import (
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.common.dataclass.image import ImageData
-from studio.app.common.dataclass.utils import save_thumbnail
 from studio.app.const import (
     ACCEPT_FILE_EXT,
     CELLMASK_FIELDNAME,
@@ -28,6 +28,7 @@ from studio.app.const import (
     FOV_CONTRAST,
     FOV_SUFFIX,
     TC_SUFFIX,
+    THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
 from studio.app.dir_path import DIRPATH
@@ -56,6 +57,18 @@ class Result:
 def get_default_params(name: str):
     filepath = find_param_filepath(name)
     return ConfigReader.read(filepath)
+
+
+def save_image_with_thumb(img_path: str, img):
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+        if img.mode == "F":
+            img = img.convert("RGB")
+    img.save(img_path)
+    w, h = img.size
+    new_width = int(w * (THUMBNAIL_HEIGHT / h))
+    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.LANCZOS)
+    thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
 class ExpDbPath:
@@ -239,7 +252,7 @@ class ExpDbBatch:
             fov_cell_merge = np.round(fov_cell_merge * 255).astype(np.uint8)
 
             for expdb_path in self.expdb_paths:
-                save_thumbnail(
+                save_image_with_thumb(
                     join_filepath([expdb_path.cellmask_dir, f"fov_cell_merge_{i}.png"]),
                     fov_cell_merge,
                 )
@@ -297,7 +310,7 @@ class ExpDbBatch:
             file_name = os.path.splitext(os.path.basename(pixelmap))[0]
 
             for expdb_path in self.expdb_paths:
-                save_thumbnail(
+                save_image_with_thumb(
                     join_filepath([expdb_path.pixelmap_dir, f"{file_name}.png"]), img
                 )
 
