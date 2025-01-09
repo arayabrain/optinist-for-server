@@ -33,7 +33,7 @@ class PolarData(BaseData):
 
     def save_plot(self, output_dir):
         for i in range(len(self.data)):
-            plt.figure(figsize=(10, 10))
+            plt.figure()
             ax = plt.subplot(111, polar=True)
 
             # Convert degrees to radians
@@ -61,7 +61,7 @@ class PolarData(BaseData):
                     linewidth=1.5,
                 )
 
-            plot_file = f"{output_dir}/{self.filename}_{i}_matplotlib.png"
+            plot_file = join_filepath([output_dir, f"{self.file_name}_{i}.png"])
             plt.tight_layout()
             plt.savefig(plot_file, bbox_inches="tight")
             plt.close()
