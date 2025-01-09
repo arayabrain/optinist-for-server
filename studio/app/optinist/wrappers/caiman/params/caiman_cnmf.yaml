@@ -27,7 +27,7 @@ init_params:
   # NOTE: K would affect performance.
   # Set lower values (like 4) for faster processing. (eg., for development)
   # K: 2000  # for production.
-  K: 4
+  K: 10
 
   gSig: [4, 4]
   ssub: 1
