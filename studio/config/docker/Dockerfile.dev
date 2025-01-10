@@ -76,10 +76,10 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install poetry && \
     poetry config virtualenvs.create false
 
-# export requirements.txt from poetry and
+# export requirements.txt from poetry and install
 # * Some module versions are adjusted directly for batch environments.
-RUN poetry export -f requirements.txt -o requirements.studio.txt --without-hashes && \
-    sed -e '/^h5py/d' -e '/^opencv-python/d' requirements.studio.txt > requirements.batch.txt
+RUN poetry export -f requirements.txt -o requirements.studio.txt && \
+    sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
 
 RUN pip3 install -r requirements.studio.txt
 
@@ -111,4 +111,3 @@ USER optinist
 COPY studio/app/optinist/wrappers/caiman/run_download_model_files.sh ./
 RUN bash run_download_model_files.sh && rm run_download_model_files.sh
 USER root
-
