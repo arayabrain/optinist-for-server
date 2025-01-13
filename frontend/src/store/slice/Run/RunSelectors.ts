@@ -10,7 +10,6 @@ import {
   RunPostData,
 } from "api/run/Run"
 import {
-  selectAlgorithmDataFilterParam,
   selectAlgorithmFunctionPath,
   selectAlgorithmIsUpdated,
   selectAlgorithmName,
@@ -59,7 +58,6 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
   nodes.forEach((node) => {
     if (isAlgorithmNodeData(node)) {
       const param = selectAlgorithmParams(node.id)(state) ?? {}
-      const dataFilterParam = selectAlgorithmDataFilterParam(node.id)(state)
       const functionPath = selectAlgorithmFunctionPath(node.id)(state)
       const algorithmNodePostData: Node<AlgorithmNodePostData> = {
         ...node,
@@ -69,7 +67,6 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
           type: NODE_TYPE_SET.ALGORITHM,
           path: functionPath,
           param,
-          dataFilterParam,
         },
       }
       nodeDict[node.id] = algorithmNodePostData
@@ -79,7 +76,6 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
       const param = selectInputNodeParam(node.id)(state)
       const hdf5Path = selectInputNodeHDF5Path(node.id)(state)
       const matPath = selectInputNodeMatlabPath(node.id)(state)
-      const dataFilterParam = selectAlgorithmDataFilterParam(node.id)(state)
       const inputNodePosyData: Node<InputNodePostData> = {
         ...node,
         data: {
@@ -91,7 +87,6 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
           matPath: matPath,
           hdf5Path: hdf5Path,
           fileType,
-          dataFilterParam,
         },
       }
       nodeDict[node.id] = inputNodePosyData

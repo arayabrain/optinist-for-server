@@ -10,8 +10,6 @@ export type TDim = { start?: number; end?: number }
 
 export type TDataFilterParam = {
   dim1?: TDim[]
-  dim2?: TDim[]
-  dim3?: TDim[]
   roi?: TDim[]
 }
 

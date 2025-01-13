@@ -22,14 +22,17 @@ export const selectAlgorithmParams = (nodeId: string) => (state: RootState) =>
 
 export const selectAlgorithmDataFilterParam =
   (nodeId: string) => (state: RootState) => {
+    return selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
+  }
+
+export const selectAlgorithmDataFilterParamObject =
+  (nodeId: string) => (state: RootState) => {
     const dataFilterParam =
       selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
     if (!dataFilterParam) return undefined
-    const { dim1, dim2, dim3, roi } = dataFilterParam
+    const { dim1, roi } = dataFilterParam
     return {
       dim1: dim1?.filter(Boolean),
-      dim2: dim2?.filter(Boolean),
-      dim3: dim3?.filter(Boolean),
       roi: roi?.filter(Boolean),
     }
   }
