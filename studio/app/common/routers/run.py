@@ -3,7 +3,12 @@ from typing import Dict
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.workflow.workflow import Message, NodeItem, RunItem
+from studio.app.common.core.workflow.workflow import (
+    DataFilterParam,
+    Message,
+    NodeItem,
+    RunItem,
+)
 from studio.app.common.core.workflow.workflow_result import (
     WorkflowMonitor,
     WorkflowResult,
@@ -50,8 +55,7 @@ async def run_id(
     workspace_id: str, uid: str, runItem: RunItem, background_tasks: BackgroundTasks
 ):
     try:
-        workflow_runner = WorkflowRunner(workspace_id, uid, runItem)
-        workflow_runner.run_workflow(background_tasks)
+        WorkflowRunner(workspace_id, uid, runItem).run_workflow(background_tasks)
 
         logger.info("run snakemake")
         logger.info("forcerun list: %s", runItem.forceRunList)
@@ -99,3 +103,15 @@ async def cancel_run(workspace_id: str, uid: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cencel workflow.",
         )
+
+
+@router.post("/filter/{workspace_id}/{uid}/{node_id}", response_model=bool)
+async def apply_filter(
+    workspace_id: str, uid: str, node_id: str, params: DataFilterParam
+):
+    return
+
+
+@router.post("/reset_filter/{workspace_id}/{uid}/{node_id}", response_model=bool)
+async def reset_filter(workspace_id: str, uid: str, node_id: str):
+    return

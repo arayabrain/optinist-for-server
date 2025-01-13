@@ -147,13 +147,13 @@ class DataFilterRangeParam:
 @dataclass
 class DataFilterParam:
     dim1: List[DataFilterRangeParam] = field(default_factory=list)
-    dim2: List[DataFilterRangeParam] = field(default_factory=list)
-    dim3: List[DataFilterRangeParam] = field(default_factory=list)
+    # dim2: List[DataFilterRangeParam] = field(default_factory=list)
+    # dim3: List[DataFilterRangeParam] = field(default_factory=list)
     roi: List[DataFilterRangeParam] = field(default_factory=list)
 
     @property
     def is_empty(self):
-        return len(self.dim1 + self.dim2 + self.dim3 + self.roi) == 0
+        return len(self.dim1 + self.roi) == 0
 
     @staticmethod
     def _get_mask(dim_range: List[DataFilterRangeParam], max_size: int):
@@ -162,19 +162,13 @@ class DataFilterParam:
         mask = np.zeros(max_size, dtype=bool)
         for range in dim_range:
             if isinstance(range, dict):
-                mask[range["start"] : range["end"] + 1] = True
+                mask[range["start"] : range["end"]] = True
             else:
-                mask[range.start : range.end + 1] = True
+                mask[range.start : range.end] = True
         return mask
 
     def dim1_mask(self, max_size):
         return self._get_mask(self.dim1, max_size=max_size)
-
-    def dim2_mask(self, max_size):
-        return self._get_mask(self.dim2, max_size=max_size)
-
-    def dim3_mask(self, max_size):
-        return self._get_mask(self.dim3, max_size=max_size)
 
     def roi_mask(self, max_size):
         return self._get_mask(self.roi, max_size=max_size)
@@ -189,9 +183,9 @@ class NodeData:
     fileType: str = None
     hdf5Path: str = None
     matPath: str = None
-    dataFilterParam: Union[DataFilterParam, dict, None] = field(
-        default_factory=lambda: DataFilterParam(dim1=[], dim2=[], dim3=[], roi=[])
-    )
+    # dataFilterParam: Union[DataFilterParam, dict, None] = field(
+    #     default_factory=lambda: DataFilterParam(dim1=[], dim2=[], dim3=[], roi=[])
+    # )
 
 
 @dataclass

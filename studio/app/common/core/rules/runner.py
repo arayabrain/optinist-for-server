@@ -58,27 +58,13 @@ class Runner:
 
             cls.__set_func_start_timestamp(os.path.dirname(__rule.output))
 
-            dataFilterParam = DataFilterParam(**__rule.dataFilterParam)
-            bak_output = __rule.output + ".bak"
-            if not dataFilterParam.is_empty and os.path.exists(bak_output):
-                bak_output_info = PickleReader.read(bak_output)
-                output_info = cls.__filter_data(
-                    bak_output_info,
-                    dataFilterParam,
-                    __rule.type,
-                    output_dir=os.path.dirname(__rule.output),
-                )
-            else:
-                if os.path.exists(bak_output):
-                    os.remove(bak_output)
-                # output_info
-                output_info = cls.__execute_function(
-                    __rule.path,
-                    __rule.params,
-                    nwbfile.get("input"),
-                    os.path.dirname(__rule.output),
-                    input_info,
-                )
+            output_info = cls.__execute_function(
+                __rule.path,
+                __rule.params,
+                nwbfile.get("input"),
+                os.path.dirname(__rule.output),
+                input_info,
+            )
 
             # nwbfileの設定
             output_info["nwbfile"] = cls.__save_func_nwb(
@@ -262,33 +248,30 @@ class Runner:
         dff = output_info["dff"].data if output_info.get("dff") else None
         iscell = output_info["iscell"].data
 
+        # if data_filter_param.dim1:
+        #     dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
+        #     im[:, ~dim1_filter_mask, :] = np.nan
+
+        # if data_filter_param.dim2:
+        #     dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
+        #     im[:, :, ~dim2_filter_mask] = np.nan
+
         if data_filter_param.dim1:
-            dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
-            im[:, ~dim1_filter_mask, :] = np.nan
-
-        if data_filter_param.dim2:
-            dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
-            im[:, :, ~dim2_filter_mask] = np.nan
-
-        if data_filter_param.dim3:
-            dim3_filter_mask = data_filter_param.dim3_mask(
+            dim1_filter_mask = data_filter_param.dim1_mask(
                 max_size=fluorescence.shape[1]
             )
-            fluorescence[:, ~dim3_filter_mask] = np.nan
+            fluorescence[:, ~dim1_filter_mask] = np.nan
             if dff is not None:
-                dff[:, ~dim3_filter_mask] = np.nan
+                dff[:, ~dim1_filter_mask] = np.nan
 
         if data_filter_param.roi:
-            roi_filter_mask = data_filter_param.roi_mask(max_size=im.shape[0])
+            roi_filter_mask = data_filter_param.roi_mask(max_size=iscell.shape[0])
             iscell[~roi_filter_mask] = False
 
-        output_info["edit_roi_data"].im = im
-
-        nwbfile = output_info["nwbfile"][type]
-        function_id = list(nwbfile[NWBDATASET.POSTPROCESS].keys())[0]
-        nwbfile[NWBDATASET.POSTPROCESS][function_id]["all_roi_img"] = im
-        nwbfile[NWBDATASET.COLUMN][function_id]["data"] = iscell
-        nwbfile[NWBDATASET.FLUORESCENCE][function_id]["Fluorescence"][
+        nwbfile = output_info["nwbfile"]
+        function_id = list(nwbfile[type][NWBDATASET.POSTPROCESS].keys())[0]
+        nwbfile[type][NWBDATASET.COLUMN][function_id]["data"] = iscell
+        nwbfile[type][NWBDATASET.FLUORESCENCE][function_id]["Fluorescence"][
             "data"
         ] = fluorescence.T
 

@@ -33,8 +33,6 @@ class WorkflowRunner:
         self.nodeDict = self.runItem.nodeDict
         self.edgeDict = self.runItem.edgeDict
 
-        self.check_data_filter_param()
-
         WorkflowConfigWriter(
             self.workspace_id,
             self.unique_id,
