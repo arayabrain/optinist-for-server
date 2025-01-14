@@ -8,18 +8,22 @@ import {
 } from "react"
 import { shallowEqual, useDispatch, useSelector } from "react-redux"
 
+import { enqueueSnackbar } from "notistack"
+
 import styled from "@emotion/styled"
 import { Box, Button, Input, InputProps } from "@mui/material"
 
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
-import { updateFilterParams } from "store/slice/AlgorithmNode/AlgorithmNodeSlice"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
+import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
+import { selectRunOutputPaths } from "store/slice/Pipeline/PipelineSelectors"
+import { AppDispatch } from "store/store"
 
 type InputDim = {
   title: string
   onChangeInput?: (value?: string) => void
-  max?: number
+  max?: number | null
   multiple?: boolean
 } & InputProps
 
@@ -120,24 +124,33 @@ const TextError = styled("div")`
 `
 
 const BoxFilter = ({ nodeId }: { nodeId: string }) => {
-  const dataFilterParamsSelector = useSelector(
+  const dispatch = useDispatch<AppDispatch>()
+  const outputPaths = useSelector(selectRunOutputPaths(nodeId))
+  const maxDim = useMemo(
+    () => outputPaths.fluorescence?.data_shape?.[1],
+    [outputPaths.fluorescence?.data_shape],
+  )
+  const maxRoi = useMemo(
+    () => outputPaths.fluorescence?.max_index,
+    [outputPaths.fluorescence?.max_index],
+  )
+  const { onOpenFilterDialog } = useContext(DialogContext)
+
+  const filterSelector = useSelector(
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
   )
-  const maxDim = 12 // TODO: WIP - get from api
+  const [filterParam, setFilterParam] = useState(filterSelector)
 
-  const { onOpenFilterDialog } = useContext(DialogContext)
+  const dataFilterParam = useMemo(() => {
+    if (!filterParam) return undefined
+    const { dim1, roi } = filterParam
+    return { dim1: dim1?.filter(Boolean), roi: roi?.filter(Boolean) }
+  }, [filterParam])
 
-  const dataFilterParams = useMemo(() => {
-    if (!dataFilterParamsSelector) return undefined
-    const { dim1, roi } = dataFilterParamsSelector
-    return {
-      dim1: dim1?.filter(Boolean),
-      roi: roi?.filter(Boolean),
-    }
-  }, [dataFilterParamsSelector])
-
-  const dispatch = useDispatch()
+  useEffect(() => {
+    setFilterParam(filterSelector)
+  }, [filterSelector])
 
   const getData = useCallback(
     (value?: TDim[]) =>
@@ -154,34 +167,62 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const { dim1, roi } = useMemo(() => {
     return {
-      dim1: getData(dataFilterParams?.dim1),
-      roi: getData(dataFilterParams?.roi),
+      dim1: getData(dataFilterParam?.dim1),
+      roi: getData(dataFilterParam?.roi),
     }
-  }, [dataFilterParams, getData])
+  }, [dataFilterParam, getData])
 
-  const onChange = useCallback(
-    (name: string, value?: string) => {
-      const values = value?.split(",").map((v) => {
-        if (!v) return ""
-        const array = v.split(":")
-        const dim: TDim = {}
-        if (array[0]) dim.start = Number(array[0])
-        if (array[1]) dim.end = Number(array[1])
-        return dim
+  const onChange = useCallback((name: string, value?: string) => {
+    const values = value?.split(",").map((v) => {
+      if (!v) return ""
+      const array = v.split(":")
+      const dim: TDim = {}
+      if (array[0]) dim.start = Number(array[0])
+      if (array[1]) dim.end = Number(array[1])
+      return dim
+    })
+    setFilterParam((pre) => ({ ...pre, [name]: values?.filter(Boolean) }))
+  }, [])
+
+  const isNotChange = useMemo(() => {
+    return (
+      !dim1?.length &&
+      !roi?.length &&
+      !filterSelector?.roi?.length &&
+      !filterSelector?.roi?.length
+    )
+  }, [dim1?.length, filterSelector?.roi?.length, roi?.length])
+
+  const acceptFilter = useCallback(() => {
+    onOpenFilterDialog("")
+    if (isNotChange) return
+    if (JSON.stringify(filterSelector) === JSON.stringify(filterParam)) {
+      return
+    }
+    dispatch(runApplyFilter({ dataFilterParam, nodeId }))
+      .unwrap()
+      .catch(() => {
+        enqueueSnackbar("Failed to Accept filter", { variant: "error" })
       })
+  }, [
+    dataFilterParam,
+    dispatch,
+    filterParam,
+    filterSelector,
+    isNotChange,
+    nodeId,
+    onOpenFilterDialog,
+  ])
 
-      dispatch(
-        updateFilterParams({
-          nodeId,
-          dataFilterParam: {
-            ...dataFilterParams,
-            [name]: values?.filter(Boolean),
-          },
-        }),
-      )
-    },
-    [dataFilterParams, dispatch, nodeId],
-  )
+  const resetFilter = useCallback(() => {
+    onOpenFilterDialog("")
+    if (!filterSelector?.dim1?.length && !filterSelector?.roi?.length) return
+    dispatch(runApplyFilter({ dataFilterParam: undefined, nodeId }))
+      .unwrap()
+      .catch(() => {
+        enqueueSnackbar("Failed to Reset filter", { variant: "error" })
+      })
+  }, [dispatch, filterSelector, nodeId, onOpenFilterDialog])
 
   return (
     <Box display="flex" justifyContent="flex-end">
@@ -190,10 +231,11 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
           <InputDim
             title="ROI"
             name="roi"
-            placeholder="1:23,50:52"
+            placeholder={`0:${maxRoi},1:${maxRoi}`}
             value={roi || ""}
             onChangeInput={(v) => onChange("roi", v)}
             multiple
+            max={maxRoi}
           />
           <InputDim
             title="Time(Dim1)"
@@ -205,7 +247,12 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
           />
         </Box>
         <Box mt={2} display="flex" gap={1}>
-          <Button variant="outlined" size="small" style={{ width: 120 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            style={{ width: 120 }}
+            onClick={acceptFilter}
+          >
             APPLY
           </Button>
           <Button
@@ -217,7 +264,12 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
           >
             CANCEL
           </Button>
-          <Button variant="outlined" size="small" style={{ width: 120 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            style={{ width: 120 }}
+            onClick={resetFilter}
+          >
             RESET
           </Button>
         </Box>

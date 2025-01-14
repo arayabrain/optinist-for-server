@@ -29,10 +29,11 @@ import {
   selectAlgoReturns,
 } from "store/slice/AlgorithmList/AlgorithmListSelectors"
 import {
+  selectAlgorithmFilterParamLoadingApi,
   selectAlgorithmIsUpdated,
+  selectAlgorithmIsUpdatedFilterParams,
   selectAlgorithmNodeDefined,
 } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
-import { resetDataFilterParams } from "store/slice/AlgorithmNode/AlgorithmNodeSlice"
 import {
   isParentNodeUpdatedParams,
   selectAncestorNodesOriginalValueById,
@@ -70,6 +71,10 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
   data,
 }: NodeProps<NodeData>) {
   const { onOpenOutputDialog, onOpenFilterDialog } = useContext(DialogContext)
+
+  const isUpdateFilterParams = useSelector(
+    selectAlgorithmIsUpdatedFilterParams(nodeId),
+  )
   const dispatch = useDispatch()
 
   const onClickParamButton = () => {
@@ -98,7 +103,7 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
 
   useEffect(() => {
     if (isParentParamsUpdated) {
-      dispatch(resetDataFilterParams(nodeId))
+      // TODO reset param
     }
   }, [dispatch, isParentParamsUpdated, nodeId])
 
@@ -157,6 +162,7 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
             disabled={
               status !== NODE_RESULT_STATUS.SUCCESS || isParentParamsUpdated
             }
+            style={{ backgroundColor: isUpdateFilterParams ? "#ff98004d" : "" }}
           >
             Filter
           </Button>
@@ -171,9 +177,13 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
 const AlgoProgress = memo(function AlgoProgress({ nodeId }: NodeIdProps) {
   const status = useStatus(nodeId)
   const pipelineStatus = useSelector(selectPipelineStatus)
+  const loadingFilterParams = useSelector(
+    selectAlgorithmFilterParamLoadingApi(nodeId),
+  )
   if (
-    pipelineStatus === RUN_STATUS.START_SUCCESS &&
-    status === NODE_RESULT_STATUS.PENDING
+    (pipelineStatus === RUN_STATUS.START_SUCCESS &&
+      status === NODE_RESULT_STATUS.PENDING) ||
+    loadingFilterParams
   ) {
     return (
       <div style={{ paddingLeft: 8, paddingRight: 8 }}>

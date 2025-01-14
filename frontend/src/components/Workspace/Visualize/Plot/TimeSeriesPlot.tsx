@@ -142,7 +142,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
 
   const colorScale = createColormap({
     colormap: "jet",
-    nshades: nshades, //maxIndex >= 6 ? maxIndex : 6,
+    nshades: Math.max(nshades, 6), //maxIndex >= 6 ? maxIndex : 6,
     format: "hex",
     alpha: 1,
   })

@@ -44,6 +44,20 @@ export interface AlgorithmNodePostData extends AlgorithmNodeData {
   path: string
   param: ParamMap
   dataFilterParam?: TDataFilterParam
+  isUpdateFilter?: boolean | null
+}
+
+export async function runFilterApi(
+  workspaceId: number,
+  uid: number | string,
+  node_id: string,
+  data?: TDataFilterParam,
+): Promise<string> {
+  const response = await axios.post(
+    `${BASE_URL}/run/filter/${workspaceId}/${uid}/${node_id}`,
+    data,
+  )
+  return response.data
 }
 
 export async function runApi(
@@ -79,6 +93,8 @@ export type OutputPathsDTO = {
   [outputKey: string]: {
     path: string
     type: string
+    data_shape: number[]
+    max_index: number
   }
 }
 

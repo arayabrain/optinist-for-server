@@ -24,6 +24,10 @@ export const selectAlgorithmDataFilterParam =
   (nodeId: string) => (state: RootState) => {
     return selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
   }
+export const selectAlgorithmFilterParamLoadingApi =
+  (nodeId: string) => (state: RootState) => {
+    return selectAlgorithmNodeById(nodeId)(state)?.loadingFilterParamApi
+  }
 
 export const selectAlgorithmDataFilterParamObject =
   (nodeId: string) => (state: RootState) => {
@@ -40,14 +44,18 @@ export const selectAlgorithmDataFilterParamObject =
 export const selectAlgorithmIsUpdated =
   (nodeId: string) => (state: RootState) => {
     const isUpdate = selectAlgorithmNodeById(nodeId)(state).isUpdate
-    const isUpdateFilter = selectAlgorithmNodeById(nodeId)(state).isUpdateFilter
     const originalValue = selectAlgorithmNodeById(nodeId)(state).originalValue
     const param = selectAlgorithmParams(nodeId)(state)
     return (
-      isUpdateFilter ||
-      (!(JSON.stringify(originalValue) === JSON.stringify(param)) && isUpdate)
+      !(JSON.stringify(originalValue) === JSON.stringify(param)) && isUpdate
     )
   }
+
+export const selectAlgorithmIsUpdatedFilterParams =
+  (nodeId: string) => (state: RootState) => {
+    return selectAlgorithmNodeById(nodeId)(state).isUpdateFilter
+  }
+
 export const selectAlgorithmParamsExit =
   (nodeId: string) => (state: RootState) =>
     selectAlgorithmNodeById(nodeId)(state).params !== null
