@@ -189,9 +189,14 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
       !dim1?.length &&
       !roi?.length &&
       !filterSelector?.roi?.length &&
-      !filterSelector?.roi?.length
+      !filterSelector?.dim1?.length
     )
-  }, [dim1?.length, filterSelector?.roi?.length, roi?.length])
+  }, [
+    dim1?.length,
+    filterSelector?.dim1?.length,
+    filterSelector?.roi?.length,
+    roi?.length,
+  ])
 
   const acceptFilter = useCallback(() => {
     onOpenFilterDialog("")
