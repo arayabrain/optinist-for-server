@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
@@ -107,11 +107,14 @@ async def cancel_run(workspace_id: str, uid: str):
 
 @router.post("/filter/{workspace_id}/{uid}/{node_id}", response_model=bool)
 async def apply_filter(
-    workspace_id: str, uid: str, node_id: str, params: DataFilterParam
+    workspace_id: str, uid: str, node_id: str, params: Optional[DataFilterParam] = None
 ):
-    return
-
-
-@router.post("/reset_filter/{workspace_id}/{uid}/{node_id}", response_model=bool)
-async def reset_filter(workspace_id: str, uid: str, node_id: str):
-    return
+    try:
+        WorkflowRunner.filter_node_data(workspace_id, uid, node_id, params)
+        return True
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to filter data.",
+        )

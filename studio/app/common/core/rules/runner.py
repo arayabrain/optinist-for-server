@@ -236,7 +236,7 @@ class Runner:
             return root_dict[path]
 
     @classmethod
-    def __filter_data(
+    def filter_data(
         cls,
         output_info: dict,
         data_filter_param: DataFilterParam,

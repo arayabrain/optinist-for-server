@@ -129,6 +129,7 @@ class OutputPath:
     path: str
     type: str
     max_index: int = None
+    data_shape: list = field(default_factory=list)
 
 
 @dataclass
@@ -183,9 +184,9 @@ class NodeData:
     fileType: str = None
     hdf5Path: str = None
     matPath: str = None
-    # dataFilterParam: Union[DataFilterParam, dict, None] = field(
-    #     default_factory=lambda: DataFilterParam(dim1=[], dim2=[], dim3=[], roi=[])
-    # )
+    dataFilterParam: Union[DataFilterParam, dict, None] = field(
+        default_factory=lambda: DataFilterParam(dim1=[], roi=[])
+    )
 
 
 @dataclass

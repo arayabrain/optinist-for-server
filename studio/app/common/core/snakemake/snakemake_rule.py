@@ -101,7 +101,6 @@ class SmkRule:
             .set_output(algo_output)
             .set_path(self._node.data.path)
             .set_type(self._node.data.label)
-            # .set_dataFilterParam(self._node.data.dataFilterParam)
             .build()
         )
 
