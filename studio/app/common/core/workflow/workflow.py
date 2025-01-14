@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -129,7 +129,7 @@ class OutputPath:
     path: str
     type: str
     max_index: int = None
-    data_shape: list = field(default_factory=list)
+    data_shape: Optional[list] = field(default_factory=list)
 
 
 @dataclass

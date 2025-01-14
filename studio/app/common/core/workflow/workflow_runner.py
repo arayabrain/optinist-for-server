@@ -172,6 +172,8 @@ class WorkflowRunner:
 
         workflow_config = cls.get_workflow_config(workspace_id, uid, node_id)
         node = workflow_config.nodeDict[node_id]
+        node.data.dataFilterParam = params
+
         pkl_filepath = join_filepath(
             [
                 DIRPATH.OUTPUT_DIR,
@@ -205,6 +207,7 @@ class WorkflowRunner:
             )
             PickleWriter.write(pkl_filepath, original_output_info)
         else:
+            # reset filter
             if not os.path.exists(original_pkl_filepath):
                 return
             os.remove(pkl_filepath)
@@ -216,7 +219,13 @@ class WorkflowRunner:
         cls._save_json(original_output_info, node_dirpath)
 
         # write config
-        # WorkflowConfigWriter.write()
+        WorkflowConfigWriter(
+            workspace_id,
+            uid,
+            workflow_config.nodeDict,
+            workflow_config.edgeDict,
+        ).write()
+
         return
 
     @classmethod
