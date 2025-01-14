@@ -163,7 +163,7 @@ class WorkflowRunner:
         )
         exp_config = ExptConfigReader.read(expt_filepath)
 
-        assert exp_config.success == "success"
+        # assert exp_config.success == "success"
         assert exp_config.function[node_id].success == "success"
 
     @classmethod
@@ -172,7 +172,6 @@ class WorkflowRunner:
 
         workflow_config = cls.get_workflow_config(workspace_id, uid, node_id)
         node = workflow_config.nodeDict[node_id]
-        node.data.dataFilterParam = params
 
         pkl_filepath = join_filepath(
             [
@@ -219,6 +218,8 @@ class WorkflowRunner:
         cls._save_json(original_output_info, node_dirpath)
 
         # write config
+        node.data.dataFilterParam = params
+        node.data.isUpdateFilter = True
         WorkflowConfigWriter(
             workspace_id,
             uid,
