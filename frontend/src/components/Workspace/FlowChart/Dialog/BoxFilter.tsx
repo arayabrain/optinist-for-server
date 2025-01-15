@@ -29,22 +29,17 @@ type InputDim = {
 
 const InputDim = (props: InputDim) => {
   const { title, onChangeInput, max, multiple, ...p } = props
-  const [value, setValue] = useState(p.value)
+  const [value, setValue] = useState<string>(p.value as string)
   const [valuePassed, setValuePassed] = useState<string>(p.value as string)
 
   useEffect(() => {
-    setValue(p.value)
+    setValue(p.value as string)
   }, [p.value])
 
-  const onChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      let regex = /[^0-9,:]/g
-      if (!multiple) regex = /[^0-9:]/g
-      let value = event.target.value.replace(regex, "")
-      let regexTest = /^(\d+:\d+)(,\d+:\d+)*$/
-      if (!multiple) regexTest = /^(\d+:\d+)(\d+:\d+)*$/
-      if (max) {
-        value = value
+  const validateValue = useCallback(
+    (string: string, isBlur?: boolean) => {
+      if (max || max === 0) {
+        return string
           .split(",")
           .map((e) => {
             const dims = e.split(":")
@@ -55,19 +50,34 @@ const InputDim = (props: InputDim) => {
             if (dim0 && dim1) {
               return `${Number(dim0) > max ? max : dim0}:${Number(dim1) > max ? max : dim1}`
             }
+            if (dim1 && !dim0) return `0:${dim1}`
+            if (isBlur && dim0 && !dim1) return `${dim0}:${max}`
             return e
           })
           .join(",")
       }
+      return string
+    },
+    [max],
+  )
+
+  const onChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      let regex = /[^0-9,:]/g
+      if (!multiple) regex = /[^0-9:]/g
+      let value = event.target.value.replace(regex, "")
+      let regexTest = /^(\d+:\d+)(,\d+:\d+)*$/
+      if (!multiple) regexTest = /^(\d+:\d+)(\d+:\d+)*$/
+      value = validateValue(value)
       if (regexTest.test(value) || !value) setValuePassed(value)
       setValue(value)
     },
-    [max, multiple],
+    [multiple, validateValue],
   )
 
-  const error = useMemo(() => {
-    if (value !== valuePassed) return "Invalid format"
-    const values = valuePassed.split(",").filter(Boolean)
+  const getError = useCallback((string: string, stringPassed: string) => {
+    if (string !== stringPassed) return "Invalid format"
+    const values = stringPassed.split(",").filter(Boolean)
     if (values.length) {
       const errorEnd = values.find((v) => {
         const dim1 = v.split(":")[1]
@@ -79,13 +89,21 @@ const InputDim = (props: InputDim) => {
       }
     }
     return null
-  }, [value, valuePassed])
+  }, [])
+
+  const error = useMemo(
+    () => getError(value, valuePassed),
+    [getError, value, valuePassed],
+  )
 
   const _onBlur = useCallback(() => {
-    if (error && value) return
-    setValue(valuePassed)
-    onChangeInput?.(valuePassed)
-  }, [error, onChangeInput, value, valuePassed])
+    const newValue = validateValue(value, true)
+    const isError = getError(newValue, newValue)
+    if (isError && newValue) return
+    setValue(newValue)
+    setValuePassed(newValue)
+    onChangeInput?.(newValue)
+  }, [getError, onChangeInput, validateValue, value])
 
   return (
     <Box flex={1}>
@@ -221,13 +239,12 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const resetFilter = useCallback(() => {
     onOpenFilterDialog("")
-    if (!filterSelector?.dim1?.length && !filterSelector?.roi?.length) return
     dispatch(runApplyFilter({ dataFilterParam: undefined, nodeId }))
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Reset filter", { variant: "error" })
       })
-  }, [dispatch, filterSelector, nodeId, onOpenFilterDialog])
+  }, [dispatch, nodeId, onOpenFilterDialog])
 
   return (
     <Box display="flex" justifyContent="flex-end">

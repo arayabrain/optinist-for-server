@@ -30,6 +30,7 @@ import {
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { selectCurrentWorkspaceId } from "store/slice/Workspace/WorkspaceSelector"
 import { AppDispatch } from "store/store"
+import { jetColorMap } from "utils/color"
 import { twoDimarrayEqualityFn } from "utils/EqualityUtils"
 
 export const RoiPlot = memo(function RoiPlot() {
@@ -67,21 +68,34 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, path))
   const { setRoiSelected, roisSelected } = useRoisSelected()
 
-  const lengthColor = Math.max(dialogFilterNodeId ? timeDataMaxIndex : 10, 6)
-
-  const colorscale = createColormap({
-    colormap: "jet",
-    nshades: lengthColor,
-    format: "hex",
-    alpha: 1,
-  }).map((v, idx) => {
-    return { rgb: v, offset: String(idx / (lengthColor - 1)) }
-  })
+  const colorscaleRoi = useMemo(() => {
+    if (dialogFilterNodeId) return jetColorMap(timeDataMaxIndex)
+    const nshades = Math.max(timeDataMaxIndex || 0, 6)
+    return createColormap({
+      colormap: "jet",
+      nshades,
+      format: "hex",
+      alpha: 1,
+    }).map((v, idx) => [String(idx / (nshades - 1)), v])
+  }, [dialogFilterNodeId, timeDataMaxIndex])
 
   const onChartClick = (event: PlotMouseEvent) => {
     const point = event.points[0] as unknown as { z: number }
     setRoiSelected(point.z)
   }
+
+  const colorscale = useMemo(() => {
+    if (!dialogFilterNodeId) return colorscaleRoi
+    return [...Array(timeDataMaxIndex + 1)].map((_, i) => {
+      const new_i = Math.floor(((i % 10) * 10 + i / 10) % timeDataMaxIndex)
+      const offset: number = i / timeDataMaxIndex
+      const rgba = colorscaleRoi[new_i]
+      if (!dialogFilterNodeId || roisSelected.includes(i)) {
+        return [offset, rgba]
+      }
+      return [offset, `${rgba}${(77).toString(16).toUpperCase()}`]
+    })
+  }, [colorscaleRoi, dialogFilterNodeId, roisSelected, timeDataMaxIndex])
 
   const data = useMemo(
     () => [
@@ -90,25 +104,17 @@ const RoiPlotImple = memo(function RoiPlotImple() {
         type: "heatmap",
         name: "roi",
         hovertemplate: !dialogFilterNodeId ? undefined : "cell id: %{z}",
-        colorscale: colorscale.map((value, index) => {
-          const offset = parseFloat(value.offset)
-          if (
-            roisSelected.length &&
-            dialogFilterNodeId &&
-            !roisSelected.includes(index + 1)
-          ) {
-            return [offset, `${value.rgb}${(77).toString(16).toUpperCase()}`]
-          }
-          return [offset, value.rgb]
-        }),
+        colorscale,
         hoverongaps: false,
         // zsmooth: zsmooth, // ['best', 'fast', false]
         zsmooth: false,
         showlegend: !dialogFilterNodeId,
         showscale: !dialogFilterNodeId,
+        zmin: 0,
+        zmax: timeDataMaxIndex,
       },
     ],
-    [imageData, dialogFilterNodeId, colorscale, roisSelected],
+    [imageData, dialogFilterNodeId, colorscale, timeDataMaxIndex],
   )
 
   const layout = useMemo(

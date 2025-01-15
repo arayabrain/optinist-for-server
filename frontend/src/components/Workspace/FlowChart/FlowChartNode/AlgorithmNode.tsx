@@ -1,5 +1,5 @@
 import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { shallowEqual, useDispatch, useSelector } from "react-redux"
 import { Handle, Position, NodeProps } from "reactflow"
 
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded"
@@ -29,9 +29,9 @@ import {
   selectAlgoReturns,
 } from "store/slice/AlgorithmList/AlgorithmListSelectors"
 import {
+  selectAlgorithmDataFilterParam,
   selectAlgorithmFilterParamLoadingApi,
   selectAlgorithmIsUpdated,
-  selectAlgorithmIsUpdatedFilterParams,
   selectAlgorithmNodeDefined,
 } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import {
@@ -72,9 +72,16 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
 }: NodeProps<NodeData>) {
   const { onOpenOutputDialog, onOpenFilterDialog } = useContext(DialogContext)
 
-  const isUpdateFilterParams = useSelector(
-    selectAlgorithmIsUpdatedFilterParams(nodeId),
+  const filterSelector = useSelector(
+    selectAlgorithmDataFilterParam(nodeId),
+    shallowEqual,
   )
+  const isUpdateFilterParams = useMemo(() => {
+    return (
+      filterSelector?.dim1?.filter(Boolean).length ||
+      filterSelector?.roi?.filter(Boolean).length
+    )
+  }, [filterSelector?.dim1, filterSelector?.roi])
   const dispatch = useDispatch()
 
   const onClickParamButton = () => {

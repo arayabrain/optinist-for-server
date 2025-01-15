@@ -47,6 +47,7 @@ import {
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import { AppDispatch } from "store/store"
+import { jetColorMap } from "utils/color"
 
 export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
   const { itemId, filePath: path } = useContext(DisplayDataContext)
@@ -136,22 +137,28 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   }, [rangeUnit, dataXrange, timeSeriesData, drawOrderList])
 
   const nshades = useMemo(() => {
-    if (!dataKeys?.length) return 6
+    if (!dataKeys?.length) return 0
     return Math.max(...dataKeys.map((e) => Number(e)))
   }, [dataKeys])
 
-  const colorScale = createColormap({
-    colormap: "jet",
-    nshades: Math.max(nshades, 6), //maxIndex >= 6 ? maxIndex : 6,
-    format: "hex",
-    alpha: 1,
-  })
+  const colorScale = useMemo(() => {
+    if (dialogFilterNodeId) return jetColorMap(nshades)
+    return createColormap({
+      colormap: "jet",
+      nshades: Math.max(nshades, 6), //maxIndex >= 6 ? maxIndex : 6,
+      format: "hex",
+      alpha: 1,
+    })
+  }, [dialogFilterNodeId, nshades])
 
   const data = useMemo(() => {
     return Object.fromEntries(
       dataKeys.map((key) => {
         let y = newDataXrange.map((x) => newTimeSeriesData[key]?.[x])
-        const new_i = Number(key)
+        const new_i = dialogFilterNodeId
+          ? Math.floor(((Number(key) % 10) * 10 + Number(key) / 10) % nshades)
+          : Number(key)
+        const rgba = colorScale[new_i]
         if (drawOrderList.includes(key) && !stdBool) {
           const activeIdx: number = drawOrderList.findIndex((v) => v === key)
           const mean: number = y.reduce((a, b) => a + b) / y.length
@@ -168,7 +175,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
             x: newDataXrange,
             y: y,
             visible: drawOrderList.includes(key) ? true : "legendonly",
-            line: { color: colorScale[new_i] },
+            line: { color: rgba },
             error_y: {
               type: "data",
               array:
@@ -182,14 +189,16 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
       }),
     )
   }, [
-    drawOrderList,
-    stdBool,
-    span,
-    colorScale,
-    dataStd,
     dataKeys,
     newDataXrange,
+    dialogFilterNodeId,
+    nshades,
+    colorScale,
+    drawOrderList,
+    stdBool,
+    dataStd,
     newTimeSeriesData,
+    span,
   ])
 
   const annotations = useMemo(() => {
