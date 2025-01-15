@@ -89,8 +89,7 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        {/*
-        <InputNodeComponent 
+        <InputNodeComponent
           fileName={"image"}
           nodeName={"imageData"}
           fileType={FILE_TYPE_SET.IMAGE}
@@ -119,8 +118,7 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileName={"matlab"}
           nodeName={"matlabData"}
           fileType={FILE_TYPE_SET.MATLAB}
-        />        
-        */}
+        />
         <InputNodeComponent
           fileName={"microscope"}
           nodeName={"microscopeData"}
