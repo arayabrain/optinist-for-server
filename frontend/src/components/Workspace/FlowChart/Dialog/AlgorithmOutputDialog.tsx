@@ -12,6 +12,7 @@ import Tabs, { tabsClasses } from "@mui/material/Tabs"
 
 import BoxFilter from "components/Workspace/FlowChart/Dialog/BoxFilter"
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { BoxFilterProvider } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { DisplayDataItem } from "components/Workspace/Visualize/DisplayDataItem"
 import { selectAlgorithmName } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { NodeIdProps } from "store/slice/FlowElement/FlowElementType"
@@ -58,8 +59,10 @@ export const AlgorithmOutputDialog = memo(function AlgorithmOutputDialog({
         nodeId={nodeId}
       />
       <DialogContent dividers sx={{ pt: 1, px: 2 }}>
-        {open && <OutputViewer nodeId={nodeId} />}
-        {open && dialogFilterNodeId ? <BoxFilter nodeId={nodeId} /> : null}
+        <BoxFilterProvider>
+          {open && <OutputViewer nodeId={nodeId} />}
+          {open && dialogFilterNodeId ? <BoxFilter nodeId={nodeId} /> : null}
+        </BoxFilterProvider>
       </DialogContent>
     </Dialog>
   )

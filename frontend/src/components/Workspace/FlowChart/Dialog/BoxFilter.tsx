@@ -14,6 +14,7 @@ import styled from "@emotion/styled"
 import { Box, Button, Input, InputProps } from "@mui/material"
 
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
@@ -158,7 +159,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
   )
-  const [filterParam, setFilterParam] = useState(filterSelector)
+  const { filterParam, setFilterParam } = useBoxFilter()
 
   const dataFilterParam = useMemo(() => {
     if (!filterParam) return undefined
@@ -168,7 +169,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   useEffect(() => {
     setFilterParam(filterSelector)
-  }, [filterSelector])
+  }, [filterSelector, setFilterParam])
 
   const getData = useCallback(
     (value?: TDim[]) =>

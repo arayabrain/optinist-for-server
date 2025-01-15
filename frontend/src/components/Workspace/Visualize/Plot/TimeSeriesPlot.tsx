@@ -12,6 +12,7 @@ import {
   DialogContext,
   useRoisSelected,
 } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
 import {
   getTimeSeriesDataById,
@@ -94,7 +95,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const showline = useSelector(selectTimeSeriesItemShowLine(itemId))
   const showticklabels = useSelector(selectTimeSeriesItemShowTickLabels(itemId))
   const zeroline = useSelector(selectTimeSeriesItemZeroLine(itemId))
-  const xrange = useSelector(selectTimeSeriesItemXrange(itemId))
+  const xrangeSelector = useSelector(selectTimeSeriesItemXrange(itemId))
   const drawOrderList = useSelector(selectTimeSeriesItemDrawOrderList(itemId))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
@@ -106,6 +107,15 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const frameRate = useSelector(selectFrameRate(currentPipelineUid))
   const { dialogFilterNodeId } = useContext(DialogContext)
   const { setRoiSelected } = useRoisSelected()
+
+  const { filterParam } = useBoxFilter()
+  const xrange = useMemo(() => {
+    if (dialogFilterNodeId && filterParam) {
+      const dim1 = filterParam?.dim1?.[0]
+      if (dim1) return { left: dim1.start, right: dim1.end }
+    }
+    return xrangeSelector
+  }, [dialogFilterNodeId, filterParam, xrangeSelector])
 
   useEffect(() => {
     const seriesData: TimeSeriesData = {}
