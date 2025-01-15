@@ -164,6 +164,8 @@ describe("RecordReproduce", () => {
     ...initialState,
     algorithmNode: {
       dummy_image2image_c8tqfxw0mq: {
+        dataFilterParam: undefined,
+        originalDataFilterValue: undefined,
         name: "dummy_image2image",
         functionPath: "dummy/dummy_image2image",
         isUpdate: false,
@@ -178,6 +180,8 @@ describe("RecordReproduce", () => {
         },
       },
       dummy_image2image8time_4mrz8h7hyk: {
+        dataFilterParam: undefined,
+        originalDataFilterValue: undefined,
         name: "dummy_image2image8time",
         functionPath: "dummy/dummy_image2image8time",
         isUpdate: false,
@@ -403,6 +407,8 @@ describe("RecordReproduce", () => {
             name: "dummy_image2image8time",
             outputPaths: {
               dummyImage2: {
+                data_shape: undefined,
+                max_index: 1,
                 path: "/tmp/optinist/output/96844a59/dummy_image2image8time_4mrz8h7hyk/image2.tif",
                 type: "image",
               },
@@ -414,6 +420,8 @@ describe("RecordReproduce", () => {
             name: "dummy_image2image",
             outputPaths: {
               dummyImage: {
+                data_shape: undefined,
+                max_index: 1,
                 path: "/tmp/optinist/output/96844a59/dummy_image2image_c8tqfxw0mq/image.tif",
                 type: "image",
               },
