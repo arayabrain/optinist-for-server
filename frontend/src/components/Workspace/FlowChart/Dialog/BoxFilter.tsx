@@ -191,17 +191,20 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     }
   }, [dataFilterParam, getData])
 
-  const onChange = useCallback((name: string, value?: string) => {
-    const values = value?.split(",").map((v) => {
-      if (!v) return ""
-      const array = v.split(":")
-      const dim: TDim = {}
-      if (array[0]) dim.start = Number(array[0])
-      if (array[1]) dim.end = Number(array[1])
-      return dim
-    })
-    setFilterParam((pre) => ({ ...pre, [name]: values?.filter(Boolean) }))
-  }, [])
+  const onChange = useCallback(
+    (name: string, value?: string) => {
+      const values = value?.split(",").map((v) => {
+        if (!v) return ""
+        const array = v.split(":")
+        const dim: TDim = {}
+        if (array[0]) dim.start = Number(array[0])
+        if (array[1]) dim.end = Number(array[1])
+        return dim
+      })
+      setFilterParam((pre) => ({ ...pre, [name]: values?.filter(Boolean) }))
+    },
+    [setFilterParam],
+  )
 
   const isNotChange = useMemo(() => {
     return (
