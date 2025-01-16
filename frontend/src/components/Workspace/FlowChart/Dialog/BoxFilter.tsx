@@ -35,11 +35,12 @@ const InputDim = (props: InputDim) => {
 
   useEffect(() => {
     setValue(p.value as string)
+    setValuePassed(p.value as string)
   }, [p.value])
 
   const validateValue = useCallback(
     (string: string, isBlur?: boolean) => {
-      if (max || max === 0) {
+      if (max) {
         return string
           .split(",")
           .map((e) => {
@@ -47,9 +48,9 @@ const InputDim = (props: InputDim) => {
             if (!dims.filter(Boolean).length) return e
             const dim0 = dims[0]
             const dim1 = dims[1]
-            if (dim0 && !dim1 && Number(dim0) > max) return `${max}:`
+            if (dim0 && !dim1 && Number(dim0) >= max) return `${max - 1}:`
             if (dim0 && dim1) {
-              return `${Number(dim0) > max ? max : dim0}:${Number(dim1) > max ? max : dim1}`
+              return `${Number(dim0) >= max ? max - 1 : dim0}:${Number(dim1) > max ? max : dim1}`
             }
             if (dim1 && !dim0) return `0:${dim1}`
             if (isBlur && dim0 && !dim1) return `${dim0}:${max}`
@@ -70,8 +71,8 @@ const InputDim = (props: InputDim) => {
       let regexTest = /^(\d+:\d+)(,\d+:\d+)*$/
       if (!multiple) regexTest = /^(\d+:\d+)(\d+:\d+)*$/
       value = validateValue(value)
-      if (regexTest.test(value) || !value) setValuePassed(value)
-      setValue(value)
+      if (regexTest.test(value) || !value) setValuePassed(value.trim())
+      setValue(value.trim())
     },
     [multiple, validateValue],
   )
@@ -86,7 +87,7 @@ const InputDim = (props: InputDim) => {
         return dim1 && Number(dim1) < Number(dim0) ? dim0 : undefined
       })
       if (errorEnd) {
-        return `The 'to' value must be >= ${errorEnd.split(":")[0]}`
+        return `The 'to' value must be > ${errorEnd.split(":")[0]}`
       }
     }
     return null
