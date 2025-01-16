@@ -125,8 +125,8 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileType={FILE_TYPE_SET.MICROSCOPE}
         />
         <InputNodeComponent
-          fileName={"expdb"}
-          nodeName={"expdbData"}
+          fileName={"expdbPreprocessed"}
+          nodeName={"expdbPreprocessedData"}
           fileType={FILE_TYPE_SET.EXPDB}
           displayName="preprocessed_data"
         />

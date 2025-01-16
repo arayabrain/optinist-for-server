@@ -7,7 +7,7 @@ from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_conve
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 
 expdb_wrapper_dict = {
-    "ohkilab": {
+    "expdb": {
         "preprocess_components": {
             "preprocessing": {
                 "function": preprocessing,
