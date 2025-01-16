@@ -84,7 +84,7 @@ const InputDim = (props: InputDim) => {
       const errorEnd = values.find((v) => {
         const dim1 = v.split(":")[1]
         const dim0 = v.split(":")[0]
-        return dim1 && Number(dim1) < Number(dim0) ? dim0 : undefined
+        return dim1 && Number(dim1) <= Number(dim0) ? dim0 : undefined
       })
       if (errorEnd) {
         return `The 'to' value must be > ${errorEnd.split(":")[0]}`
