@@ -52,7 +52,7 @@ const InputDim = (props: InputDim) => {
             if (dim0 && dim1) {
               return `${Number(dim0) >= max ? max - 1 : dim0}:${Number(dim1) > max ? max : dim1}`
             }
-            if (dim1 && !dim0) return `0:${dim1}`
+            if (dim1 && !dim0 && isBlur) return `0:${dim1}`
             if (isBlur && dim0 && !dim1) return `${dim0}:${max}`
             return e
           })
