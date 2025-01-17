@@ -30,7 +30,6 @@ import {
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { selectCurrentWorkspaceId } from "store/slice/Workspace/WorkspaceSelector"
 import { AppDispatch } from "store/store"
-import { jetColorMap } from "utils/color"
 import { twoDimarrayEqualityFn } from "utils/EqualityUtils"
 
 export const RoiPlot = memo(function RoiPlot() {
@@ -67,17 +66,16 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   const { dialogFilterNodeId } = useContext(DialogContext)
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, path))
   const { setRoiSelected, roisSelected } = useRoisSelected()
+  const nshades = Math.max(timeDataMaxIndex || 0, 6)
 
   const colorscaleRoi = useMemo(() => {
-    if (dialogFilterNodeId) return jetColorMap(timeDataMaxIndex)
-    const nshades = Math.max(timeDataMaxIndex || 0, 6)
     return createColormap({
       colormap: "jet",
       nshades,
       format: "hex",
       alpha: 1,
-    }).map((v, idx) => [String(idx / (nshades - 1)), v])
-  }, [dialogFilterNodeId, timeDataMaxIndex])
+    })
+  }, [nshades])
 
   const onChartClick = (event: PlotMouseEvent) => {
     const point = event.points[0] as unknown as { z: number }
@@ -85,7 +83,9 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   }
 
   const colorscale = useMemo(() => {
-    if (!dialogFilterNodeId) return colorscaleRoi
+    if (!dialogFilterNodeId) {
+      return colorscaleRoi.map((v, idx) => [String(idx / (nshades - 1)), v])
+    }
     return [...Array(timeDataMaxIndex + 1)].map((_, i) => {
       const new_i = Math.floor(((i % 10) * 10 + i / 10) % timeDataMaxIndex)
       const offset: number = i / timeDataMaxIndex
@@ -95,7 +95,13 @@ const RoiPlotImple = memo(function RoiPlotImple() {
       }
       return [offset, `${rgba}${(77).toString(16).toUpperCase()}`]
     })
-  }, [colorscaleRoi, dialogFilterNodeId, roisSelected, timeDataMaxIndex])
+  }, [
+    colorscaleRoi,
+    dialogFilterNodeId,
+    nshades,
+    roisSelected,
+    timeDataMaxIndex,
+  ])
 
   const data = useMemo(
     () => [

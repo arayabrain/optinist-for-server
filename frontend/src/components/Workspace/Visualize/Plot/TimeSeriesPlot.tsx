@@ -48,7 +48,6 @@ import {
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import { AppDispatch } from "store/store"
-import { jetColorMap } from "utils/color"
 
 export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
   const { itemId, filePath: path } = useContext(DisplayDataContext)
@@ -152,14 +151,13 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   }, [dataKeys])
 
   const colorScale = useMemo(() => {
-    if (dialogFilterNodeId) return jetColorMap(nshades)
     return createColormap({
       colormap: "jet",
       nshades: Math.max(nshades, 6), //maxIndex >= 6 ? maxIndex : 6,
       format: "hex",
       alpha: 1,
     })
-  }, [dialogFilterNodeId, nshades])
+  }, [nshades])
 
   const data = useMemo(() => {
     return Object.fromEntries(
