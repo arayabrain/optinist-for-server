@@ -3,16 +3,19 @@ import os
 
 import numpy as np
 import requests
+import scipy
 
-from studio.app.common.core.experiment.experiment import ExptOutputPathIds
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
 )
 from studio.app.common.dataclass import ImageData
+from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
+from studio.app.dir_path import DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
+from studio.app.optinist.dataclass.expdb import ExpDbData
 
 logger = AppLogger.get_logger()
 
@@ -151,15 +154,67 @@ def util_download_model_files():
                     f.write(response.content)
 
 
-def caiman_cnmf(
+def mm_fun(A: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    """
+    This code is a port of the CaImAn-MATLAB function (mm_fun.m).
+    However, the porting is limited to the functions
+    assumed to be used in this application.
+    """
+
+    # multiply A*Y or A'*Y or Y*A or Y*C' depending on the dimension for loaded
+    # or memory mapped Y.
+
+    (d1a, d2a) = A.shape[0:2]
+
+    d1y = np.prod(Y.shape[0:-1])
+    d2y = Y.shape[-1]
+
+    if d1a == d1y:  # A'*Y
+        AY = A.T @ Y
+    elif d1a == d2y:
+        AY = Y @ A
+    elif d2a == d1y:
+        AY = A @ Y
+    elif d2a == d2y:  # Y*C'
+        AY = Y.T @ A
+    else:
+        assert False, "matrix dimensions do not match"
+
+    return AY
+
+
+def calculate_AY(
+    A_or: scipy.sparse.csc_matrix, C_or: np.ndarray, Yr: np.ndarray, stack_shape: list
+) -> np.ndarray:
+    A_or_full = A_or.toarray()
+    A_or_full = np.reshape(
+        A_or_full, (stack_shape[0], stack_shape[1], A_or_full.shape[1])
+    )
+    nA = np.asarray(np.sqrt(A_or.power(2).sum(axis=0))).ravel()
+    K2 = C_or.shape[0]
+
+    # normalize spatial components to unit energy
+    nA_D = scipy.sparse.spdiags(nA, [0], K2, K2)
+    A_or2 = A_or.dot(np.linalg.inv(nA_D.toarray()))
+
+    # spdiags(nA,0,K,K)*C;
+    # C_or2 = C_or * nA[:, np.newaxis]
+    AY = mm_fun(A_or2, Yr)
+    AY = AY.T
+
+    return AY
+
+
+def caiman_cnmf_preprocessing(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
-) -> dict(fluorescence=FluoData, iscell=IscellData):
+) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
+    import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
 
-    function_id = ExptOutputPathIds(output_dir).function_id
+    function_id = output_dir.split("/")[-1]  # get function_id from output_dir path
     logger.info(f"start caiman_cnmf: {function_id}")
 
     # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
@@ -178,7 +233,9 @@ def caiman_cnmf(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
+    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
     images = images.data
+    T = images.shape[0]
     mmap_images, dims, mmap_path = util_get_memmap(images, file_path)
 
     del images
@@ -186,6 +243,22 @@ def caiman_cnmf(
 
     nwbfile = kwargs.get("nwbfile", {})
     fr = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
+
+    # Get physical size (µm/pixel)
+    pixels = nwbfile.get("device", {}).get("metadata", {}).get("Pixels", {})
+    physical_size_x = pixels.get("PhysicalSizeX")
+    physical_size_y = pixels.get("PhysicalSizeY")
+    if physical_size_x is not None and physical_size_y is not None:
+        EXPECTED_CELL_SIZE = 12.5 / 2  # Half size of neuron in µm
+        gSig = [
+            # cast to int because non-integer gSig would cause error.
+            # https://github.com/flatironinstitute/CaImAn/issues/1072
+            int(EXPECTED_CELL_SIZE / physical_size)
+            for physical_size in [physical_size_y, physical_size_x]  # raw x col
+        ]
+        logger.info(f"physical_size: {physical_size_x}, {physical_size_y}")
+        logger.info(f"use {gSig} as gSig")
+        reshaped_params["gSig"] = gSig
 
     if reshaped_params is None:
         ops = CNMFParams()
@@ -222,6 +295,33 @@ def caiman_cnmf(
     cnm.estimates.evaluate_components(mmap_images, cnm.params, dview=dview)
 
     stop_server(dview=dview)
+
+    Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
+        {"Yr": Yr},
+    )
+
+    AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
+    timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
+    trialstructure_path = join_filepath(
+        [
+            DIRPATH.EXPDB_DIR,
+            exp_id.split("_")[0],
+            exp_id,
+            f"{exp_id}_{TS_SUFFIX}.mat",
+        ]
+    )
+    scipy.io.savemat(timecourse_path, {"timecourse": AY})
+
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
+        {"cellmask": cnm.estimates.A},
+    )
+    scipy.io.savemat(
+        join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
+        {"C_or": cnm.estimates.C},
+    )
 
     # contours plot
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
@@ -312,6 +412,7 @@ def caiman_cnmf(
     }
 
     info = {
+        "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
         "images": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,

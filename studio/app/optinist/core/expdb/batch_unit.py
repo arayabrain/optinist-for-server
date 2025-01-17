@@ -42,7 +42,9 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
-from studio.app.optinist.wrappers.caiman.cnmf import caiman_cnmf
+from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
+    caiman_cnmf_preprocessing,
+)
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
@@ -205,10 +207,10 @@ class ExpDbBatch:
     def cell_detection_cnmf(self, stack: ImageData):
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        caiman_cnmf(
+        caiman_cnmf_preprocessing(
             images=stack,
             output_dir=self.raw_path.preprocess_dir,
-            params=get_default_params("caiman_cnmf"),
+            params=get_default_params("caiman_cnmf_preprocessing"),
             nwbfile=self.nwb_input_config,
         )
 
