@@ -66,7 +66,8 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   const { dialogFilterNodeId } = useContext(DialogContext)
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, path))
   const { setRoiSelected, roisSelected } = useRoisSelected()
-  const nshades = Math.max(timeDataMaxIndex || 0, 6)
+  const nshades =
+    timeDataMaxIndex < 100 ? Math.max(timeDataMaxIndex || 0, 6) : 100
 
   const colorscaleRoi = useMemo(() => {
     return createColormap({
@@ -87,7 +88,7 @@ const RoiPlotImple = memo(function RoiPlotImple() {
       return colorscaleRoi.map((v, idx) => [String(idx / (nshades - 1)), v])
     }
     return [...Array(timeDataMaxIndex + 1)].map((_, i) => {
-      const new_i = Math.floor(((i % 10) * 10 + i / 10) % timeDataMaxIndex)
+      const new_i = Math.floor(((i % 10) * 10 + i / 10) % nshades)
       const offset: number = i / timeDataMaxIndex
       const rgba = colorscaleRoi[new_i]
       if (!dialogFilterNodeId || roisSelected.includes(i)) {
