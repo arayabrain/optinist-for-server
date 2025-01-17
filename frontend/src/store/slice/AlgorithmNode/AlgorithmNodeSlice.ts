@@ -69,7 +69,6 @@ export const algorithmNodeSlice = createSlice({
             name,
             params: convertToParamMap(params),
             isUpdate: runAlready ?? false,
-            isUpdateFilter: runAlready ?? false,
           }
         }
       })
@@ -116,7 +115,6 @@ export const algorithmNodeSlice = createSlice({
       .addCase(runApplyFilter.fulfilled, (state, action) => {
         const { dataFilterParam, nodeId } = action.meta.arg
         state[nodeId].dataFilterParam = dataFilterParam
-        state[nodeId].isUpdateFilter = true
         state[nodeId].loadingFilterParamApi = false
       })
       .addMatcher(
@@ -139,7 +137,6 @@ export const algorithmNodeSlice = createSlice({
                   originalValue: node.data.param,
                   originalDataFilterValue: node.data.dataFilterParam,
                   isUpdate: false,
-                  isUpdateFilter: !!node.data.isUpdateFilter,
                 }
               }
             })
@@ -154,7 +151,6 @@ export const algorithmNodeSlice = createSlice({
             .filter(isAlgorithmNodePostData)
             .forEach((node) => {
               state[node.id].isUpdate = false
-              state[node.id].isUpdateFilter = false
             })
         },
       )

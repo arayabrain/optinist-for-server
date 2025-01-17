@@ -44,7 +44,6 @@ export interface AlgorithmNodePostData extends AlgorithmNodeData {
   path: string
   param: ParamMap
   dataFilterParam?: TDataFilterParam
-  isUpdateFilter?: boolean | null
 }
 
 export async function runFilterApi(

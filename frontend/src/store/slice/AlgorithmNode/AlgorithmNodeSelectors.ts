@@ -51,11 +51,6 @@ export const selectAlgorithmIsUpdated =
     )
   }
 
-export const selectAlgorithmIsUpdatedFilterParams =
-  (nodeId: string) => (state: RootState) => {
-    return selectAlgorithmNodeById(nodeId)(state).isUpdateFilter
-  }
-
 export const selectAlgorithmParamsExit =
   (nodeId: string) => (state: RootState) =>
     selectAlgorithmNodeById(nodeId)(state).params !== null

@@ -1,4 +1,4 @@
-import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useContext, useMemo, useRef, useState } from "react"
 import { shallowEqual, useDispatch, useSelector } from "react-redux"
 import { Handle, Position, NodeProps } from "reactflow"
 
@@ -108,14 +108,9 @@ const AlgorithmNodeImple = memo(function AlgorithmNodeImple({
   const isUpdated = useSelector(selectAlgorithmIsUpdated(nodeId))
   const isParentParamsUpdated = useSelector(isParentNodeUpdatedParams(nodeId))
 
-  useEffect(() => {
-    if (isParentParamsUpdated) {
-      // TODO reset param
-    }
-  }, [dispatch, isParentParamsUpdated, nodeId])
-
   const updated =
-    typeof workflowId !== "undefined" && (isUpdated || ancestorIsUpdated)
+    typeof workflowId !== "undefined" &&
+    (isUpdated || ancestorIsUpdated || isParentParamsUpdated)
 
   const allowFilter = useMemo(
     () =>

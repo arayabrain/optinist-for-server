@@ -26,12 +26,14 @@ const selectParentNodeIdsById = (nodeId: string) => (state: RootState) =>
     .filter((edge) => edge.target === nodeId)
     .map((edge) => edge.source)
 
-const selectNodeIsUpdate = (nodeId: string) => (state: RootState) =>
-  state.algorithmNode[nodeId]?.isUpdate ||
-  state.algorithmNode[nodeId]?.isUpdateFilter
-
-const selectNodeParamsUpdated = (nodeId: string) => (state: RootState) =>
-  state.algorithmNode[nodeId]?.isUpdate
+const selectNodeIsUpdate = (nodeId: string) => (state: RootState) => {
+  const { dim1, roi } = state.algorithmNode[nodeId]?.dataFilterParam || {}
+  return (
+    state.algorithmNode[nodeId]?.isUpdate ||
+    dim1?.filter(Boolean).length ||
+    roi?.filter(Boolean).length
+  )
+}
 
 export const isParentNodeUpdatedParams =
   (nodeId: string) =>
@@ -40,7 +42,7 @@ export const isParentNodeUpdatedParams =
     if (parentNodes.length === 0) {
       return false
     } else {
-      if (parentNodes.some((id) => selectNodeParamsUpdated(id)(state))) {
+      if (parentNodes.some((id) => selectNodeIsUpdate(id)(state))) {
         return true
       } else {
         return parentNodes.some((id) =>

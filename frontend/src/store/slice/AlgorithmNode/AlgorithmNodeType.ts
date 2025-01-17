@@ -21,6 +21,5 @@ type AlgorithmNodeType = {
   originalValue: unknown
   originalDataFilterValue: unknown
   isUpdate: boolean
-  isUpdateFilter?: boolean
   loadingFilterParamApi?: boolean
 }
