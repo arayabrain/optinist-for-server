@@ -18,18 +18,22 @@ import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContex
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
-import { selectRunOutputPaths } from "store/slice/Pipeline/PipelineSelectors"
+import {
+  selectPipelineNodeResultOutputFilePath,
+  selectRunOutputPaths,
+} from "store/slice/Pipeline/PipelineSelectors"
 import { AppDispatch } from "store/store"
 
 type InputDim = {
   title: string
   onChangeInput?: (value?: string) => void
   max?: number | null
+  min?: number | null
   multiple?: boolean
 } & InputProps
 
 const InputDim = (props: InputDim) => {
-  const { title, onChangeInput, max, multiple, ...p } = props
+  const { title, onChangeInput, max, multiple, min, ...p } = props
   const [value, setValue] = useState<string>(p.value as string)
   const [valuePassed, setValuePassed] = useState<string>(p.value as string)
 
@@ -48,11 +52,18 @@ const InputDim = (props: InputDim) => {
             if (!dims.filter(Boolean).length) return e
             const dim0 = dims[0]
             const dim1 = dims[1]
-            if (dim0 && !dim1 && Number(dim0) >= max) return `${max - 1}:`
-            if (dim0 && dim1) {
-              return `${Number(dim0) >= max ? max - 1 : dim0}:${Number(dim1) > max ? max : dim1}`
+            if (max && dim0 && !dim1 && Number(dim0) >= max) {
+              return `${max - 1}:`
             }
-            if (dim1 && !dim0 && isBlur) return `0:${dim1}`
+            if (min && dim0 && !dim1 && Number(dim0) <= min && isBlur)
+              return `${min}:`
+            if (dim0 && dim1) {
+              let start = dim0
+              if (max && Number(dim0) >= max) start = String(max - 1)
+              else if (min && Number(dim0) <= min && isBlur) start = String(min)
+              return `${start}:${Number(dim1) > max ? max : dim1}`
+            }
+            if (dim1 && !dim0 && isBlur) return `${min || 0}:${dim1}`
             if (isBlur && dim0 && !dim1) return `${dim0}:${max}`
             return e
           })
@@ -60,7 +71,7 @@ const InputDim = (props: InputDim) => {
       }
       return string
     },
-    [max],
+    [max, min],
   )
 
   const onChange = useCallback(
@@ -77,21 +88,31 @@ const InputDim = (props: InputDim) => {
     [multiple, validateValue],
   )
 
-  const getError = useCallback((string: string, stringPassed: string) => {
-    if (string !== stringPassed) return "Invalid format"
-    const values = stringPassed.split(",").filter(Boolean)
-    if (values.length) {
-      const errorEnd = values.find((v) => {
-        const dim1 = v.split(":")[1]
-        const dim0 = v.split(":")[0]
-        return dim1 && Number(dim1) <= Number(dim0) ? dim0 : undefined
-      })
-      if (errorEnd) {
-        return `The 'to' value must be > ${errorEnd.split(":")[0]}`
+  const getError = useCallback(
+    (string: string, stringPassed: string) => {
+      if (string !== stringPassed) return "Invalid format"
+      const values = stringPassed.split(",").filter(Boolean)
+      if (values.length) {
+        const errorEnd = values.find((v) => {
+          const dim1 = v.split(":")[1]
+          const dim0 = v.split(":")[0]
+          return dim1 && Number(dim1) <= Number(dim0) ? dim0 : undefined
+        })
+        const errorStart = values.find((v) => {
+          const dim0 = v.split(":")[0]
+          return min && dim0 && Number(dim0) < Number(min) ? dim0 : undefined
+        })
+        if (errorStart) {
+          return `The 'from' value must be <= ${min}`
+        }
+        if (errorEnd) {
+          return `The 'to' value must be > ${errorEnd.split(":")[0]}`
+        }
       }
-    }
-    return null
-  }, [])
+      return null
+    },
+    [min],
+  )
 
   const error = useMemo(
     () => getError(value, valuePassed),
@@ -146,16 +167,16 @@ const TextError = styled("div")`
 const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const dispatch = useDispatch<AppDispatch>()
   const outputPaths = useSelector(selectRunOutputPaths(nodeId))
-  const maxDim = useMemo(
-    () => outputPaths.fluorescence?.data_shape?.[1],
-    [outputPaths.fluorescence?.data_shape],
-  )
-  const maxRoi = useMemo(
-    () => outputPaths.fluorescence?.max_index,
-    [outputPaths.fluorescence?.max_index],
-  )
-  const { onOpenFilterDialog } = useContext(DialogContext)
 
+  const { onOpenFilterDialog } = useContext(DialogContext)
+  const filePathCellRoi = useSelector(
+    selectPipelineNodeResultOutputFilePath(nodeId, "cell_roi"),
+    shallowEqual,
+  )
+  const filePathFluorescence = useSelector(
+    selectPipelineNodeResultOutputFilePath(nodeId, "fluorescence"),
+    shallowEqual,
+  )
   const filterSelector = useSelector(
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
@@ -167,6 +188,38 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     const { dim1, roi } = filterParam
     return { dim1: dim1?.filter(Boolean), roi: roi?.filter(Boolean) }
   }, [filterParam])
+
+  const maxDim = useMemo(() => {
+    const dims = filterSelector?.dim1
+      ?.map((e) => (e.end ? Number(e.end) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.max(...(dims as number[]))
+    return outputPaths.fluorescence?.data_shape?.[1]
+  }, [filterSelector?.dim1, outputPaths.fluorescence?.data_shape])
+
+  const minDim = useMemo(() => {
+    const dims = filterSelector?.dim1
+      ?.map((e) => (e.start ? Number(e.start) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.min(...(dims as number[]))
+    return 0
+  }, [filterSelector?.dim1])
+
+  const maxRoi = useMemo(() => {
+    const dims = filterSelector?.roi
+      ?.map((e) => (e.end ? Number(e.end) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.min(...(dims as number[]))
+    return outputPaths.fluorescence?.max_index
+  }, [filterSelector?.roi, outputPaths.fluorescence?.max_index])
+
+  const minRoi = useMemo(() => {
+    const dims = filterSelector?.roi
+      ?.map((e) => (e.start ? Number(e.start) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.max(...(dims as number[]))
+    return 0
+  }, [filterSelector?.roi])
 
   useEffect(() => {
     setFilterParam(filterSelector)
@@ -227,7 +280,14 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     if (JSON.stringify(filterSelector) === JSON.stringify(filterParam)) {
       return
     }
-    dispatch(runApplyFilter({ dataFilterParam, nodeId }))
+    dispatch(
+      runApplyFilter({
+        dataFilterParam,
+        nodeId,
+        filePathCellRoi,
+        filePathFluorescence,
+      }),
+    )
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Accept filter", { variant: "error" })
@@ -235,6 +295,8 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   }, [
     dataFilterParam,
     dispatch,
+    filePathCellRoi,
+    filePathFluorescence,
     filterParam,
     filterSelector,
     isNotChange,
@@ -244,12 +306,25 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const resetFilter = useCallback(() => {
     onOpenFilterDialog("")
-    dispatch(runApplyFilter({ dataFilterParam: undefined, nodeId }))
+    dispatch(
+      runApplyFilter({
+        dataFilterParam: undefined,
+        nodeId,
+        filePathCellRoi,
+        filePathFluorescence,
+      }),
+    )
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Reset filter", { variant: "error" })
       })
-  }, [dispatch, nodeId, onOpenFilterDialog])
+  }, [
+    dispatch,
+    filePathCellRoi,
+    filePathFluorescence,
+    nodeId,
+    onOpenFilterDialog,
+  ])
 
   return (
     <Box display="flex" justifyContent="flex-end">
@@ -263,6 +338,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
             onChangeInput={(v) => onChange("roi", v)}
             multiple
             max={maxRoi}
+            min={minRoi}
           />
           <InputDim
             title="Time(Dim1)"
@@ -271,6 +347,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
             value={dim1 || ""}
             onChangeInput={(v) => onChange("dim1", v)}
             max={maxDim}
+            min={minDim}
           />
         </Box>
         <Box mt={2} display="flex" gap={1}>

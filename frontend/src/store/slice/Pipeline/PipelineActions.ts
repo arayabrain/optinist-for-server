@@ -38,7 +38,12 @@ export const run = createAsyncThunk<
 
 export const runApplyFilter = createAsyncThunk<
   string,
-  { dataFilterParam?: TDataFilterParam; nodeId: string },
+  {
+    dataFilterParam?: TDataFilterParam
+    nodeId: string
+    filePathCellRoi: string
+    filePathFluorescence: string
+  },
   ThunkApiConfig
 >(
   `${PIPELINE_SLICE_NAME}/run/filter`,
