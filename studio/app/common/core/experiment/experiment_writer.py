@@ -261,7 +261,7 @@ class ExptDataWriter:
 
             updated_data = self.__replace_ids_recursive(data, old_id, new_id)
             with open(file_path, "wb") as file:
-                pickle.dump(updated_data, file, sort_keys=False)
+                pickle.dump(updated_data, file)
 
             logger.info(f"Updated Pickle: {file_path}")
         except Exception as e:
