@@ -470,8 +470,6 @@ export const displayDataSlice = createSlice({
           .sort((n1, n2) => n1 - n2)
           .map(String)
 
-        console.log("path", path)
-
         state.roi[path] = {
           type: "roi",
           data: data,
