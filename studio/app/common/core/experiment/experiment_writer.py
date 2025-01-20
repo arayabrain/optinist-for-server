@@ -177,11 +177,11 @@ class ExptDataWriter:
             shutil.copytree(output_dir, new_output_dir)
 
             # Update experiment configuration and unique IDs
-            if not self.__update_experiment_config_name(new_output_dir):
+            if not self.__copy_data_update_experiment_config_name(new_output_dir):
                 logger.error("Failed to update experiment.yml after copying.")
                 return False
 
-            if not self.__replace_unique_id(
+            if not self.__copy_data_replace_unique_id(
                 new_output_dir, self.unique_id, new_unique_id
             ):
                 logger.error("Failed to update unique_id in files.")
@@ -194,7 +194,9 @@ class ExptDataWriter:
             logger.error(f"Error copying data: {e}")
             return False
 
-    def __replace_unique_id(self, directory: str, old_id: str, new_id: str) -> bool:
+    def __copy_data_replace_unique_id(
+        self, directory: str, old_id: str, new_id: str
+    ) -> bool:
         logger = AppLogger.get_logger()
 
         try:
@@ -213,11 +215,11 @@ class ExptDataWriter:
             for file_type, files in targeted_files.items():
                 for file in files:
                     if file_type == "yaml":
-                        self.__update_yaml(file, old_id, new_id)
+                        self.__copy_data_update_yaml(file, old_id, new_id)
                     elif file_type == "pkl":
-                        self.__update_pickle(file, old_id, new_id)
+                        self.__copy_data_update_pickle(file, old_id, new_id)
                     elif file_type == "npy":
-                        self.__update_npy(file, old_id, new_id)
+                        self.__copy_data_update_npy(file, old_id, new_id)
 
             logger.info("All relevant files updated successfully.")
             return True
@@ -226,7 +228,7 @@ class ExptDataWriter:
             logger.error(f"Error replacing unique_id in files: {e}")
             return False
 
-    def __update_yaml(self, file_path: str, old_id: str, new_id: str) -> None:
+    def __copy_data_update_yaml(self, file_path: str, old_id: str, new_id: str) -> None:
         logger = AppLogger.get_logger()
         try:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -240,7 +242,9 @@ class ExptDataWriter:
         except Exception as e:
             logger.warning(f"Failed to update YAML {file_path}: {e}")
 
-    def __update_pickle(self, file_path: str, old_id: str, new_id: str) -> None:
+    def __copy_data_update_pickle(
+        self, file_path: str, old_id: str, new_id: str
+    ) -> None:
         logger = AppLogger.get_logger()
         try:
             with open(file_path, "rb") as file:
@@ -248,13 +252,13 @@ class ExptDataWriter:
 
             updated_data = self.__replace_ids_recursive(data, old_id, new_id)
             with open(file_path, "wb") as file:
-                pickle.dump(updated_data, file)
+                pickle.dump(updated_data, file, sort_keys=False)
 
             logger.info(f"Updated Pickle: {file_path}")
         except Exception as e:
             logger.warning(f"Failed to update Pickle {file_path}: {e}")
 
-    def __update_npy(self, file_path: str, old_id: str, new_id: str) -> None:
+    def __copy_data_update_npy(self, file_path: str, old_id: str, new_id: str) -> None:
         logger = AppLogger.get_logger()
         try:
             with open(file_path, "rb") as file:
@@ -321,7 +325,7 @@ class ExptDataWriter:
         else:
             return obj
 
-    def __update_experiment_config_name(self, output_dir: str) -> bool:
+    def __copy_data_update_experiment_config_name(self, output_dir: str) -> bool:
         logger = AppLogger.get_logger()
         config_path = join_filepath([output_dir, DIRPATH.EXPERIMENT_YML])
 
@@ -335,7 +339,7 @@ class ExptDataWriter:
 
             config["name"] = f"{config.get('name', 'experiment')}_copy"
             with open(config_path, "w") as file:
-                yaml.safe_dump(config, file)
+                yaml.dump(config, file, sort_keys=False)
 
             logger.info(f"Updated experiment.yml: {config_path}")
             return True
