@@ -1,6 +1,7 @@
 import glob
 import os
 import pickle
+import re
 import shutil
 from dataclasses import asdict
 from datetime import datetime
@@ -243,7 +244,12 @@ class ExptDataWriter:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
 
-            updated_content = content.replace(old_id, new_id)
+            # Use the provided regex pattern for replacement
+            pattern = re.compile(rf"(?:\b|\/){re.escape(old_id)}(?:\b|\/)(?:[^\s]*)")
+            updated_content = pattern.sub(
+                lambda match: match.group(0).replace(old_id, new_id), content
+            )
+
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(updated_content)
 
@@ -319,7 +325,11 @@ class ExptDataWriter:
                     ]
                 )
         elif isinstance(obj, str) and old_id in obj:
-            return obj.replace(old_id, new_id)
+            # Use the custom regex pattern for strings
+            pattern = re.compile(rf"(?:\b|\/){re.escape(old_id)}(?:\b|\/)(?:[^\s]*)")
+            return pattern.sub(
+                lambda match: match.group(0).replace(old_id, new_id), obj
+            )
         elif hasattr(obj, "__dict__"):
             # Process custom objects
             for attr, value in obj.__dict__.items():
