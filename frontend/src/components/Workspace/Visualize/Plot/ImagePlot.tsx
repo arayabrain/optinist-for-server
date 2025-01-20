@@ -300,7 +300,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
         z: roiDataState,
         type: "heatmap",
         name: "roi",
-        hovertemplate: action === ADD_ROI ? "none" : "cell id: %{z}",
+        hovertemplate: action === ADD_ROI ? "none" : "ROI: %{z}",
         // hoverinfo: isAddRoi || pointClick.length ? "none" : undefined,
         colorscale: [...Array(timeDataMaxIndex + 1)].map((_, i) => {
           const new_i = Math.floor(((i % 10) * 10 + i / 10) % 100)
@@ -709,8 +709,8 @@ const ImagePlotChart = memo(function ImagePlotChart({
                   action === DELETE_ROI
                     ? "#F84E1B"
                     : action === MERGE_ROI
-                    ? "#6619A9"
-                    : "default",
+                      ? "#6619A9"
+                      : "default",
                 display: "flex",
                 gap: 1,
                 textDecoration: "none",
