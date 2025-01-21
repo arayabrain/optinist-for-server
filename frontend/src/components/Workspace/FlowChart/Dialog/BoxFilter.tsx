@@ -209,7 +209,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     const dims = filterSelector?.roi
       ?.map((e) => (e.end ? Number(e.end) : undefined))
       ?.filter(Boolean)
-    if (dims?.length) return Math.min(...(dims as number[]))
+    if (dims?.length) return Math.max(...(dims as number[]))
     return outputPaths.fluorescence?.max_index
   }, [filterSelector?.roi, outputPaths.fluorescence?.max_index])
 
@@ -217,7 +217,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     const dims = filterSelector?.roi
       ?.map((e) => (e.start ? Number(e.start) : undefined))
       ?.filter(Boolean)
-    if (dims?.length) return Math.max(...(dims as number[]))
+    if (dims?.length) return Math.min(...(dims as number[]))
     return 0
   }, [filterSelector?.roi])
 
