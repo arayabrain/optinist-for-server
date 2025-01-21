@@ -11,6 +11,7 @@ import {
   DialogContext,
   useRoisSelected,
 } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
 import { getRoiData } from "store/slice/DisplayData/DisplayDataActions"
 import {
@@ -59,13 +60,44 @@ export const RoiPlot = memo(function RoiPlot() {
 
 const RoiPlotImple = memo(function RoiPlotImple() {
   const { itemId, filePath: path } = useContext(DisplayDataContext)
-  const imageData = useSelector(selectRoiData(path), imageDataEqualtyFn)
+  const imageDataSelector = useSelector(selectRoiData(path), imageDataEqualtyFn)
   const meta = useSelector(selectRoiMeta(path))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
   const { dialogFilterNodeId } = useContext(DialogContext)
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, path))
   const { setRoiSelected, roisSelected } = useRoisSelected()
+
+  const { filterParam } = useBoxFilter()
+
+  const maxRoi = useMemo(() => {
+    const dims = filterParam?.roi
+      ?.map((e) => (e.end ? Number(e.end) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.max(...(dims as number[]))
+    return undefined
+  }, [filterParam?.roi])
+
+  const minRoi = useMemo(() => {
+    const dims = filterParam?.roi
+      ?.map((e) => (e.start ? Number(e.start) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.min(...(dims as number[]))
+    return undefined
+  }, [filterParam?.roi])
+
+  const imageData = useMemo(() => {
+    if (!dialogFilterNodeId) return imageDataSelector
+    return imageDataSelector.map((img) =>
+      img.map((e) => {
+        if (!e && e !== 0) return null
+        if (minRoi && e < minRoi) return null
+        if (maxRoi && e >= maxRoi) return null
+        return e
+      }),
+    )
+  }, [dialogFilterNodeId, imageDataSelector, maxRoi, minRoi])
+
   const nshades =
     timeDataMaxIndex < 100 ? Math.max(timeDataMaxIndex || 0, 6) : 100
 

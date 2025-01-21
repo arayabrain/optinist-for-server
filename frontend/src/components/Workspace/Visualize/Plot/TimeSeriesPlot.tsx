@@ -98,7 +98,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const drawOrderList = useSelector(selectTimeSeriesItemDrawOrderList(itemId))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
-  const dataKeys = useSelector(selectTimeSeriesItemKeys(itemId))
+  const dataKeysSelector = useSelector(selectTimeSeriesItemKeys(itemId))
 
   const [newDataXrange, setNewDataXrange] = useState<string[]>(dataXrange)
   const [newTimeSeriesData, setNewTimeSeriesData] = useState(timeSeriesData)
@@ -115,6 +115,34 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     }
     return xrangeSelector
   }, [dialogFilterNodeId, filterParam, xrangeSelector])
+
+  const maxRoi = useMemo(() => {
+    const dims = filterParam?.roi
+      ?.map((e) => (e.end ? Number(e.end) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.max(...(dims as number[]))
+    return undefined
+  }, [filterParam?.roi])
+
+  const minRoi = useMemo(() => {
+    const dims = filterParam?.roi
+      ?.map((e) => (e.start ? Number(e.start) : undefined))
+      ?.filter(Boolean)
+    if (dims?.length) return Math.min(...(dims as number[]))
+    return undefined
+  }, [filterParam?.roi])
+
+  const dataKeys = useMemo(() => {
+    let keys = dataKeysSelector
+    if (!dialogFilterNodeId) return keys
+    if (minRoi !== undefined) {
+      keys = keys.filter((e) => Number(e) >= minRoi)
+    }
+    if (maxRoi !== undefined) {
+      keys = keys.filter((e) => Number(e) < maxRoi)
+    }
+    return keys
+  }, [dataKeysSelector, dialogFilterNodeId, maxRoi, minRoi])
 
   useEffect(() => {
     const seriesData: TimeSeriesData = {}
@@ -278,6 +306,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
         zeroline: zeroline,
       },
       annotations: annotations,
+      showlegend: true,
     }),
     [
       meta,
