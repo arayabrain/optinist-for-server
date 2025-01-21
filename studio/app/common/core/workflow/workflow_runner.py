@@ -190,11 +190,8 @@ class WorkflowRunner:
 
         if params and not params.is_empty:
             if not os.path.exists(original_pkl_filepath):
-                shutil.copyfile(pkl_filepath, original_pkl_filepath)
-                shutil.copytree(
-                    node_dirpath + "/tiff",
-                    node_dirpath + "/tiff.bak",
-                    dirs_exist_ok=True,
+                cls._backup_original_data(
+                    node_dirpath, pkl_filepath, original_pkl_filepath
                 )
 
             original_output_info = PickleReader.read(original_pkl_filepath)
@@ -209,10 +206,7 @@ class WorkflowRunner:
             # reset filter
             if not os.path.exists(original_pkl_filepath):
                 return
-            os.remove(pkl_filepath)
-            shutil.move(original_pkl_filepath, pkl_filepath)
-            shutil.rmtree(node_dirpath + "/tiff")
-            os.rename(node_dirpath + "/tiff.bak", node_dirpath + "/tiff")
+            cls._remove_backup_data(node_dirpath, pkl_filepath, original_pkl_filepath)
             original_output_info = PickleReader.read(pkl_filepath)
 
         cls._save_json(original_output_info, node_dirpath)
@@ -228,6 +222,39 @@ class WorkflowRunner:
         ).write()
 
         return
+
+    @classmethod
+    def _backup_original_data(cls, node_dirpath, pkl_filepath, original_pkl_filepath):
+        shutil.copyfile(pkl_filepath, original_pkl_filepath)
+
+        shutil.copyfile(
+            node_dirpath + "/cell_roi.json", node_dirpath + "/cell_roi.json.bak"
+        )
+
+        shutil.copytree(
+            node_dirpath + "/tiff",
+            node_dirpath + "/tiff.bak",
+            dirs_exist_ok=True,
+        )
+
+        shutil.copytree(
+            node_dirpath + "/fluorescence",
+            node_dirpath + "/fluorescence.bak",
+            dirs_exist_ok=True,
+        )
+
+    @classmethod
+    def _remove_backup_data(cls, node_dirpath, pkl_filepath, original_pkl_filepath):
+        os.remove(pkl_filepath)
+        shutil.move(original_pkl_filepath, pkl_filepath)
+
+        os.remove(node_dirpath + "/cell_roi.json.bak")
+
+        shutil.rmtree(node_dirpath + "/tiff")
+        os.rename(node_dirpath + "/tiff.bak", node_dirpath + "/tiff")
+
+        shutil.rmtree(node_dirpath + "/fluorescence")
+        os.rename(node_dirpath + "/fluorescence.bak", node_dirpath + "/fluorescence")
 
     @classmethod
     def get_workflow_config(cls, workspace_id, uid, node_id):
