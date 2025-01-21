@@ -20,6 +20,10 @@ export const selectAlgorithmName = (nodeId: string) => (state: RootState) =>
 export const selectAlgorithmParams = (nodeId: string) => (state: RootState) =>
   selectAlgorithmNodeById(nodeId)(state)?.params
 
+export const selectAlgorithmFilterParams =
+  (nodeId: string) => (state: RootState) =>
+    selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
+
 export const selectAlgorithmDataFilterParam =
   (nodeId: string) => (state: RootState) => {
     return selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
