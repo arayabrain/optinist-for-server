@@ -80,8 +80,8 @@ const RoiPlotImple = memo(function RoiPlotImple() {
 
   const minRoi = useMemo(() => {
     const dims = filterParam?.roi
-      ?.map((e) => (e.start ? Number(e.start) : undefined))
-      ?.filter(Boolean)
+      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
+      ?.filter((e) => e || e === 0)
     if (dims?.length) return Math.min(...(dims as number[]))
     return undefined
   }, [filterParam?.roi])

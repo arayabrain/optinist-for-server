@@ -199,8 +199,8 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const minDim = useMemo(() => {
     const dims = filterSelector?.dim1
-      ?.map((e) => (e.start ? Number(e.start) : undefined))
-      ?.filter(Boolean)
+      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
+      ?.filter((e) => e || e === 0)
     if (dims?.length) return Math.min(...(dims as number[]))
     return 0
   }, [filterSelector?.dim1])
@@ -215,8 +215,8 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const minRoi = useMemo(() => {
     const dims = filterSelector?.roi
-      ?.map((e) => (e.start ? Number(e.start) : undefined))
-      ?.filter(Boolean)
+      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
+      ?.filter((e) => e || e === 0)
     if (dims?.length) return Math.min(...(dims as number[]))
     return 0
   }, [filterSelector?.roi])
