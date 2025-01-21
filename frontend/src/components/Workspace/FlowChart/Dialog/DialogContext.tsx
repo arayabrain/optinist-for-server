@@ -114,7 +114,11 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
         )
         if (!select) {
           dispatch(
-            getTimeSeriesDataById({ path: filePath, index: String(index) }),
+            getTimeSeriesDataById({
+              path: filePath,
+              index: String(index),
+              isFull: true,
+            }),
           )
         }
       }
