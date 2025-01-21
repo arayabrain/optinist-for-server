@@ -59,7 +59,7 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
   nodes.forEach((node) => {
     if (isAlgorithmNodeData(node)) {
       const param = selectAlgorithmParams(node.id)(state) ?? {}
-      const dataFilterParam = selectAlgorithmFilterParams(node.id)(state) ?? {}
+      const dataFilterParam = selectAlgorithmFilterParams(node.id)(state)
       const functionPath = selectAlgorithmFunctionPath(node.id)(state)
       const algorithmNodePostData: Node<AlgorithmNodePostData> = {
         ...node,
