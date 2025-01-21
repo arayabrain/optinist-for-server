@@ -116,8 +116,16 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   }
 
   const colorscale = useMemo(() => {
-    if (!dialogFilterNodeId) {
-      return colorscaleRoi.map((v, idx) => [String(idx / (nshades - 1)), v])
+    if (!dialogFilterNodeId || timeDataMaxIndex < 1) {
+      return colorscaleRoi.map((value, idx) => {
+        if (timeDataMaxIndex < 1 && !roisSelected.includes(0)) {
+          return [
+            String(idx / (nshades - 1)),
+            `${value}${(77).toString(16).toUpperCase()}`,
+          ]
+        }
+        return [String(idx / (nshades - 1)), value]
+      })
     }
     return [...Array(timeDataMaxIndex + 1)].map((_, i) => {
       const new_i = Math.floor(((i % 10) * 10 + i / 10) % nshades)
