@@ -18,10 +18,7 @@ import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContex
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
-import {
-  selectPipelineNodeResultOutputFilePath,
-  selectRunOutputPaths,
-} from "store/slice/Pipeline/PipelineSelectors"
+import { selectRunOutputPaths } from "store/slice/Pipeline/PipelineSelectors"
 import { AppDispatch } from "store/store"
 
 type InputDim = {
@@ -169,14 +166,6 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const outputPaths = useSelector(selectRunOutputPaths(nodeId))
 
   const { onOpenFilterDialog } = useContext(DialogContext)
-  const filePathCellRoi = useSelector(
-    selectPipelineNodeResultOutputFilePath(nodeId, "cell_roi"),
-    shallowEqual,
-  )
-  const filePathFluorescence = useSelector(
-    selectPipelineNodeResultOutputFilePath(nodeId, "fluorescence"),
-    shallowEqual,
-  )
   const filterSelector = useSelector(
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
@@ -196,6 +185,21 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const maxRoi = useMemo(() => {
     return outputPaths.fluorescence?.max_index
   }, [outputPaths.fluorescence?.max_index])
+
+  const dimPlaceholder = useMemo(() => {
+    const dims = filterSelector?.dim1
+      ?.map((e) => [e.start, e.end].filter((e) => e || e === 0))
+      ?.filter((e) => e.length)
+    return dims?.map((e) => e.join(":"))?.toString()
+  }, [filterSelector?.dim1])
+
+  const roiPlaceholder = useMemo(() => {
+    const rois = filterSelector?.roi
+      ?.map((e) => [e.start, e.end].filter((e) => e || e === 0))
+      ?.filter((e) => e.length)
+    return rois?.map((e) => e.join(":"))?.toString()
+    return 0
+  }, [filterSelector?.roi])
 
   useEffect(() => {
     setFilterParam(filterSelector)
@@ -256,14 +260,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     if (JSON.stringify(filterSelector) === JSON.stringify(filterParam)) {
       return
     }
-    dispatch(
-      runApplyFilter({
-        dataFilterParam,
-        nodeId,
-        filePathCellRoi,
-        filePathFluorescence,
-      }),
-    )
+    dispatch(runApplyFilter({ dataFilterParam, nodeId }))
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Accept filter", { variant: "error" })
@@ -271,8 +268,6 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   }, [
     dataFilterParam,
     dispatch,
-    filePathCellRoi,
-    filePathFluorescence,
     filterParam,
     filterSelector,
     isNotChange,
@@ -282,25 +277,12 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
 
   const resetFilter = useCallback(() => {
     onOpenFilterDialog("")
-    dispatch(
-      runApplyFilter({
-        dataFilterParam: undefined,
-        nodeId,
-        filePathCellRoi,
-        filePathFluorescence,
-      }),
-    )
+    dispatch(runApplyFilter({ dataFilterParam: undefined, nodeId }))
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Reset filter", { variant: "error" })
       })
-  }, [
-    dispatch,
-    filePathCellRoi,
-    filePathFluorescence,
-    nodeId,
-    onOpenFilterDialog,
-  ])
+  }, [dispatch, nodeId, onOpenFilterDialog])
 
   return (
     <Box display="flex" justifyContent="flex-end">
@@ -309,7 +291,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
           <InputDim
             title="ROI"
             name="roi"
-            placeholder={`0:${maxRoi},1:${maxRoi}`}
+            placeholder={roiPlaceholder || `0:${maxRoi}`}
             value={roi || ""}
             onChangeInput={(v) => onChange("roi", v)}
             multiple
@@ -318,7 +300,7 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
           <InputDim
             title="Time(Dim1)"
             name="dim1"
-            placeholder={`0:${maxDim}`}
+            placeholder={dimPlaceholder || `0:${maxDim}`}
             value={dim1 || ""}
             onChangeInput={(v) => onChange("dim1", v)}
             max={maxDim}

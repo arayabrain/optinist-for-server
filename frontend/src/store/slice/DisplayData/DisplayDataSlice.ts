@@ -28,11 +28,7 @@ import {
   DisplayData,
   DISPLAY_DATA_SLICE_NAME,
 } from "store/slice/DisplayData/DisplayDataType"
-import {
-  run,
-  runApplyFilter,
-  runByCurrentUid,
-} from "store/slice/Pipeline/PipelineActions"
+import { run, runByCurrentUid } from "store/slice/Pipeline/PipelineActions"
 import {
   deleteDisplayItem,
   setNewDisplayDataPath,
@@ -614,11 +610,6 @@ export const displayDataSlice = createSlice({
         state.isEditRoiCommitting = true
 
         state.loadingStack.push((state.loading = true))
-      })
-      .addCase(runApplyFilter.fulfilled, (state, action) => {
-        const { filePathCellRoi, filePathFluorescence } = action.meta.arg
-        delete state.timeSeries[filePathFluorescence]
-        delete state.roi[filePathCellRoi]
       })
       .addMatcher(
         isAnyOf(

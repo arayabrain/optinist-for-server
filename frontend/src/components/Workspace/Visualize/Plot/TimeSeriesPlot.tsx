@@ -56,12 +56,13 @@ export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
   const isInitialized = useSelector(selectTimeSeriesDataIsInitialized(path))
   const error = useSelector(selectTimeSeriesDataError(path))
   const isFulfilled = useSelector(selectTimeSeriesDataIsFulfilled(path))
+  const { dialogFilterNodeId } = useContext(DialogContext)
 
   useEffect(() => {
-    if (!isInitialized) {
-      dispatch(getTimeSeriesInitData({ path, itemId }))
-    }
-  }, [dispatch, isInitialized, path, itemId])
+    dispatch(
+      getTimeSeriesInitData({ path, itemId, isFull: !!dialogFilterNodeId }),
+    )
+  }, [dispatch, path, itemId, dialogFilterNodeId])
 
   if (!isInitialized) {
     return <LinearProgress />

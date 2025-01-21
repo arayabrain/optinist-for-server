@@ -41,8 +41,6 @@ export const runApplyFilter = createAsyncThunk<
   {
     dataFilterParam?: TDataFilterParam
     nodeId: string
-    filePathCellRoi: string
-    filePathFluorescence: string
   },
   ThunkApiConfig
 >(

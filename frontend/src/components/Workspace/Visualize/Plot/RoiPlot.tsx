@@ -18,7 +18,6 @@ import {
   selectRoiData,
   selectRoiDataError,
   selectRoiDataIsFulfilled,
-  selectRoiDataIsInitialized,
   selectRoiDataIsPending,
   selectRoiMeta,
 } from "store/slice/DisplayData/DisplayDataSelectors"
@@ -36,17 +35,18 @@ import { twoDimarrayEqualityFn } from "utils/EqualityUtils"
 export const RoiPlot = memo(function RoiPlot() {
   const { filePath: path } = useContext(DisplayDataContext)
   const isPending = useSelector(selectRoiDataIsPending(path))
-  const isInitialized = useSelector(selectRoiDataIsInitialized(path))
   const isFulfilled = useSelector(selectRoiDataIsFulfilled(path))
   const error = useSelector(selectRoiDataError(path))
   const workspaceId = useSelector(selectCurrentWorkspaceId)
+  const { dialogFilterNodeId } = useContext(DialogContext)
 
   const dispatch = useDispatch<AppDispatch>()
   useEffect(() => {
-    if (workspaceId && !isInitialized) {
-      dispatch(getRoiData({ path, workspaceId }))
+    if (workspaceId) {
+      dispatch(getRoiData({ path, workspaceId, isFull: !!dialogFilterNodeId }))
     }
-  }, [dispatch, isInitialized, path, workspaceId])
+  }, [dialogFilterNodeId, dispatch, path, workspaceId])
+
   if (isPending) {
     return <LinearProgress />
   } else if (error != null) {
