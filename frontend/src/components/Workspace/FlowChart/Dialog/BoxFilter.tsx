@@ -190,36 +190,12 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   }, [filterParam])
 
   const maxDim = useMemo(() => {
-    const dims = filterSelector?.dim1
-      ?.map((e) => (e.end ? Number(e.end) : undefined))
-      ?.filter(Boolean)
-    if (dims?.length) return Math.max(...(dims as number[]))
     return outputPaths.fluorescence?.data_shape?.[1]
-  }, [filterSelector?.dim1, outputPaths.fluorescence?.data_shape])
-
-  const minDim = useMemo(() => {
-    const dims = filterSelector?.dim1
-      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
-      ?.filter((e) => e || e === 0)
-    if (dims?.length) return Math.min(...(dims as number[]))
-    return 0
-  }, [filterSelector?.dim1])
+  }, [outputPaths.fluorescence?.data_shape])
 
   const maxRoi = useMemo(() => {
-    const dims = filterSelector?.roi
-      ?.map((e) => (e.end ? Number(e.end) : undefined))
-      ?.filter(Boolean)
-    if (dims?.length) return Math.max(...(dims as number[]))
     return outputPaths.fluorescence?.max_index
-  }, [filterSelector?.roi, outputPaths.fluorescence?.max_index])
-
-  const minRoi = useMemo(() => {
-    const dims = filterSelector?.roi
-      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
-      ?.filter((e) => e || e === 0)
-    if (dims?.length) return Math.min(...(dims as number[]))
-    return 0
-  }, [filterSelector?.roi])
+  }, [outputPaths.fluorescence?.max_index])
 
   useEffect(() => {
     setFilterParam(filterSelector)
@@ -338,7 +314,6 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
             onChangeInput={(v) => onChange("roi", v)}
             multiple
             max={maxRoi}
-            min={minRoi}
           />
           <InputDim
             title="Time(Dim1)"
@@ -347,7 +322,6 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
             value={dim1 || ""}
             onChangeInput={(v) => onChange("dim1", v)}
             max={maxDim}
-            min={minDim}
           />
         </Box>
         <Box mt={2} display="flex" gap={1}>
