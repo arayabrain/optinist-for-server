@@ -77,6 +77,7 @@ import {
   selectImageItemAlpha,
   selectRoiItemOutputKeys,
   selectVisualizeItems,
+  selectImageItemShowRoiLabels,
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import {
   incrementImageActiveIndex,
@@ -227,6 +228,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
   const [startDragAddRoi, setStartDragAddRoi] = useState(false)
   const [action, setAction] = useState("")
   const [positionDrag, setChangeSize] = useState<PositionDrag | undefined>()
+  const showRoiLabels = useSelector(selectImageItemShowRoiLabels(itemId))
 
   const outputKey: string | null = useSelector(selectRoiItemOutputKeys(itemId))
 
@@ -389,6 +391,57 @@ const ImagePlotChart = memo(function ImagePlotChart({
       dispatch(selectingImageArea({ itemId, range: event.range }))
     }
   })
+
+  const roiLabels = useMemo(() => {
+    if (!showRoiLabels) return []
+    const labels: Plotly.Annotations[] = []
+    const seen = new Set()
+
+    roiDataState.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== null && !seen.has(value)) {
+          seen.add(value)
+          const points = {
+            x: [] as number[],
+            y: [] as number[],
+            count: 0,
+          }
+          roiDataState.forEach((r, yi) => {
+            r.forEach((v, xi) => {
+              if (v === value) {
+                points.x.push(xi)
+                points.y.push(yi)
+                points.count++
+              }
+            })
+          })
+
+          const centerX = points.x.reduce((a, b) => a + b, 0) / points.count
+          const centerY = points.y.reduce((a, b) => a + b, 0) / points.count
+
+          const annotation: Partial<Plotly.Annotations> = {
+            x: centerX,
+            y: centerY,
+            text: `${value}`,
+            xref: "x",
+            yref: "y",
+            showarrow: false,
+            font: {
+              color: "black", // Black text
+              size: 10,
+              weight: 700, // Bold text
+            },
+            bgcolor: "rgba(255, 255, 255, 0.6)", // Soft white semi-transparent background (60% opacity)
+            borderpad: 0.5, // Padding around the text
+          }
+
+          labels.push(annotation as Plotly.Annotations)
+        }
+      })
+    })
+    return labels
+  }, [roiDataState, showRoiLabels])
+
   const layout = useMemo(
     () => ({
       title: {
@@ -412,6 +465,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
         autotick: true,
         ticks: "",
         showticklabels: showticklabels,
+        annotations: roiLabels,
       },
       yaxis: {
         title: meta?.ylabel,
@@ -420,10 +474,11 @@ const ImagePlotChart = memo(function ImagePlotChart({
         showgrid: showgrid,
         showline: showline,
         zeroline: false,
-        autotick: true, // todo
+        autotick: true,
         ticks: "",
-        showticklabels: showticklabels, // todo
+        showticklabels: showticklabels,
       },
+      annotations: roiLabels,
     }),
     //eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -435,6 +490,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
       height,
       selectMode,
       action,
+      roiLabels,
     ],
   )
 
