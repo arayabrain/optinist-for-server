@@ -20,6 +20,7 @@ import {
   PlotData,
   PlotMouseEvent,
   PlotSelectionEvent,
+  Annotations,
 } from "plotly.js"
 
 import { Button, LinearProgress, TextField, Typography } from "@mui/material"
@@ -394,11 +395,11 @@ const ImagePlotChart = memo(function ImagePlotChart({
 
   const roiLabels = useMemo(() => {
     if (!showRoiLabels) return []
-    const labels: Plotly.Annotations[] = []
+    const labels: Annotations[] = []
     const seen = new Set()
 
-    roiDataState.forEach((row, y) => {
-      row.forEach((value, x) => {
+    roiDataState.forEach((row, _y) => {
+      row.forEach((value, _x) => {
         if (value !== null && !seen.has(value)) {
           seen.add(value)
           const points = {
@@ -419,7 +420,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
           const centerX = points.x.reduce((a, b) => a + b, 0) / points.count
           const centerY = points.y.reduce((a, b) => a + b, 0) / points.count
 
-          const annotation: Partial<Plotly.Annotations> = {
+          const annotation: Partial<Annotations> = {
             x: centerX,
             y: centerY,
             text: `${value}`,
@@ -435,7 +436,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
             borderpad: 0.5, // Padding around the text
           }
 
-          labels.push(annotation as Plotly.Annotations)
+          labels.push(annotation as Annotations)
         }
       })
     })
