@@ -10,7 +10,7 @@ def roi_fluo_from_hdf5(
     cell_img: ImageData,
     fluo: FluoData,
     output_dir: str,
-    iscell: IscellData = None,
+    iscell: IscellData,
     params: dict = None,
     **kwargs
 ) -> dict(iscell=IscellData, fluorescence=FluoData):
