@@ -251,7 +251,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
         x:
           Number((newDataXrange.length - 1) / range) +
           newDataXrange.length / (10 * range),
-        y: data[value].y[newDataXrange.length - 1],
+        y: data[value]?.y[newDataXrange.length - 1],
         xref: "x",
         yref: "y",
         text: `cell: ${value}`,

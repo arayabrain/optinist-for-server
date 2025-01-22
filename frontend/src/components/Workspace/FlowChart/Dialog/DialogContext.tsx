@@ -4,6 +4,7 @@ import {
   PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react"
 import { useDispatch, useSelector } from "react-redux"
@@ -125,6 +126,13 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
     },
     [dispatch, filePath, itemId, roisSelected],
   )
+
+  useEffect(() => {
+    return () => {
+      if (!itemId) return
+      dispatch(setTimeSeriesItemDrawOrderList({ itemId, drawOrderList: [] }))
+    }
+  }, [dispatch, itemId])
 
   return (
     <RoiSelectedContext.Provider value={{ roisSelected, setRoiSelected }}>
