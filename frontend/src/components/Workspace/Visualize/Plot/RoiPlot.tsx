@@ -68,7 +68,11 @@ const RoiPlotImple = memo(function RoiPlotImple() {
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, path))
   const { setRoiSelected, roisSelected } = useRoisSelected()
 
-  const { filterParam } = useBoxFilter()
+  const { filterParam, setRoiPath } = useBoxFilter()
+
+  useEffect(() => {
+    setRoiPath(path)
+  }, [path, setRoiPath])
 
   const maxRoi = useMemo(() => {
     const dims = filterParam?.roi

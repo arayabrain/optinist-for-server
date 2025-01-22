@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memo, useContext, useEffect, useMemo, useState } from "react"
 import PlotlyChart from "react-plotlyjs-ts"
-import { useSelector, useDispatch } from "react-redux"
+import { useSelector, useDispatch, shallowEqual } from "react-redux"
 
 import createColormap from "colormap"
 import { LegendClickEvent } from "plotly.js"
@@ -19,6 +20,7 @@ import {
   getTimeSeriesInitData,
 } from "store/slice/DisplayData/DisplayDataActions"
 import {
+  selectRoiUniqueList,
   selectTimeSeriesData,
   selectTimeSeriesDataError,
   selectTimeSeriesDataIsFulfilled,
@@ -108,7 +110,10 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const { dialogFilterNodeId } = useContext(DialogContext)
   const { setRoiSelected } = useRoisSelected()
 
-  const { filterParam } = useBoxFilter()
+  const { filterParam, roiPath } = useBoxFilter()
+
+  const roiUniqueList = useSelector(selectRoiUniqueList(roiPath), shallowEqual)
+
   const xrange = useMemo(() => {
     if (dialogFilterNodeId && filterParam) {
       const dim1 = filterParam?.dim1?.[0]
@@ -136,6 +141,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const dataKeys = useMemo(() => {
     let keys = dataKeysSelector
     if (!dialogFilterNodeId) return keys
+    keys = keys.filter((e) => roiUniqueList?.includes(e))
     if (minRoi !== undefined) {
       keys = keys.filter((e) => Number(e) >= minRoi)
     }
@@ -143,7 +149,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
       keys = keys.filter((e) => Number(e) < maxRoi)
     }
     return keys
-  }, [dataKeysSelector, dialogFilterNodeId, maxRoi, minRoi])
+  }, [dataKeysSelector, dialogFilterNodeId, maxRoi, minRoi, roiUniqueList])
 
   useEffect(() => {
     const seriesData: TimeSeriesData = {}
