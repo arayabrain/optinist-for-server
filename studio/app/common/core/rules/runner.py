@@ -248,21 +248,13 @@ class Runner:
         dff = output_info["dff"].data if output_info.get("dff") else None
         iscell = output_info["iscell"].data
 
-        # if data_filter_param.dim1:
-        #     dim1_filter_mask = data_filter_param.dim1_mask(max_size=im.shape[1])
-        #     im[:, ~dim1_filter_mask, :] = np.nan
-
-        # if data_filter_param.dim2:
-        #     dim2_filter_mask = data_filter_param.dim2_mask(max_size=im.shape[2])
-        #     im[:, :, ~dim2_filter_mask] = np.nan
-
         if data_filter_param.dim1:
             dim1_filter_mask = data_filter_param.dim1_mask(
                 max_size=fluorescence.shape[1]
             )
-            fluorescence[:, ~dim1_filter_mask] = np.nan
+            fluorescence = fluorescence[:, dim1_filter_mask]
             if dff is not None:
-                dff[:, ~dim1_filter_mask] = np.nan
+                dff = dff[:, dim1_filter_mask]
 
         if data_filter_param.roi:
             roi_filter_mask = data_filter_param.roi_mask(max_size=iscell.shape[0])
