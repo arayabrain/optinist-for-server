@@ -26,11 +26,19 @@ class NestDictGetter:
                 if sig.return_annotation is not inspect._empty:
                     returns_list = cls._return_list(sig.return_annotation.items())
 
+                # get conda env infomations
+                conda_name = value.get("conda_name")
+                conda_env_exists = (
+                    True if conda_name in (None, "caiman", "lccd") else False
+                )  # TODO WIP: actually obtained by the conda environment check process
+
                 algo_dict[key] = Algo(
                     args=cls._args_list(sig.parameters.values()),
                     returns=returns_list,
                     parameter=value["parameter"] if "parameter" in value else None,
                     path=cls._parent_key(parent_key, key),
+                    conda_name=conda_name,
+                    conda_env_exists=conda_env_exists,
                 )
 
         return algo_dict
@@ -70,12 +78,16 @@ async def get_algolist() -> Dict[str, Algo]:
                     'caiman_mc' : {
                         'args': ['images', 'timeseries'],
                         'return': ['images'],
-                        'path': 'caiman/caiman_mc'
+                        'path': 'caiman/caiman_mc',
+                        'conda_name': 'conda_name',
+                        'conda_env_exists': True,
                     },
                     'caiman_cnmf': {
                         'args': ['images', 'timeseries'],
                         'return': ['images'],
-                        'path': 'caiman/caiman_mc'
+                        'path': 'caiman/caiman_cnmf',
+                        'conda_name': 'conda_name',
+                        'conda_env_exists': True,
                     }
                 }
             }
