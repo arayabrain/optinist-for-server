@@ -13,7 +13,7 @@ def roi_fluo_from_hdf5(
     iscell: IscellData,
     params: dict = None,
     **kwargs
-) -> dict(iscell=IscellData, fluorescence=FluoData):
+) -> dict():
     if iscell is not None:
         iscell_data = iscell.data
         return {
