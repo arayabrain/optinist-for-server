@@ -431,14 +431,64 @@ class NWBCreater:
         # Create Device (microscope information)
         devices = []
         for key in nwbfile.devices.keys():
+            device_info = nwbfile.devices[key]
+
+            if hasattr(device_info, "MicroscopeOMEMetaData"):
+                device_metadata = device_info.MicroscopeOMEMetaData
+
+                # Note: The fields in the original hdf cannot be copied to the new hdf,
+                # so they are converted to dict once.
+                image_meta = {
+                    k: getattr(device_metadata.Image, k)
+                    for k in device_metadata.Image.fields
+                }
+                pixels_meta = {
+                    k: getattr(device_metadata.Pixels, k)
+                    for k in device_metadata.Pixels.fields
+                }
+                objective_mata = {
+                    k: getattr(device_metadata.Objective, k)
+                    for k in device_metadata.Objective.fields
+                }
+            else:
+                device_metadata = None
+                image_meta = None
+                pixels_meta = None
+                objective_mata = None
+
+            if hasattr(device_info, "MicroscopeLabMetaData"):
+                # Note: The fields in the original hdf cannot be copied to the new hdf,
+                # so they are converted to dict once.
+                lab_specific_meta = {
+                    k: getattr(device_info.MicroscopeLabMetaData, k)
+                    for k in device_info.MicroscopeLabMetaData.fields
+                }
+            else:
+                lab_specific_meta = None
+
             device = DeviceMetaData(
-                Image=nwbfile.devices[key].Image,
-                Pixels=nwbfile.devices[key].Pixels,
-                Objective=nwbfile.devices[key].Objective,
+                MicroscopeOMEMetaData=MicroscopeOMEMetaData(
+                    Image=None if image_meta is None else ImagingMetaData(**image_meta),
+                    Pixels=(
+                        None if pixels_meta is None else PixelsMetaData(**pixels_meta)
+                    ),
+                    Objective=(
+                        None
+                        if objective_mata is None
+                        else ObjectiveMetaData(**objective_mata)
+                    ),
+                ),
+                MicroscopeLabMetaData=(
+                    None
+                    if lab_specific_meta is None
+                    else MicroscopeLabMetaData(**lab_specific_meta)
+                ),
                 name=key,
-                description=nwbfile.devices[key].description,
-                manufacturer=nwbfile.devices[key].manufacturer,
+                description=device_info.description,
+                manufacturer=device_info.manufacturer,
             )
+
+            new_nwbfile.add_device(device)
             devices.append(device)
 
         # Create OpticalChannel
