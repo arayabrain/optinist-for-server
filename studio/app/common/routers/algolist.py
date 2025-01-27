@@ -3,6 +3,7 @@ from typing import Dict, List, ValuesView
 
 from fastapi import APIRouter
 
+from studio.app.common.core.snakemake.smk_utils import SmkInternalUtils
 from studio.app.common.schemas.algolist import Algo, AlgoList, Arg, Return
 from studio.app.const import NOT_DISPLAY_ARGS_LIST
 from studio.app.wrappers import wrapper_dict
@@ -28,9 +29,13 @@ class NestDictGetter:
 
                 # get conda env infomations
                 conda_name = value.get("conda_name")
-                conda_env_exists = (
-                    True if conda_name in (None, "caiman", "lccd") else False
-                )  # TODO WIP: actually obtained by the conda environment check process
+                if conda_name is None:
+                    # If conda env is not used, always returns True.
+                    conda_env_exists = True
+                else:
+                    conda_env_exists = SmkInternalUtils.verify_conda_env_exists(
+                        conda_name
+                    )
 
                 algo_dict[key] = Algo(
                     args=cls._args_list(sig.parameters.values()),
