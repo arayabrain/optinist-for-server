@@ -428,18 +428,37 @@ class NWBCreater:
         devices = []
         for key in nwbfile.devices.keys():
             device_info = nwbfile.devices[key]
-            if hasattr(device_info, "metadata"):
-                device_metadata = device_info.metadata
-                image_meta = device_metadata.Image
-                pixels_meta = device_metadata.Pixels
-                objective_mata = device_metadata.Objective
+
+            if hasattr(device_info, "MicroscopeOMEMetaData"):
+                device_metadata = device_info.MicroscopeOMEMetaData
+
+                # Note: The fields in the original hdf cannot be copied to the new hdf,
+                # so they are converted to dict once.
+                image_meta = {
+                    k: getattr(device_metadata.Image, k)
+                    for k in device_metadata.Image.fields
+                }
+                pixels_meta = {
+                    k: getattr(device_metadata.Pixels, k)
+                    for k in device_metadata.Pixels.fields
+                }
+                objective_mata = {
+                    k: getattr(device_metadata.Objective, k)
+                    for k in device_metadata.Objective.fields
+                }
             else:
+                device_metadata = None
                 image_meta = None
                 pixels_meta = None
                 objective_mata = None
 
-            if hasattr(device_info, "lab_specific_metadata"):
-                lab_specific_meta = device_info.lab_specific_metadata
+            if hasattr(device_info, "MicroscopeLabMetaData"):
+                # Note: The fields in the original hdf cannot be copied to the new hdf,
+                # so they are converted to dict once.
+                lab_specific_meta = {
+                    k: getattr(device_info.MicroscopeLabMetaData, k)
+                    for k in device_info.MicroscopeLabMetaData.fields
+                }
             else:
                 lab_specific_meta = None
 
