@@ -427,14 +427,45 @@ class NWBCreater:
 
         devices = []
         for key in nwbfile.devices.keys():
+            device_info = nwbfile.devices[key]
+            if hasattr(device_info, "metadata"):
+                device_metadata = device_info.metadata
+                image_meta = device_metadata.Image
+                pixels_meta = device_metadata.Pixels
+                objective_mata = device_metadata.Objective
+            else:
+                image_meta = None
+                pixels_meta = None
+                objective_mata = None
+
+            if hasattr(device_info, "lab_specific_metadata"):
+                lab_specific_meta = device_info.lab_specific_metadata
+            else:
+                lab_specific_meta = None
+
             device = DeviceMetaData(
-                Image=nwbfile.devices[key].Image,
-                Pixels=nwbfile.devices[key].Pixels,
-                Objective=nwbfile.devices[key].Objective,
+                MicroscopeOMEMetaData=MicroscopeOMEMetaData(
+                    Image=None if image_meta is None else ImagingMetaData(**image_meta),
+                    Pixels=(
+                        None if pixels_meta is None else PixelsMetaData(**pixels_meta)
+                    ),
+                    Objective=(
+                        None
+                        if objective_mata is None
+                        else ObjectiveMetaData(**objective_mata)
+                    ),
+                ),
+                MicroscopeLabMetaData=(
+                    None
+                    if lab_specific_meta is None
+                    else MicroscopeLabMetaData(**lab_specific_meta)
+                ),
                 name=key,
-                description=nwbfile.devices[key].description,
-                manufacturer=nwbfile.devices[key].manufacturer,
+                description=device_info.description,
+                manufacturer=device_info.manufacturer,
             )
+
+            new_nwbfile.add_device(device)
             devices.append(device)
 
         old_optical_channel = nwbfile.imaging_planes["ImagingPlane"].optical_channel[0]
