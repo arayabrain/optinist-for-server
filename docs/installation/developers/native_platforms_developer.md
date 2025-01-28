@@ -116,12 +116,12 @@ yarn install
 yarn start
 ```
 
-- Launch browser, and go to http://localhost:3000
+- Launch browser, and go to `http://localhost:3000`
+
+Done!
 
 ```{eval-rst}
 .. note::
-    frontend in development environment uses port 3000,
-    while production optinist uses 8000.
+    * frontend in development environment uses port 3000, while production optinist uses 8000.
+    * See: :ref:`_optinist_startup_options`
 ```
-
-Done!

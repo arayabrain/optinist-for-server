@@ -7,3 +7,4 @@ Installation
 
   users/index
   developers/index
+  appendix
