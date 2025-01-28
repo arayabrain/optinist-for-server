@@ -18,13 +18,13 @@ Please follow instructions below.
 
 - Unix-like platforms
   - Linux
-    - [Install Tools](linux.md#install-tools)
+    - [Install Tools](../users/linux.md#install-tools)
   - Windows WSL
-    - [Install Tools](windows.md#install-tools-1)
+    - [Install Tools](../users/windows.md#install-tools-1)
   - Mac
-    - [Install Tools](mac.md#install-tools)
+    - [Install Tools](../users/mac.md#install-tools)
 - Windows
-    - [Install Tools](windows.md#install-tools)
+    - [Install Tools](../users/windows.md#install-tools)
 
 #### Install Node.js
 
