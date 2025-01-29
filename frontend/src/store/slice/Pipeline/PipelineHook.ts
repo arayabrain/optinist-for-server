@@ -7,6 +7,7 @@ import { useSnackbar, VariantType } from "notistack"
 import { isRejected } from "@reduxjs/toolkit"
 
 import { STANDALONE_WORKSPACE_ID } from "const/Mode"
+import { getAlgoList } from "store/slice/AlgorithmList/AlgorithmListActions"
 import { selectAlgorithmNodeNotExist } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { getExperiments } from "store/slice/Experiments/ExperimentsActions"
 import { clearExperiments } from "store/slice/Experiments/ExperimentsSlice"
@@ -137,18 +138,29 @@ export function useRunPipeline() {
   const [prevStatus, setPrevStatus] = useState(status)
   useEffect(() => {
     if (prevStatus !== status) {
-      if (status === RUN_STATUS.FINISHED) {
-        enqueueSnackbar("Finished", { variant: "success" })
+      let isRunFinished = false
+
+      if (status === RUN_STATUS.START_SUCCESS) {
         dispatch(getExperiments())
-      } else if (status === RUN_STATUS.START_SUCCESS) {
+      } else if (status === RUN_STATUS.FINISHED) {
+        enqueueSnackbar("Workflow finished", { variant: "success" })
+        isRunFinished = true
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.ABORTED) {
-        enqueueSnackbar("Aborted", { variant: "error" })
+        enqueueSnackbar("Workflow aborted", { variant: "error" })
+        isRunFinished = true
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.CANCELED) {
-        enqueueSnackbar("Workflow canceled.", { variant: "success" })
+        enqueueSnackbar("Workflow canceled", { variant: "success" })
+        isRunFinished = true
         dispatch(getExperiments())
       }
+
+      if (isRunFinished) {
+        // Update TreeView
+        dispatch(getAlgoList())
+      }
+
       setPrevStatus(status)
     }
   }, [dispatch, status, prevStatus, enqueueSnackbar])
