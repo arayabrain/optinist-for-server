@@ -52,13 +52,13 @@ def CCA(
     target_idx = params["target_index"]
     if isinstance(target_idx, str):
         target_idx = target_idx.strip("[] ")
-        if ':' in target_idx:
-            parts = [p.strip() for p in target_idx.split(':')]
+        if ":" in target_idx:
+            parts = [p.strip() for p in target_idx.split(":")]
             start = int(parts[0]) if parts[0] else None
             end = int(parts[1]) if parts[1] else None
             Y = Y[:, start:end]
         else:
-            indices = list(map(int, target_idx.split(',')))
+            indices = list(map(int, target_idx.split(",")))
             Y = Y[:, indices]
     elif isinstance(target_idx, (list, np.ndarray)):
         indices = [int(i) for i in target_idx]
