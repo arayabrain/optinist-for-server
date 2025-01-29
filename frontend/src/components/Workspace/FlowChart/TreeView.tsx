@@ -1,18 +1,17 @@
-import { memo, useCallback, useEffect, useState } from "react"
+import { memo, useCallback, useEffect } from "react"
 import { useDrag } from "react-dnd"
 import { useSelector, useDispatch } from "react-redux"
 
 import AddIcon from "@mui/icons-material/Add"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import WarningIcon from "@mui/icons-material/Warning"
 import { styled, Typography } from "@mui/material"
 import IconButton from "@mui/material/IconButton"
 import { treeItemClasses } from "@mui/x-tree-view"
 import { TreeItem } from "@mui/x-tree-view/TreeItem"
 import { TreeView } from "@mui/x-tree-view/TreeView"
 
-import { ConfirmDialog } from "components/common/ConfirmDialog"
+import { CondaNoticeButton } from "components/Workspace/FlowChart/Buttons/CondaNoticeButton"
 import {
   DND_ITEM_TYPE_SET,
   TreeItemCollectedProps,
@@ -304,7 +303,7 @@ const AlgoNodeComponent = memo(function AlgoNodeComponent({
             }}
           >
             {!node.condaEnvExists && (
-              <WarningCondaButton condaName={node.condaName} />
+              <CondaNoticeButton condaName={node.condaName} />
             )}
 
             <AddButton
@@ -345,59 +344,6 @@ const AddButton = memo(function AddButton({ name, onClick }: AddButtonProps) {
       >
         {name}
       </Typography>
-    </>
-  )
-})
-
-interface WarningCondaButtonProps {
-  condaName: string
-}
-
-const WarningCondaButton = memo(function WarningCondaButton({
-  condaName,
-}: WarningCondaButtonProps) {
-  const [open, setOpen] = useState(false)
-  const openDialog = () => {
-    setOpen(true)
-  }
-  const handleOk = () => {
-    // TODO: Requires implementation
-  }
-  return (
-    <>
-      <IconButton
-        style={{ padding: 0, color: "orange" }}
-        size="small"
-        onClick={openDialog}
-      >
-        <WarningIcon />
-      </IconButton>
-      <ConfirmDialog
-        open={open}
-        setOpen={setOpen}
-        onConfirm={handleOk}
-        title="Conda Environment Verification"
-        content={
-          <>
-            <p>
-              Conda environment <strong>&quot;{condaName}&quot;</strong> does
-              not exist. Create an environment?
-            </p>
-            <p style={{ display: "flex", alignItems: "center" }}>
-              <WarningIcon
-                style={{
-                  marginRight: 8,
-                  color: "orange",
-                }}
-              />
-              Start Conda environment creation workflow. <br />
-              Current workflow will be cleared.
-            </p>
-          </>
-        }
-        confirmLabel="Start"
-        iconType="info"
-      />
     </>
   )
 })
