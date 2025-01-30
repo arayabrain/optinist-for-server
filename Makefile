@@ -8,9 +8,12 @@ define rm_unused_docker_containers
 	docker ps -a --filter "status=exited" --filter "name=$(1)" --format "{{.ID}}" | xargs --no-run-if-empty docker rm
 endef
 
+VERSION := $(shell poetry version -s)
 PYTEST = poetry run pytest -s
-OLD_VERSION = "v1.2.1"
-CURRENT_VERSION = "v1.3.0"
+
+.PHONY: version
+version:
+	echo "Current Optinist Version: $(VERSION)"
 
 .PHONY: test_run
 test_run:
@@ -117,6 +120,6 @@ push_pypi:
 .PHONY: push_dockerhub
 push_dockerhub:
 	docker build --rm -t oistncu/optinist:latest -f studio/config/docker/Dockerfile . --platform=linux/amd64
-	docker tag oistncu/optinist:latest oistncu/optinist:${OLD_VERSION}
-	docker push oistncu/optinist:${OLD_VERSION}
+	docker tag oistncu/optinist:latest oistncu/optinist:${VERSION}
+	docker push oistncu/optinist:${VERSION}
 	docker push oistncu/optinist:latest
