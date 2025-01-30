@@ -46,7 +46,7 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
       })
 
     // Reproduce create-conda-env workflow
-    const uid = `conda_${condaName}`
+    const uid = `setup_conda_${condaName}`
     await dispatch(reproduceWorkflow({ workspaceId, uid }))
       .unwrap()
       .then(() => {
@@ -95,7 +95,7 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
             </p>
           </>
         }
-        confirmLabel="Run Create"
+        confirmLabel="Start Create"
         iconType="info"
       />
     </>
