@@ -9,11 +9,6 @@ define rm_unused_docker_containers
 endef
 
 VERSION := $(shell poetry version -s)
-PYTEST = poetry run pytest -s
-
-.PHONY: version
-version:
-	echo "Current Optinist Version: $(VERSION)"
 
 .PHONY: test_run
 test_run:
@@ -59,6 +54,13 @@ test_frontend:
 
 
 ############################## For Building ##############################
+
+PYTEST = poetry run pytest -s
+
+.PHONY: version
+version:
+	echo "Current Optinist Version: $(VERSION)"
+
 
 .PHONY: build_frontend
 build_frontend:
