@@ -9,6 +9,8 @@ define rm_unused_docker_containers
 endef
 
 PYTEST = poetry run pytest -s
+OLD_VERSION = "v1.2.1"
+CURRENT_VERSION = "v1.3.0"
 
 .PHONY: test_run
 test_run:
@@ -115,6 +117,6 @@ push_pypi:
 .PHONY: push_dockerhub
 push_dockerhub:
 	docker build --rm -t oistncu/optinist:latest -f studio/config/docker/Dockerfile . --platform=linux/amd64
-	docker tag oistncu/optinist:latest oistncu/optinist:${old_ver}
-	docker push oistncu/optinist:${old_ver}
+	docker tag oistncu/optinist:latest oistncu/optinist:${OLD_VERSION}
+	docker push oistncu/optinist:${OLD_VERSION}
 	docker push oistncu/optinist:latest
