@@ -115,4 +115,6 @@ push_pypi:
 .PHONY: push_dockerhub
 push_dockerhub:
 	docker build --rm -t oistncu/optinist:latest -f studio/config/docker/Dockerfile . --platform=linux/amd64
+	docker tag oistncu/optinist:latest oistncu/optinist:${old_ver}
+	docker push oistncu/optinist:${old_ver}
 	docker push oistncu/optinist:latest
