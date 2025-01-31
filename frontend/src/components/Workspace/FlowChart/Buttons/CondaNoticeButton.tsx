@@ -33,10 +33,11 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
 
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId) || -1
+  const category = "maintenance"
 
   const handleOk = async (condaName: string) => {
     // Import create-conda-env workflow
-    await dispatch(importSampleData({ workspaceId }))
+    await dispatch(importSampleData({ workspaceId, category }))
       .unwrap()
       .then(() => {
         // *Here, success snackbar display is off.
