@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from "react-redux"
 
 import { enqueueSnackbar } from "notistack"
 
-import WarningIcon from "@mui/icons-material/Warning"
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
+import { Typography } from "@mui/material"
 import IconButton from "@mui/material/IconButton"
 
 import { ConfirmDialog } from "components/common/ConfirmDialog"
@@ -17,10 +18,12 @@ import { selectCurrentWorkspaceId } from "store/slice/Workspace/WorkspaceSelecto
 import { AppDispatch } from "store/store"
 
 interface CondaNoticeButtonProps {
+  name: string
   condaName: string
 }
 
 export const CondaNoticeButton = memo(function CondaNoticeButton({
+  name,
   condaName,
 }: CondaNoticeButtonProps) {
   const [open, setOpen] = useState(false)
@@ -65,12 +68,25 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
   return (
     <>
       <IconButton
-        style={{ padding: 0, color: "orange" }}
+        style={{ padding: 2 }}
+        color="warning"
         size="small"
         onClick={openDialog}
       >
-        <WarningIcon />
+        <InfoOutlinedIcon />
       </IconButton>
+      <Typography
+        variant="inherit"
+        style={{
+          textOverflow: "ellipsis",
+          overflow: "visible",
+          width: "8rem",
+          display: "inline-block",
+        }}
+      >
+        {name}
+      </Typography>
+
       <ConfirmDialog
         open={open}
         setOpen={setOpen}
@@ -83,11 +99,11 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
               not exist. Create an environment?
             </p>
             <p style={{ display: "flex", alignItems: "center" }}>
-              <WarningIcon
+              <InfoOutlinedIcon
                 style={{
                   marginRight: 8,
-                  color: "orange",
                 }}
+                color="info"
                 fontSize="medium"
               />
               Start Conda environment creation workflow. Current workflow will
