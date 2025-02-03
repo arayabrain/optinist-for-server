@@ -32,31 +32,38 @@ def roi_fluo_from_hdf5(
     logger = AppLogger.get_logger()
     logger.info("Starting ROI and fluorescence data processing")
 
-    # Initialize outputs and mappings
-    iscell_data = iscell.data if iscell else None
+    # Base output data
+    all_roi = RoiData(
+        np.nanmax(cell_img.data, axis=0), output_dir=output_dir, file_name="all_roi"
+    )
+    fluorescence = FluoData(np.transpose(fluo.data), file_name="fluorescence")
 
-    # Enrich output with metadata and processed data
+    if iscell is None:
+        return {"all_roi": all_roi, "fluorescence": fluorescence}
+
+    # Extract iscell data
+    iscell_data = iscell.data
+
+    # Process ROI types
+    non_cell_roi = RoiData(
+        np.nanmax(cell_img.data[np.where(iscell_data == 0)], axis=0),
+        output_dir=output_dir,
+        file_name="noncell_roi",
+    )
+
+    cell_roi = RoiData(
+        np.nanmax(cell_img.data[np.where(iscell_data != 0)], axis=0),
+        output_dir=output_dir,
+        file_name="cell_roi",
+    )
+
+    # Construct output dictionary
     output = {
-        "iscell": IscellData(iscell_data, file_name="iscell") if iscell else None,
-        "all_roi": RoiData(
-            np.nanmax(cell_img.data, axis=0),
-            output_dir=output_dir,
-            file_name="all_roi",
-        ),
-        "non_cell_roi": RoiData(
-            (np.nanmax(cell_img.data[iscell_data == 0], axis=0)),
-            output_dir=output_dir,
-            file_name="noncell_roi",
-        ),
-        "cell_roi": RoiData(
-            (np.nanmax(cell_img.data[iscell_data != 0], axis=0)),
-            output_dir=output_dir,
-            file_name="cell_roi",
-        ),
-        "fluorescence": FluoData(
-            np.transpose(fluo.data),
-            file_name="fluorescence",
-        ),
+        "iscell": IscellData(iscell_data, file_name="iscell"),
+        "all_roi": all_roi,
+        "non_cell_roi": non_cell_roi,
+        "cell_roi": cell_roi,
+        "fluorescence": fluorescence,
     }
 
     logger.info("Completed ROI and fluorescence data processing")
