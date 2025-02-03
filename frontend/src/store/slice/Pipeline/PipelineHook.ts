@@ -83,8 +83,7 @@ export function useRunPipeline() {
   const uid = useSelector(selectPipelineLatestUid)
   const isCanceled = useSelector(selectPipelineIsCanceled)
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
-  const isOwner = useSelector(selectIsWorkspaceOwner)
-  const runDisabled = isOwner ? isStartedSuccess : true
+  const runDisabled = useIsRunDisabled()
 
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)
@@ -174,4 +173,12 @@ export function useRunPipeline() {
     handleRunPipelineByUid,
     handleCancelPipeline,
   }
+}
+
+export function useIsRunDisabled() {
+  const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
+  const isOwner = useSelector(selectIsWorkspaceOwner)
+  const runDisabled = isOwner ? isStartedSuccess : true
+
+  return runDisabled
 }

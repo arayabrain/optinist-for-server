@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton"
 
 import { ConfirmDialog } from "components/common/ConfirmDialog"
 import { getExperiments } from "store/slice/Experiments/ExperimentsActions"
+import { useIsRunDisabled } from "store/slice/Pipeline/PipelineHook"
 import { reset } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import {
   importSampleData,
@@ -34,6 +35,8 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId) || -1
   const category = "maintenance"
+
+  const runDisabled = useIsRunDisabled()
 
   const handleOk = async (condaName: string) => {
     // Import create-conda-env workflow
@@ -72,6 +75,7 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
         style={{ padding: 2 }}
         color="warning"
         size="small"
+        disabled={runDisabled}
         onClick={openDialog}
       >
         <InfoOutlinedIcon />
