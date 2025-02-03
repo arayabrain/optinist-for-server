@@ -13,7 +13,10 @@ from studio.app.common.core.workflow.workflow_result import (
     WorkflowMonitor,
     WorkflowResult,
 )
-from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
+from studio.app.common.core.workflow.workflow_runner import (
+    WorkflowNodeDataFilter,
+    WorkflowRunner,
+)
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
     is_workspace_owner,
@@ -110,7 +113,9 @@ async def apply_filter(
     workspace_id: str, uid: str, node_id: str, params: Optional[DataFilterParam] = None
 ):
     try:
-        WorkflowRunner.filter_node_data(workspace_id, uid, node_id, params)
+        WorkflowNodeDataFilter(
+            workspace_id=workspace_id, unique_id=uid, node_id=node_id
+        ).filter_node_data(params)
         return True
     except Exception as e:
         logger.error(e, exc_info=True)
