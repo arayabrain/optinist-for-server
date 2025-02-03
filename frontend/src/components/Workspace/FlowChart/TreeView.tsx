@@ -302,14 +302,14 @@ const AlgoNodeComponent = memo(function AlgoNodeComponent({
               display: "flex", // Place Items on single line.
             }}
           >
-            {!node.condaEnvExists && (
-              <CondaNoticeButton condaName={node.condaName} />
+            {node.condaEnvExists ? (
+              <AddButton
+                name={name}
+                onClick={() => onAddAlgoNode(name, node.functionPath)}
+              />
+            ) : (
+              <CondaNoticeButton name={name} condaName={node.condaName} />
             )}
-
-            <AddButton
-              name={name}
-              onClick={() => onAddAlgoNode(name, node.functionPath)}
-            />
           </div>
         </>
       }
