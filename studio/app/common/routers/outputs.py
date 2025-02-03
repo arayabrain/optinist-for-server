@@ -12,7 +12,7 @@ from studio.app.common.core.utils.filepath_creater import (
 )
 from studio.app.common.core.utils.json_writer import JsonWriter, save_tiff2json
 from studio.app.common.schemas.outputs import JsonTimeSeriesData, OutputData
-from studio.app.const import ACCEPT_FILE_EXT
+from studio.app.const import ACCEPT_FILE_EXT, ORIGINAL_DATA_EXT
 from studio.app.dir_path import DIRPATH
 
 router = APIRouter(prefix="/outputs", tags=["outputs"])
@@ -35,7 +35,7 @@ async def get_inittimedata(
     dirpath: str,
     isFull: Optional[bool] = None,
 ):
-    full_json_dirpath = dirpath + ".bak"
+    full_json_dirpath = dirpath + ORIGINAL_DATA_EXT
     if isFull and os.path.exists(full_json_dirpath):
         dirpath = full_json_dirpath
 
@@ -83,7 +83,7 @@ async def get_timedata(
     index: int,
     isFull: Optional[bool] = None,
 ):
-    full_json_dirpath = dirpath + ".bak"
+    full_json_dirpath = dirpath + ORIGINAL_DATA_EXT
     if isFull and os.path.exists(full_json_dirpath):
         dirpath = full_json_dirpath
 
@@ -139,7 +139,7 @@ async def get_image(
     filename, ext = os.path.splitext(os.path.basename(filepath))
 
     if filename == "cell_roi" and isFull:
-        full_cell_roi_filepath = filepath + ".bak"
+        full_cell_roi_filepath = filepath + ORIGINAL_DATA_EXT
         if os.path.exists(full_cell_roi_filepath):
             filepath = full_cell_roi_filepath
 
