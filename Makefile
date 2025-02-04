@@ -8,7 +8,7 @@ define rm_unused_docker_containers
 	docker ps -a --filter "status=exited" --filter "name=$(1)" --format "{{.ID}}" | xargs --no-run-if-empty docker rm
 endef
 
-VERSION := $(shell poetry version -s)
+PYTEST = poetry run pytest -s
 
 .PHONY: test_run
 test_run:
@@ -55,7 +55,7 @@ test_frontend:
 
 ############################## For Building ##############################
 
-PYTEST = poetry run pytest -s
+VERSION := $(shell poetry version -s)
 
 .PHONY: version
 version:
