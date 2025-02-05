@@ -232,8 +232,9 @@ class WorkflowNodeDataFilter:
         self._write_config(params)
 
     def _write_config(self, params):
-        self.workflow_config.nodeDict[self.node_id].data.dataFilterParam = params
-        self.workflow_config.nodeDict[self.node_id].data.isUpdateFilter = True
+        node_data = self.workflow_config.nodeDict[self.node_id].data
+        node_data.draftDataFilterParam = params
+
         WorkflowConfigWriter(
             self.workspace_id,
             self.unique_id,
