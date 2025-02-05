@@ -36,10 +36,7 @@ export const selectVisualizeImageAndRoiItemIdList = (state: RootState) =>
     .map(Number)
     .filter((itemId) => {
       const item = selectVisualizeItemById(itemId)(state)
-      return (
-        (isImageItem(item) && !item.isWorkflowDialog) ||
-        (isRoiItem(item) && !item.isWorkflowDialog)
-      )
+      return !item.isWorkflowDialog && (isImageItem(item) || isRoiItem(item))
     })
 
 export const selectVisualizeItems = (state: RootState) =>
