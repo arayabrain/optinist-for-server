@@ -36,7 +36,6 @@ describe("RecordReproduce", () => {
           dummyImage: {
             path: "/tmp/optinist/output/96844a59/dummy_image2image_c8tqfxw0mq/image.tif",
             type: "images",
-            max_index: 1,
           },
         },
         started_at: "2023-10-13 15:03:14",
@@ -51,7 +50,6 @@ describe("RecordReproduce", () => {
           dummyImage2: {
             path: "/tmp/optinist/output/96844a59/dummy_image2image8time_4mrz8h7hyk/image2.tif",
             type: "images",
-            max_index: 1,
           },
         },
         started_at: "2023-10-13 15:03:40",
@@ -406,7 +404,6 @@ describe("RecordReproduce", () => {
             outputPaths: {
               dummyImage2: {
                 data_shape: undefined,
-                max_index: 1,
                 path: "/tmp/optinist/output/96844a59/dummy_image2image8time_4mrz8h7hyk/image2.tif",
                 type: "image",
               },
@@ -419,7 +416,6 @@ describe("RecordReproduce", () => {
             outputPaths: {
               dummyImage: {
                 data_shape: undefined,
-                max_index: 1,
                 path: "/tmp/optinist/output/96844a59/dummy_image2image_c8tqfxw0mq/image.tif",
                 type: "image",
               },
