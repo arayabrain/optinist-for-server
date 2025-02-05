@@ -7,6 +7,7 @@ import {
   useState,
 } from "react"
 import { shallowEqual, useDispatch, useSelector } from "react-redux"
+import { useParams } from "react-router-dom"
 
 import { enqueueSnackbar } from "notistack"
 
@@ -15,10 +16,13 @@ import { Box, Button, Input, InputProps } from "@mui/material"
 
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
 import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
+import { STANDALONE_WORKSPACE_ID } from "const/Mode"
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
 import { selectRunOutputPaths } from "store/slice/Pipeline/PipelineSelectors"
+import { selectModeStandalone } from "store/slice/Standalone/StandaloneSeclector"
+import { fetchWorkflow } from "store/slice/Workflow/WorkflowActions"
 import { AppDispatch } from "store/store"
 
 type InputDim = {
@@ -164,6 +168,9 @@ const TextError = styled("div")`
 const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const dispatch = useDispatch<AppDispatch>()
   const outputPaths = useSelector(selectRunOutputPaths(nodeId))
+  const isStandalone = useSelector(selectModeStandalone)
+  const { workspaceId } = useParams<{ workspaceId: string }>()
+  const _workspaceId = Number(workspaceId)
 
   const { onOpenFilterDialog } = useContext(DialogContext)
   const filterSelector = useSelector(
@@ -262,6 +269,11 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     }
     dispatch(runApplyFilter({ dataFilterParam, nodeId }))
       .unwrap()
+      .then(() => {
+        dispatch(
+          fetchWorkflow(isStandalone ? STANDALONE_WORKSPACE_ID : _workspaceId),
+        )
+      })
       .catch(() => {
         enqueueSnackbar("Failed to Accept filter", { variant: "error" })
       })
@@ -271,18 +283,25 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     filterParam,
     filterSelector,
     isNotChange,
+    isStandalone,
     nodeId,
     onOpenFilterDialog,
+    _workspaceId,
   ])
 
   const resetFilter = useCallback(() => {
     onOpenFilterDialog("")
     dispatch(runApplyFilter({ dataFilterParam: undefined, nodeId }))
       .unwrap()
+      .then(() => {
+        dispatch(
+          fetchWorkflow(isStandalone ? STANDALONE_WORKSPACE_ID : _workspaceId),
+        )
+      })
       .catch(() => {
         enqueueSnackbar("Failed to Reset filter", { variant: "error" })
       })
-  }, [dispatch, nodeId, onOpenFilterDialog])
+  }, [_workspaceId, dispatch, isStandalone, nodeId, onOpenFilterDialog])
 
   return (
     <Box display="flex" justifyContent="flex-end">

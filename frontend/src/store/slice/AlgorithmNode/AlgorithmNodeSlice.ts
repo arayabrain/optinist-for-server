@@ -137,6 +137,7 @@ export const algorithmNodeSlice = createSlice({
                   originalValue: node.data.param,
                   originalDataFilterValue: node.data.dataFilterParam,
                   isUpdate: false,
+                  isUpdateFilter: node.data.isUpdateFilter,
                 }
               }
             })
@@ -151,6 +152,7 @@ export const algorithmNodeSlice = createSlice({
             .filter(isAlgorithmNodePostData)
             .forEach((node) => {
               state[node.id].isUpdate = false
+              state[node.id].isUpdateFilter = false
             })
         },
       )
