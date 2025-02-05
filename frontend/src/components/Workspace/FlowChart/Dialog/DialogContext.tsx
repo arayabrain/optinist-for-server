@@ -12,10 +12,17 @@ import { useDispatch, useSelector } from "react-redux"
 import { FILE_TREE_TYPE } from "api/files/Files"
 import { getTimeSeriesDataById } from "store/slice/DisplayData/DisplayDataActions"
 import {
+  selectTimeSeriesData,
+  selectTimeSeriesXrange,
+} from "store/slice/DisplayData/DisplayDataSelectors"
+import {
   selectPipelineNodeResultOutputFileDataType,
   selectPipelineNodeResultOutputFilePath,
 } from "store/slice/Pipeline/PipelineSelectors"
-import { selectVisualizeItemIdForWorkflowDialog } from "store/slice/VisualizeItem/VisualizeItemSelectors"
+import {
+  selectVisualizeDataFilePath,
+  selectVisualizeItemIdForWorkflowDialog,
+} from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import { AppDispatch } from "store/store"
 
@@ -66,9 +73,13 @@ export const DialogContext = createContext<{
 export const RoiSelectedContext = createContext<{
   roisSelected: number[]
   setRoiSelected: (index: number) => void
+  itemId: number | null
+  maxDim?: number
+  maxRoi?: number
 }>({
   roisSelected: [],
   setRoiSelected: () => null,
+  itemId: null,
 })
 
 export const useRoisSelected = () => useContext(RoiSelectedContext)
@@ -95,6 +106,9 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
       dataType,
     ),
   )
+  const filePathVisualz = useSelector(selectVisualizeDataFilePath(itemId))
+  const dataXrange = useSelector(selectTimeSeriesXrange(filePathVisualz))
+  const dataTimeSeries = useSelector(selectTimeSeriesData(filePathVisualz))
 
   const setRoiSelected = useCallback(
     (index: number) => {
@@ -135,7 +149,15 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
   }, [dispatch, itemId])
 
   return (
-    <RoiSelectedContext.Provider value={{ roisSelected, setRoiSelected }}>
+    <RoiSelectedContext.Provider
+      value={{
+        roisSelected,
+        setRoiSelected,
+        itemId,
+        maxDim: dataXrange?.length,
+        maxRoi: Object.keys(dataTimeSeries || {}).length,
+      }}
+    >
       {children}
     </RoiSelectedContext.Provider>
   )

@@ -14,13 +14,15 @@ import { enqueueSnackbar } from "notistack"
 import styled from "@emotion/styled"
 import { Box, Button, Input, InputProps } from "@mui/material"
 
-import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import {
+  DialogContext,
+  useRoisSelected,
+} from "components/Workspace/FlowChart/Dialog/DialogContext"
 import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { STANDALONE_WORKSPACE_ID } from "const/Mode"
 import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import { TDim } from "store/slice/AlgorithmNode/AlgorithmNodeType"
 import { runApplyFilter } from "store/slice/Pipeline/PipelineActions"
-import { selectRunOutputPaths } from "store/slice/Pipeline/PipelineSelectors"
 import { selectModeStandalone } from "store/slice/Standalone/StandaloneSeclector"
 import { fetchWorkflow } from "store/slice/Workflow/WorkflowActions"
 import { AppDispatch } from "store/store"
@@ -167,12 +169,12 @@ const TextError = styled("div")`
 
 const BoxFilter = ({ nodeId }: { nodeId: string }) => {
   const dispatch = useDispatch<AppDispatch>()
-  const outputPaths = useSelector(selectRunOutputPaths(nodeId))
   const isStandalone = useSelector(selectModeStandalone)
   const { workspaceId } = useParams<{ workspaceId: string }>()
   const _workspaceId = Number(workspaceId)
 
   const { onOpenFilterDialog } = useContext(DialogContext)
+  const { maxDim, maxRoi } = useRoisSelected()
   const filterSelector = useSelector(
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
@@ -184,14 +186,6 @@ const BoxFilter = ({ nodeId }: { nodeId: string }) => {
     const { dim1, roi } = filterParam
     return { dim1: dim1?.filter(Boolean), roi: roi?.filter(Boolean) }
   }, [filterParam])
-
-  const maxDim = useMemo(() => {
-    return outputPaths.fluorescence?.data_shape?.[1]
-  }, [outputPaths.fluorescence?.data_shape])
-
-  const maxRoi = useMemo(() => {
-    return outputPaths.fluorescence?.max_index
-  }, [outputPaths.fluorescence?.max_index])
 
   const dimPlaceholder = useMemo(() => {
     const dims = filterSelector?.dim1

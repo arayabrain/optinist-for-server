@@ -88,7 +88,6 @@ function convertToOutputPath(dto: OutputPathsDTO) {
     result[functionPath] = {
       path: value.path,
       data_shape: value.data_shape,
-      max_index: value.max_index,
       type: toDataType(value.type),
     }
   })

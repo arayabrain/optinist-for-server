@@ -135,7 +135,6 @@ describe("Pipeline State Test", () => {
                   path: "./output/path",
                   type: "image",
                   data_shape: [],
-                  max_index: null,
                 },
               },
             },
