@@ -94,20 +94,41 @@ export function useRunPipeline() {
     (name: string) => {
       dispatch(run({ runPostData: { name, ...runPostData, forceRunList: [] } }))
         .unwrap()
-        .catch(() => {
-          enqueueSnackbar("Failed to Run workflow", { variant: "error" })
+        .catch((error) => {
+          const errorMessage =
+            error?.response?.data?.detail || "Failed to run workflow"
+          console.log("Backend error:", errorMessage)
+
+          if (error?.response?.status === 422) {
+            enqueueSnackbar(errorMessage.replace(/['"]+/g, ""), {
+              variant: "warning",
+            })
+          } else {
+            enqueueSnackbar("Failed to Run workflow", { variant: "error" })
+          }
         })
     },
     [dispatch, enqueueSnackbar, runPostData],
   )
+
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })
   }
   const handleRunPipelineByUid = useCallback(() => {
     dispatch(runByCurrentUid({ runPostData }))
       .unwrap()
-      .catch(() => {
-        enqueueSnackbar("Failed to Run workflow", { variant: "error" })
+      .catch((error) => {
+        const errorMessage =
+          error?.response?.data?.detail || "Failed to run workflow"
+        console.log("Backend error:", errorMessage)
+
+        if (error?.response?.status === 422) {
+          enqueueSnackbar(errorMessage.replace(/['"]+/g, ""), {
+            variant: "warning",
+          })
+        } else {
+          enqueueSnackbar("Failed to Run workflow", { variant: "error" })
+        }
       })
   }, [dispatch, enqueueSnackbar, runPostData])
   const handleCancelPipeline = useCallback(async () => {

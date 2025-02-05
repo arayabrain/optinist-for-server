@@ -1,5 +1,8 @@
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
+
+logger = AppLogger.get_logger()
 
 
 def get_typecheck_params(message_params, name):
@@ -11,6 +14,15 @@ def get_typecheck_params(message_params, name):
 
 def check_types(params, default_params):
     for key in params.keys():
+        if key not in default_params:
+            logger.error(f"Missing key: {key} in parameters")
+            logger.error("You may need to update your workflow yaml file to v2 style")
+            logger.error(
+                "notebooks/yaml-converter.ipynb can be used to convert yaml files"
+            )
+            raise KeyError(
+                "Try converting workflow to v2 using notebooks/yaml-converter.ipynb"
+            )
         if isinstance(params[key], dict):
             params[key] = check_types(params[key], default_params[key])
         else:
