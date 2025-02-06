@@ -273,9 +273,11 @@ class NodeResult:
 
 
 class WorkflowMonitor:
-    PROCESS_SNAKEMAKE_CMDLINE = "python .*/\\.snakemake/scripts/"
+    PROCESS_SNAKEMAKE_CMDLINE = "\\b(?:python)\\b.*/\\.snakemake/scripts/"
     PROCESS_SNAKEMAKE_WAIT_TIMEOUT = 7200  # sec
-    PROCESS_CONDA_CMDLINE = "conda env create .*/\\.snakemake/conda/"
+    PROCESS_CONDA_CMDLINE = (
+        "\\b(?:conda)\\b.*\\b(?:env)\\b.*\\b(?:create)\\b.*/\\.snakemake/conda/"
+    )
     PROCESS_CONDA_WAIT_TIMEOUT = 3600  # sec
 
     def __init__(self, workspace_id: str, unique_id: str):
@@ -324,7 +326,7 @@ class WorkflowMonitor:
             logger.info(f"Found workflow process. {process}")
 
             # validate process name
-            process_cmdline = " ".join(process.cmdline())
+            process_cmdline = " ".join(process.cmdline()).replace("\\", "/")
             if not re.search(self.PROCESS_SNAKEMAKE_CMDLINE, process_cmdline):
                 logger.warning(
                     "Found another process with same PID:"
@@ -345,6 +347,7 @@ class WorkflowMonitor:
                 try:
                     cmdline = proc.info.get("cmdline")
                     cmdline = " ".join(cmdline) if cmdline else ""
+                    cmdline = cmdline.replace("\\", "/")
 
                     if re.search(self.PROCESS_CONDA_CMDLINE, cmdline):
                         conda_ps_create_elapsed = int(time.time() - proc.create_time())
