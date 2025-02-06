@@ -273,6 +273,7 @@ class NodeResult:
 
 
 class WorkflowMonitor:
+    PROCESS_SEARCH_NAMES = ["python", "conda"]
     PROCESS_SNAKEMAKE_CMDLINE = "\\b(?:python)\\b.*/\\.snakemake/scripts/"
     PROCESS_SNAKEMAKE_WAIT_TIMEOUT = 7200  # sec
     PROCESS_CONDA_CMDLINE = (
@@ -349,9 +350,18 @@ class WorkflowMonitor:
 
             # Search for the existence of a conda command process ("conda env create")
             conda_process = None
-            for proc in process_iter(["pid", "name", "cmdline"]):
+            for proc in process_iter(["pid", "name"]):
                 try:
-                    cmdline = proc.info.get("cmdline")
+                    # Targeting specific programs for backlog (for performance)
+                    proc_name = proc.info.get("name")
+                    if not any(v in proc_name for v in self.PROCESS_SEARCH_NAMES):
+                        continue
+
+                    # Get cmdline info
+                    # Note:
+                    #   Since "cmdline" is not specified in `process_iter` (for performance),
+                    #   the cmdline is obtained using "proc.as_dict".
+                    cmdline = proc.as_dict(attrs=["cmdline"]).get("cmdline")
                     cmdline = " ".join(cmdline) if cmdline else ""
                     cmdline = cmdline.replace("\\", "/")
 
