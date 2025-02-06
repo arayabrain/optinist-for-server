@@ -16,13 +16,9 @@ def check_types(params, default_params):
     for key in params.keys():
         if key not in default_params:
             logger.error(f"Missing key: {key} in parameters")
-            logger.error("You may need to update your workflow yaml file to v2 style")
-            logger.error(
-                "notebooks/yaml-converter.ipynb can be used to convert yaml files"
-            )
-            raise KeyError(
-                "Try converting workflow to v2 using notebooks/yaml-converter.ipynb"
-            )
+            logger.error("You may need to update your workflow yaml file see FAQ")
+            logger.error("https://github.com/oist/optinist/wiki/FAQ")
+            raise KeyError("Workflow yaml error, see FAQ")
         if isinstance(params[key], dict):
             params[key] = check_types(params[key], default_params[key])
         else:
