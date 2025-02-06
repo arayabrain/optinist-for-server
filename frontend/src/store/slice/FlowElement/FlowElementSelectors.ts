@@ -27,9 +27,14 @@ const selectParentNodeIdsById = (nodeId: string) => (state: RootState) =>
     .map((edge) => edge.source)
 
 const selectNodeIsUpdate = (nodeId: string) => (state: RootState) => {
+  const { dataFilterParam, draftDataFilterParam } =
+    state.algorithmNode[nodeId] || {}
+  const { dim1 = [], roi = [] } = dataFilterParam || {}
+  const { dim1: _dim1 = [], roi: _roi = [] } = draftDataFilterParam || {}
   return (
     state.algorithmNode[nodeId]?.isUpdate ||
-    state.algorithmNode[nodeId]?.isUpdateFilter
+    String(dim1?.filter(Boolean)) !== String(_dim1?.filter(Boolean)) ||
+    String(roi?.filter(Boolean)) !== String(_roi?.filter(Boolean))
   )
 }
 

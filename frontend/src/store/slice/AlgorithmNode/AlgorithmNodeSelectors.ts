@@ -22,11 +22,12 @@ export const selectAlgorithmParams = (nodeId: string) => (state: RootState) =>
 
 export const selectAlgorithmFilterParams =
   (nodeId: string) => (state: RootState) =>
-    selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
+    selectAlgorithmNodeById(nodeId)(state)?.draftDataFilterParam
 
 export const selectAlgorithmDataFilterParam =
   (nodeId: string) => (state: RootState) => {
-    return selectAlgorithmNodeById(nodeId)(state)?.dataFilterParam
+    const s = selectAlgorithmNodeById(nodeId)(state)
+    return s?.draftDataFilterParam || s?.dataFilterParam
   }
 export const selectAlgorithmFilterParamLoadingApi =
   (nodeId: string) => (state: RootState) => {

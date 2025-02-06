@@ -90,9 +90,8 @@ export const algorithmNodeSlice = createSlice({
         Object.values(runPostData.nodeDict)
           .filter(isAlgorithmNodePostData)
           .forEach((node) => {
-            if (state[node.id].dataFilterParam) {
-              state[node.id].dataFilterParam = undefined
-            }
+            state[node.id].dataFilterParam = node.data.dataFilterParam
+            state[node.id].draftDataFilterParam = undefined
           })
       })
       .addCase(runByCurrentUid.fulfilled, (state, action) => {
@@ -114,7 +113,7 @@ export const algorithmNodeSlice = createSlice({
       })
       .addCase(runApplyFilter.fulfilled, (state, action) => {
         const { dataFilterParam, nodeId } = action.meta.arg
-        state[nodeId].dataFilterParam = dataFilterParam
+        state[nodeId].draftDataFilterParam = dataFilterParam
         state[nodeId].loadingFilterParamApi = false
       })
       .addMatcher(
@@ -134,10 +133,10 @@ export const algorithmNodeSlice = createSlice({
                   functionPath: node.data.path,
                   params: node.data.param,
                   dataFilterParam: node.data.dataFilterParam,
+                  draftDataFilterParam: node.data.draftDataFilterParam,
                   originalValue: node.data.param,
                   originalDataFilterValue: node.data.dataFilterParam,
                   isUpdate: false,
-                  isUpdateFilter: node.data.isUpdateFilter,
                 }
               }
             })
@@ -152,7 +151,6 @@ export const algorithmNodeSlice = createSlice({
             .filter(isAlgorithmNodePostData)
             .forEach((node) => {
               state[node.id].isUpdate = false
-              state[node.id].isUpdateFilter = false
             })
         },
       )

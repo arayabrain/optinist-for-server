@@ -36,6 +36,7 @@ export interface InputNodePostData extends InputNodeData {
     [key: string]: unknown
   }
   dataFilterParam?: TDataFilterParam
+  draftDataFilterParam?: TDataFilterParam
   hdf5Path?: string
   matPath?: string
 }
@@ -44,7 +45,7 @@ export interface AlgorithmNodePostData extends AlgorithmNodeData {
   path: string
   param: ParamMap
   dataFilterParam?: TDataFilterParam
-  isUpdateFilter?: boolean
+  draftDataFilterParam?: TDataFilterParam
 }
 
 export async function runFilterApi(

@@ -70,6 +70,7 @@ const selectNodeDictForRun = (state: RootState): NodeDict => {
           path: functionPath,
           param,
           dataFilterParam,
+          draftDataFilterParam: dataFilterParam,
         },
       }
       nodeDict[node.id] = algorithmNodePostData
