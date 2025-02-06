@@ -359,8 +359,8 @@ class WorkflowMonitor:
 
                     # Get cmdline info
                     # Note:
-                    #   Since "cmdline" is not specified in `process_iter` (for performance),
-                    #   the cmdline is obtained using "proc.as_dict".
+                    #   Since "cmdline" is not specified in `process_iter`
+                    #   (for performance), the cmdline is obtained using "proc.as_dict".
                     cmdline = proc.as_dict(attrs=["cmdline"]).get("cmdline")
                     cmdline = " ".join(cmdline) if cmdline else ""
                     cmdline = cmdline.replace("\\", "/")
