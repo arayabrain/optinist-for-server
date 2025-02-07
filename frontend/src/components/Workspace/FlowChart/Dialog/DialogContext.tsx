@@ -12,17 +12,10 @@ import { useDispatch, useSelector } from "react-redux"
 import { FILE_TREE_TYPE } from "api/files/Files"
 import { getTimeSeriesDataById } from "store/slice/DisplayData/DisplayDataActions"
 import {
-  selectTimeSeriesData,
-  selectTimeSeriesXrange,
-} from "store/slice/DisplayData/DisplayDataSelectors"
-import {
   selectPipelineNodeResultOutputFileDataType,
   selectPipelineNodeResultOutputFilePath,
 } from "store/slice/Pipeline/PipelineSelectors"
-import {
-  selectVisualizeDataFilePath,
-  selectVisualizeItemIdForWorkflowDialog,
-} from "store/slice/VisualizeItem/VisualizeItemSelectors"
+import { selectVisualizeItemIdForWorkflowDialog } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import { AppDispatch } from "store/store"
 
@@ -76,6 +69,8 @@ export const RoiSelectedContext = createContext<{
   itemId: number | null
   maxDim?: number
   maxRoi?: number
+  setMaxDim?: (maxDim?: number) => void
+  setMaxRoi?: (maxDim?: number) => void
 }>({
   roisSelected: [],
   setRoiSelected: () => null,
@@ -88,6 +83,9 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
   children,
 }: PropsWithChildren) {
   const [roisSelected, setRoisSelected] = useState<number[]>([])
+  const [maxDim, setMaxDim] = useState<number>()
+  const [maxRoi, setMaxRoi] = useState<number>()
+
   const { dialogFilterNodeId } = useContext(DialogContext)
   const dispatch = useDispatch<AppDispatch>()
   const filePath = useSelector(
@@ -106,9 +104,6 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
       dataType,
     ),
   )
-  const filePathVisualz = useSelector(selectVisualizeDataFilePath(itemId))
-  const dataXrange = useSelector(selectTimeSeriesXrange(filePathVisualz))
-  const dataTimeSeries = useSelector(selectTimeSeriesData(filePathVisualz))
 
   const setRoiSelected = useCallback(
     (index: number) => {
@@ -154,8 +149,10 @@ export const RoiSelectedProvider = memo(function RoiSelectedProviderMemo({
         roisSelected,
         setRoiSelected,
         itemId,
-        maxDim: dataXrange?.length,
-        maxRoi: Object.keys(dataTimeSeries || {}).length,
+        maxDim,
+        maxRoi,
+        setMaxDim,
+        setMaxRoi,
       }}
     >
       {children}
