@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 from dataclasses import asdict
+from datetime import datetime
 from glob import glob
 from typing import Dict, List, Optional
 
@@ -260,6 +261,12 @@ class WorkflowNodeDataFilter:
     def _recover_original_data(self):
         os.remove(self.pkl_filepath)
         shutil.move(self.original_pkl_filepath, self.pkl_filepath)
+
+        # trigger snakemake re-run next node by update modification time
+        os.utime(
+            self.pkl_filepath,
+            (os.path.getctime(self.pkl_filepath), datetime.now().timestamp()),
+        )
 
         os.remove(self.cell_roi_filepath)
         shutil.move(self.original_cell_roi_filepath, self.cell_roi_filepath)
