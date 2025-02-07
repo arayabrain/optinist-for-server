@@ -115,7 +115,13 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const roiUniqueList = useSelector(selectRoiUniqueList(roiPath), shallowEqual)
 
   useEffect(() => {
-    setMaxDim?.(Object.keys(timeSeriesData).length)
+    if (!timeSeriesData) return
+    const max = Math.max(
+      ...Object.keys(timeSeriesData).map(
+        (e) => Object.keys(timeSeriesData[e]).length,
+      ),
+    )
+    setMaxDim?.(max)
   }, [setMaxDim, timeSeriesData])
 
   const xrange = useMemo(() => {
