@@ -8,7 +8,6 @@ Mac
 ## Installation
 
 We introduce how to install optinist.
-We have developed optinist python(backend) and typescript(frontend), so you need to make both environment.
 Please follow instructions below.
 
 <br />
@@ -17,14 +16,24 @@ Please follow instructions below.
 
 ### Install Tools
 
-(mac-install-anaconda)=
+(mac-install-conda)=
 
-#### Install Anaconda
+#### Install Conda Tool
 
-- Download and install the package:
-  - [Anaconda Archive](https://repo.anaconda.com/archive/)
-    - Download the latest version: `Anaconda3-*.MacOSX-x86_64.pkg`
-      - *The latest version of the module is fine.*
+- Install [Miniforge](https://github.com/conda-forge/miniforge)
+
+```bash
+# install (*latest version is fine)
+curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-x86_64.sh"
+bash Miniforge3-$(uname)-x86_64.sh
+
+# initial setting (re-login required)
+$HOME/miniforge3/bin/conda init
+logout
+
+# setting configs
+conda config --set channel_priority flexible
+```
 
 ```{eval-rst}
 .. caution::
@@ -45,22 +54,6 @@ Please follow instructions below.
         .. code-block:: bash
 
            arch -x86_64 /usr/bin/env bash
-
-   3. Download and install Miniforge:
-
-      - Miniforge: https://github.com/conda-forge/miniforge
-
-        .. code-block:: bash
-
-           curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-x86_64.sh"
-
-           bash Miniforge3-$(uname)-x86_64.sh
-
-           $HOME/miniforge3/bin/conda init
-
-           conda activate
-
-           conda config --set channel_priority flexible
 
    Now continue creating the optinist environment using conda
 ```
@@ -94,10 +87,10 @@ run_optinist
 - `run_optinist` log is as blow:
 ```bash
 $ run_optinist
-INFO:   Will watch for changes in these directories: [‘/Users/oist/optinist/backend’]
+INFO:   Will watch for changes in these directories: [‘/Users/oist/optinist’]
 INFO:   Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:   Started reloader process [5811] using statreload
-INFO:   Started server process [5820]
+INFO:   Started reloader process [xxxx] using statreload
+INFO:   Started server process [xxxx]
 INFO:   Waiting for application startup.
 INFO:   Application startup complete.
 ```

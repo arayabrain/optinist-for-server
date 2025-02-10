@@ -1,4 +1,4 @@
-Linux
+Windows (WSL2)
 =================
 
 ```{contents}
@@ -10,9 +10,11 @@ Linux
 We introduce how to install optinist.
 Please follow instructions below.
 
+<br />
+
 ```{eval-rst}
-.. note::
-    We confirmed them on Ubuntu 20.04/22.04.
+.. caution::
+   For WSL2, we confirmed them on Ubuntu 20.04/22.04.
 ```
 
 ## 1. Make Backend Environment
@@ -24,6 +26,7 @@ Please follow instructions below.
 - For install CaImAn, you need to install gcc and g++.
 
 ```bash
+sudo apt update
 sudo apt install gcc g++
 ```
 
