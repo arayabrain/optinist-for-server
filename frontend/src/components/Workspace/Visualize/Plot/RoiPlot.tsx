@@ -78,33 +78,20 @@ const RoiPlotImple = memo(function RoiPlotImple() {
     setMaxRoi?.(Math.max(...imageDataSelector.flat()) + 1)
   }, [imageDataSelector, setMaxRoi])
 
-  const maxRoi = useMemo(() => {
-    const dims = filterParam?.roi
-      ?.map((e) => (e.end ? Number(e.end) : undefined))
-      ?.filter(Boolean)
-    if (dims?.length) return Math.max(...(dims as number[]))
-    return undefined
-  }, [filterParam?.roi])
-
-  const minRoi = useMemo(() => {
-    const dims = filterParam?.roi
-      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
-      ?.filter((e) => e || e === 0)
-    if (dims?.length) return Math.min(...(dims as number[]))
-    return undefined
-  }, [filterParam?.roi])
-
   const imageData = useMemo(() => {
     if (!dialogFilterNodeId) return imageDataSelector
     return imageDataSelector.map((img) =>
       img.map((e) => {
         if (!e && e !== 0) return null
-        if (minRoi && e < minRoi) return null
-        if (maxRoi && e >= maxRoi) return null
-        return e
+        if (!filterParam?.roi?.length) return e
+        const check = filterParam?.roi.some(
+          (roi) => e >= (roi.start || 0) && (!roi.end || e < roi.end),
+        )
+        if (check) return e
+        return null
       }),
     )
-  }, [dialogFilterNodeId, imageDataSelector, maxRoi, minRoi])
+  }, [dialogFilterNodeId, filterParam?.roi, imageDataSelector])
 
   const nshades =
     timeDataMaxIndex < 100 ? Math.max(timeDataMaxIndex || 0, 6) : 100

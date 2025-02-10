@@ -132,34 +132,21 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     return xrangeSelector
   }, [dialogFilterNodeId, filterParam, xrangeSelector])
 
-  const maxRoi = useMemo(() => {
-    const dims = filterParam?.roi
-      ?.map((e) => (e.end ? Number(e.end) : undefined))
-      ?.filter(Boolean)
-    if (dims?.length) return Math.max(...(dims as number[]))
-    return undefined
-  }, [filterParam?.roi])
-
-  const minRoi = useMemo(() => {
-    const dims = filterParam?.roi
-      ?.map((e) => (e.start || e.start === 0 ? Number(e.start) : undefined))
-      ?.filter((e) => e || e === 0)
-    if (dims?.length) return Math.min(...(dims as number[]))
-    return undefined
-  }, [filterParam?.roi])
-
   const dataKeys = useMemo(() => {
     let keys = dataKeysSelector
     if (!dialogFilterNodeId) return keys
-    keys = keys.filter((e) => roiUniqueList?.includes(e))
-    if (minRoi !== undefined) {
-      keys = keys.filter((e) => Number(e) >= minRoi)
-    }
-    if (maxRoi !== undefined) {
-      keys = keys.filter((e) => Number(e) < maxRoi)
-    }
+    keys = keys.filter(
+      (e) =>
+        roiUniqueList?.includes(e) &&
+        (!filterParam?.roi?.length ||
+          filterParam?.roi?.some(
+            (roi) =>
+              Number(e) >= (roi.start || 0) &&
+              (!roi.end || Number(e) < roi.end),
+          )),
+    )
     return keys
-  }, [dataKeysSelector, dialogFilterNodeId, maxRoi, minRoi, roiUniqueList])
+  }, [dataKeysSelector, dialogFilterNodeId, filterParam?.roi, roiUniqueList])
 
   useEffect(() => {
     const seriesData: TimeSeriesData = {}
