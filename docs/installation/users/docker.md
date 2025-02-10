@@ -22,15 +22,17 @@ Please follow instructions below.
 ### Make Docker Image
 
 Pull the latest docker image from docker hub.
+
 ```bash
 docker pull oistncu/optinist
 ```
+
 Start docker container.
 
 ```bash
 # Notes:
 # - Set your saving directory to `/your/saving/dir`.
-# - The "command line continuation charactor" should be replaced by your platform.
+# - The "command line continuation character" should be replaced by your platform.
 #   - Unix Shells ... \
 #   - Windows Command Prompt ... ^
 #   - Windows PowerShell ... `
@@ -42,7 +44,6 @@ docker run -it --shm-size=2G \
   oistncu/optinist:latest \
   poetry run python main.py --host 0.0.0.0 --port 8000
 ```
-
 
 ```{eval-rst}
 .. note::
