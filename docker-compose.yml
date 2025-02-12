@@ -7,7 +7,7 @@ services:
       dockerfile: studio/config/docker/Dockerfile
     working_dir: /app
     volumes:
-      - ./studio/app:/app/studio/app
+      - ./studio/app/optinist/wrappers:/app/studio/app/optinist/wrappers
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
       - ../optinist-docker-volumes/logs/:/app/logs
       - ../optinist-docker-volumes/studio_data/:/app/studio_data
