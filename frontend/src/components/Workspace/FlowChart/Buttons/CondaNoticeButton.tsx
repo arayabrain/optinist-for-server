@@ -9,7 +9,7 @@ import IconButton from "@mui/material/IconButton"
 
 import { ConfirmDialog } from "components/common/ConfirmDialog"
 import { getExperiments } from "store/slice/Experiments/ExperimentsActions"
-import { runByCurrentUid } from "store/slice/Pipeline/PipelineActions"
+import { run } from "store/slice/Pipeline/PipelineActions"
 import { useIsRunDisabled } from "store/slice/Pipeline/PipelineHook"
 import { selectRunPostData } from "store/slice/Run/RunSelectors"
 import { reset } from "store/slice/VisualizeItem/VisualizeItemSlice"
@@ -66,8 +66,13 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
         enqueueSnackbar("Failed to reproduce", { variant: "error" })
         return // break on error
       })
+
+    // RUN reproduced workflow.
+    // * Simulate RunButtons.handleClick (call PipelineHook.useRunPipeline.handleRunPipeline)
     const runPostData = selectRunPostData(store.getState())
-    dispatch(runByCurrentUid({ runPostData }))
+    await dispatch(
+      run({ runPostData: { name, ...runPostData, forceRunList: [] } }),
+    )
       .unwrap()
       .catch(() => {
         enqueueSnackbar("Failed to Run workflow", { variant: "error" })

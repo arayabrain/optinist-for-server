@@ -100,9 +100,7 @@ export function useRunPipeline() {
     },
     [dispatch, enqueueSnackbar, runPostData],
   )
-  const handleClickVariant = (variant: VariantType, mess: string) => {
-    enqueueSnackbar(mess, { variant })
-  }
+
   const handleRunPipelineByUid = useCallback(() => {
     dispatch(runByCurrentUid({ runPostData }))
       .unwrap()
@@ -110,6 +108,11 @@ export function useRunPipeline() {
         enqueueSnackbar("Failed to Run workflow", { variant: "error" })
       })
   }, [dispatch, enqueueSnackbar, runPostData])
+
+  const handleClickVariant = (variant: VariantType, mess: string) => {
+    enqueueSnackbar(mess, { variant })
+  }
+
   const handleCancelPipeline = useCallback(async () => {
     if (uid != null) {
       const data = await dispatch(cancelResult({ uid }))
@@ -122,6 +125,7 @@ export function useRunPipeline() {
     }
     //eslint-disable-next-line
   }, [dispatch, uid])
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (isStartedSuccess && !isCanceled && uid != null) {
@@ -132,9 +136,11 @@ export function useRunPipeline() {
       clearInterval(intervalId)
     }
   }, [dispatch, uid, isCanceled, isStartedSuccess])
+
   const status = useSelector(selectPipelineStatus)
   // タブ移動による再レンダリングするたびにスナックバーが実行されてしまう挙動を回避するために前回の値を保持
   const [prevStatus, setPrevStatus] = useState(status)
+
   useEffect(() => {
     if (prevStatus !== status) {
       let isRunFinished = false
@@ -163,6 +169,7 @@ export function useRunPipeline() {
       setPrevStatus(status)
     }
   }, [dispatch, status, prevStatus, enqueueSnackbar])
+
   return {
     filePathIsUndefined,
     algorithmNodeNotExist,
