@@ -1,5 +1,4 @@
-Windows (Native)
-=================
+# Windows (Native)
 
 ```{contents}
 :depth: 4
@@ -18,7 +17,7 @@ Please follow instructions below.
 
 #### Install Visual Studio Build Tools
 
-- For install CaImAn, you need to install Visual Studio Build Tools.
+- For installing CaImAn, you need to install Visual Studio Build Tools.
 - Download `Build Tools for Visual Studio 2022` from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/ja/downloads/) .
 - In insteraller, select `Desktop Application for C++`
 
@@ -29,17 +28,17 @@ Please follow instructions below.
 - Install Miniforge for Windows
   - [https://github.com/conda-forge/miniforge/releases](https://github.com/conda-forge/miniforge/releases)
     - `Miniforge3-Windows-x86_64.exe`
-      - *The latest version is fine.*
+      - _The latest version is fine._
 
 ##### setting configs
 
 On the Terminal (Miniforge Prompt, etc)
 
-- For *Miniforge*
+- For _Miniforge_
   ```bash
   conda config --set channel_priority flexible
   ```
-- For *Anaconda, Miniconda*
+- For _Anaconda, Miniconda_
   ```bash
   conda config --set channel_priority strict
   ```
@@ -63,7 +62,7 @@ pip install optinist
 
 ### Set Saving Directory
 
-Optinist default saving directory is `C:\tmp\optinist`. If you reboot your PC, this repogitory content is deleted. And setting the saving directory in environment path.
+Optinist default saving directory is `C:\tmp\optinist`. If you reboot your PC, this repository content is deleted. And setting the saving directory in environment path.
 
 - For Command Prompt
   ```batch
@@ -82,7 +81,7 @@ On the Terminal
 run_optinist
 ```
 
-- `run_optinist` log is as blow:
+- `run_optinist` log is as below:
 
 ```batch
 (optinist) PS C:\optinist> run_optinist

@@ -1,5 +1,4 @@
-Mac
-=================
+# Mac
 
 ```{contents}
 :depth: 4
@@ -65,7 +64,6 @@ conda create -n optinist python=3.8
 conda activate optinist
 ```
 
-
 ### Install Library
 
 ```bash
@@ -74,7 +72,8 @@ pip install optinist
 
 ### Set Saving Directory
 
-Optinist default saving directory is `/tmp/studio`. If you reboot your PC, this repogitory content is deleted. And setting the saving directory in environment path.
+Optinist default saving directory is `/tmp/studio`. If you reboot your PC, this repository content is deleted. And setting the saving directory in environment path.
+
 ```bash
 export OPTINIST_DIR="your_saving_dir"
 ```
@@ -84,7 +83,9 @@ export OPTINIST_DIR="your_saving_dir"
 ```bash
 run_optinist
 ```
-- `run_optinist` log is as blow:
+
+- `run_optinist` log is as below:
+
 ```bash
 $ run_optinist
 INFO:   Will watch for changes in these directories: [‘/Users/oist/optinist’]
@@ -94,6 +95,7 @@ INFO:   Started server process [xxxx]
 INFO:   Waiting for application startup.
 INFO:   Application startup complete.
 ```
+
 - Launch browser, and go to `http://localhost:8000`
 
 Done!
