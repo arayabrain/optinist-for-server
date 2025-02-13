@@ -1,3 +1,4 @@
+# Packages in conda env for [suite2p]
 dependencies:
   - python=3.9
   - pip
