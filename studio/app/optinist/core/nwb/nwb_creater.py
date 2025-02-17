@@ -41,6 +41,7 @@ from studio.app.optinist.core.nwb.lab_metadata import (
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import PostProcess
 from studio.app.optinist.core.nwb.oristat import Oristats
+from studio.app.optinist.core.nwb.oristat import name as ORISTATS_NWB_ATTR_NAME
 from studio.app.optinist.core.nwb.subject.marmoset import (
     SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
 )
@@ -345,6 +346,11 @@ class NWBCreater:
 
     @classmethod
     def oristats(cls, nwbfile, data: dict):
+        # Note: The analysis section of NWB cannot be overwritten,
+        # so if there is existing data, delete it explicitly.
+        if ORISTATS_NWB_ATTR_NAME in nwbfile.analysis:
+            del nwbfile.analysis[ORISTATS_NWB_ATTR_NAME]
+
         nwbfile.add_analysis(Oristats(**data))
         return nwbfile
 
