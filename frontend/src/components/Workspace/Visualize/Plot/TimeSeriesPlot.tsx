@@ -15,6 +15,7 @@ import {
 } from "components/Workspace/FlowChart/Dialog/DialogContext"
 import { useBoxFilter } from "components/Workspace/FlowChart/Dialog/FilterContext"
 import { DisplayDataContext } from "components/Workspace/Visualize/DataContext"
+import { selectAlgorithmDataFilterParam } from "store/slice/AlgorithmNode/AlgorithmNodeSelectors"
 import {
   getTimeSeriesDataById,
   getTimeSeriesInitData,
@@ -78,13 +79,18 @@ export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
 })
 
 const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
-  const { filePath: path, itemId } = useContext(DisplayDataContext)
+  const { filePath: path, itemId, nodeId } = useContext(DisplayDataContext)
 
   // 0番のデータとkeysだけをとってくる
   const dispatch = useDispatch<AppDispatch>()
   const timeSeriesData = useSelector(
     selectTimeSeriesData(path),
     timeSeriesDataEqualityFn,
+  )
+
+  const filterSelector = useSelector(
+    selectAlgorithmDataFilterParam(nodeId),
+    shallowEqual,
   )
 
   const meta = useSelector(selectTimesSeriesMeta(path))
@@ -110,7 +116,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const { dialogFilterNodeId } = useContext(DialogContext)
   const { setRoiSelected, setMaxDim } = useRoisSelected()
 
-  const { filterParam, roiPath } = useBoxFilter()
+  const { filterParam = filterSelector, roiPath } = useBoxFilter()
 
   const roiUniqueList = useSelector(selectRoiUniqueList(roiPath), shallowEqual)
 
@@ -133,11 +139,9 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   }, [dialogFilterNodeId, filterParam, xrangeSelector])
 
   const dataKeys = useMemo(() => {
-    let keys = dataKeysSelector
-    if (!dialogFilterNodeId) return keys
-    keys = keys.filter(
+    const keys = dataKeysSelector.filter(
       (e) =>
-        roiUniqueList?.includes(e) &&
+        (roiUniqueList?.includes(e) || !dialogFilterNodeId) &&
         (!filterParam?.roi?.length ||
           filterParam?.roi?.some(
             (roi) =>
