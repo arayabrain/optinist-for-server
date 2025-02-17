@@ -236,12 +236,14 @@ const ImagePlotChart = memo(function ImagePlotChart({
   const refPageXSize = useRef(0)
   const refPageYSize = useRef(0)
 
-  const colorscaleRoi = createColormap({
-    colormap: "jet",
-    nshades: 100, //timeDataMaxIndex >= 6 ? timeDataMaxIndex : 6,
-    format: "rgba",
-    alpha: 1.0,
-  })
+  function getRoiColor(roiIndex: number): string {
+    const colors = createColormap({
+      colormap: "jet",
+      nshades: 200,
+      format: "hex",
+    })
+    return colors[(Math.abs(roiIndex) * 9) % 200]
+  }
 
   useEffect(() => {
     setRoiDataState(roiData)
@@ -306,10 +308,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
         hovertemplate: action === ADD_ROI ? "none" : "ROI: %{z}",
         // hoverinfo: isAddRoi || pointClick.length ? "none" : undefined,
         colorscale: [...Array(timeDataMaxIndex + 1)].map((_, i) => {
-          const new_i = Math.floor(((i % 10) * 10 + i / 10) % 100)
           const offset: number = i / timeDataMaxIndex
-          const rgba = colorscaleRoi[new_i]
-          const hex = rgba2hex(rgba, roiAlpha)
           if (!action) {
             if (statusRoi.temp_delete_roi.includes(i))
               return [offset, "#ffffff"]
@@ -341,7 +340,7 @@ const ImagePlotChart = memo(function ImagePlotChart({
               return [offset, "#e134eb"]
             if (statusRoi.temp_add_roi.includes(i)) return [offset, "#3483eb"]
           }
-          return [offset, hex]
+          return [offset, getRoiColor(i)]
         }),
         zmin: 0,
         zmax: timeDataMaxIndex,
@@ -356,7 +355,6 @@ const ImagePlotChart = memo(function ImagePlotChart({
       zsmooth,
       showscale,
       colorscale,
-      colorscaleRoi,
       timeDataMaxIndex,
       roiAlpha,
       alpha,
