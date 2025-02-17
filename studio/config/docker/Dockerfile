@@ -118,6 +118,7 @@ USER root
 # copy application sources.
 COPY --chown=optinist frontend/build /app/frontend/build
 COPY --chown=optinist studio /app/studio
+COPY --chown=optinist sample_data /app/sample_data
 COPY --chown=optinist main.py alembic.ini run_expdb_batch.py ./
 
 # copy production-mode config files.
