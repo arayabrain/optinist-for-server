@@ -1,0 +1,13 @@
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - cython
+  - numpy=1.22.*
+  - scikit-image=0.19.*
+  - protobuf=3.20.*
+  - caiman>=1.9.9, <=1.9.12
+
+  # for expdb
+  - gcc=12

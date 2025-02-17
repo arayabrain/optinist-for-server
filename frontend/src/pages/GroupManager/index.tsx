@@ -40,7 +40,7 @@ import { UserDTO } from "api/users/UsersApiDTO"
 import { ConfirmDialog } from "components/common/ConfirmDialog"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
-import PopupSetGroupManager from "components/PopupSetGroupManager"
+import PopupSetGroupManager from "components/GroupManager/PopupSetGroupManager"
 import {
   changeNameGroupManager,
   deleteGroupManager,
@@ -315,7 +315,7 @@ const GroupManager = () => {
     return {
       offset: Number(offset) || 0,
       limit: Number(limit) || 50,
-      sort: [sort[0], sort[1]] || [],
+      sort: sort.length > 0 ? [sort[0], sort[1]] : [],
     }
     //eslint-disable-next-line
   }, [offset, limit, JSON.stringify(sort)])
@@ -597,7 +597,7 @@ const GroupManager = () => {
         handleClose={handleClose}
         dataParams={dataParams}
       />
-      {loading ? <Loading /> : null}
+      <Loading loading={loading} />
     </GroupManagerWrapper>
   )
 }

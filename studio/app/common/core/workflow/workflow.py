@@ -1,23 +1,111 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from pydantic import BaseModel
 
 from studio.app.common.core.snakemake.smk import ForceRun
+from studio.app.const import FILETYPE
+
+
+class WorkflowRunStatus(Enum):
+    RUNNING = "running"
+    ERROR = "error"
+    SUCCESS = "success"
+
+    @classmethod
+    def is_running(cls, status: str) -> bool:
+        return status == cls.RUNNING.value
+
+    @classmethod
+    def is_success(cls, status: str) -> bool:
+        return status == cls.SUCCESS.value
+
+    @classmethod
+    def is_error(cls, status: str) -> bool:
+        return status == cls.ERROR.value
+
+
+class NodeRunStatus(Enum):
+    """
+    Note: Content is the same as WorkflowRunStatus
+    """
+
+    RUNNING = WorkflowRunStatus.RUNNING.value
+    ERROR = WorkflowRunStatus.ERROR.value
+    SUCCESS = WorkflowRunStatus.SUCCESS.value
+
+    @classmethod
+    def is_running(cls, status: str) -> bool:
+        return WorkflowRunStatus.is_running(status)
+
+    @classmethod
+    def is_success(cls, status: str) -> bool:
+        return WorkflowRunStatus.is_success(status)
+
+    @classmethod
+    def is_error(cls, status: str) -> bool:
+        return WorkflowRunStatus.is_error(status)
 
 
 @dataclass
 class NodeType:
+    # Data Types
     IMAGE: str = "ImageFileNode"
     CSV: str = "CsvFileNode"
     FLUO: str = "FluoFileNode"
     BEHAVIOR: str = "BehaviorFileNode"
     HDF5: str = "HDF5FileNode"
-    MAT: str = "MatlabFileNode"
-    ALGO: str = "AlgorithmNode"
     MATLAB: str = "MatlabFileNode"
     MICROSCOPE: str = "MicroscopeFileNode"
     EXPDB: str = "ExpDbNode"
+
+    # Data Type (Includes above DataType Nodes)
+    DATA: str = "DataNode"
+
+    # Algo Type
+    ALGO: str = "AlgorithmNode"
+
+
+class NodeTypeUtil:
+    @staticmethod
+    def check_nodetype(node_type: str) -> str:
+        """
+        Check NodeType (DATA or ALGO) from detailed node type
+        """
+        if node_type in [
+            NodeType.IMAGE,
+            NodeType.CSV,
+            NodeType.FLUO,
+            NodeType.BEHAVIOR,
+            NodeType.HDF5,
+            NodeType.MATLAB,
+            NodeType.MICROSCOPE,
+            NodeType.EXPDB,
+        ]:
+            return NodeType.DATA
+        elif node_type == NodeType.ALGO:
+            return NodeType.ALGO
+        else:
+            None
+
+    @staticmethod
+    def check_nodetype_from_filetype(file_type: str) -> str:
+        """
+        Check NodeType (DATA or ALGO) from file type
+        """
+        if file_type in [
+            FILETYPE.IMAGE,
+            FILETYPE.CSV,
+            FILETYPE.BEHAVIOR,
+            FILETYPE.HDF5,
+            FILETYPE.MATLAB,
+            FILETYPE.MICROSCOPE,
+            FILETYPE.EXPDB,
+        ]:
+            return NodeType.DATA
+        else:
+            None
 
 
 @dataclass
@@ -107,9 +195,3 @@ class RunItem(BaseModel):
     snakemakeParam: dict = {}
     nwbParam: dict = {}
     forceRunList: List[ForceRun]
-
-
-@dataclass
-class WorkflowConfig:
-    nodeDict: Dict[str, Node]
-    edgeDict: Dict[str, Edge]

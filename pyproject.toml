@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "studio"
 description = "analysis studio"
-version = "1.3.0"
+version = "1.4.0"
 license = "GPL-3.0"
 authors = ["Ohki Lab <email@example.com>"]
 readme = "README.md"
@@ -37,7 +37,11 @@ include = [
   "sample_data/input/*",
   "sample_data/output/**/*.yaml",
 ]
-exclude = ["studio/tests/*", "studio/test_data/*", "conda.env.*"]
+exclude = [
+  "studio/tests/*",
+  "studio/test_data/*",
+  "conda.env.*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
@@ -66,15 +70,14 @@ sqlmodel = "0.0.12"
 pymysql = "1.1.0"
 fastapi_pagination = "0.12.13"
 plotly = "5.18.0"
-kaleido = "0.2.1"
 filelock = "*"
 ruamel-yaml = "^0.18.5"
 zc-lockfile = "*"
 lauda = "*"
-opencv-python = "*"
+Pillow = "*"
 pymatreader = "^0.0.32"
 xmltodict = "*"
-matplotlib = "==3.7.*"
+matplotlib = "3.7.*"
 scikit-image = "0.21"
 
 [tool.poetry.group.dev]
@@ -126,6 +129,15 @@ env = [
   "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
   "GRAPH_HOST=http://localhost:8000/datasets",
   "IS_TEST=True",
+]
+filterwarnings = [
+    "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
+    "ignore:Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning",
+    "ignore:invalid escape sequence :DeprecationWarning",
+]
+markers = [
+    "lighter_processing",
+    "heavier_processing",
 ]
 
 [tool.codespell]

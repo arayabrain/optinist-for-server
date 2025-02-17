@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from glob import glob
 from typing import Optional, Tuple
 
-import cv2
 import numpy as np
 import tifffile
 from lauda import stopwatch
+from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
@@ -21,7 +21,7 @@ from studio.app.common.core.utils.filepath_creater import (
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
-    ACCEPT_MICROSCOPE_EXT,
+    ACCEPT_FILE_EXT,
     CELLMASK_FIELDNAME,
     CELLMASK_SUFFIX,
     EXP_METADATA_SUFFIX,
@@ -42,7 +42,9 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope import MicroscopeData
-from studio.app.optinist.wrappers.caiman.cnmf import caiman_cnmf
+from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
+    caiman_cnmf_preprocessing,
+)
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
@@ -60,9 +62,15 @@ def get_default_params(name: str):
 
 
 def save_image_with_thumb(img_path: str, img):
-    cv2.imwrite(img_path, img)
-    thumb_img = cv2.resize(img, dsize=(THUMBNAIL_HEIGHT, THUMBNAIL_HEIGHT))
-    cv2.imwrite(img_path.replace(".png", ".thumb.png"), thumb_img)
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+        if img.mode == "F":
+            img = img.convert("RGB")
+    img.save(img_path)
+    w, h = img.size
+    new_width = int(w * (THUMBNAIL_HEIGHT / h))
+    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.LANCZOS)
+    thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
 class ExpDbPath:
@@ -76,7 +84,7 @@ class ExpDbPath:
 
             # input_files
             microscope_files = []
-            for ext in ACCEPT_MICROSCOPE_EXT:
+            for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT.value:
                 microscope_files.extend(glob(join_filepath([self.exp_dir, f"*{ext}"])))
             self.microscope_file = (
                 microscope_files[0] if len(microscope_files) > 0 else None
@@ -199,10 +207,10 @@ class ExpDbBatch:
     def cell_detection_cnmf(self, stack: ImageData):
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        caiman_cnmf(
+        caiman_cnmf_preprocessing(
             images=stack,
             output_dir=self.raw_path.preprocess_dir,
-            params=get_default_params("caiman_cnmf"),
+            params=get_default_params("caiman_cnmf_preprocessing"),
             nwbfile=self.nwb_input_config,
         )
 

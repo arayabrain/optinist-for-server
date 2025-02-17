@@ -24,6 +24,7 @@ export type InputNodeType =
   | MatlabInputNode
   | MicroscopeInputNode
   | ExpDbInputNode
+  | MicroscopeInputNode
 
 interface InputNodeBaseType<
   T extends FILE_TYPE,

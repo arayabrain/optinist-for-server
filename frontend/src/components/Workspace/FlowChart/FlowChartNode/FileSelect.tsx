@@ -306,7 +306,7 @@ function getFileInputAccept(fileType: FILE_TREE_TYPE | undefined) {
     case FILE_TREE_TYPE_SET.HDF5:
       return ".hdf5,.nwb"
     case FILE_TREE_TYPE_SET.MICROSCOPE:
-      return ".nd2,.oir,.isxd,.thor.zip,.xml"
+      return ".nd2,.oir,.isxd,.thor.zip"
     default:
       return undefined
   }

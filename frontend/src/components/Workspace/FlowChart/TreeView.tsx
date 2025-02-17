@@ -20,7 +20,7 @@ import {
 import { REACT_FLOW_NODE_TYPE, REACT_FLOW_NODE_TYPE_KEY } from "const/flowchart"
 import { getAlgoList } from "store/slice/AlgorithmList/AlgorithmListActions"
 import {
-  selectAlgorithmListIsLated,
+  selectAlgorithmListIsLatest,
   selectAlgorithmListTree,
 } from "store/slice/AlgorithmList/AlgorithmListSelectors"
 import {
@@ -44,7 +44,7 @@ import { getNanoId } from "utils/nanoid/NanoIdUtils"
 export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
   const dispatch = useDispatch<AppDispatch>()
   const algoList = useSelector(selectAlgorithmListTree)
-  const isLatest = useSelector(selectAlgorithmListIsLated)
+  const isLatest = useSelector(selectAlgorithmListIsLatest)
   const workflowId = useSelector(selectPipelineLatestUid)
   const runAlready = typeof workflowId !== "undefined"
 
@@ -89,9 +89,9 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
       defaultExpandIcon={<ChevronRightIcon />}
     >
       <TreeItem nodeId="Data" label="Data">
-        {/* <InputNodeComponent
-          fileName={'image'}
-          nodeName={'imageData'}
+        <InputNodeComponent
+          fileName={"image"}
+          nodeName={"imageData"}
           fileType={FILE_TYPE_SET.IMAGE}
         />
         <InputNodeComponent
@@ -113,23 +113,23 @@ export const AlgorithmTreeView = memo(function AlgorithmTreeView() {
           fileName={"behavior"}
           nodeName={"behaviorData"}
           fileType={FILE_TYPE_SET.BEHAVIOR}
-        /> */}
+        />
+        <InputNodeComponent
+          fileName={"matlab"}
+          nodeName={"matlabData"}
+          fileType={FILE_TYPE_SET.MATLAB}
+        />
         <InputNodeComponent
           fileName={"microscope"}
           nodeName={"microscopeData"}
           fileType={FILE_TYPE_SET.MICROSCOPE}
         />
         <InputNodeComponent
-          fileName={"expdb"}
-          nodeName={"expdbData"}
+          fileName={"expdbPreprocessed"}
+          nodeName={"expdbPreprocessedData"}
           fileType={FILE_TYPE_SET.EXPDB}
           displayName="preprocessed_data"
         />
-        {/* <InputNodeComponent
-          fileName={"matlab"}
-          nodeName={"matlabData"}
-          fileType={FILE_TYPE_SET.MATLAB}
-        /> */}
       </TreeItem>
       <TreeItem nodeId="Algorithm" label="Algorithm">
         {Object.entries(algoList).map(([name, node], i) => (

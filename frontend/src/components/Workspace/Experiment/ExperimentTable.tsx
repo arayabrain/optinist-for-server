@@ -12,6 +12,9 @@ import {
 } from "react"
 import { useSelector, useDispatch } from "react-redux"
 
+import { useSnackbar } from "notistack"
+
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import DeleteIcon from "@mui/icons-material/Delete"
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
@@ -34,7 +37,7 @@ import TableRow from "@mui/material/TableRow"
 import TableSortLabel from "@mui/material/TableSortLabel"
 import Typography from "@mui/material/Typography"
 
-import { renameExperiment } from "api/experiments/Experiments"
+import { renameExperimentApi } from "api/experiments/Experiments"
 import { ConfirmDialog } from "components/common/ConfirmDialog"
 import { useLocalStorage } from "components/utils/LocalStorageUtil"
 import { DeleteButton } from "components/Workspace/Experiment/Button/DeleteButton"
@@ -47,6 +50,7 @@ import { ReproduceButton } from "components/Workspace/Experiment/Button/Reproduc
 import { CollapsibleTable } from "components/Workspace/Experiment/CollapsibleTable"
 import { ExperimentStatusIcon } from "components/Workspace/Experiment/ExperimentStatusIcon"
 import {
+  copyExperimentByList,
   deleteExperimentByList,
   getExperiments,
 } from "store/slice/Experiments/ExperimentsActions"
@@ -117,11 +121,14 @@ const TableImple = memo(function TableImple() {
   const dispatch = useDispatch<AppDispatch>()
   const [checkedList, setCheckedList] = useState<string[]>([])
   const [open, setOpen] = useState(false)
+  const [openCopy, setOpenCopy] = useState(false)
   const isRunning = useSelector((state: RootState) => {
     const currentUid = selectPipelineLatestUid(state)
     const isPending = selectPipelineIsStartedSuccess(state)
     return checkedList.includes(currentUid as string) && isPending
   })
+  const { enqueueSnackbar } = useSnackbar()
+
   const onClickReload = () => {
     dispatch(getExperiments())
   }
@@ -132,6 +139,24 @@ const TableImple = memo(function TableImple() {
     const isAsc = sortTarget === property && order === "asc"
     setOrder(isAsc ? "desc" : "asc")
     setSortTarget(property)
+  }
+
+  const onClickCopy = () => {
+    setOpenCopy(true)
+  }
+
+  const onClickOkCopy = () => {
+    dispatch(copyExperimentByList(checkedList))
+      .unwrap()
+      .then(() => {
+        dispatch(getExperiments())
+        enqueueSnackbar("Record Copied", { variant: "success" })
+      })
+      .catch(() => {
+        enqueueSnackbar("Failed to copy", { variant: "error" })
+      })
+    setCheckedList([])
+    setOpenCopy(false)
   }
 
   const onCheckBoxClick = (uid: string) => {
@@ -157,6 +182,14 @@ const TableImple = memo(function TableImple() {
   }
   const onClickOk = () => {
     dispatch(deleteExperimentByList(checkedList))
+      .unwrap()
+      .then(() => {
+        // do nothing.
+      })
+      .catch(() => {
+        enqueueSnackbar("Failed to delete", { variant: "error" })
+      })
+
     checkedList.filter((v) => v === currentPipelineUid).length > 0 &&
       dispatch(clearCurrentPipeline())
     setCheckedList([])
@@ -204,6 +237,17 @@ const TableImple = memo(function TableImple() {
         )}
         <Button
           sx={{
+            margin: (theme) => theme.spacing(0, 1, 1, 1),
+          }}
+          variant="outlined"
+          endIcon={<ContentCopyIcon />}
+          onClick={onClickCopy}
+          disabled={checkedList.length === 0 || isRunning}
+        >
+          COPY
+        </Button>
+        <Button
+          sx={{
             margin: (theme) => theme.spacing(0, 1, 1, 0),
           }}
           variant="outlined"
@@ -214,6 +258,7 @@ const TableImple = memo(function TableImple() {
         </Button>
         {isOwner && (
           <Button
+            data-testid="delete-selected-button"
             sx={{
               marginBottom: (theme) => theme.spacing(1),
             }}
@@ -234,6 +279,29 @@ const TableImple = memo(function TableImple() {
         title="Delete records?"
         content={
           <>
+            {checkedList.map((uid) => {
+              const experiment = experimentList[uid]
+              return (
+                <Typography key={uid}>
+                  ・
+                  {experiment
+                    ? `${experiment.name} (${uid})`
+                    : `Unknown (${uid})`}
+                </Typography>
+              )
+            })}
+          </>
+        }
+        iconType="warning"
+        confirmLabel="delete"
+      />
+      <ConfirmDialog
+        open={openCopy}
+        setOpen={setOpenCopy}
+        onConfirm={onClickOkCopy}
+        title="Copy records?"
+        content={
+          <>
             {checkedList.map((uid) => (
               <Typography key={uid}>
                 ・{experimentList[uid].name} ({uid})
@@ -242,7 +310,7 @@ const TableImple = memo(function TableImple() {
           </>
         }
         iconType="warning"
-        confirmLabel="delete"
+        confirmLabel="copy"
       />
       <Paper
         elevation={0}
@@ -356,6 +424,7 @@ const HeadItem = memo(function HeadItem({
       <TableRow>
         <TableCell padding="checkbox">
           <Checkbox
+            data-testid="select-all-checkbox"
             sx={{ visibility: checkboxVisible ? "visible" : "hidden" }}
             checked={allChecked}
             indeterminate={allCheckIndeterminate}
@@ -424,6 +493,7 @@ const RowItem = memo(function RowItem({
   const [errorEdit, setErrorEdit] = useState("")
   const [valueEdit, setValueEdit] = useState(name)
   const dispatch = useDispatch<AppDispatch>()
+  const { enqueueSnackbar } = useSnackbar()
 
   const onBlurEdit = (event: FocusEvent) => {
     event.preventDefault()
@@ -451,7 +521,13 @@ const RowItem = memo(function RowItem({
 
   const onSaveNewName = async () => {
     if (valueEdit === name || workspaceId === void 0) return
-    await renameExperiment(workspaceId, uid, valueEdit)
+
+    try {
+      await renameExperimentApi(workspaceId, uid, valueEdit)
+    } catch (e) {
+      enqueueSnackbar("Failed to rename", { variant: "error" })
+    }
+
     dispatch(getExperiments())
   }
 
