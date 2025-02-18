@@ -195,14 +195,24 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     })
   }, [nshades])
 
+  function getRoiColor(roiIndex: number): string {
+    const colors = createColormap({
+      colormap: "jet",
+      nshades: 200,
+      format: "hex",
+    })
+    return colors[(Math.abs(roiIndex) * 9) % 200]
+  }
+
   const data = useMemo(() => {
     return Object.fromEntries(
       dataKeys.map((key) => {
         let y = newDataXrange.map((x) => newTimeSeriesData[key]?.[x])
-        const new_i = dialogFilterNodeId
-          ? Math.floor(((Number(key) % 10) * 10 + Number(key) / 10) % nshades)
-          : Number(key)
-        const rgba = colorScale[new_i]
+        const color = dialogFilterNodeId
+          ? colorScale[
+              Math.floor(((Number(key) % 10) * 10 + Number(key) / 10) % nshades)
+            ]
+          : getRoiColor(Number(key))
         if (drawOrderList.includes(key) && !stdBool) {
           const activeIdx: number = drawOrderList.findIndex((v) => v === key)
           const mean: number = y.reduce((a, b) => a + b) / y.length
@@ -219,7 +229,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
             x: newDataXrange,
             y: y,
             visible: drawOrderList.includes(key) ? true : "legendonly",
-            line: { color: rgba },
+            line: { color },
             error_y: {
               type: "data",
               array:
@@ -233,16 +243,16 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
       }),
     )
   }, [
+    drawOrderList,
+    stdBool,
+    span,
+    dataStd,
     dataKeys,
     newDataXrange,
     dialogFilterNodeId,
     nshades,
     colorScale,
-    drawOrderList,
-    stdBool,
-    dataStd,
     newTimeSeriesData,
-    span,
   ])
 
   const annotations = useMemo(() => {
