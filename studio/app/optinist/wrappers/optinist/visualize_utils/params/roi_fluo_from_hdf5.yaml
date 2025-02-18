@@ -1,1 +1,3 @@
+# こちらは一時的の対応です。基本的にはTransposeはTrueにしてください。
+# ただし、TransposeがTrueの場合、データの座標が逆になるケースがあります。そのため、画面でFalseに切り替えることもあります。
 transpose: True
