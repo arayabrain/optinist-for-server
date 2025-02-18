@@ -6,7 +6,14 @@ import { useDispatch, useSelector } from "react-redux"
 import { useSnackbar, VariantType } from "notistack"
 
 import CachedIcon from "@mui/icons-material/Cached"
-import { Box, FormHelperText, Popover } from "@mui/material"
+import {
+  Box,
+  CircularProgress,
+  FormHelperText,
+  IconButton,
+  Popover,
+  Tooltip,
+} from "@mui/material"
 import { grey } from "@mui/material/colors"
 import { styled } from "@mui/material/styles"
 
@@ -77,15 +84,24 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
   })
   const [fileViaUrl, setFileViaUrl] = useState("")
   const [errorUrl, setErrorUrl] = useState("")
+  const [nodeRefresh, setNodeRefresh] = useState(false)
 
+  const handleRefreshAlgoList = async () => {
+    setNodeRefresh(true)
+
+    try {
+      await dispatch(getAlgoList()) // Ensure it waits for the API call to finish
+    } catch (error) {
+      handleClickVariant("error", "Failed to get Algorithm List")
+    } finally {
+      handleClickVariant("success", "Algorithm List Refreshed")
+      setNodeRefresh(false)
+    }
+  }
   const { enqueueSnackbar } = useSnackbar()
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })
-  }
-
-  const handleRefreshAlgoList = () => {
-    dispatch(getAlgoList())
   }
 
   const onLoadFileViaUrl = async () => {
@@ -164,10 +180,21 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
                 Nodes
-                <CachedIcon
-                  onClick={handleRefreshAlgoList}
-                  style={{ cursor: "pointer", color: "#1976d2" }}
-                />
+                <Tooltip title="Refresh Node">
+                  <span>
+                    <IconButton
+                      onClick={handleRefreshAlgoList}
+                      color="primary"
+                      disabled={nodeRefresh} // Disable while loading
+                    >
+                      {nodeRefresh ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <CachedIcon />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </SectionTitle>
               <AlgorithmTreeView />
             </Box>
