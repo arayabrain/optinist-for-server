@@ -91,7 +91,7 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
     <>
       <IconButton
         style={{ padding: 2 }}
-        color="warning"
+        color="default"
         size="small"
         disabled={runDisabled}
         onClick={openDialog}
@@ -115,13 +115,25 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
         setOpen={setOpen}
         onCancel={onSkipClick}
         onConfirm={() => handleOk(condaName)}
-        cancelTitle="Ignore"
+        cancelTitle="Skip"
         title="Conda Environment Verification"
         content={
           <>
             <p>
-              Conda environment <strong>&quot;{condaName}&quot;</strong> does
-              not exist. Create an environment in advance?
+              Conda environment <strong>&quot;{condaName}&quot;</strong> not
+              found.
+            </p>
+
+            <p style={{ display: "flex", alignItems: "center" }}>
+              <InfoOutlinedIcon
+                style={{
+                  marginRight: 8,
+                }}
+                color="info"
+                fontSize="small"
+              />
+              Create environment beforehand for easier troubleshooting, or skip
+              to auto-create environment using RUN.
             </p>
             <p style={{ display: "flex", alignItems: "center" }}>
               <InfoOutlinedIcon
@@ -129,14 +141,13 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
                   marginRight: 8,
                 }}
                 color="info"
-                fontSize="medium"
+                fontSize="small"
               />
-              Start Conda environment creation workflow. Current workflow will
-              be cleared.
+              Creating now will clear the current workflow.
             </p>
           </>
         }
-        confirmLabel="Start Create"
+        confirmLabel="Create env"
         iconType="info"
       />
     </>
