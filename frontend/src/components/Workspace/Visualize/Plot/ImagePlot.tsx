@@ -221,7 +221,6 @@ const ImagePlotChart = memo(function ImagePlotChart({
   const colorscale = useSelector(selectImageItemColors(itemId))
   const alpha = useSelector(selectImageItemAlpha(itemId))
   const timeDataMaxIndex = useSelector(selectRoiItemIndex(itemId, roiFilePath))
-  const roiAlpha = useSelector(selectImageItemRoiAlpha(itemId))
   const width = useSelector(selectVisualizeItemWidth(itemId))
   const height = useSelector(selectVisualizeItemHeight(itemId))
   const statusRoi = useSelector(selectStatusRoi)
@@ -356,7 +355,6 @@ const ImagePlotChart = memo(function ImagePlotChart({
       showscale,
       colorscale,
       timeDataMaxIndex,
-      roiAlpha,
       alpha,
       pointClick,
       action,
