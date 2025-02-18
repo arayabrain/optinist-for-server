@@ -167,6 +167,7 @@ const FlowChart = memo(function FlowChart(props: UseRunPipelineReturnType) {
           onMessageError: setMessageError,
           onOpenFilterDialog: setFilterDialogNodeId,
           dialogFilterNodeId,
+          isOutput: true,
         }}
       >
         <DndProvider backend={HTML5Backend}>

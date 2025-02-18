@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { memo, useContext, useEffect, useMemo, useState } from "react"
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import PlotlyChart from "react-plotlyjs-ts"
 import { useSelector, useDispatch, shallowEqual } from "react-redux"
 
@@ -8,7 +15,7 @@ import { LegendClickEvent } from "plotly.js"
 
 import { LinearProgress, Typography } from "@mui/material"
 
-import { TimeSeriesData } from "api/outputs/Outputs"
+import { getRoiDataApi, TimeSeriesData } from "api/outputs/Outputs"
 import {
   DialogContext,
   useRoisSelected,
@@ -32,7 +39,10 @@ import {
   selectTimesSeriesMeta,
 } from "store/slice/DisplayData/DisplayDataSelectors"
 import { selectFrameRate } from "store/slice/Experiments/ExperimentsSelectors"
-import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
+import {
+  selectOutputFilePathCellRoi,
+  selectPipelineLatestUid,
+} from "store/slice/Pipeline/PipelineSelectors"
 import {
   selectTimeSeriesItemDrawOrderList,
   selectTimeSeriesItemOffset,
@@ -50,6 +60,7 @@ import {
   selectImageItemRangeUnit,
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
 import { setTimeSeriesItemDrawOrderList } from "store/slice/VisualizeItem/VisualizeItemSlice"
+import { selectCurrentWorkspaceId } from "store/slice/Workspace/WorkspaceSelector"
 import { AppDispatch } from "store/store"
 
 export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
@@ -92,7 +103,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     selectAlgorithmDataFilterParam(nodeId),
     shallowEqual,
   )
-
+  const workspaceId = useSelector(selectCurrentWorkspaceId)
   const meta = useSelector(selectTimesSeriesMeta(path))
   const dataXrange = useSelector(selectTimeSeriesXrange(path))
   const dataStd = useSelector(selectTimeSeriesStd(path))
@@ -113,12 +124,49 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
   const [newTimeSeriesData, setNewTimeSeriesData] = useState(timeSeriesData)
   const currentPipelineUid = useSelector(selectPipelineLatestUid)
   const frameRate = useSelector(selectFrameRate(currentPipelineUid))
-  const { dialogFilterNodeId } = useContext(DialogContext)
+  const { dialogFilterNodeId, isOutput } = useContext(DialogContext)
   const { setRoiSelected, setMaxDim } = useRoisSelected()
-
   const { filterParam = filterSelector, roiPath } = useBoxFilter()
+  const roiUniqueListSelector = useSelector(
+    selectRoiUniqueList(roiPath),
+    shallowEqual,
+  )
+  const [roiUniqueList, setRoiUniqueList] = useState<null | string[]>(
+    roiUniqueListSelector,
+  )
 
-  const roiUniqueList = useSelector(selectRoiUniqueList(roiPath), shallowEqual)
+  const pathCellRoi = useSelector(selectOutputFilePathCellRoi(nodeId))
+
+  const isExistFilterRoi = useMemo(
+    () => filterParam?.roi?.length,
+    [filterParam?.roi?.length],
+  )
+
+  const getRoiUniqueList = useCallback(() => {
+    if (workspaceId && pathCellRoi) {
+      getRoiDataApi(pathCellRoi, { workspaceId }).then(({ data }) => {
+        const roi1Ddata: number[] = data[0]
+          .map((row) =>
+            Array.from(new Set(row.filter((value) => value != null))),
+          )
+          .flat()
+        const roiUniqueIds = Array.from(new Set(roi1Ddata))
+          .sort((n1, n2) => n1 - n2)
+          .map(String)
+        setRoiUniqueList(roiUniqueIds)
+      })
+    }
+  }, [pathCellRoi, workspaceId])
+
+  useEffect(() => {
+    if (isOutput && isExistFilterRoi) getRoiUniqueList()
+  }, [getRoiUniqueList, isExistFilterRoi, isOutput])
+
+  useEffect(() => {
+    if (!isOutput || dialogFilterNodeId) {
+      setRoiUniqueList(roiUniqueListSelector)
+    }
+  }, [dialogFilterNodeId, isOutput, roiUniqueListSelector])
 
   useEffect(() => {
     if (!timeSeriesData) return
@@ -138,19 +186,34 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     return xrangeSelector
   }, [dialogFilterNodeId, filterParam, xrangeSelector])
 
+  const isExistParamsRoi = useCallback(
+    (num: number) => {
+      return (
+        !isExistFilterRoi ||
+        filterParam?.roi?.some(
+          (roi) => num >= (roi.start || 0) && (!roi.end || num < roi.end),
+        )
+      )
+    },
+    [filterParam?.roi, isExistFilterRoi],
+  )
+
   const dataKeys = useMemo(() => {
     const keys = dataKeysSelector.filter(
       (e) =>
-        (roiUniqueList?.includes(e) || !dialogFilterNodeId) &&
-        (!filterParam?.roi?.length ||
-          filterParam?.roi?.some(
-            (roi) =>
-              Number(e) >= (roi.start || 0) &&
-              (!roi.end || Number(e) < roi.end),
-          )),
+        (roiUniqueList?.includes(e) ||
+          (!dialogFilterNodeId && (!isOutput || !isExistFilterRoi))) &&
+        isExistParamsRoi(Number(e)),
     )
     return keys
-  }, [dataKeysSelector, dialogFilterNodeId, filterParam?.roi, roiUniqueList])
+  }, [
+    dataKeysSelector,
+    dialogFilterNodeId,
+    isExistFilterRoi,
+    isExistParamsRoi,
+    isOutput,
+    roiUniqueList,
+  ])
 
   useEffect(() => {
     const seriesData: TimeSeriesData = {}
