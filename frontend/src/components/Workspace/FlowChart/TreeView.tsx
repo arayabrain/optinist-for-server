@@ -228,7 +228,7 @@ const InputNodeComponent = memo(function InputNodeComponent({
   )
 })
 
-interface AlgoNodeComponentBaseProps {
+export interface AlgoNodeComponentBaseProps {
   name: string
   onAddAlgoNode: (
     nodeName: string,
@@ -308,7 +308,19 @@ const AlgoNodeComponent = memo(function AlgoNodeComponent({
                 onClick={() => onAddAlgoNode(name, node.functionPath)}
               />
             ) : (
-              <CondaNoticeButton name={name} condaName={node.condaName} />
+              <CondaNoticeButton
+                name={name}
+                node={node}
+                onSkipClick={(_event, reason) => {
+                  // Cancel operation from other than Skip (Cancel) button does nothing.
+                  // *In the cancel button click, the reason is undefined..
+                  if (reason !== undefined) {
+                    return
+                  }
+
+                  onAddAlgoNode(name, node.functionPath)
+                }}
+              />
             )}
           </div>
         </>

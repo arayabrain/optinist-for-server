@@ -1,4 +1,4 @@
-import { memo, useState } from "react"
+import { memo, SyntheticEvent, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
 import { enqueueSnackbar } from "notistack"
@@ -8,6 +8,7 @@ import { Typography } from "@mui/material"
 import IconButton from "@mui/material/IconButton"
 
 import { ConfirmDialog } from "components/common/ConfirmDialog"
+import { AlgorithmChild } from "store/slice/AlgorithmList/AlgorithmListType"
 import { getExperiments } from "store/slice/Experiments/ExperimentsActions"
 import { run } from "store/slice/Pipeline/PipelineActions"
 import { useIsRunDisabled } from "store/slice/Pipeline/PipelineHook"
@@ -22,13 +23,20 @@ import { AppDispatch, store } from "store/store"
 
 interface CondaNoticeButtonProps {
   name: string
-  condaName: string
+  node: AlgorithmChild
+  onSkipClick: (
+    event: SyntheticEvent | Event,
+    reason?: "backdropClick" | "escapeKeyDown",
+  ) => void
 }
 
 export const CondaNoticeButton = memo(function CondaNoticeButton({
   name,
-  condaName,
+  node,
+  onSkipClick: onSkipClick,
 }: CondaNoticeButtonProps) {
+  const condaName = node.condaName
+
   const [open, setOpen] = useState(false)
   const openDialog = () => {
     setOpen(true)
@@ -105,13 +113,15 @@ export const CondaNoticeButton = memo(function CondaNoticeButton({
       <ConfirmDialog
         open={open}
         setOpen={setOpen}
+        onCancel={onSkipClick}
         onConfirm={() => handleOk(condaName)}
+        cancelTitle="Ignore"
         title="Conda Environment Verification"
         content={
           <>
             <p>
               Conda environment <strong>&quot;{condaName}&quot;</strong> does
-              not exist. Create an environment?
+              not exist. Create an environment in advance?
             </p>
             <p style={{ display: "flex", alignItems: "center" }}>
               <InfoOutlinedIcon
