@@ -21,14 +21,15 @@ Please follow instructions below.
 
 ```bash
 git clone https://github.com/oist/optinist.git
-cd ./optinist
 ```
 
-- copy config files
-  ```bash
-  cp studio/config/.env.example studio/config/.env
-  cp frontend/.env.example frontend/.env
-  ```
+#### setup application config files
+
+```bash
+cd ./optinist
+cp studio/config/.env.example studio/config/.env
+cp frontend/.env.example frontend/.env
+```
 
 ### Start Docker Container
 

@@ -41,11 +41,6 @@ By setting the optinist startup options, you can access optinist via a browser f
 
 ## Application Configurations (Developers)
 
-```{eval-rst}
-.. caution::
-  (WIP) Explains .env, etc.
-```
-
 ### Allow access to optinist from another PC
 
 By setting the optinist startup options and configs, you can access optinist via a browser from a network other than your own PC.
@@ -63,7 +58,7 @@ By setting the optinist startup options and configs, you can access optinist via
         REACT_APP_SERVER_HOST=
         REACT_APP_SERVER_PORT=8000
         ```
-      * run: `yarn start`
+      * run: `yarn start` or `yarn install && yarn start`
 2. Access to optinist from client PC
     * Access `http://optinist-dev-pc:3000` with a browser
 

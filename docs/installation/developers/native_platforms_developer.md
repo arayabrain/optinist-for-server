@@ -33,10 +33,11 @@ Follow the steps in the `Install Tools` section for each platform below.
 
 - [Node.js Official](https://nodejs.org)
   - Get node with v20
-- You can also install node via [nvm](https://github.com/nvm-sh/nvm). 
-  - *Recommended for unix-like platforms.*
+- You can also install node via [nvm](https://github.com/nvm-sh/nvm).
+  - _Recommended for unix-like platforms._
 
 After install node, install yarn.
+
 ```bash
 npm install -g yarn
 ```
@@ -52,14 +53,15 @@ conda activate optinist_dev
 
 ```bash
 git clone https://github.com/oist/optinist.git
-cd ./optinist
 ```
 
-- copy config files
-  ```
-  cp studio/config/.env.example studio/config/.env
-  cp frontend/.env.example frontend/.env
-  ```
+#### setup application config files
+
+```bash
+cd ./optinist
+cp studio/config/.env.example studio/config/.env
+cp frontend/.env.example frontend/.env
+```
 
 ### Install Requirements
 
@@ -80,7 +82,9 @@ export OPTINIST_DIR="your_saving_dir"
 ```bash
 python main.py
 ```
+
 - `python main.py` log is as blow:
+
 ```bash
 $ run_optinist
 INFO:     Will watch for changes in these directories: ['/home/oist/optinist']
@@ -103,6 +107,7 @@ cd frontend
 ```
 
 Then install packages and run.
+
 ```bash
 yarn install
 yarn start
