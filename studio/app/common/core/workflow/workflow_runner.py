@@ -205,8 +205,9 @@ class WorkflowNodeDataFilter:
         )
         exp_config = ExptConfigReader.read(expt_filepath)
 
-        # assert exp_config.success == WorkflowRunStatus.SUCCESS
-        assert exp_config.function[self.node_id].success == WorkflowRunStatus.SUCCESS
+        assert (
+            exp_config.function[self.node_id].success == WorkflowRunStatus.SUCCESS.value
+        )
         assert os.path.exists(self.pkl_filepath)
 
     def filter_node_data(self, params: Optional[DataFilterParam]):
