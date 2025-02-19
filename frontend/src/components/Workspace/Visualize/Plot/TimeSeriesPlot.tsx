@@ -129,19 +129,20 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     //eslint-disable-next-line
   }, [rangeUnit, dataXrange, timeSeriesData, drawOrderList])
 
-  const colorScale = createColormap({
-    colormap: "jet",
-    nshades: 100, //maxIndex >= 6 ? maxIndex : 6,
-    format: "hex",
-    alpha: 1,
-  })
+  function getRoiColor(roiIndex: number): string {
+    const colors = createColormap({
+      colormap: "jet",
+      nshades: 200,
+      format: "hex",
+    })
+    return colors[(Math.abs(roiIndex) * 9) % 200]
+  }
 
   const data = useMemo(() => {
     return Object.fromEntries(
       dataKeys.map((key) => {
         let y = newDataXrange.map((x) => newTimeSeriesData[key]?.[x])
         const i = Number(key)
-        const new_i = Math.floor((i % 10) * 10 + i / 10) % 100
         if (drawOrderList.includes(key) && !stdBool) {
           const activeIdx: number = drawOrderList.findIndex((v) => v === key)
           const mean: number = y.reduce((a, b) => a + b) / y.length
@@ -158,7 +159,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
             x: newDataXrange,
             y: y,
             visible: drawOrderList.includes(key) ? true : "legendonly",
-            line: { color: colorScale[new_i] },
+            line: { color: getRoiColor(i) },
             error_y: {
               type: "data",
               array:
@@ -175,7 +176,6 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     drawOrderList,
     stdBool,
     span,
-    colorScale,
     dataStd,
     dataKeys,
     newDataXrange,
