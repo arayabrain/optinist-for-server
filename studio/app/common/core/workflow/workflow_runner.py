@@ -25,6 +25,7 @@ from studio.app.common.core.workflow.workflow import (
     NodeType,
     NodeTypeUtil,
     RunItem,
+    WorkflowRunStatus,
 )
 from studio.app.common.core.workflow.workflow_params import get_typecheck_params
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
@@ -204,8 +205,8 @@ class WorkflowNodeDataFilter:
         )
         exp_config = ExptConfigReader.read(expt_filepath)
 
-        # assert exp_config.success == "success"
-        assert exp_config.function[self.node_id].success == "success"
+        # assert exp_config.success == WorkflowRunStatus.SUCCESS
+        assert exp_config.function[self.node_id].success == WorkflowRunStatus.SUCCESS
         assert os.path.exists(self.pkl_filepath)
 
     def filter_node_data(self, params: Optional[DataFilterParam]):
