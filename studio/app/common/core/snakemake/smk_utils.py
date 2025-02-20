@@ -62,7 +62,9 @@ class SmkUtils:
             if is_caiman and cls.is_apple_silicon():
                 # Modify the parameters directly in the details dictionary
                 if "params" in details:
-                    details["params"] = cls.modify_caiman_params(details["params"])
+                    details["params"] = cls.modify_caiman_params_for_apple_silicon(
+                        details["params"]
+                    )
 
             return cls.get_conda_env_filepath(conda_name)
 
@@ -94,7 +96,7 @@ class SmkUtils:
             return False
 
     @staticmethod
-    def modify_caiman_params(params: Dict) -> Dict:
+    def modify_caiman_params_for_apple_silicon(params: Dict) -> Dict:
         """
         Modifies CaImAn params to be compatible with Apple Silicon by disabling CNN
         """
