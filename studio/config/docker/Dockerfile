@@ -73,10 +73,10 @@ USER root
 # * copy only minimal files to enable docker run cache.
 COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry && \
+    pip3 install --upgrade poetry poetry-plugin-export && \
     poetry config virtualenvs.create false
 
-# export requirements.txt from poetry and install
+# Export requirements.txt from poetry and install
 # * Some module versions are adjusted directly for batch environments.
 RUN poetry export -f requirements.txt -o requirements.studio.txt && \
     sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
