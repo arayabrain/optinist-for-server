@@ -83,6 +83,9 @@ RUN poetry export -f requirements.txt -o requirements.studio.txt && \
 
 RUN pip3 install -r requirements.studio.txt
 
+# Setting permissions for operational user to some site-packages.
+RUN chown -R optinist /usr/local/lib/python3.9/site-packages/pynwb
+
 # ----------------------------------------
 # setup optinist batch environment #2
 # ----------------------------------------

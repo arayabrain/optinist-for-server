@@ -1,4 +1,4 @@
-# Packages in conda env for [caiman]
+# Packages in conda env for [caiman_with_expdb]
 channels:
   - conda-forge
   - defaults
@@ -10,7 +10,8 @@ dependencies:
   - caiman >=1.11.1,<=1.11.4
   - conda-build
   - scikit-image>=0.19.0
-  - protobuf=3.20.*
 
   # for expdb
   - gcc=12
+  - pip:
+    - protobuf==3.20.*

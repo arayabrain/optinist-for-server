@@ -10,4 +10,3 @@ dependencies:
   - caiman >=1.11.1,<=1.11.4
   - conda-build
   - scikit-image>=0.19.0
-  - protobuf=3.20.*
