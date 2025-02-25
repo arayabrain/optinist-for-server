@@ -24,12 +24,12 @@ nodeDict:
     id: input_zdax4o54o0
     type: BehaviorFileNode
     data:
-      label: sample_mouse2p_behaviour.csv
+      label: sample_mouse2p_behavior.csv
       param:
         setHeader: null
         setIndex: false
         transpose: false
-      path: sample_mouse2p_behaviour.csv
+      path: sample_mouse2p_behavior.csv
       type: input
       fileType: csv
       hdf5Path: null
