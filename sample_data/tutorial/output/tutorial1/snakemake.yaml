@@ -4,7 +4,7 @@ rules:
     - 1/sample_mouse2p_image.tiff
     return_arg: input_ab1mmvt2ky
     params: {}
-    output: 1/aea701e7/input_ab1mmvt2ky/sample_mouse2p_image.pkl
+    output: 1/tutorial1/input_ab1mmvt2ky/sample_mouse2p_image.pkl
     type: image
     nwbfile:
       session_description: optinist
@@ -44,7 +44,7 @@ rules:
       setHeader: null
       setIndex: false
       transpose: false
-    output: 1/aea701e7/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
+    output: 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
     type: behavior
     nwbfile:
       session_description: optinist
@@ -79,13 +79,13 @@ rules:
     path: null
   suite2p_file_convert_tlri58d268:
     input:
-    - 1/aea701e7/input_ab1mmvt2ky/sample_mouse2p_image.pkl
+    - 1/tutorial1/input_ab1mmvt2ky/sample_mouse2p_image.pkl
     return_arg:
       input_ab1mmvt2ky: image
     params:
       force_sktiff: false
       batch_size: 500
-    output: 1/aea701e7/suite2p_file_convert_tlri58d268/suite2p_file_convert.pkl
+    output: 1/tutorial1/suite2p_file_convert_tlri58d268/suite2p_file_convert.pkl
     type: suite2p_file_convert
     nwbfile: null
     hdf5Path: null
@@ -93,7 +93,7 @@ rules:
     path: suite2p/suite2p_file_convert
   suite2p_registration_xq4pexs8o7:
     input:
-    - 1/aea701e7/suite2p_file_convert_tlri58d268/suite2p_file_convert.pkl
+    - 1/tutorial1/suite2p_file_convert_tlri58d268/suite2p_file_convert.pkl
     return_arg:
       ops: ops
     params:
@@ -121,7 +121,7 @@ rules:
         - 128
         snr_thresh: 1.2
         maxregshiftNR: 5
-    output: 1/aea701e7/suite2p_registration_xq4pexs8o7/suite2p_registration.pkl
+    output: 1/tutorial1/suite2p_registration_xq4pexs8o7/suite2p_registration.pkl
     type: suite2p_registration
     nwbfile: null
     hdf5Path: null
@@ -129,7 +129,7 @@ rules:
     path: suite2p/suite2p_registration
   suite2p_roi_yvqcdmsg0r:
     input:
-    - 1/aea701e7/suite2p_registration_xq4pexs8o7/suite2p_registration.pkl
+    - 1/tutorial1/suite2p_registration_xq4pexs8o7/suite2p_registration.pkl
     return_arg:
       ops: ops
     params:
@@ -152,7 +152,7 @@ rules:
         allow_overlap: false
         inner_neuropil_radius: 2
         min_neuropil_pixels: 350
-    output: 1/aea701e7/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
+    output: 1/tutorial1/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
     type: suite2p_roi
     nwbfile: null
     hdf5Path: null
@@ -160,9 +160,9 @@ rules:
     path: suite2p/suite2p_roi
   eta_elysjdrr7j:
     input:
-    - 1/aea701e7/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
-    - 1/aea701e7/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
-    - 1/aea701e7/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
+    - 1/tutorial1/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
+    - 1/tutorial1/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
+    - 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
     return_arg:
       fluorescence: neural_data
       iscell: iscell
@@ -177,11 +177,11 @@ rules:
         trigger_threshold: 0.5
         pre_event: -10
         post_event: 10
-    output: 1/aea701e7/eta_elysjdrr7j/eta.pkl
+    output: 1/tutorial1/eta_elysjdrr7j/eta.pkl
     type: eta
     nwbfile: null
     hdf5Path: null
     matPath: null
     path: optinist/basic_neural_analysis/eta
 last_output:
-- 1/aea701e7/eta_elysjdrr7j/eta.pkl
+- 1/tutorial1/eta_elysjdrr7j/eta.pkl

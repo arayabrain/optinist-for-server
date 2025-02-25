@@ -4,7 +4,7 @@ rules:
     - 1/sample_mouse2p_image.tiff
     return_arg: input_0
     params: {}
-    output: 1/68347566/input_0/sample_mouse2p_image.pkl
+    output: 1/tutorial3/input_0/sample_mouse2p_image.pkl
     type: image
     nwbfile:
       session_description: optinist
@@ -39,13 +39,13 @@ rules:
     path: null
   suite2p_file_convert_uwyrgu1xyc:
     input:
-    - 1/68347566/input_0/sample_mouse2p_image.pkl
+    - 1/tutorial3/input_0/sample_mouse2p_image.pkl
     return_arg:
       input_0: image
     params:
       force_sktiff: false
       batch_size: 500
-    output: 1/68347566/suite2p_file_convert_uwyrgu1xyc/suite2p_file_convert.pkl
+    output: 1/tutorial3/suite2p_file_convert_uwyrgu1xyc/suite2p_file_convert.pkl
     type: suite2p_file_convert
     nwbfile: null
     hdf5Path: null
@@ -53,7 +53,7 @@ rules:
     path: suite2p/suite2p_file_convert
   suite2p_registration_q9rk525j0v:
     input:
-    - 1/68347566/suite2p_file_convert_uwyrgu1xyc/suite2p_file_convert.pkl
+    - 1/tutorial3/suite2p_file_convert_uwyrgu1xyc/suite2p_file_convert.pkl
     return_arg:
       ops: ops
     params:
@@ -81,7 +81,7 @@ rules:
         - 128
         snr_thresh: 1.2
         maxregshiftNR: 5
-    output: 1/68347566/suite2p_registration_q9rk525j0v/suite2p_registration.pkl
+    output: 1/tutorial3/suite2p_registration_q9rk525j0v/suite2p_registration.pkl
     type: suite2p_registration
     nwbfile: null
     hdf5Path: null
@@ -89,7 +89,7 @@ rules:
     path: suite2p/suite2p_registration
   lccd_cell_detection_q9g9if8oeg:
     input:
-    - 1/68347566/suite2p_registration_q9rk525j0v/suite2p_registration.pkl
+    - 1/tutorial3/suite2p_registration_q9rk525j0v/suite2p_registration.pkl
     return_arg:
       mc_images: mc_images
     params:
@@ -111,7 +111,7 @@ rules:
       dff:
         f0_frames: 100
         f0_percentile: 8
-    output: 1/68347566/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
+    output: 1/tutorial3/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
     type: lccd_cell_detection
     nwbfile: null
     hdf5Path: null
@@ -124,7 +124,7 @@ rules:
       setHeader: null
       setIndex: false
       transpose: false
-    output: 1/68347566/input_9ig87jnsul/sample_mouse2p_behavior.pkl
+    output: 1/tutorial3/input_9ig87jnsul/sample_mouse2p_behavior.pkl
     type: behavior
     nwbfile:
       session_description: optinist
@@ -159,9 +159,9 @@ rules:
     path: null
   lda_hasufj1cnb:
     input:
-    - 1/68347566/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
-    - 1/68347566/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
-    - 1/68347566/input_9ig87jnsul/sample_mouse2p_behavior.pkl
+    - 1/tutorial3/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
+    - 1/tutorial3/lccd_cell_detection_q9g9if8oeg/lccd_cell_detection.pkl
+    - 1/tutorial3/input_9ig87jnsul/sample_mouse2p_behavior.pkl
     return_arg:
       fluorescence: neural_data
       iscell: iscell
@@ -184,11 +184,11 @@ rules:
         store_covariance: false
         tol: 0.0001
         covariance_estimator: None
-    output: 1/68347566/lda_hasufj1cnb/lda.pkl
+    output: 1/tutorial3/lda_hasufj1cnb/lda.pkl
     type: lda
     nwbfile: null
     hdf5Path: null
     matPath: null
     path: optinist/neural_decoding/lda
 last_output:
-- 1/68347566/lda_hasufj1cnb/lda.pkl
+- 1/tutorial3/lda_hasufj1cnb/lda.pkl

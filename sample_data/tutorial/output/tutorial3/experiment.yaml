@@ -1,5 +1,5 @@
 workspace_id: '1'
-unique_id: '68347566'
+unique_id: 'tutorial3'
 name: Tutorial3
 started_at: '2025-02-13 15:33:37'
 finished_at: '2025-02-13 15:34:57'
@@ -23,7 +23,7 @@ function:
     message: suite2p_file_convert success
     outputPaths:
       meanImg:
-        path: /tmp/studio/output/1/68347566/suite2p_file_convert_uwyrgu1xyc/meanImg.json
+        path: /tmp/studio/output/1/tutorial3/suite2p_file_convert_uwyrgu1xyc/meanImg.json
         type: images
         max_index: 1
     started_at: '2025-02-13 15:33:48'
@@ -36,15 +36,15 @@ function:
     message: suite2p_registration success
     outputPaths:
       refImg:
-        path: /tmp/studio/output/1/68347566/suite2p_registration_q9rk525j0v/refImg.json
+        path: /tmp/studio/output/1/tutorial3/suite2p_registration_q9rk525j0v/refImg.json
         type: images
         max_index: 1
       meanImgE:
-        path: /tmp/studio/output/1/68347566/suite2p_registration_q9rk525j0v/meanImgE.json
+        path: /tmp/studio/output/1/tutorial3/suite2p_registration_q9rk525j0v/meanImgE.json
         type: images
         max_index: 1
       mc_images:
-        path: /tmp/studio/output/1/68347566/suite2p_registration_q9rk525j0v/tiff/mc_images/mc_images.tif
+        path: /tmp/studio/output/1/tutorial3/suite2p_registration_q9rk525j0v/tiff/mc_images/mc_images.tif
         type: images
         max_index: 2000
     started_at: '2025-02-13 15:34:05'
@@ -57,23 +57,23 @@ function:
     message: lccd_cell_detection success
     outputPaths:
       dff:
-        path: /tmp/studio/output/1/68347566/lccd_cell_detection_q9g9if8oeg/dff
+        path: /tmp/studio/output/1/tutorial3/lccd_cell_detection_q9g9if8oeg/dff
         type: timeseries
         max_index: 42
       fluorescence:
-        path: /tmp/studio/output/1/68347566/lccd_cell_detection_q9g9if8oeg/fluorescence
+        path: /tmp/studio/output/1/tutorial3/lccd_cell_detection_q9g9if8oeg/fluorescence
         type: timeseries
         max_index: 42
       all_roi:
-        path: /tmp/studio/output/1/68347566/lccd_cell_detection_q9g9if8oeg/all_roi.json
+        path: /tmp/studio/output/1/tutorial3/lccd_cell_detection_q9g9if8oeg/all_roi.json
         type: roi
         max_index: null
       cell_roi:
-        path: /tmp/studio/output/1/68347566/lccd_cell_detection_q9g9if8oeg/cell_roi.json
+        path: /tmp/studio/output/1/tutorial3/lccd_cell_detection_q9g9if8oeg/cell_roi.json
         type: roi
         max_index: null
       non_cell_roi:
-        path: /tmp/studio/output/1/68347566/lccd_cell_detection_q9g9if8oeg/non_cell_roi.json
+        path: /tmp/studio/output/1/tutorial3/lccd_cell_detection_q9g9if8oeg/non_cell_roi.json
         type: roi
         max_index: null
     started_at: '2025-02-13 15:34:25'
@@ -95,7 +95,7 @@ function:
     message: lda success
     outputPaths:
       score:
-        path: /tmp/studio/output/1/68347566/lda_hasufj1cnb/score.json
+        path: /tmp/studio/output/1/tutorial3/lda_hasufj1cnb/score.json
         type: bar
         max_index: null
     started_at: '2025-02-13 15:34:53'
