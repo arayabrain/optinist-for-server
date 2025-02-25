@@ -38,13 +38,13 @@ rules:
     matPath: null
     path: null
   input_zdax4o54o0:
-    input: 1/sample_mouse2p_behaviour.csv
+    input: 1/sample_mouse2p_behavior.csv
     return_arg: input_zdax4o54o0
     params:
       setHeader: null
       setIndex: false
       transpose: false
-    output: 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
+    output: 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behavior.pkl
     type: behavior
     nwbfile:
       session_description: optinist
@@ -162,7 +162,7 @@ rules:
     input:
     - 1/tutorial1/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
     - 1/tutorial1/suite2p_roi_yvqcdmsg0r/suite2p_roi.pkl
-    - 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behaviour.pkl
+    - 1/tutorial1/input_zdax4o54o0/sample_mouse2p_behavior.pkl
     return_arg:
       fluorescence: neural_data
       iscell: iscell

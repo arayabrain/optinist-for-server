@@ -17,7 +17,7 @@ function:
     finished_at: '2025-02-13 14:42:12'
   input_zdax4o54o0:
     unique_id: input_zdax4o54o0
-    name: sample_mouse2p_behaviour.csv
+    name: sample_mouse2p_behavior.csv
     success: success
     hasNWB: false
     message: null
