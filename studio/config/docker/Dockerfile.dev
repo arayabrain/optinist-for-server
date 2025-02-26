@@ -102,6 +102,11 @@ RUN . ~/.bashrc && \
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install -r requirements.batch.txt
 
+# Some environment variable settings
+# - Settings for protobuf 3.20 compatibility
+#   - see: https://protobuf.dev/news/2022-05-06/#python-updates
+RUN echo "export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python" >> ~/.bashrc
+
 # Return to root user
 USER root
 
