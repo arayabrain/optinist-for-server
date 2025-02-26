@@ -86,12 +86,12 @@ def ETA(
     neural_data = neural_data.data
     behaviors_data = behaviors_data.data
 
-    if params["transpose_x"]:
+    if params["I/O"]["transpose_x"]:
         X = neural_data.transpose()
     else:
         X = neural_data
 
-    if params["transpose_y"]:
+    if params["I/O"]["transpose_y"]:
         Y = behaviors_data.transpose()
     else:
         Y = behaviors_data
@@ -108,16 +108,20 @@ def ETA(
         cell_numbers = ind
         X = X[:, ind]
 
-    Y = Y[:, params["event_col_index"]]
+    Y = Y[:, params["I/O"]["event_col_index"]]
 
     # calculate Triggers
     [trigger_idxs, trigger_len] = calc_trigger(
-        Y, params["trigger_type"], params["trigger_threshold"]
+        Y, params["ETA"]["trigger_type"], params["ETA"]["trigger_threshold"]
     )
 
     # calculate Triggered average
     event_trigger_data = calc_trigger_average(
-        X, trigger_idxs, trigger_len, params["pre_event"], params["post_event"]
+        X,
+        trigger_idxs,
+        trigger_len,
+        params["ETA"]["pre_event"],
+        params["ETA"]["post_event"],
     )
 
     # (cell_number, event_time_lambda)
@@ -149,14 +153,18 @@ def ETA(
         mean,
         std=std,
         sem=sem,
-        index=list(range(params["pre_event"], params["post_event"] + trigger_len)),
+        index=list(
+            range(params["ETA"]["pre_event"], params["ETA"]["post_event"] + trigger_len)
+        ),
         cell_numbers=cell_numbers if iscell is not None else None,
         file_name="mean",
     )
     info["mean_heatmap"] = HeatMapData(
         norm_mean,
         columns=list(
-            np.arange(params["pre_event"], params["post_event"] + trigger_len)
+            np.arange(
+                params["ETA"]["pre_event"], params["ETA"]["post_event"] + trigger_len
+            )
         ),
         file_name="mean_heatmap",
     )
