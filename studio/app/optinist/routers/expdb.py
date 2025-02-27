@@ -95,13 +95,14 @@ EXPERIMENT_GRAPHS = {
     "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
     "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
-    "pca_pc1_spatial_map": {"title": "PCA Spatial Analysis", "dir": "plots"},
-    "pca_pc1_time_course": {"title": "PCA Time Course", "dir": "plots"},
-    "pca_explained_variance": {"title": "PCA Explained Variance", "dir": "plots"},
-    "kmeans_correlation_matrix": {
-        "title": "k-means Clustering Correlation Matrix",
-        "dir": "plots",
-    },
+    "pca_analysis": {"title": "PCA Analysis", "dir": "plots"},
+    "pca_analysis_variance": {"title": "PCA Explained Variance", "dir": "plots"},
+    "pca_contribution": {"title": "PCA Component Contribution", "dir": "plots"},
+    "pca_component_1_spatial": {"title": "PCA Component 1 Spatial Map", "dir": "plots"},
+    "pca_component_1_time": {"title": "PCA Component 1 Time Course", "dir": "plots"},
+    "clustering_analysis": {"title": "k-means Clustering Analysis", "dir": "plots"},
+    "cluster_spatial_map": {"title": "Cluster Spatial Map", "dir": "plots"},
+    "cluster_time_courses": {"title": "Cluster Time Courses", "dir": "plots"},
 }
 
 

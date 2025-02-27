@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib.colors import ListedColormap
 from sklearn.cluster import KMeans
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass.utils import save_thumbnail
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.stat import StatData
@@ -17,14 +18,14 @@ def kmeans_analysis(
 
     # Set default parameters if none provided
     if params is None:
-        params = {"n_clusters": min(3, stat.ncells), "random_state": 42}
+        params = {"n_clusters": min(3, stat.ncells)}
 
     # Calculate correlation matrix
     corr_matrix = np.corrcoef(fluorescence)
 
     # Perform clustering
     kmeans = KMeans(
-        n_clusters=params["n_clusters"], random_state=params["random_state"]
+        n_clusters=params["n_clusters"],
     )
     cluster_labels = kmeans.fit_predict(corr_matrix)
 
@@ -58,10 +59,10 @@ def kmeans_analysis(
 
 
 def generate_kmeans_visualization(
-    labels, corr_matrix, fluorescence, roi_masks, output_path
+    labels, corr_matrix, fluorescence, roi_masks, output_dir
 ):
     """
-    Generate detailed K-means visualization
+    Generate KMeans visualizations with separate files for each component
 
     Parameters
     ----------
@@ -71,11 +72,15 @@ def generate_kmeans_visualization(
         Cell-to-cell correlation matrix
     fluorescence : ndarray
         Temporal components/fluorescence traces (n_cells x time)
-    roi_masks : ndarray
-        ROI masks data (height x width x n_cells)
-    output_path : str
-        Path for saving the detailed output file
+    roi_masks : ndarray or None
+        ROI masks data in any format
+    output_dir : str
+        Directory for saving output files
     """
+    if labels is None or len(labels) == 0:
+        print("Warning: Missing cluster labels")
+        return
+
     # Reorder correlation matrix based on clusters
     sort_idx = np.argsort(labels)
     sorted_corr_matrix = corr_matrix[sort_idx][:, sort_idx]
@@ -86,50 +91,74 @@ def generate_kmeans_visualization(
     colors = plt.cm.jet(np.linspace(0, 1, n_clusters))
     custom_cmap = ListedColormap(colors)
 
-    # Calculate mean time course for each cluster
-    cluster_averages = []
-    for cluster in unique_clusters:
-        cluster_mask = labels == cluster
-        cluster_avg = np.mean(fluorescence[cluster_mask], axis=0)
-        cluster_averages.append(cluster_avg)
+    # 1. Correlation matrix heatmap
+    plt.figure()
+    im = plt.imshow(sorted_corr_matrix, cmap="jet")
+    plt.colorbar(im)
+    plt.title(f"K-means Clustering (k={n_clusters})")
+    plt.xlabel("Cells")
+    plt.ylabel("Cells")
 
-    # Generate cluster map
-    cluster_map = np.zeros(roi_masks.shape[:2])
-    for i, label in enumerate(labels):
-        if i < roi_masks.shape[2]:
-            roi_mask = roi_masks[..., i]
-            cluster_map[roi_mask > 0] = label + 1
-
-    # Create detailed visualization
-    fig = plt.figure(figsize=(15, 10))
-
-    # 1. Correlation matrix
-    ax1 = fig.add_subplot(2, 2, 1)
-    im1 = ax1.imshow(sorted_corr_matrix, cmap="jet")
-    fig.colorbar(im1, ax=ax1)
-    ax1.set_title(f"K-means Clustering (k={n_clusters})")
-    ax1.set_xlabel("Cells")
-    ax1.set_ylabel("Cells")
-
-    # 2. Average time courses
-    ax2 = fig.add_subplot(2, 2, 2)
-    for i, avg in enumerate(cluster_averages):
-        ax2.plot(avg, color=colors[i], linewidth=2, label=f"Cluster {i+1}")
-    ax2.set_title("Mean Time Course by Cluster")
-    ax2.set_xlabel("Time")
-    ax2.set_ylabel("Fluorescence")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-
-    # 3. Cell maps
-    ax3 = fig.add_subplot(2, 1, 2)
-    im3 = ax3.imshow(cluster_map, cmap=custom_cmap)
-    fig.colorbar(im3, ax=ax3, label="Cluster")
-    ax3.set_title("Cluster Assignments")
-
-    plt.tight_layout()
-    plt.savefig(output_path)
+    matrix_path = join_filepath([output_dir, "clustering_analysis.png"])
+    plt.savefig(matrix_path, bbox_inches="tight")
     plt.close()
+    save_thumbnail(matrix_path)
 
-    # Create thumbnail
-    save_thumbnail(output_path)
+    # 2. Mean time courses by cluster
+    if fluorescence is not None and fluorescence.shape[0] >= len(labels):
+        plt.figure()
+        cluster_averages = []
+
+        for i, cluster in enumerate(unique_clusters):
+            cluster_mask = labels == cluster
+            if np.any(cluster_mask):
+                cluster_avg = np.mean(fluorescence[cluster_mask], axis=0)
+                plt.plot(
+                    cluster_avg, color=colors[i], linewidth=2, label=f"Cluster {i+1}"
+                )
+                cluster_averages.append(cluster_avg)
+
+        plt.title("Mean Time Course by Cluster")
+        plt.xlabel("Time")
+        plt.ylabel("Fluorescence")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        time_path = join_filepath([output_dir, "cluster_time_courses.png"])
+        plt.savefig(time_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(time_path)
+
+    # 3. Spatial cluster map - attempt only if roi_masks has appropriate shape
+    if roi_masks is not None and hasattr(roi_masks, "shape"):
+        try:
+            # Check for 3D mask (standard case with multiple ROIs)
+            if len(roi_masks.shape) == 3:
+                cluster_map = np.zeros(roi_masks.shape[:2])
+                for i, label in enumerate(labels):
+                    if i < roi_masks.shape[2]:
+                        roi_mask = roi_masks[:, :, i]
+                        cluster_map[roi_mask > 0] = label + 1
+
+            # Simpler 2D mask case
+            elif len(roi_masks.shape) == 2:
+                cluster_map = np.zeros(roi_masks.shape)
+                # Use most common cluster for the mask
+                if len(labels) > 0:
+                    counts = np.bincount(labels)
+                    most_common = np.argmax(counts) if len(counts) > 0 else 0
+                    cluster_map[roi_masks > 0] = most_common + 1
+
+            # If valid cluster map was created, plot it
+            if "cluster_map" in locals():
+                plt.figure()
+                im = plt.imshow(cluster_map, cmap=custom_cmap)
+                plt.colorbar(im, label="Cluster")
+                plt.title("Cluster Assignments")
+
+                map_path = join_filepath([output_dir, "cluster_spatial_map.png"])
+                plt.savefig(map_path, bbox_inches="tight")
+                plt.close()
+                save_thumbnail(map_path)
+        except Exception as e:
+            print(f"Could not create cluster spatial map: {str(e)}")
