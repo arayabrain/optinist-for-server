@@ -9,8 +9,9 @@
 WSL (Windows Subsystem for Linux) lets you run a Linux environment directly on Windows 10 and newer versions, without the need for a traditional virtual machine.
 
 - To install WSL:
+
   1. Open PowerShell or Windows Command Prompt as Administrator
-  2. Run: `wsl --install`
+  2. Run: `wsl --install -d Ubuntu-22.04`
   3. Open a new terminal and run: `wsl`
 
 - Important note:
@@ -81,8 +82,20 @@ export OPTINIST_DIR="your_saving_dir"
 
 ## 2. Run Backend
 
+#### optinist startup options
+
+- Options for `run_optinist`, `python main.py`
+  - `--host` ... Request listen host (default: 127.0.0.1)
+    - `127.0.0.1` ... Allow access from localhost only
+    - `0.0.0.0` ... Allow access from all networks
+  - `--port` ... Request listen port (default: 8000)
+
+### Allow access to optinist from another PC
+
+By setting the optinist startup options, you can access optinist via a browser from a network other than your own PC.
+
 ```bash
-run_optinist
+run_optinist --host=0.0.0.0 --port=8000
 ```
 
 - `run_optinist` log is as below:
