@@ -338,7 +338,7 @@ class ExpDbBatch:
             stat=stat_data,
             cnmf_info=cnmf_info,
             output_dir=self.raw_path.output_dir,
-            params=get_default_params("pca_plots"),
+            params=get_default_params("pca_analysis"),
             nwbfile=self.nwbfile,
         )
 
@@ -356,13 +356,12 @@ class ExpDbBatch:
             stat_data.pca_contribution.save_plot(dir_path)
 
             # Generate additional detailed visualization
-            output_path = join_filepath([dir_path, "pca_detailed.png"])
             generate_pca_visualization(
                 scores=stat_data.pca_scores,
                 explained_variance=stat_data.pca_explained_variance,
                 components=stat_data.pca_components,
                 roi_masks=cnmf_info["cell_roi"].data,
-                output_path=output_path,
+                output_dir=dir_path,
             )
 
     def generate_kmeans_plots(self, stat_data, cnmf_info):
@@ -389,13 +388,12 @@ class ExpDbBatch:
             stat_data.clustering_analysis.save_plot(dir_path)
 
             # Generate additional visualizations
-            output_path = join_filepath([dir_path, "clustering_detailed.png"])
             generate_kmeans_visualization(
                 labels=stat_data.cluster_labels,
                 corr_matrix=stat_data.cluster_corr_matrix,
                 fluorescence=cnmf_info["fluorescence"].data,
                 roi_masks=cnmf_info["cell_roi"].data,
-                output_path=output_path,
+                output_dir=dir_path,
             )
 
     @stopwatch(callback=__stopwatch_callback)

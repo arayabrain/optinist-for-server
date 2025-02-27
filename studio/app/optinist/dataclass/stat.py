@@ -304,7 +304,7 @@ class StatData(BaseData):
     def nwb_dict_pca(self) -> dict:
         nwb_dict = {}
 
-        # Raw numerical arrays
+        # Only include fields that are defined in PCA_TYPES
         if hasattr(self, "pca_scores") and self.pca_scores is not None:
             nwb_dict["pca_scores"] = self.pca_scores
         if (
@@ -321,6 +321,7 @@ class StatData(BaseData):
     def nwb_dict_kmeans(self) -> dict:
         nwb_dict = {}
 
+        # Only include fields that are defined in KMEANS_TYPES
         if hasattr(self, "cluster_labels") and self.cluster_labels is not None:
             nwb_dict["cluster_labels"] = self.cluster_labels
         if (
