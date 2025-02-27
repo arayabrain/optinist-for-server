@@ -1,7 +1,7 @@
 import os
-from glob import glob
 import platform
 import subprocess
+from glob import glob
 from typing import Dict
 
 from studio.app.common.core.logger import AppLogger
