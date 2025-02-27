@@ -189,9 +189,10 @@ def caiman_cnmf(
         ops.change_params(
             {
                 "fnames": [mmap_path],
-                "max_comp_update_shape": reshaped_params["max_comp_update_shape"]
-                or np.inf,
-                "num_times_comp_updated": reshaped_params["update_num_comps"] or np.inf,
+                # NOTE: These params uses np.inf as default in CaImAn.
+                # Yaml cannot serialize np.inf, so default value in yaml is None.
+                "max_comp_update_shape": params["max_comp_update_shape"] or np.inf,
+                "num_times_comp_updated": params["update_num_comps"] or np.inf,
             }
         )
         cnm = online_cnmf.OnACID(dview=dview, Ain=Ain, params=ops)
