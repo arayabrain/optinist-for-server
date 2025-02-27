@@ -1,10 +1,13 @@
 import numpy as np
 
+from studio.app.common.dataclass.bar import BarData
 from studio.app.common.dataclass.base import BaseData
+from studio.app.common.dataclass.heatmap import HeatMapData
 from studio.app.common.dataclass.histogram import HistogramData
 from studio.app.common.dataclass.line import LineData
 from studio.app.common.dataclass.pie import PieData
 from studio.app.common.dataclass.polar import PolarData
+from studio.app.common.dataclass.scatter import ScatterData
 from studio.app.optinist.core.nwb.oristat import (
     ANOVA_PROPS,
     ANOVA_TYPES,
@@ -99,6 +102,15 @@ class StatData(BaseData):
         self.ori_tuning_width = np.full(self.ncells, np.NaN)
         self.ori_k1 = np.full(self.ncells, np.NaN)
         self.ori_a1 = np.full(self.ncells, np.NaN)
+
+        # --- PCA ---
+        self.pca_scores = np.full((self.ncells, self.ncells), np.NaN)
+        self.pca_explained_variance = np.full(self.ncells, np.NaN)
+        self.pca_components = None
+
+        # --- kmeans ---
+        self.cluster_labels = np.full(self.ncells, np.NaN)
+        self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
     # --- stat_file_convert ---
     def set_file_convert_props(self):
@@ -217,6 +229,36 @@ class StatData(BaseData):
             file_name="orientation_tuning_width",
         )
 
+    # --- pca ---
+    def set_pca_props(self):
+        """Create visualization data structures for PCA results"""
+        self.pca_analysis_variance = BarData(
+            data=self.pca_explained_variance[
+                : min(10, len(self.pca_explained_variance))
+            ],
+            file_name="pca_analysis_variance",
+        )
+
+        self.pca_analysis = ScatterData(
+            data=self.pca_scores[:, : min(3, self.pca_scores.shape[1])],
+            file_name="pca_analysis",
+        )
+
+        # Keep this one for additional data
+        self.pca_contribution = BarData(
+            data=self.pca_components[: min(5, self.pca_components.shape[0])],
+            index=[f"PC {i+1}" for i in range(min(5, self.pca_components.shape[0]))],
+            file_name="pca_contribution",
+        )
+
+    # --- kmeans ---
+    def set_kmeans_props(self):
+        """Create visualization data structures for KMeans results"""
+        self.clustering_analysis = HeatMapData(
+            data=self.cluster_corr_matrix,
+            file_name="clustering_analysis",
+        )
+
     @property
     def nwb_dict_file_convert(self) -> dict:
         nwb_dict = {
@@ -259,12 +301,45 @@ class StatData(BaseData):
         return nwb_dict
 
     @property
+    def nwb_dict_pca(self) -> dict:
+        nwb_dict = {}
+
+        # Raw numerical arrays
+        if hasattr(self, "pca_scores") and self.pca_scores is not None:
+            nwb_dict["pca_scores"] = self.pca_scores
+        if (
+            hasattr(self, "pca_explained_variance")
+            and self.pca_explained_variance is not None
+        ):
+            nwb_dict["pca_explained_variance"] = self.pca_explained_variance
+        if hasattr(self, "pca_components") and self.pca_components is not None:
+            nwb_dict["pca_components"] = self.pca_components
+
+        return nwb_dict
+
+    @property
+    def nwb_dict_kmeans(self) -> dict:
+        nwb_dict = {}
+
+        if hasattr(self, "cluster_labels") and self.cluster_labels is not None:
+            nwb_dict["cluster_labels"] = self.cluster_labels
+        if (
+            hasattr(self, "cluster_corr_matrix")
+            and self.cluster_corr_matrix is not None
+        ):
+            nwb_dict["cluster_corr_matrix"] = self.cluster_corr_matrix
+
+        return nwb_dict
+
+    @property
     def nwb_dict_all(self) -> dict:
         return {
             **self.nwb_dict_file_convert,
             **self.nwb_dict_anova,
             **self.nwb_dict_vector_average,
             **self.nwb_dict_curvefit,
+            **self.nwb_dict_pca,
+            **self.nwb_dict_kmeans,
         }
 
     @classmethod

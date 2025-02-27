@@ -1,0 +1,12 @@
+# Data standardization parameters
+standard_mean: True
+standard_std: True
+
+# PCA parameters
+PCA:
+  n_components: 10  # For batch we set this to 10 since we want to visualize top 10 components
+  copy: True
+  whiten: False
+  svd_solver: 'auto'
+  tol: 0.0
+  iterated_power: 'auto'

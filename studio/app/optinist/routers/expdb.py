@@ -95,6 +95,13 @@ EXPERIMENT_GRAPHS = {
     "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
     "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+    "pca_pc1_spatial_map": {"title": "PCA Spatial Analysis", "dir": "plots"},
+    "pca_pc1_time_course": {"title": "PCA Time Course", "dir": "plots"},
+    "pca_explained_variance": {"title": "PCA Explained Variance", "dir": "plots"},
+    "kmeans_correlation_matrix": {
+        "title": "k-means Clustering Correlation Matrix",
+        "dir": "plots",
+    },
 }
 
 
