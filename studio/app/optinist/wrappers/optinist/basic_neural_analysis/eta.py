@@ -43,7 +43,11 @@ def calc_trigger(behavior_data, trigger_type, trigger_threshold):
         else:
             i += 1
     if trigger_lengths:
-        trigger_len = mode(trigger_lengths).mode[0]  # find most common length
+        mode_result = mode(trigger_lengths)  # find most common length
+        trigger_len = mode_result.mode  # If scalar, use this value
+        if hasattr(trigger_len, "__len__"):  # If array use first value
+            trigger_len = trigger_len[0]
+
         trigger_idx = [
             idx
             for idx, length in zip(trigger_idx, trigger_lengths)
@@ -113,7 +117,11 @@ def ETA(
 
     # calculate Triggered average
     event_trigger_data = calc_trigger_average(
-        X, trigger_idxs, trigger_len, params["pre_event"], params["post_event"]
+        X,
+        trigger_idxs,
+        trigger_len,
+        params["pre_event"],
+        params["post_event"],
     )
 
     # (cell_number, event_time_lambda)
