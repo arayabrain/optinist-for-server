@@ -29,7 +29,8 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
     selectAlgorithmParamsKeyList(nodeId),
     arrayEqualityFn,
   )
-  const parameterUrl = `https://github.com/arayabrain/barebone-studio/blob/develop-main/docs/specifications/algorithm_nodes.md#${algoName.toLowerCase()}`
+  const formattedAlgoName = algoName.toLowerCase().replace(/_/g, "-")
+  const parameterUrl = `https://optinist.readthedocs.io/en/latest/specifications/algorithm_nodes.html#${formattedAlgoName}`
   useEffect(() => {
     if (!algoParamIsLoaded) {
       dispatch(getAlgoParams({ nodeId, algoName }))
