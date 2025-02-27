@@ -43,6 +43,20 @@ Kenichi Ohki [University of Tokyo](https://physiol1.m.u-tokyo.ac.jp/ern24596/)
 
 <!-- ## Citing the Project
 To cite this repository in publications:
+
+## Citation
+<table width="100%">
+<tr>
+<td valign="top" width="50%">
+If you use this software, please cite our paper:
+<a href="https://www.biorxiv.org/content/10.1101/2024.09.17.613603v1">https://www.biorxiv.org/content/10.1101/2024.09.17.613603v1</a>
+</td>
+<td valign="top" width="50%" align="right">
+<img src="docs/_static/paper_QR.png" alt="Read our paper" width="150">
+</td>
+</tr>
+</table>
+
 ```
 @misc{Studio,
   author = {name},
