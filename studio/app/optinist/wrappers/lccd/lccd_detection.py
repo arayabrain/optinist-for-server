@@ -47,8 +47,8 @@ def lccd_detect(
         timeseries = np.zeros((0, num_frames))
         timeseries_dff = np.zeros((0, num_frames))
     else:
-        dff_f0_frames = params["dff"]["f0_frames"]
-        dff_f0_percentile = params["dff"]["f0_percentile"]
+        dff_f0_frames = params["f0_frames"]
+        dff_f0_percentile = params["f0_percentile"]
         iscell = np.ones(num_cell, dtype=int)
 
         reshapedD = D.reshape([D.shape[0] * D.shape[1], D.shape[2]])
