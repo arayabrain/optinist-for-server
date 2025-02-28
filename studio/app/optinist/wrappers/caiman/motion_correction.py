@@ -122,6 +122,7 @@ def __handle_mmap_cleanup(mc, fname_new, output_dir):
     # Explicitly gc before deleting memmap file
     # *Avoid lock errors when cleaning memmap files.
     import gc
+
     gc.collect()
 
     for mmap_file in mc.mmap_file:
