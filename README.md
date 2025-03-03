@@ -68,7 +68,7 @@ OptiNiSt also supports reproducibility of scientific research, standardization o
 Need anaconda or miniconda or miniforge environment.
 
 ```
-conda create -n optinist python=3.8
+conda create -n optinist python=3.9
 conda activate optinist
 ```
 
