@@ -82,19 +82,8 @@ export OPTINIST_DIR="your_saving_dir"
 
 ## 2. Run Backend
 
-#### optinist startup options
-
-- Options for `run_optinist`, `python main.py`
-  - `--host` ... Request listen host (default: 127.0.0.1)
-    - `127.0.0.1` ... Allow access from localhost only
-    - `0.0.0.0` ... Allow access from all networks
-  - `--port` ... Request listen port (default: 8000)
-
-### Allow access to optinist from another PC
-
-By setting the optinist startup options, you can access optinist via a browser from a network other than your own PC.
-
 ```bash
+# Specify "host=0.0.0.0" to allow remote connections
 run_optinist --host=0.0.0.0 --port=8000
 ```
 
@@ -110,6 +99,12 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
 
-- Launch browser, and go to `http://localhost:8000`
+- Launch browser, and go to `http://{wsl-host-ip-address}:8000`
+  - (Note) `{wsl-host-ip-address}` can be confirmed with the `ip a` command in the WSL host.
 
 Done!
+
+```{eval-rst}
+.. note::
+    * For optinist startup options, see :ref:`_optinist_startup_options`.
+```
