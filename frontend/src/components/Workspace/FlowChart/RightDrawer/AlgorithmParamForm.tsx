@@ -39,8 +39,9 @@ export const AlgorithmParamForm = memo(function AlgorithmParamForm() {
     lda: "lda-linear-discriminant-analysis",
     svm: "svm-support-vector-machine",
     granger: "granger-granger-causality-test",
-    "lccd-detect": "lccd-cell-detection",
+    "lccd-cell-detection": "lccd-detect",
     "microscope-to-img": "microscope-to-image",
+    "cnmf-multisession": "caiman-cnmf-multisession",
   }
 
   let formattedAlgoName = algoName.toLowerCase().replace(/_/g, "-")
