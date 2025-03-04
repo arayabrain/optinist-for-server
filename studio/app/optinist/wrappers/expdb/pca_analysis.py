@@ -277,7 +277,7 @@ def generate_pca_visualization(
         plt.ylabel("Component Value")
         plt.grid(True, alpha=0.3)
 
-        time_path = join_filepath([output_dir, f"pca_component_{i+1}_time.png"])
+        time_path = join_filepath([pca_time_dir, f"pca_component_{i+1}_time.png"])
         plt.savefig(time_path, bbox_inches="tight")
         plt.close()
         save_thumbnail(time_path)
@@ -324,7 +324,7 @@ def generate_pca_visualization(
                         plt.title(f"PC {i+1} Spatial Map")
 
                         spatial_path = join_filepath(
-                            [output_dir, f"pca_component_{i+1}_spatial.png"]
+                            [pca_spatial_dir, f"pca_component_{i+1}_spatial.png"]
                         )
                         plt.savefig(spatial_path, bbox_inches="tight")
                         plt.close()
