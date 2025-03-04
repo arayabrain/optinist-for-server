@@ -5,6 +5,7 @@ from studio.app.common.core.logger import AppLogger
 from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
+from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 logger = AppLogger.get_logger()
 
@@ -16,6 +17,10 @@ def lccd_detect(
 
     function_id = ExptOutputPathIds(output_dir).function_id
     logger.info("start lccd_detect: %s", function_id)
+
+    flattened_params = {}
+    recursive_flatten_params(params, flattened_params)
+    params = flattened_params
 
     logger.info("params: %s", params)
     lccd = LCCD(params)
@@ -42,8 +47,8 @@ def lccd_detect(
         timeseries = np.zeros((0, num_frames))
         timeseries_dff = np.zeros((0, num_frames))
     else:
-        dff_f0_frames = params["dff"]["f0_frames"]
-        dff_f0_percentile = params["dff"]["f0_percentile"]
+        dff_f0_frames = params["f0_frames"]
+        dff_f0_percentile = params["f0_percentile"]
         iscell = np.ones(num_cell, dtype=int)
 
         reshapedD = D.reshape([D.shape[0] * D.shape[1], D.shape[2]])
