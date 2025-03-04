@@ -127,6 +127,10 @@ class ExpDbPath:
         self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
         self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
+        self.pca_spatial_dir = join_filepath(
+            [self.output_dir, "pca_components_spatial"]
+        )
+        self.pca_time_dir = join_filepath([self.output_dir, "pca_components_time"])
         self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
 
 
@@ -347,13 +351,14 @@ class ExpDbBatch:
 
         # Save plots for each path
         for expdb_path in self.expdb_paths:
-            dir_path = expdb_path.plot_dir
-            create_directory(dir_path)
+            create_directory(expdb_path.plot_dir)
+            create_directory(expdb_path.pca_spatial_dir)
+            create_directory(expdb_path.pca_time_dir)
 
             # Save visualization objects with correct names
-            stat_data.pca_analysis.save_plot(dir_path)
-            stat_data.pca_analysis_variance.save_plot(dir_path)
-            stat_data.pca_contribution.save_plot(dir_path)
+            stat_data.pca_analysis.save_plot(expdb_path.plot_dir)
+            stat_data.pca_analysis_variance.save_plot(expdb_path.plot_dir)
+            stat_data.pca_contribution.save_plot(expdb_path.plot_dir)
 
             # Generate additional detailed visualization
             generate_pca_visualization(
@@ -361,7 +366,9 @@ class ExpDbBatch:
                 explained_variance=stat_data.pca_explained_variance,
                 components=stat_data.pca_components,
                 roi_masks=cnmf_info["cell_roi"].data,
-                output_dir=dir_path,
+                output_dir=expdb_path.plot_dir,
+                pca_spatial_dir=expdb_path.pca_spatial_dir,
+                pca_time_dir=expdb_path.pca_time_dir,
             )
 
     def generate_kmeans_plots(self, stat_data, cnmf_info):

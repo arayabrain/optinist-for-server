@@ -13,18 +13,70 @@ def pca_analysis(
 ) -> dict:
     """Perform PCA analysis on CNMF results"""
 
+    # Get the fluorescence data
     fluorescence = cnmf_info["fluorescence"].data
+
+    # If iscell data is available, use it to filter fluorescence
+    if "iscell" in cnmf_info and cnmf_info["iscell"] is not None:
+        iscell = cnmf_info["iscell"].data
+        if len(iscell) == fluorescence.shape[0]:
+            good_indices = np.where(iscell == 1)[0]
+            print(f"Using iscell {len(iscell)} total cells for PCA")
+
+            if len(good_indices) > 0:
+                # Filter fluorescence to only include good components
+                fluorescence = fluorescence[good_indices]
+                print(f"Filtered fluorescence shape: {fluorescence.shape}")
+
+    n_cells = fluorescence.shape[0]
+    print(f"PCA will use {n_cells} cells")
+
+    # Check if we have enough ROIs for PCA
+    if n_cells < 2:
+        # Handle the case of insufficient ROIs for PCA
+        # Create dummy placeholders to avoid errors in set_pca_props
+        dummy_scores = np.zeros((1, 1))
+        dummy_components = np.zeros((1, 1))
+        dummy_explained_variance = np.zeros(1)
+
+        stat.pca_scores = dummy_scores
+        stat.pca_components = dummy_components
+        stat.pca_explained_variance = dummy_explained_variance
+
+        # Store ROI masks for visualization
+        stat.roi_masks = cnmf_info["cell_roi"].data
+
+        # Still create visualization objects for proper UI display
+        stat.set_pca_props()
+
+        # Add message to nwbfile
+        nwbfile = kwargs.get("nwbfile", {})
+        pca_dict = {
+            "pca_scores": dummy_scores,
+            "pca_components": dummy_components,
+            "pca_explained_variance": dummy_explained_variance,
+        }
+        nwbfile = {
+            NWBDATASET.ORISTATS: {**nwbfile.get(NWBDATASET.ORISTATS, {}), **pca_dict}
+        }
+
+        return {
+            "stat": stat,
+            "pca_analysis": stat.pca_analysis,
+            "pca_analysis_variance": stat.pca_analysis_variance,
+            "pca_contribution": stat.pca_contribution,
+            "nwbfile": nwbfile,
+        }
 
     # Set default parameters if none provided
     if params is None:
-        params = {"n_components": min(10, stat.ncells), "standard_norm": True}
+        params = {"n_components": min(50, n_cells), "standard_norm": True}
     else:
         # Extract parameters from the nested structure if present
         pca_params = params.get("PCA", {})
         params = {
-            "n_components": pca_params.get("n_components", min(10, stat.ncells)),
-            "standard_norm": params.get("standard_mean", True)
-            or params.get("standard_std", True),
+            "n_components": min(50, n_cells, pca_params.get("n_components", 50)),
+            "standard_norm": params.get("standard_mean", True),
         }
 
     # Prepare data
@@ -32,7 +84,10 @@ def pca_analysis(
         # Center the data
         data = fluorescence - np.mean(fluorescence, axis=1, keepdims=True)
         # Scale to unit variance
-        data = data / np.std(data, axis=1, keepdims=True)
+        std_values = np.std(data, axis=1, keepdims=True)
+        # Avoid division by zero
+        std_values[std_values == 0] = 1.0
+        data = data / std_values
     else:
         data = fluorescence
 
@@ -74,7 +129,13 @@ def pca_analysis(
 
 
 def generate_pca_visualization(
-    scores, explained_variance, components, roi_masks, output_dir
+    scores,
+    explained_variance,
+    components,
+    roi_masks,
+    output_dir,
+    pca_spatial_dir,
+    pca_time_dir,
 ):
     """
     Generate PCA visualization with separate files for each component
@@ -87,17 +148,90 @@ def generate_pca_visualization(
         Explained variance percentages
     components : ndarray
         PCA components matrix (components x cells)
-    roi_masks : ndarray or None
-        ROI masks data in any format
+    roi_masks : ndarray
+        2D ROI mask where each non-NaN value identifies a cell
     output_dir : str
         Directory for saving output files
     """
-    # Number of components to visualize
+    # Check if inputs are valid
     if components is None or scores is None:
         print("Warning: Missing PCA components or scores")
         return
 
-    num_components = min(3, components.shape[0], scores.shape[1])
+    # Basic info about the data
+    print(f"PCA components shape: {components.shape}")
+    print(f"PCA scores shape: {scores.shape}")
+
+    if roi_masks is not None and hasattr(roi_masks, "shape"):
+        print(f"ROI masks shape: {roi_masks.shape}")
+        print(f"Number of non-NaN values in ROI mask: {np.sum(~np.isnan(roi_masks))}")
+        print(roi_masks)
+        # Print number of unique ROI IDs (excluding NaN)
+        non_nan_mask = ~np.isnan(roi_masks)
+        if np.any(non_nan_mask):
+            unique_ids = np.unique(roi_masks[non_nan_mask])
+            print(f"Number of unique ROI IDs: {len(unique_ids)}")
+            print(f"Unique ROI IDs: {unique_ids}")
+            for val in unique_ids:
+                count = np.sum(np.isclose(roi_masks, val))
+                print(f"  ROI ID {val}: {count} pixels")
+        else:
+            print("WARNING: All values in ROI mask are NaN")
+
+    # Handle the case of insufficient ROIs - create error images
+    if components.shape[0] < 1 or scores.shape[1] < 1:
+        # Create error image for variance plot
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        variance_path = join_filepath([output_dir, "pca_analysis_variance.png"])
+        plt.savefig(variance_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(variance_path)
+
+        # Create error image for scatter plot
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        scatter_path = join_filepath([output_dir, "pca_analysis.png"])
+        plt.savefig(scatter_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(scatter_path)
+
+        # Create error image for contribution plot
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        contrib_path = join_filepath([output_dir, "pca_contribution.png"])
+        plt.savefig(contrib_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(contrib_path)
+
+        return
+
+    # Number of components to visualize
+    num_components = min(50, components.shape[0], scores.shape[1])
 
     # 1. Plot explained variance
     plt.figure()
@@ -134,9 +268,8 @@ def generate_pca_visualization(
     plt.close()
     save_thumbnail(scatter_path)
 
-    # 3. For each component, create time course and spatial map (if possible)
+    # 3. For each component, create time course and spatial map
     for i in range(num_components):
-        # Time course
         plt.figure()
         plt.plot(scores[:, i], linewidth=2)
         plt.title(f"PC {i+1} Time Course")
@@ -150,55 +283,104 @@ def generate_pca_visualization(
         save_thumbnail(time_path)
 
         # Spatial map - attempt only if roi_masks has appropriate shape
-        component_weights = np.abs(components[i])
+        component_weights = components[i]  # Using actual weights, not absolute values
 
+        # Create spatial component maps
         if roi_masks is not None and hasattr(roi_masks, "shape"):
             try:
-                # Check for 3D mask (standard case with multiple ROIs)
-                if len(roi_masks.shape) == 3:
-                    component_map = np.zeros(roi_masks.shape[:2])
-                    for cell_idx in range(
-                        min(roi_masks.shape[2], len(component_weights))
-                    ):
-                        weight = component_weights[cell_idx]
-                        roi_mask = roi_masks[:, :, cell_idx]
-                        component_map[roi_mask > 0] = weight
+                # Extract valid cell IDs (non-NaN values) from roi_masks
+                non_nan_mask = (
+                    ~np.isnan(roi_masks)
+                    if np.any(np.isnan(roi_masks))
+                    else np.ones_like(roi_masks, dtype=bool)
+                )
 
-                # Simpler 2D mask case
-                elif len(roi_masks.shape) == 2:
-                    component_map = np.zeros(roi_masks.shape)
-                    # Use mean weight for the mask
-                    if len(component_weights) > 0:
-                        component_map[roi_masks > 0] = np.mean(component_weights)
+                if np.any(non_nan_mask):
+                    # Create component map
+                    component_map = np.full_like(roi_masks, np.nan)
 
-                # If valid component map was created, plot it
-                if "component_map" in locals():
-                    plt.figure()
-                    im = plt.imshow(component_map, cmap="viridis")
-                    plt.colorbar(im, label="Component Weight")
-                    plt.title(f"PC {i+1} Spatial Map")
+                    # Get unique cell IDs
+                    valid_ids = np.unique(roi_masks[non_nan_mask])
+                    valid_ids = np.sort(valid_ids)
 
-                    spatial_path = join_filepath(
-                        [output_dir, f"pca_component_{i+1}_spatial.png"]
-                    )
-                    plt.savefig(spatial_path, bbox_inches="tight")
-                    plt.close()
-                    save_thumbnail(spatial_path)
+                    # Map each cell's weight to its spatial location
+                    for idx, cell_id in enumerate(valid_ids):
+                        if idx < len(component_weights):
+                            # Find pixels for this cell and assign component weight
+                            cell_mask = np.isclose(roi_masks, cell_id)
+                            if np.any(cell_mask):
+                                component_map[cell_mask] = component_weights[idx]
+
+                    # Check if map has valid data
+                    if not np.all(np.isnan(component_map)):
+                        # Use symmetric divergent colormap with consistent scaling
+                        vmax = np.nanmax(np.abs(component_map))
+
+                        plt.figure()
+                        im = plt.imshow(
+                            component_map, cmap="RdBu_r", vmin=-vmax, vmax=vmax
+                        )
+                        plt.colorbar(im, label="Component Weight")
+                        plt.title(f"PC {i+1} Spatial Map")
+
+                        spatial_path = join_filepath(
+                            [output_dir, f"pca_component_{i+1}_spatial.png"]
+                        )
+                        plt.savefig(spatial_path, bbox_inches="tight")
+                        plt.close()
+                        save_thumbnail(spatial_path)
+                    else:
+                        raise ValueError("No valid values in component map")
+                else:
+                    raise ValueError("No non-NaN values found in ROI mask")
+
             except Exception as e:
-                print(f"Could not create spatial map for PC {i+1}: {str(e)}")
+                print(f"Error creating spatial map for PC {i+1}: {str(e)}")
 
-    # Save the contribution weights as a separate visualization
+                # Create fallback visualization
+                plt.figure()
+                plt.bar(range(len(component_weights)), component_weights)
+                plt.title(f"PC {i+1} Component Weights")
+                plt.xlabel("Cell Index")
+                plt.ylabel("Weight")
+                plt.grid(True, alpha=0.3)
+
+                spatial_path = join_filepath(
+                    [output_dir, f"pca_component_{i+1}_spatial.png"]
+                )
+                plt.savefig(spatial_path, bbox_inches="tight")
+                plt.close()
+                save_thumbnail(spatial_path)
+
+                print(f"Created fallback bar visualization for PC {i+1}")
+        else:
+            # Create alternative visualization using direct component values
+            plt.figure()
+            plt.bar(range(len(component_weights)), component_weights)
+            plt.title(f"PC {i+1} Component Weights")
+            plt.xlabel("Cell Index")
+            plt.ylabel("Weight")
+            plt.grid(True, alpha=0.3)
+
+            spatial_path = join_filepath(
+                [output_dir, f"pca_component_{i+1}_spatial.png"]
+            )
+            plt.savefig(spatial_path, bbox_inches="tight")
+            plt.close()
+            save_thumbnail(spatial_path)
+
+    # 5. Save the contribution weights as a separate visualization
     plt.figure()
     top_n = min(5, components.shape[0])
     for i in range(top_n):
         plt.bar(
             range(len(components[i])),
-            np.abs(components[i]),
+            components[i],  # Using actual weights, not absolute values
             alpha=0.7,
             label=f"PC {i+1}",
         )
     plt.xlabel("Cell Index")
-    plt.ylabel("Absolute Weight")
+    plt.ylabel("Component Weight")
     plt.title("PCA Component Contributions")
     plt.legend()
     plt.grid(True, alpha=0.3)

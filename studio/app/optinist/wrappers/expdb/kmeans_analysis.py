@@ -132,13 +132,64 @@ def generate_kmeans_visualization(
     # 3. Spatial cluster map - attempt only if roi_masks has appropriate shape
     if roi_masks is not None and hasattr(roi_masks, "shape"):
         try:
+            # Create cluster colormap
+            unique_clusters = np.unique(labels)
+            n_clusters = len(unique_clusters)
+            colors = plt.cm.jet(np.linspace(0, 1, n_clusters))
+            custom_cmap = ListedColormap(colors)
+
             # Check for 3D mask (standard case with multiple ROIs)
             if len(roi_masks.shape) == 3:
                 cluster_map = np.zeros(roi_masks.shape[:2])
+
+                # Create cluster map
                 for i, label in enumerate(labels):
                     if i < roi_masks.shape[2]:
                         roi_mask = roi_masks[:, :, i]
-                        cluster_map[roi_mask > 0] = label + 1
+                        cluster_map[roi_mask > 0] = (
+                            label + 1
+                        )  # +1 to avoid 0 (background)
+
+                # Create a mask of all cell locations
+                all_cells_mask = np.zeros(roi_masks.shape[:2], dtype=bool)
+                for i in range(roi_masks.shape[2]):
+                    all_cells_mask |= roi_masks[:, :, i] > 0
+
+                # Create masked cluster map for better visualization
+                masked_cluster_map = np.ma.masked_array(
+                    cluster_map,
+                    mask=~all_cells_mask,  # Mask background (non-cell areas)
+                )
+
+                # Plot cluster map
+                plt.figure()
+                im = plt.imshow(
+                    masked_cluster_map, cmap=custom_cmap, interpolation="nearest"
+                )
+
+                # Add colorbar with cluster labels
+                colorbar = plt.colorbar(im, ticks=np.arange(1, n_clusters + 1))
+                colorbar.set_label("Cluster")
+
+                # Add cluster legend with unique colors
+                handles = [
+                    plt.Rectangle((0, 0), 1, 1, color=colors[i])
+                    for i in range(n_clusters)
+                ]
+                plt.legend(
+                    handles,
+                    [f"Cluster {i+1}" for i in range(n_clusters)],
+                    loc="upper right",
+                    bbox_to_anchor=(1.3, 1),
+                )
+
+                plt.title("Cluster Spatial Map")
+
+                # Save maps
+                map_path = join_filepath([output_dir, "cluster_spatial_map.png"])
+                plt.savefig(map_path, bbox_inches="tight")
+                plt.close()
+                save_thumbnail(map_path)
 
             # Simpler 2D mask case
             elif len(roi_masks.shape) == 2:
@@ -149,8 +200,7 @@ def generate_kmeans_visualization(
                     most_common = np.argmax(counts) if len(counts) > 0 else 0
                     cluster_map[roi_masks > 0] = most_common + 1
 
-            # If valid cluster map was created, plot it
-            if "cluster_map" in locals():
+                # Plot and save as above
                 plt.figure()
                 im = plt.imshow(cluster_map, cmap=custom_cmap)
                 plt.colorbar(im, label="Cluster")
