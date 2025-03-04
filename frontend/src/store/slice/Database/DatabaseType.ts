@@ -24,6 +24,8 @@ export type DatabaseType = {
     thumb_url: string
     params: object
   }
+  pca_spatial_components: ImageUrls[]
+  pca_time_components: ImageUrls[]
   statistics?: {
     p_value_resp?: string
     p_value_sel?: string

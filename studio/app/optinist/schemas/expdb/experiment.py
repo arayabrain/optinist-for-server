@@ -56,6 +56,8 @@ class ExpDbExperiment(BaseModel):
     view_attributes: Optional[dict] = {}
     cell_image_urls: List[ImageInfo] = None
     graph_urls: List[ImageInfo] = None
+    pca_spatial_components: List[ImageInfo] = []
+    pca_time_components: List[ImageInfo] = []
     share_type: int = Field(description="1: default(per users), 2: for organization")
     publish_status: int = Field(description="0: private, 1: public")
     created_at: Optional[datetime]
