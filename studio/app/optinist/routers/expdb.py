@@ -75,6 +75,10 @@ def experiment_transformer(items: Sequence) -> Sequence:
 
         exp.cell_image_urls = get_pixelmap_urls(exp_dir)
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
+
+        exp.pca_spatial_components = get_pca_spatial_component_urls(exp_dir)
+        exp.pca_time_components = get_pca_time_component_urls(exp_dir)
+
         experiments.append(exp)
     return experiments
 
@@ -95,6 +99,12 @@ EXPERIMENT_GRAPHS = {
     "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
     "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+    "pca_analysis": {"title": "PCA Analysis", "dir": "plots"},
+    "pca_analysis_variance": {"title": "PCA Explained Variance", "dir": "plots"},
+    "pca_contribution": {"title": "PCA Component Contribution", "dir": "plots"},
+    "clustering_analysis": {"title": "k-means Clustering Analysis", "dir": "plots"},
+    "cluster_spatial_map": {"title": "Cluster Spatial Map", "dir": "plots"},
+    "cluster_time_courses": {"title": "Cluster Time Courses", "dir": "plots"},
 }
 
 
@@ -115,6 +125,40 @@ def get_pixelmap_urls(exp_dir, params=None):
     return [
         ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
         for k in pixelmaps
+    ]
+
+
+def get_pca_spatial_component_urls(exp_dir, params=None):
+    """Get URLs for PCA spatial component images"""
+    dirs = exp_dir.split("/")
+    pub_dir = (
+        f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pca_components_spatial/"
+    )
+    components = sorted(
+        list(set(glob(f"{pub_dir}/*.png")) - set(glob(f"{pub_dir}/*.thumb.png")))
+    )
+
+    return [
+        ImageInfo(
+            url=f"{exp_dir}/pca_components_spatial/{os.path.basename(k)}", params=params
+        )
+        for k in components
+    ]
+
+
+def get_pca_time_component_urls(exp_dir, params=None):
+    """Get URLs for PCA time component images"""
+    dirs = exp_dir.split("/")
+    pub_dir = f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/pca_components_time/"
+    components = sorted(
+        list(set(glob(f"{pub_dir}/*.png")) - set(glob(f"{pub_dir}/*.thumb.png")))
+    )
+
+    return [
+        ImageInfo(
+            url=f"{exp_dir}/pca_components_time/{os.path.basename(k)}", params=params
+        )
+        for k in components
     ]
 
 

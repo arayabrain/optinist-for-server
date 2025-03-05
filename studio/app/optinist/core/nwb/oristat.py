@@ -108,6 +108,17 @@ CURVEFIT_PROPS = {
     "orientation_tuning_width": ("float", (None, None)),
 }
 
+PCA_TYPES = {
+    "pca_scores": ("float", (None, None)),
+    "pca_explained_variance": ("float", (None,)),
+    "pca_components": ("float", (None, None)),
+}
+
+KMEANS_TYPES = {
+    "cluster_labels": ("int", (None,)),
+    "cluster_corr_matrix": ("float", (None, None)),
+}
+
 
 def get_dataset_list(types: dict) -> list:
     return [
@@ -132,6 +143,8 @@ oristat_ext = NWBGroupSpec(
         *get_dataset_list(VECTOR_AVERAGE_PROPS),
         *get_dataset_list(CURVEFIT_TYPES),
         *get_dataset_list(CURVEFIT_PROPS),
+        *get_dataset_list(PCA_TYPES),
+        *get_dataset_list(KMEANS_TYPES),
     ],
     name="oristats",
     neurodata_type_def="Oristats",

@@ -398,6 +398,60 @@ const columns = (
       )
     },
   },
+  {
+    field: "pca_spatial_components",
+    headerName: "PCA Spatial Components",
+    width: 160,
+    filterable: false,
+    sortable: false,
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Box
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+          }}
+          onClick={() => handleOpenDialog(params.row?.pca_spatial_components)}
+        >
+          {params.row?.pca_spatial_components?.length > 0 && (
+            <img
+              src={params.row?.pca_spatial_components[0].thumb_url}
+              alt={""}
+              width={"100%"}
+              height={"100%"}
+            />
+          )}
+        </Box>
+      )
+    },
+  },
+  {
+    field: "pca_time_components",
+    headerName: "PCA Time Components",
+    width: 160,
+    filterable: false,
+    sortable: false,
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Box
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+          }}
+          onClick={() => handleOpenDialog(params.row?.pca_time_components)}
+        >
+          {params.row?.pca_time_components?.length > 0 && (
+            <img
+              src={params.row?.pca_time_components[0].thumb_url}
+              alt={""}
+              width={"100%"}
+              height={"100%"}
+            />
+          )}
+        </Box>
+      )
+    },
+  },
 ]
 
 const PopupAttributes = ({
