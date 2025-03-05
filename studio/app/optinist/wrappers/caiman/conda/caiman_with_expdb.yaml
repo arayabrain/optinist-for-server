@@ -10,6 +10,7 @@ dependencies:
   - pandas>=1.5.0
   - scikit-image>=0.19.0
   - pynwb<3
+  - tensorflow>=2.10
   - caiman>=1.11.1,<=1.11.4
 
   # for expdb
