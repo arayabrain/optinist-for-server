@@ -100,7 +100,7 @@ EXPERIMENT_GRAPHS = {
 
 def get_experiment_urls(source, exp_dir, params=None):
     return [
-        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}.png", params=params)
+        ImageInfo(urls=[f"{exp_dir}/{v['dir']}/{k}.png"], params=params)
         for k, v in source.items()
     ]
 
@@ -113,7 +113,7 @@ def get_pixelmap_urls(exp_dir, params=None):
     )
 
     return [
-        ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
+        ImageInfo(urls=[f"{exp_dir}/pixelmaps/{os.path.basename(k)}"], params=params)
         for k in pixelmaps
     ]
 
@@ -142,7 +142,7 @@ EXP_ATTRIBUTE_SORT_MAPPING = {
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
-        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
+        ImageInfo(urls=[f"{exp_dir}/{v['dir']}/{k}_{index}.png"], params=params)
         for k, v in source.items()
     ]
 
@@ -842,9 +842,6 @@ def update_multiple_experiment_database_share_status(
                     for group_id in data.group_ids
                 )
 
-    db.commit()
-
-    return True
     db.commit()
 
     return True
