@@ -44,12 +44,12 @@ from studio.app.optinist.core.nwb.oristat import Oristats
 from studio.app.optinist.core.nwb.oristat import name as ORISTATS_NWB_ATTR_NAME
 from studio.app.optinist.core.nwb.subject.marmoset import (
     SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
+    SubjectMarmoset,
 )
-from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
 from studio.app.optinist.core.nwb.subject.mouse import (
     SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
+    SubjectMouse,
 )
-from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
 
 
 class NWBCreater:
