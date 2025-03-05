@@ -19,7 +19,7 @@ init_params:
   #   - Processing time is slightly longer than in batch mode
   #   - Processing results are slightly different from those in batch mode.
   # Useful in environments with limited memory resources, etc. (eg., for development)
-  # use_online: False  # If True, use CNMF Online instead of CNMF.
+  # use_online: False  # If True, use CNMF Online instead of CNMF.  # for production.
   use_online: True
 
   do_refit: False
