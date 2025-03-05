@@ -28,7 +28,7 @@ Following is the summary of directory structure.
 - api, components, store/slice directories are separated by its domain.
 
 ### Backend
-- language: Python (v3.8)
+- language: Python (v3.9)
 - framework: FastAPI
 - handle workflow by snakemake.
 

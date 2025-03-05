@@ -54,7 +54,7 @@ cd ./optinist
 ### Create Anaconda Environment
 
 ```
-conda create -n optinist_dev python=3.8 poetry
+conda create -n optinist_dev python=3.9 poetry
 conda activate optinist_dev
 ```
 

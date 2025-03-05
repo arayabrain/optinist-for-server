@@ -64,7 +64,7 @@ Please follow instructions below.
 ### Create Anaconda Environment
 
 ```
-conda create -n optinist python=3.8
+conda create -n optinist python=3.9
 conda activate optinist
 ```
 
