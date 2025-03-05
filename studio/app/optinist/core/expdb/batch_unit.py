@@ -379,7 +379,7 @@ class ExpDbBatch:
             stat=stat_data,
             cnmf_info=cnmf_info,
             output_dir=self.raw_path.output_dir,
-            params={"n_clusters": min(3, stat_data.ncells)},
+            params=get_default_params("kmeans_analysis"),
             nwbfile=self.nwbfile,
         )
 
@@ -398,7 +398,7 @@ class ExpDbBatch:
             generate_kmeans_visualization(
                 labels=stat_data.cluster_labels,
                 corr_matrix=stat_data.cluster_corr_matrix,
-                fluorescence=cnmf_info["fluorescence"].data,
+                fluorescence=stat_data.fluorescence,
                 roi_masks=cnmf_info["cell_roi"].data,
                 output_dir=dir_path,
             )

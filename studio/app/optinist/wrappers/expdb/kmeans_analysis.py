@@ -14,11 +14,67 @@ def kmeans_analysis(
 ) -> dict:
     """Perform KMeans clustering analysis on CNMF results"""
 
+    # Get the fluorescence data
     fluorescence = cnmf_info["fluorescence"].data
+
+    # If iscell data is available, use it to filter fluorescence
+    if "iscell" in cnmf_info and cnmf_info["iscell"] is not None:
+        iscell = cnmf_info["iscell"].data
+        if len(iscell) == fluorescence.shape[0]:
+            good_indices = np.where(iscell == 1)[0]
+            print(f"Using only iscell {len(good_indices)} ROI for KMeans")
+
+            if len(good_indices) > 0:
+                # Filter fluorescence to only include good components
+                fluorescence = fluorescence[good_indices]
+                print(f"Filtered fluorescence shape: {fluorescence.shape}")
+
+    n_cells = fluorescence.shape[0]
+    print(f"KMeans will use {n_cells} cells")
 
     # Set default parameters if none provided
     if params is None:
-        params = {"n_clusters": min(3, stat.ncells)}
+        params = {}
+    # Ensure n_clusters exists and doesn't exceed the number of cells
+    params["n_clusters"] = min(params.get("n_clusters", 3), n_cells)
+
+    # Handle case when there are insufficient cells for clustering
+    if n_cells < 2:
+        print("Not enough cells for KMeans clustering (minimum 2 required)")
+        # Set dummy values
+        cluster_labels = np.zeros(max(1, n_cells), dtype=int)
+        corr_matrix = np.ones((max(1, n_cells), max(1, n_cells)), dtype=float)
+
+        # Store results in StatData
+        stat.cluster_labels = cluster_labels
+        stat.cluster_corr_matrix = corr_matrix
+
+        # Store data needed for visualization
+        stat.fluorescence = fluorescence
+        if not hasattr(stat, "roi_masks") or stat.roi_masks is None:
+            stat.roi_masks = cnmf_info["cell_roi"].data
+
+        # Create visualization objects within the function
+        stat.set_kmeans_props()
+
+        # Add to nwbfile if needed
+        nwbfile = kwargs.get("nwbfile", {})
+        clustering_dict = {
+            "cluster_labels": cluster_labels,
+            "cluster_corr_matrix": corr_matrix,
+        }
+        nwbfile = {
+            NWBDATASET.ORISTATS: {
+                **nwbfile.get(NWBDATASET.ORISTATS, {}),
+                **clustering_dict,
+            }
+        }
+
+        return {
+            "stat": stat,
+            "clustering_analysis": stat.clustering_analysis,
+            "nwbfile": nwbfile,
+        }
 
     # Calculate correlation matrix
     corr_matrix = np.corrcoef(fluorescence)
@@ -79,6 +135,65 @@ def generate_kmeans_visualization(
     """
     if labels is None or len(labels) == 0:
         print("Warning: Missing cluster labels")
+        return
+
+    # Handle the case of insufficient ROIs
+    is_data_insufficient = (
+        labels is None
+        or len(labels) < 2
+        or corr_matrix is None
+        or corr_matrix.shape[0] < 2
+    )
+
+    if is_data_insufficient:
+        # Create error image for correlation matrix plot
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for k-means clustering.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        matrix_path = join_filepath([output_dir, "clustering_analysis.png"])
+        plt.savefig(matrix_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(matrix_path)
+
+        # Create error image for time courses plot
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for k-means clustering.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        time_path = join_filepath([output_dir, "cluster_time_courses.png"])
+        plt.savefig(time_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(time_path)
+
+        # Create error image for spatial map
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for k-means clustering.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        map_path = join_filepath([output_dir, "cluster_spatial_map.png"])
+        plt.savefig(map_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(map_path)
+
         return
 
     # Reorder correlation matrix based on clusters
