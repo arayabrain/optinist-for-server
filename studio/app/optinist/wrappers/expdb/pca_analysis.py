@@ -75,7 +75,7 @@ def pca_analysis(
         # Extract parameters from the nested structure if present
         pca_params = params.get("PCA", {})
         params = {
-            "n_components": min(50, n_cells, pca_params.get("n_components", 50)),
+            "n_components": min(pca_params.get("n_components", 50), n_cells),
             "standard_norm": params.get("standard_mean", True),
         }
 
@@ -152,26 +152,22 @@ def generate_pca_visualization(
         2D ROI mask where each non-NaN value identifies a cell
     output_dir : str
         Directory for saving output files
+    pca_spatial_dir : str
+        Directory for saving spatial component visualizations
+    pca_time_dir : str
+        Directory for saving time component visualizations
     """
     # Check if inputs are valid
     if components is None or scores is None:
         print("Warning: Missing PCA components or scores")
         return
 
-    # Basic info about the data
-    print(f"PCA components shape: {components.shape}")
-    print(f"PCA scores shape: {scores.shape}")
-
     if roi_masks is not None and hasattr(roi_masks, "shape"):
-        print(f"ROI masks shape: {roi_masks.shape}")
-        print(f"Number of non-NaN values in ROI mask: {np.sum(~np.isnan(roi_masks))}")
         print(roi_masks)
         # Print number of unique ROI IDs (excluding NaN)
         non_nan_mask = ~np.isnan(roi_masks)
         if np.any(non_nan_mask):
             unique_ids = np.unique(roi_masks[non_nan_mask])
-            print(f"Number of unique ROI IDs: {len(unique_ids)}")
-            print(f"Unique ROI IDs: {unique_ids}")
             for val in unique_ids:
                 count = np.sum(np.isclose(roi_masks, val))
                 print(f"  ROI ID {val}: {count} pixels")
@@ -179,7 +175,16 @@ def generate_pca_visualization(
             print("WARNING: All values in ROI mask are NaN")
 
     # Handle the case of insufficient ROIs - create error images
-    if components.shape[0] < 1 or scores.shape[1] < 1:
+    is_data_insufficient = (
+        components.shape[0] < 2
+        or scores.shape[1] < 2  # Less than 2 components
+        or np.allclose(components, 0, atol=1e-7)  # Less than 2 score dimensions
+        or np.allclose(scores, 0, atol=1e-7)  # All component values near zero
+        or np.all(np.isnan(components))  # All score values near zero
+        or np.all(np.isnan(scores))  # All NaN values  # All NaN values
+    )
+
+    if is_data_insufficient:
         # Create error image for variance plot
         plt.figure()
         plt.text(
@@ -228,14 +233,49 @@ def generate_pca_visualization(
         plt.close()
         save_thumbnail(contrib_path)
 
+        # Error image for spatial components
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        spatial_path = join_filepath([pca_spatial_dir, "pca_component_1_spatial.png"])
+        plt.savefig(spatial_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(spatial_path)
+
+        # Error image for time components
+        plt.figure()
+        plt.text(
+            0.5,
+            0.5,
+            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
+            ha="center",
+            va="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+        time_path = join_filepath([pca_time_dir, "pca_component_1_time.png"])
+        plt.savefig(time_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(time_path)
+
         return
 
     # Number of components to visualize
     num_components = min(50, components.shape[0], scores.shape[1])
 
+    # Set to 10 as too many make legend illegible
+    plots_to_show = 10
+
     # 1. Plot explained variance
     plt.figure()
-    num_display = min(10, len(explained_variance))
+    num_display = min(plots_to_show, len(explained_variance))
     plt.bar(range(1, num_display + 1), explained_variance[:num_display])
     plt.title("Explained Variance")
     plt.xlabel("Principal Component")
@@ -282,7 +322,7 @@ def generate_pca_visualization(
         plt.close()
         save_thumbnail(time_path)
 
-        # Spatial map - attempt only if roi_masks has appropriate shape
+        # 4. Spatial map - attempt only if roi_masks has appropriate shape
         component_weights = components[i]  # Using actual weights, not absolute values
 
         # Create spatial component maps
@@ -346,7 +386,7 @@ def generate_pca_visualization(
                 plt.grid(True, alpha=0.3)
 
                 spatial_path = join_filepath(
-                    [output_dir, f"pca_component_{i+1}_spatial.png"]
+                    [pca_spatial_dir, f"pca_component_{i+1}_spatial.png"]
                 )
                 plt.savefig(spatial_path, bbox_inches="tight")
                 plt.close()
@@ -363,7 +403,7 @@ def generate_pca_visualization(
             plt.grid(True, alpha=0.3)
 
             spatial_path = join_filepath(
-                [output_dir, f"pca_component_{i+1}_spatial.png"]
+                [pca_spatial_dir, f"pca_component_{i+1}_spatial.png"]
             )
             plt.savefig(spatial_path, bbox_inches="tight")
             plt.close()
@@ -371,7 +411,7 @@ def generate_pca_visualization(
 
     # 5. Save the contribution weights as a separate visualization
     plt.figure()
-    top_n = min(5, components.shape[0])
+    top_n = min(plots_to_show, components.shape[0])
     for i in range(top_n):
         plt.bar(
             range(len(components[i])),
