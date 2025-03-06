@@ -94,7 +94,15 @@ EXPERIMENT_GRAPHS = {
     "orientation_selectivity": {"title": "Orientation Selectivity", "dir": "plots"},
     "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
-    "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+    "spatial_frequency_selectivity": {
+        "title": "Spatial Freq Selectivity Index",
+        "dir": "plots",
+    },
+    "spatial_frequency_responsivity": {
+        "title": "Peak Spatial Freq Response",
+        "dir": "plots",
+    },
+    "spatial_frequency_tuning": {"title": "Spatial Freq Tuning Curve", "dir": "plots"},
 }
 
 

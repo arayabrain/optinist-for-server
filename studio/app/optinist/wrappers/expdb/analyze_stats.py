@@ -27,5 +27,7 @@ def analyze_stats(
         "preferred_orientation": stat.preferred_orientation,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
+        "stim_selectivity": stat.stim_selectivity,
+        "stim_responsivity": stat.stim_responsivity,
         "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }

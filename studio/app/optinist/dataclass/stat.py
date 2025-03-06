@@ -100,6 +100,13 @@ class StatData(BaseData):
         self.ori_k1 = np.full(self.ncells, np.NaN)
         self.ori_a1 = np.full(self.ncells, np.NaN)
 
+        # --- Non-circular feature metrics ---
+        self.best_sf = np.full(self.ncells, np.NaN)
+        self.min_sf = np.full(self.ncells, np.NaN)
+        self.r_best_sf = np.full(self.ncells, np.NaN)
+        self.r_min_sf = np.full(self.ncells, np.NaN)
+        self.si = np.full(self.ncells, np.NaN)
+
     # --- stat_file_convert ---
     def set_file_convert_props(self):
         self.dsi = (self.r_best_dir - np.maximum(self.r_null_dir, 0)) / (
@@ -119,6 +126,14 @@ class StatData(BaseData):
                 0, 360, self.dir_ratio_change[0].shape[0], endpoint=False
             ),
             file_name="tuning_curve_polar",
+        )
+        self.stim_selectivity = HistogramData(
+            data=self.si[~np.isnan(self.si)],
+            file_name="stim_selectivity",
+        )
+        self.stim_responsivity = HistogramData(
+            data=self.r_best_sf[~np.isnan(self.r_best_sf)] * 100,
+            file_name="stim_responsivity",
         )
 
     # --- anova ---
@@ -217,6 +232,28 @@ class StatData(BaseData):
             file_name="orientation_tuning_width",
         )
 
+    # --- non circular ---
+    def set_non_circular_props(self):
+        """Create visualization data structures for non-circular features"""
+        # Create selectivity histogram similar to direction_selectivity
+        self.stim_selectivity = HistogramData(
+            data=self.si[~np.isnan(self.si)],
+            file_name="stim_selectivity",
+        )
+
+        # Create best response histogram similar to best_responsivity
+        self.stim_responsivity = HistogramData(
+            data=self.r_best_sf[~np.isnan(self.r_best_sf)] * 100,
+            file_name="stim_responsivity",
+        )
+
+        # self.sf_tuning_curve = LineData(
+        #     data=self.dir_ratio_change,
+        #     # Assuming spatial frequencies are linearly spaced - adjust as needed
+        #     columns=np.linspace(min_sf, max_sf, self.dir_ratio_change[0].shape[0]),
+        #     file_name="spatial_frequency_tuning",
+        # )
+
     @property
     def nwb_dict_file_convert(self) -> dict:
         nwb_dict = {
@@ -259,12 +296,29 @@ class StatData(BaseData):
         return nwb_dict
 
     @property
+    def nwb_dict_non_circular(self) -> dict:
+        nwb_dict = {
+            "best_sf": self.best_sf,
+            "min_sf": self.min_sf,
+            "r_best_sf": self.r_best_sf,
+            "r_min_sf": self.r_min_sf,
+            "si": self.si,
+        }
+        if hasattr(self, "stim_selectivity"):
+            nwb_dict["stim_selectivity"] = self.stim_selectivity.data
+        if hasattr(self, "stim_responsivity"):
+            nwb_dict["stim_responsivity"] = self.stim_responsivity.data
+
+        return nwb_dict
+
+    @property
     def nwb_dict_all(self) -> dict:
         return {
             **self.nwb_dict_file_convert,
             **self.nwb_dict_anova,
             **self.nwb_dict_vector_average,
             **self.nwb_dict_curvefit,
+            **self.nwb_dict_non_circular,
         }
 
     @classmethod
