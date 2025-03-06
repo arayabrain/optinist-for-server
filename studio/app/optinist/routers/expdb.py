@@ -102,7 +102,14 @@ EXPERIMENT_GRAPHS = {
         "title": "Peak Spatial Freq Response",
         "dir": "plots",
     },
-    "spatial_frequency_tuning": {"title": "Spatial Freq Tuning Curve", "dir": "plots"},
+    "spatial_frequency_responsivity_ratio": {
+        "title": "Spatial Freq Responsivity Ratio",
+        "dir": "plots",
+    },
+    "spatial_frequency_tuning": {
+        "title": "Spatial Freq Tuning Curve",
+        "dir": "plots",
+    },
 }
 
 

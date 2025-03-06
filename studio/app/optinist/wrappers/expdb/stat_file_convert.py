@@ -237,6 +237,8 @@ def get_stat_data(data_tables) -> StatData:
             stat.r_best_sf[i],
             stat.r_min_sf[i],
             stat.si[i],
+            stat.sf_si[i],
+            stat.sf_bandwidth[i],
         ) = non_circular_index(stat.dir_ratio_change[i])
 
     return stat
@@ -284,6 +286,16 @@ def stat_file_convert(
     stat = get_stat_data(data_tables)
     stat.nstim_per_trial = _nstim_per_trial
     stat.set_file_convert_props()
+
+    stat = get_stat_data(data_tables)
+    stat.nstim_per_trial = _nstim_per_trial
+
+    sf_params = {
+        "sf_min_value": params.get("sf_min_value", 0),
+        "sf_max_value": params.get("sf_max_value", 1),
+        "sf_unit": params.get("sf_unit", "normalized"),
+    }
+    stat.set_file_convert_props(sf_params)
 
     return {
         "stat": stat,
