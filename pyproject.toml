@@ -121,6 +121,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
+force_grid_wrap = 0
 
 [tool.pytest.ini_options]
 pythonpath = "."
