@@ -29,6 +29,13 @@ class SmkUtils:
                 microscope_files = []
                 for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXT.value:
                     microscope_files.extend(glob(join_filepath([exp_dir, f"*{ext}"])))
+
+                assert (
+                    len(microscope_files) > 0
+                ), "No Microscope data file found. " + str(
+                    ACCEPT_FILE_EXT.MICROSCOPE_EXT.value
+                )
+
                 return microscope_files
             elif details["type"] == FILETYPE.EXPDB:
                 exp_id = details["input"]
