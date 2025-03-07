@@ -96,9 +96,11 @@ EXPERIMENT_GRAPHS = {
     "preferred_orientation": {"title": "Preferred Orientation", "dir": "plots"},
     "direction_selectivity": {"title": "Direction Selectivity", "dir": "plots"},
     "orientation_selectivity": {"title": "Orientation Selectivity", "dir": "plots"},
-    "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
+    "best_responsivity": {"title": "Peak Response", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
-    "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+    "sf_selectivity": {"title": "Spatial Selectivity", "dir": "plots"},
+    "sf_responsivity": {"title": "Spatial Peak Response", "dir": "plots"},
+    "sf_responsivity_ratio": {"title": "Spatial Response Ratio", "dir": "plots"},
     "pca_analysis": {"title": "PCA Analysis", "dir": "plots"},
     "pca_analysis_variance": {"title": "PCA Explained Variance", "dir": "plots"},
     "pca_contribution": {"title": "PCA Component Contribution", "dir": "plots"},
@@ -166,6 +168,7 @@ CELL_GRAPHS = {
     "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
     "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
     "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
+    "spatial_frequency_tuning": {"title": "Spatial Freq Tuning", "dir": "plots"},
 }
 
 EXP_ATTRIBUTE_SORT_MAPPING = {

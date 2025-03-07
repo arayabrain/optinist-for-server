@@ -38,9 +38,13 @@ FILE_CONVERT_TYPES = {
     "oi": ("float", (None,)),
     "osi": ("float", (None,)),
 }
+
 FILE_CONVERT_PROPS = {
     "tuning_curve": ("float", (None, None)),
     "tuning_curve_polar": ("float", (None, None)),
+    "stim_selectivity": ("float", (None, None)),
+    "stim_responsivity": ("float", (None, None)),
+    "sf_responsivity_ratio": ("float", (None, None)),
 }
 
 ANOVA_TYPES = {
@@ -60,6 +64,7 @@ ANOVA_TYPES = {
     "index_orientation_selective_cell": ("bool", (None,)),
     "ncells_orientation_selective_cell": "int",
 }
+
 ANOVA_PROPS = {
     "direction_responsivity_ratio": ("float", (None, None)),
     "orientation_responsivity_ratio": ("float", (None, None)),
@@ -76,6 +81,7 @@ VECTOR_AVERAGE_TYPES = {
     "ori_vector_mag": ("float", (None,)),
     "ori_vector_tune": ("float", (None,)),
 }
+
 VECTOR_AVERAGE_PROPS = {
     "preferred_direction": ("float", (None, None)),
     "preferred_orientation": ("float", (None, None)),
@@ -103,6 +109,7 @@ CURVEFIT_TYPES = {
     "ori_a1": ("float", (None,)),
     "ori_k1": ("float", (None,)),
 }
+
 CURVEFIT_PROPS = {
     "direction_tuning_width": ("float", (None, None)),
     "orientation_tuning_width": ("float", (None, None)),

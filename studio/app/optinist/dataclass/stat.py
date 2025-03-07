@@ -51,6 +51,18 @@ class StatData(BaseData):
         self.r_min_ori = np.full(self.ncells, np.NaN)
         self.oi = np.full(self.ncells, np.NaN)
         self.osi = None
+        self.best_sf = np.full(self.ncells, np.NaN)
+        self.min_sf = np.full(self.ncells, np.NaN)
+        self.r_best_sf = np.full(self.ncells, np.NaN)
+        self.r_min_sf = np.full(self.ncells, np.NaN)
+        self.si = np.full(self.ncells, np.NaN)
+        self.sf_si = np.full(self.ncells, np.NaN)
+        self.sf_si = np.full(self.ncells, np.NaN)
+        self.sf_bandwidth = np.full(self.ncells, np.NaN)
+        self.index_sf_responsive_cell = None
+        self.ncells_sf_responsive_cell = None
+        self.index_sf_selective_cell = None
+        self.ncells_sf_selective_cell = None
 
         # --- anova1_mult ---
         self.p_value_resp = np.full(self.ncells, np.NaN)
@@ -113,7 +125,9 @@ class StatData(BaseData):
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
     # --- stat_file_convert ---
-    def set_file_convert_props(self):
+    def set_file_convert_props(self, sf_params=None):
+        """Set up standard tuning curve and spatial frequency properties"""
+        # Original direction/orientation calculations
         self.dsi = (self.r_best_dir - np.maximum(self.r_null_dir, 0)) / (
             self.r_best_dir + np.maximum(self.r_null_dir, 0)
         )
@@ -131,6 +145,64 @@ class StatData(BaseData):
                 0, 360, self.dir_ratio_change[0].shape[0], endpoint=False
             ),
             file_name="tuning_curve_polar",
+        )
+
+        # Spatial frequency responsive and selective cells
+        self.index_sf_responsive_cell = np.where(
+            (self.r_best_sf >= self.r_best_threshold) & (~np.isnan(self.r_best_sf)),
+            True,
+            False,
+        )
+        self.ncells_sf_responsive_cell = np.sum(self.index_sf_responsive_cell)
+
+        self.index_sf_selective_cell = np.where(
+            self.index_sf_responsive_cell & (self.sf_si >= self.si_threshold),
+            True,
+            False,
+        )
+        self.ncells_sf_selective_cell = np.sum(self.index_sf_selective_cell)
+
+        # Create spatial frequency visualization data structures
+        self.stim_selectivity = HistogramData(
+            data=self.sf_si[self.index_sf_responsive_cell]
+            if np.any(self.index_sf_responsive_cell)
+            else np.array([0]),
+            file_name="sf_selectivity",
+        )
+
+        self.stim_responsivity = HistogramData(
+            data=self.r_best_sf[self.index_sf_responsive_cell] * 100
+            if np.any(self.index_sf_responsive_cell)
+            else np.array([0]),
+            file_name="sf_responsivity",
+        )
+
+        self.sf_responsivity_ratio = PieData(
+            data=np.array(
+                (
+                    self.ncells_sf_selective_cell,
+                    self.ncells_sf_responsive_cell - self.ncells_sf_selective_cell,
+                    self.ncells - self.ncells_sf_responsive_cell,
+                ),
+                dtype=np.float64,
+            ),
+            labels=["SF Selective", "SF Responsive", "Non-responsive"],
+            file_name="sf_responsivity_ratio",
+        )
+
+        # Use spatial frequency parameters for scaling if provided
+        sf_min = 0
+        sf_max = 1
+        if sf_params:
+            sf_min = sf_params.get("sf_min_value", 0)
+            sf_max = sf_params.get("sf_max_value", 1)
+
+        # Create spatial frequency tuning curve with appropriate scaling
+        num_sf_points = self.dir_ratio_change.shape[1]
+        self.sf_tuning_curve = LineData(
+            data=self.dir_ratio_change,
+            columns=np.linspace(sf_min, sf_max, num_sf_points),
+            file_name="spatial_frequency_tuning",
         )
 
     # --- anova ---
