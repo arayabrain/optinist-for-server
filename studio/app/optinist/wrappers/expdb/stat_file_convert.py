@@ -285,10 +285,6 @@ def stat_file_convert(
 
     stat = get_stat_data(data_tables)
     stat.nstim_per_trial = _nstim_per_trial
-    stat.set_file_convert_props()
-
-    stat = get_stat_data(data_tables)
-    stat.nstim_per_trial = _nstim_per_trial
 
     sf_params = {
         "sf_min_value": params.get("sf_min_value", 0),
@@ -301,6 +297,7 @@ def stat_file_convert(
         "stat": stat,
         "tuning_curve": stat.tuning_curve,
         "tuning_curve_polar": stat.tuning_curve_polar,
+        "spatial_frequency_tuning": stat.sf_tuning_curve,
         "nwbfile": {
             NWBDATASET.ORISTATS: stat.nwb_dict_file_convert,
         },

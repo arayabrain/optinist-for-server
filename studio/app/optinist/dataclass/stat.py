@@ -113,7 +113,9 @@ class StatData(BaseData):
         self.ori_a1 = np.full(self.ncells, np.NaN)
 
     # --- stat_file_convert ---
-    def set_file_convert_props(self):
+    def set_file_convert_props(self, sf_params=None):
+        """Set up standard tuning curve and spatial frequency properties"""
+        # Original direction/orientation calculations
         self.dsi = (self.r_best_dir - np.maximum(self.r_null_dir, 0)) / (
             self.r_best_dir + np.maximum(self.r_null_dir, 0)
         )
@@ -133,7 +135,7 @@ class StatData(BaseData):
             file_name="tuning_curve_polar",
         )
 
-        # Calculate non-circular feature indices
+        # Spatial frequency responsive and selective cells
         self.index_sf_responsive_cell = np.where(
             (self.r_best_sf >= self.r_best_threshold) & (~np.isnan(self.r_best_sf)),
             True,
@@ -142,21 +144,25 @@ class StatData(BaseData):
         self.ncells_sf_responsive_cell = np.sum(self.index_sf_responsive_cell)
 
         self.index_sf_selective_cell = np.where(
-            self.index_sf_responsive_cell & (self.si >= self.si_threshold),
+            self.index_sf_responsive_cell & (self.sf_si >= self.si_threshold),
             True,
             False,
         )
         self.ncells_sf_selective_cell = np.sum(self.index_sf_selective_cell)
 
-        # Create visualization data structures for non-circular features
+        # Create spatial frequency visualization data structures
         self.stim_selectivity = HistogramData(
-            data=self.si[~np.isnan(self.si)],
-            file_name="stim_selectivity",
+            data=self.sf_si[self.index_sf_responsive_cell]
+            if np.any(self.index_sf_responsive_cell)
+            else np.array([0]),
+            file_name="sf_selectivity",
         )
 
         self.stim_responsivity = HistogramData(
-            data=self.r_best_sf[~np.isnan(self.r_best_sf)] * 100,
-            file_name="stim_responsivity",
+            data=self.r_best_sf[self.index_sf_responsive_cell] * 100
+            if np.any(self.index_sf_responsive_cell)
+            else np.array([0]),
+            file_name="sf_responsivity",
         )
 
         self.sf_responsivity_ratio = PieData(
@@ -165,26 +171,25 @@ class StatData(BaseData):
                     self.ncells_sf_selective_cell,
                     self.ncells_sf_responsive_cell - self.ncells_sf_selective_cell,
                     self.ncells - self.ncells_sf_responsive_cell,
-                )
+                ),
+                dtype=np.float64,
             ),
             labels=["SF Selective", "SF Responsive", "Non-responsive"],
-            file_name="spatial_frequency_responsivity_ratio",
+            file_name="sf_responsivity_ratio",
         )
 
+        # Use spatial frequency parameters for scaling if provided
+        sf_min = 0
+        sf_max = 1
+        if sf_params:
+            sf_min = sf_params.get("sf_min_value", 0)
+            sf_max = sf_params.get("sf_max_value", 1)
+
+        # Create spatial frequency tuning curve with appropriate scaling
         num_sf_points = self.dir_ratio_change.shape[1]
         self.sf_tuning_curve = LineData(
             data=self.dir_ratio_change,
-            columns=np.linspace(0, 1, num_sf_points),
-            file_name="spatial_frequency_tuning",
-        )
-
-        # sf_min = params.get("sf_min_value", 0)
-        # sf_max = params.get("sf_max_value", 1)
-
-        num_sf_points = self.dir_ratio_change.shape[1]
-        self.sf_tuning_curve = LineData(
-            data=self.dir_ratio_change,
-            # columns=np.linspace(sf_min, sf_max, num_sf_points),
+            columns=np.linspace(sf_min, sf_max, num_sf_points),
             file_name="spatial_frequency_tuning",
         )
 
@@ -326,34 +331,12 @@ class StatData(BaseData):
         return nwb_dict
 
     @property
-    def nwb_dict_non_circular(self) -> dict:
-        nwb_dict = {
-            "best_sf": self.best_sf,
-            "min_sf": self.min_sf,
-            "r_best_sf": self.r_best_sf,
-            "r_min_sf": self.r_min_sf,
-            "si": self.si,
-            "sf_si": self.sf_si,
-            "sf_bandwidth": self.sf_bandwidth,
-            "index_sf_responsive_cell": self.index_sf_responsive_cell,
-            "ncells_sf_responsive_cell": self.ncells_sf_responsive_cell,
-            "index_sf_selective_cell": self.index_sf_selective_cell,
-            "ncells_sf_selective_cell": self.ncells_sf_selective_cell,
-            "stim_selectivity": self.stim_selectivity.data,
-            "stim_responsivity": self.stim_responsivity.data,
-            "sf_responsivity_ratio": self.sf_responsivity_ratio.data,
-            "sf_tuning_curve": self.sf_tuning_curve.data,
-        }
-        return nwb_dict
-
-    @property
     def nwb_dict_all(self) -> dict:
         return {
             **self.nwb_dict_file_convert,
             **self.nwb_dict_anova,
             **self.nwb_dict_vector_average,
             **self.nwb_dict_curvefit,
-            **self.nwb_dict_non_circular,
         }
 
     @classmethod

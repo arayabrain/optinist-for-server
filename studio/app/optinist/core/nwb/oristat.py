@@ -42,8 +42,9 @@ FILE_CONVERT_TYPES = {
 FILE_CONVERT_PROPS = {
     "tuning_curve": ("float", (None, None)),
     "tuning_curve_polar": ("float", (None, None)),
-    "stim_selectivity": ("float", (None,)),
-    "stim_responsivity": ("float", (None,)),
+    "stim_selectivity": ("float", (None, None)),
+    "stim_responsivity": ("float", (None, None)),
+    "sf_responsivity_ratio": ("float", (None, None)),
 }
 
 ANOVA_TYPES = {

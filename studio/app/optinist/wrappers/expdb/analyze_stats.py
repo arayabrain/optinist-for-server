@@ -14,16 +14,6 @@ def analyze_stats(
     stat = vector_average(stat, output_dir, params).get("stat")
     stat = curvefit_tuning(stat, output_dir, params).get("stat")
 
-    sf_params = {
-        "sf_min_value": params.get("sf_min_value", 0),
-        "sf_max_value": params.get("sf_max_value", 1),
-        "sf_unit": params.get("sf_unit", "normalized"),
-        "p_value_threshold": params.get("p_value_threshold", 0.05),
-        "r_best_threshold": params.get("r_best_threshold", 0.05),
-        "si_threshold": params.get("si_threshold", 0.3),
-    }
-    stat.set_non_circular_props(sf_params)
-
     return {
         "stat": stat,
         "tuning_curve": stat.tuning_curve,
@@ -37,9 +27,9 @@ def analyze_stats(
         "preferred_orientation": stat.preferred_orientation,
         "direction_tuning_width": stat.direction_tuning_width,
         "orientation_tuning_width": stat.orientation_tuning_width,
-        "stim_selectivity": stat.stim_selectivity,
-        "stim_responsivity": stat.stim_responsivity,
-        "spatial_frequency_responsivity_ratio": stat.sf_responsivity_ratio,
+        "sf_selectivity": stat.stim_selectivity,
+        "sf_responsivity": stat.stim_responsivity,
+        "sf_responsivity_ratio": stat.sf_responsivity_ratio,
         "spatial_frequency_tuning": stat.sf_tuning_curve,
         "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }
