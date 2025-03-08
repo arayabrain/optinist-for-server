@@ -388,7 +388,7 @@ const columns = (
         >
           {params.row?.cell_image_urls?.length > 0 && (
             <img
-              src={params.row?.cell_image_urls[0].thumb_url}
+              src={params.row?.cell_image_urls[0].thumb_urls[0]}
               alt={""}
               width={"100%"}
               height={"100%"}
@@ -725,8 +725,8 @@ const DatabaseExperiments = ({
   ) => {
     let newData: string | string[] = []
     if (Array.isArray(data)) {
-      newData = data.map((d) => d.url)
-    } else newData = data.url
+      newData = data.map((d) => d.urls).flat()
+    } else newData = data.urls
     setDataDialog({
       type: "image",
       data: newData,
@@ -989,7 +989,7 @@ const DatabaseExperiments = ({
               }
             >
               <img
-                src={graph_url.thumb_url}
+                src={graph_url.thumb_urls[0]}
                 alt={""}
                 width={"100%"}
                 height={"100%"}
