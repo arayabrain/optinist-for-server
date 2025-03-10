@@ -75,6 +75,7 @@ def experiment_transformer(items: Sequence) -> Sequence:
 
         exp.cell_image_urls = get_pixelmap_urls(exp_dir)
         exp.graph_urls = get_experiment_urls(EXPERIMENT_GRAPHS, exp_dir)
+
         experiments.append(exp)
     return experiments
 
@@ -92,17 +93,70 @@ EXPERIMENT_GRAPHS = {
     "preferred_orientation": {"title": "Preferred Orientation", "dir": "plots"},
     "direction_selectivity": {"title": "Direction Selectivity", "dir": "plots"},
     "orientation_selectivity": {"title": "Orientation Selectivity", "dir": "plots"},
-    "best_responsivity": {"title": "Best Responsivity", "dir": "plots"},
+    "best_responsivity": {"title": "Peak Response", "dir": "plots"},
     "direction_tuning_width": {"title": "Direction Tuning Width", "dir": "plots"},
-    "orientation_tuning_width": {"title": "Orientation Tuning Width", "dir": "plots"},
+    "sf_selectivity": {"title": "Spatial Selectivity", "dir": "plots"},
+    "sf_responsivity": {"title": "Spatial Peak Response", "dir": "plots"},
+    "sf_responsivity_ratio": {"title": "Spatial Response Ratio", "dir": "plots"},
+    "pca_analysis": {"title": "PCA Analysis", "dir": "plots"},
+    "pca_analysis_variance": {"title": "PCA Explained Variance", "dir": "plots"},
+    "pca_contribution": {"title": "PCA Component Contribution", "dir": "plots"},
+    "pca_spatial_components": {"title": "PCA Spatial Components", "dir": "plots"},
+    "pca_time_components": {"title": "PCA Time Components", "dir": "plots"},
+    "clustering_analysis": {"title": "k-means Clustering Analysis", "dir": "plots"},
+    "cluster_spatial_map": {"title": "Cluster Spatial Map", "dir": "plots"},
+    "cluster_time_courses": {"title": "Cluster Time Courses", "dir": "plots"},
 }
 
 
 def get_experiment_urls(source, exp_dir, params=None):
-    return [
-        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}.png", params=params)
-        for k, v in source.items()
-    ]
+    result = []
+    for k, v in source.items():
+        # Special handling for PCA components
+        if k in ["pca_spatial_components", "pca_time_components"]:
+            # Determine the component directory and pattern
+            if k == "pca_spatial_components":
+                component_dir = "pca_components_spatial"
+                pattern = "pca_component_*_spatial.png"
+            elif k == "pca_time_components":
+                component_dir = "pca_components_time"
+                pattern = "pca_component_*_time.png"
+
+            # Construct the directory path
+            dirs = exp_dir.split("/")
+            pub_dir = (
+                f"{DIRPATH.PUBLIC_EXPDB_DIR}/{dirs[-2]}/{dirs[-1]}/{component_dir}/"
+            )
+
+            # Find all matching files using the specific pattern
+            component_files = sorted(
+                list(
+                    set(glob(f"{pub_dir}/{pattern}"))
+                    - set(glob(f"{pub_dir}/*.thumb.png"))
+                )
+            )
+
+            # Create a single ImageInfo with all found files or a placeholder
+            if component_files:
+                urls = [
+                    f"{exp_dir}/{component_dir}/{os.path.basename(file)}"
+                    for file in component_files
+                ]
+                thumb_urls = [url.replace(".png", ".thumb.png") for url in urls]
+
+                result.append(
+                    ImageInfo(urls=urls, thumb_urls=thumb_urls, params=params)
+                )
+            else:
+                print(f"No PCA files found for {k}, adding empty placeholder")
+                result.append(ImageInfo(urls=[], thumb_urls=[], params=params))
+        else:
+            # Standard handling for regular plots
+            url = f"{exp_dir}/{v['dir']}/{k}.png"
+            thumb_url = url.replace(".png", ".thumb.png")
+            result.append(ImageInfo(urls=[url], thumb_urls=[thumb_url], params=params))
+
+    return result
 
 
 def get_pixelmap_urls(exp_dir, params=None):
@@ -113,7 +167,7 @@ def get_pixelmap_urls(exp_dir, params=None):
     )
 
     return [
-        ImageInfo(url=f"{exp_dir}/pixelmaps/{os.path.basename(k)}", params=params)
+        ImageInfo(urls=[f"{exp_dir}/pixelmaps/{os.path.basename(k)}"], params=params)
         for k in pixelmaps
     ]
 
@@ -122,6 +176,7 @@ CELL_GRAPHS = {
     "fov_cell_merge": {"title": "Cell Mask", "dir": "cellmasks"},
     "tuning_curve": {"title": "Tuning Curve", "dir": "plots"},
     "tuning_curve_polar": {"title": "Tuning Curve Polar", "dir": "plots"},
+    "spatial_frequency_tuning": {"title": "Spatial Freq Tuning", "dir": "plots"},
 }
 
 EXP_ATTRIBUTE_SORT_MAPPING = {
@@ -142,7 +197,7 @@ EXP_ATTRIBUTE_SORT_MAPPING = {
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
     return [
-        ImageInfo(url=f"{exp_dir}/{v['dir']}/{k}_{index}.png", params=params)
+        ImageInfo(urls=[f"{exp_dir}/{v['dir']}/{k}_{index}.png"], params=params)
         for k, v in source.items()
     ]
 
@@ -842,9 +897,6 @@ def update_multiple_experiment_database_share_status(
                     for group_id in data.group_ids
                 )
 
-    db.commit()
-
-    return True
     db.commit()
 
     return True
