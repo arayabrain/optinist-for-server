@@ -415,6 +415,48 @@ const statistics = () => [
       )
     },
   },
+  {
+    field: "sf_bandwidth",
+    headerName: "SF Bandwidth",
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.sf_bandwidth}>
+          <SpanCustom>{params.row.statistics?.sf_bandwidth ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
+  },
+  {
+    field: "best_sf",
+    headerName: "Best SF",
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.best_sf}>
+          <SpanCustom>{params.row.statistics?.best_sf ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
+  },
+  {
+    field: "sf_si",
+    headerName: "SF Selectivity",
+    filterable: false,
+    sortable: false,
+    width: 120,
+    renderCell: (params: { row: DatabaseType }) => {
+      return (
+        <Tooltip title={params.row.statistics?.sf_si}>
+          <SpanCustom>{params.row.statistics?.sf_si ?? "NA"}</SpanCustom>
+        </Tooltip>
+      )
+    },
+  },
 ]
 
 const DatabaseCells = ({ user }: CellProps) => {
