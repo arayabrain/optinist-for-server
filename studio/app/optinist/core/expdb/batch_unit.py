@@ -127,10 +127,6 @@ class ExpDbPath:
         self.plot_dir = join_filepath([self.output_dir, "plots"])
         self.cellmask_dir = join_filepath([self.output_dir, "cellmasks"])
         self.pixelmap_dir = join_filepath([self.output_dir, "pixelmaps"])
-        self.pca_spatial_dir = join_filepath(
-            [self.output_dir, "pca_components_spatial"]
-        )
-        self.pca_time_dir = join_filepath([self.output_dir, "pca_components_time"])
         self.nwb_file = join_filepath([self.output_dir, f"{exp_id}.nwb"])
 
 

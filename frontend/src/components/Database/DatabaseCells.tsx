@@ -654,11 +654,12 @@ const DatabaseCells = ({ user }: CellProps) => {
     cellId?: number,
     graphTitle?: string,
   ) => {
-    let newData: string | string[] = []
-
+    let newData: string[] = []
     if (Array.isArray(data)) {
-      newData = data.map((d) => d.url)
-    } else newData = data.url
+      newData = data.flatMap((d) => d.urls || [])
+    } else if (data && data.urls) {
+      newData = Array.isArray(data.urls) ? data.urls : [data.urls]
+    }
     setDataDialog({
       type: "image",
       data: newData,
@@ -838,7 +839,7 @@ const DatabaseCells = ({ user }: CellProps) => {
             }
           >
             <img
-              src={graph_url.thumb_url}
+              src={graph_url?.thumb_urls?.[0] || ""}
               alt={""}
               width={"100%"}
               height={"100%"}
