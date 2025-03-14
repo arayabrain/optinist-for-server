@@ -100,3 +100,13 @@ cluster_time_courses:
   title: "Cluster Time Courses"
   dir: "plots"
   type: "single"
+
+my_primary_plot:
+  title: "My Primary Visualization"  # Display name in the UI
+  dir: "plots"                       # Directory where plot is saved
+  type: "single"                     # "single" for one image, "multi" for patterns
+
+my_summary_plot:
+  title: "My Primary Visualization"
+  dir: "plots"
+  type: "single"

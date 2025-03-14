@@ -1,0 +1,10 @@
+# studio/app/optinist/wrappers/expdb/params/my_new_analysis.yaml
+
+# Analysis parameters
+threshold: 0.5
+min_value: 0
+max_value: 1
+units: "normalized"
+
+# Additional options
+use_normalization: true

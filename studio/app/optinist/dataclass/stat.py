@@ -124,6 +124,13 @@ class StatData(BaseData):
         self.cluster_labels = np.full(self.ncells, np.NaN)
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
+        # --- my_new_analysis ---
+        self.my_new_metric = None
+        self.my_new_value = np.full(self.ncells, np.NaN)
+        self.my_summary_value = np.full(self.ncells, np.NaN)
+        self.index_responsive_cells = None
+        self.ncells_responsive = None
+
     # --- stat_file_convert ---
     def set_file_convert_props(self, sf_params=None):
         """Set up standard tuning curve and spatial frequency properties"""
@@ -331,6 +338,32 @@ class StatData(BaseData):
             file_name="clustering_analysis",
         )
 
+    def set_my_new_props(self):
+        """Create visualization objects for my new analysis."""
+        # Create primary visualization (e.g., histogram of values)
+        self.my_primary_plot = HistogramData(
+            data=self.my_summary_value[~np.isnan(self.my_summary_value)],
+            bins=20,  # Adjust as needed
+            title="My Primary Analysis",
+            xlabel="Value",
+            ylabel="Count",
+            file_name="my_primary_plot",  # Must match property name
+        )
+
+        # Create summary visualization (e.g., pie chart of responsive cells)
+        self.my_summary_plot = PieData(
+            data=np.array(
+                (
+                    self.ncells_responsive,
+                    self.ncells - self.ncells_responsive,
+                ),
+                dtype=np.float64,
+            ),
+            labels=["Responsive", "Non-responsive"],
+            title="Responsive Cells Summary",
+            file_name="my_summary_plot",  # Must match property name
+        )
+
     @property
     def nwb_dict_file_convert(self) -> dict:
         nwb_dict = {
@@ -405,6 +438,25 @@ class StatData(BaseData):
         return nwb_dict
 
     @property
+    def nwb_dict_my_new_analysis(self) -> dict:
+        """Return NWB dictionary for my new analysis"""
+        nwb_dict = {}
+
+        if hasattr(self, "my_new_metric") and self.my_new_metric is not None:
+            nwb_dict["my_new_metric"] = self.my_new_metric
+        if hasattr(self, "my_summary_value") and self.my_summary_value is not None:
+            nwb_dict["my_summary_value"] = self.my_summary_value
+        if (
+            hasattr(self, "index_responsive_cells")
+            and self.index_responsive_cells is not None
+        ):
+            nwb_dict["index_responsive_cells"] = self.index_responsive_cells
+        if hasattr(self, "ncells_responsive") and self.ncells_responsive is not None:
+            nwb_dict["ncells_responsive"] = self.ncells_responsive
+
+        return nwb_dict
+
+    @property
     def nwb_dict_all(self) -> dict:
         return {
             **self.nwb_dict_file_convert,
@@ -413,6 +465,7 @@ class StatData(BaseData):
             **self.nwb_dict_curvefit,
             **self.nwb_dict_pca,
             **self.nwb_dict_kmeans,
+            **self.nwb_dict_my_new_analysis,
         }
 
     @classmethod

@@ -310,6 +310,9 @@ class ExpDbBatch:
             stat_data.stim_responsivity.save_plot(dir_path)
             stat_data.sf_responsivity_ratio.save_plot(dir_path)
 
+            stat_data.my_primary_plot.save_plot(dir_path)
+            stat_data.my_summary_plot.save_plot(dir_path)
+
     @stopwatch(callback=__stopwatch_callback)
     def generate_pixelmaps(self):
         self.logger_.info("process 'generate_pixelmaps' start.")
