@@ -107,6 +107,6 @@ my_primary_plot:
   type: "single"                     # "single" for one image, "multi" for patterns
 
 my_summary_plot:
-  title: "My Primary Visualization"
+  title: "My Summary Visualization"
   dir: "plots"
   type: "single"
