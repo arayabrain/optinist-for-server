@@ -24,6 +24,7 @@ from studio.app.common.routers import (
     experiment,
     files,
     group,
+    logs,
     outputs,
     params,
     run,
@@ -34,6 +35,7 @@ from studio.app.common.routers import (
     workspace,
 )
 from studio.app.dir_path import DIRPATH
+from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.routers import expdb, hdf5, mat, nwb, roi
 
 
@@ -59,6 +61,7 @@ app.include_router(algolist.router, dependencies=[Depends(get_current_user)])
 app.include_router(auth.router)
 app.include_router(experiment.router, dependencies=[Depends(get_current_user)])
 app.include_router(files.router, dependencies=[Depends(get_current_user)])
+app.include_router(logs.router, dependencies=[Depends(get_current_user)])
 app.include_router(outputs.router, dependencies=[Depends(get_current_user)])
 app.include_router(params.router, dependencies=[Depends(get_current_user)])
 app.include_router(run.router, dependencies=[Depends(get_current_user)])
@@ -104,10 +107,10 @@ app.mount(
     name="static",
 )
 
-if DIRPATH.SELFHOST_GRAPH:
+if EXPDB_DIRPATH.SELFHOST_GRAPH:
     app.mount(
         "/datasets",
-        StaticFiles(directory=DIRPATH.PUBLIC_EXPDB_DIR),
+        StaticFiles(directory=EXPDB_DIRPATH.PUBLIC_EXPDB_DIR),
         name="datasets",
     )
 

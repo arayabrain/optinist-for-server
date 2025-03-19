@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux"
 
 import { useSnackbar } from "notistack"
 
-import { Addchart, MenuBook } from "@mui/icons-material"
+import { Addchart, MenuBook, OpenInNew } from "@mui/icons-material"
 import {
   ListItemIcon,
   ListItemText,
@@ -30,21 +30,20 @@ const Tooltips: FC = () => {
   const handleClose = () => {
     setAnchorEl(null)
   }
-
-  /* // comment out for optinist-for-server
   const handleGoToDocClick = () => {
     window.open("https://optinist.readthedocs.io/en/latest/", "_blank")
   }
-  */
 
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const dispatch: AppDispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
+  const category = "tutorial"
+
   const handleImportSampleDataClick = () => {
     if (typeof workspaceId === "number") {
-      dispatch(importSampleData({ workspaceId }))
+      dispatch(importSampleData({ workspaceId, category }))
         .unwrap()
         .then(() => {
           enqueueSnackbar("Sample data import success", { variant: "success" })
@@ -81,14 +80,12 @@ const Tooltips: FC = () => {
           role: "listbox",
         }}
       >
-        {/* // comment out for optinist-for-server
         <MenuItem onClick={handleGoToDocClick}>
           <ListItemIcon>
             <OpenInNew />
           </ListItemIcon>
           <ListItemText>Go to documentation page</ListItemText>
         </MenuItem>
-        */}
         <MenuItem
           onClick={() => {
             setDialogOpen(true)

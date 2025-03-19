@@ -1,5 +1,6 @@
 from typing import Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -10,6 +11,7 @@ from studio.app.common.core.utils.filepath_creater import (
 from studio.app.common.core.utils.json_writer import JsonWriter
 from studio.app.common.core.workflow.workflow import OutputPath, OutputType
 from studio.app.common.dataclass.base import BaseData
+from studio.app.common.dataclass.utils import save_thumbnail
 from studio.app.common.schemas.outputs import PlotMetaData
 
 
@@ -36,19 +38,25 @@ class TimeSeriesData(BaseData):
         else:
             self.data = data
 
-        if len(self.data.shape) == 1:
+        # Handle empty data case
+        if self.data.size == 0:
+            # For K=0 case, create empty 2D array with correct time dimension
+            self.data = np.zeros((0, index.size if index is not None else 0))
+        elif len(self.data.shape) == 1:
             self.data = self.data[np.newaxis, :]
 
         self.std = std
         self.sem = sem
 
-        # indexを指定
+        # Handle index for empty data case
         if index is not None:
             self.index = index
-        else:
+        elif self.data.size > 0:
             self.index = np.arange(len(self.data[0]))
+        else:
+            self.index = np.array([])  # Empty index for empty data
 
-        # cell番号を表示
+        # Handle cell numbers for empty data case
         if cell_numbers is not None:
             self.cell_numbers = cell_numbers
         else:
@@ -74,8 +82,21 @@ class TimeSeriesData(BaseData):
 
             JsonWriter.write(join_filepath([self.json_path, f"{str(cell_i)}.json"]), df)
 
+    def save_plot(self, output_dir):
+        for i, cell_num in enumerate(self.cell_numbers):
+            plt.figure()
+            plt.plot(self.index, self.data[i])
+            plot_file = join_filepath([output_dir, f"{self.file_name}_{cell_num}.png"])
+            plt.savefig(plot_file, bbox_inches="tight")
+            plt.close()
+
+            save_thumbnail(plot_file)
+
     @property
     def output_path(self) -> OutputPath:
         return OutputPath(
-            path=self.json_path, type=OutputType.TIMESERIES, max_index=len(self.data)
+            path=self.json_path,
+            type=OutputType.TIMESERIES,
+            max_index=len(self.data),
+            data_shape=list(self.data.shape),
         )

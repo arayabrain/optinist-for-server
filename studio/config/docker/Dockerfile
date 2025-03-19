@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.20-slim
+FROM --platform=linux/amd64 python:3.9-slim
 
 WORKDIR /app
 
@@ -73,15 +73,18 @@ USER root
 # * copy only minimal files to enable docker run cache.
 COPY --chown=optinist pyproject.toml poetry.lock ./
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install poetry && \
+    pip3 install --upgrade poetry poetry-plugin-export && \
     poetry config virtualenvs.create false
 
-# export requirements.txt from poetry and install
+# Export requirements.txt from poetry and install
 # * Some module versions are adjusted directly for batch environments.
 RUN poetry export -f requirements.txt -o requirements.studio.txt && \
     sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
 
 RUN pip3 install -r requirements.studio.txt
+
+# Setting permissions for operational user to some site-packages.
+RUN chown -R optinist /usr/local/lib/python3.9/site-packages/pynwb
 
 # ----------------------------------------
 # setup optinist batch environment #2
@@ -98,6 +101,11 @@ RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install -r requirements.batch.txt
+
+# Some environment variable settings
+# - Settings for protobuf 3.20 compatibility
+#   - see: https://protobuf.dev/news/2022-05-06/#python-updates
+RUN echo "export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python" >> ~/.bashrc
 
 # Return to root user
 USER root

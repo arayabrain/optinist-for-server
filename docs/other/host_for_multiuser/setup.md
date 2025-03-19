@@ -1,6 +1,4 @@
-(set-optinist-config)=
-Multi-user (Host setup)
-=======================
+# Multi-user (Host setup)
 
 ```{contents}
 :depth: 4
@@ -14,7 +12,7 @@ Follow the steps below to setup `multiuser` mode.
    ```bash
    git clone git@github.com:oist/optinist.git -b main
    ```
-2. copy config files
+2. setup application config files
    ```bash
    cp -i studio/config/.env.example studio/config/.env
    cp -i studio/config/auth/firebase_config.example.json studio/config/auth/firebase_config.json

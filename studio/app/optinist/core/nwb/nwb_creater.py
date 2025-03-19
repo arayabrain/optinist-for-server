@@ -444,18 +444,30 @@ class NWBCreater:
 
                 # Note: The fields in the original hdf cannot be copied to the new hdf,
                 # so they are converted to dict once.
-                image_meta = {
-                    k: getattr(device_metadata.Image, k)
-                    for k in device_metadata.Image.fields
-                }
-                pixels_meta = {
-                    k: getattr(device_metadata.Pixels, k)
-                    for k in device_metadata.Pixels.fields
-                }
-                objective_mata = {
-                    k: getattr(device_metadata.Objective, k)
-                    for k in device_metadata.Objective.fields
-                }
+                image_meta = (
+                    {
+                        k: getattr(device_metadata.Image, k)
+                        for k in device_metadata.Image.fields
+                    }
+                    if device_metadata.Image
+                    else None
+                )
+                pixels_meta = (
+                    {
+                        k: getattr(device_metadata.Pixels, k)
+                        for k in device_metadata.Pixels.fields
+                    }
+                    if device_metadata.Pixels
+                    else None
+                )
+                objective_mata = (
+                    {
+                        k: getattr(device_metadata.Objective, k)
+                        for k in device_metadata.Objective.fields
+                    }
+                    if device_metadata.Objective
+                    else None
+                )
             else:
                 device_metadata = None
                 image_meta = None
@@ -465,10 +477,14 @@ class NWBCreater:
             if hasattr(device_info, "MicroscopeLabMetaData"):
                 # Note: The fields in the original hdf cannot be copied to the new hdf,
                 # so they are converted to dict once.
-                lab_specific_meta = {
-                    k: getattr(device_info.MicroscopeLabMetaData, k)
-                    for k in device_info.MicroscopeLabMetaData.fields
-                }
+                lab_specific_meta = (
+                    {
+                        k: getattr(device_info.MicroscopeLabMetaData, k)
+                        for k in device_info.MicroscopeLabMetaData.fields
+                    }
+                    if device_info.MicroscopeLabMetaData
+                    else None
+                )
             else:
                 lab_specific_meta = None
 
