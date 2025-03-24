@@ -63,10 +63,11 @@ class ProcessResult:
 class ExpDbBatchRunner:
     LOGGER_NAME = None  # Note: use root logger (empty name)
 
-    def __init__(self, organization_id: int):
+    def __init__(self, organization_id: int, parallel_workers: int = 1):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
+        self.parallel_workers = parallel_workers
 
     def __init_logger(self):
         logging_config_file = DIRPATH.CONFIG_DIR + "/logging.expdb_batch.yaml"
@@ -237,7 +238,7 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        max_workers = min(len(target_flag_files), 4)  # 最大4スレッド並列実行
+        max_workers = min(len(target_flag_files), self.parallel_workers)  # 最大4スレッド並列実行
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # 各データセットの処理を並列実行し結果を取得
             futures = [

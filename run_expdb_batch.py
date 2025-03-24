@@ -4,7 +4,7 @@ import argparse
 def main(args):
     from studio.app.optinist.core.expdb.batch_runner import ExpDbBatchRunner
 
-    runner = ExpDbBatchRunner(args.org_id)
+    runner = ExpDbBatchRunner(args.org_id, args.parallel_workers)
     runner.process()
 
 
@@ -13,7 +13,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o", "--org_id", type=int, required=True, help="organization id"
     )
-
+    parser.add_argument(
+        "-p", "--parallel_workers", type=int, default=1,
+        help="Number of parallel processes (default: 1)"
+    )
     from studio.app.optinist.microscopes.ND2Reader import ND2Reader
 
     # Note: @v1.2.0
