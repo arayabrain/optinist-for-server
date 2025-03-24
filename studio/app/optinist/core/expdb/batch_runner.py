@@ -1,5 +1,6 @@
 import datetime
 import glob
+import concurrent.futures
 import logging
 import logging.config
 import os
@@ -173,6 +174,54 @@ class ExpDbBatchRunner:
         self.lock.close()
 
     @stopwatch(callback=__stopwatch_callback)
+    def __process_single_dataset(self, flag_file):
+        """単一データセットを処理する関数"""
+        exp_id = self.__get_exp_id_from_flag_file(flag_file)
+        self.logger_.info(
+            "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
+        )
+
+        error = None
+        command = None
+        result = {'success': False, 'exp_id': exp_id}
+
+        try:
+            # フラグファイル read
+            with open(flag_file) as cfile:
+                config = yaml.safe_load(cfile)
+
+            # コマンド判定
+            command = config.get("command") if config is not None else None
+
+            if command == ProcessCommand.REGIST.value:
+                self.__process_dataset_registration(flag_file)
+            elif command == ProcessCommand.REGIST_METADATA.value:
+                self.__process_dataset_metadata_registration(flag_file)
+            elif command == ProcessCommand.DELETE.value:
+                self.__process_dataset_deletion(flag_file)
+            else:
+                raise ValueError(
+                    f"invalid command: [exp_id: {exp_id}][command: {command}]"
+                )
+
+            result['success'] = True
+
+        except Exception as e:
+            self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
+            error = e
+            result['error'] = e
+
+        finally:
+            self.__process_dataset_postprocess(flag_file, command, error)
+
+            if error:
+                self.logger_.error("finish process dataset: [exp_id: %s]", exp_id)
+            else:
+                self.logger_.info("finish process dataset: [exp_id: %s]", exp_id)
+
+        return result
+
+    @stopwatch(callback=__stopwatch_callback)
     def __process_datasets(self) -> ProcessResult:
         """
         メイン処理（データ管理・解析処理処理）
@@ -188,52 +237,24 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        for flag_file in target_flag_files:
-            exp_id = self.__get_exp_id_from_flag_file(flag_file)
-            self.logger_.info(
-                "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
-            )
-            self.start_time = datetime.datetime.now()
+        max_workers = min(len(target_flag_files), 4)  # 最大4スレッド並列実行
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 各データセットの処理を並列実行し結果を取得
+            futures = [
+                executor.submit(self.__process_single_dataset, flag_file)
+                for flag_file in target_flag_files
+            ]
 
-            error: Exception = None
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
 
-            # フラグファイル read
-            with open(flag_file) as cfile:
-                config = yaml.safe_load(cfile)
-
-            # 対象データフォルダ存在チェック
-            # データが存在しない場合はエラー扱いとし、次のデータ処理へスキップ
-
-            # コマンド判定
-            try:
-                command = config.get("command") if config is not None else None
-
-                if command == ProcessCommand.REGIST.value:
-                    self.__process_dataset_registration(flag_file)
-                elif command == ProcessCommand.REGIST_METADATA.value:
-                    self.__process_dataset_metadata_registration(flag_file)
-                elif command == ProcessCommand.DELETE.value:
-                    self.__process_dataset_deletion(flag_file)
-                else:
-                    raise ValueError(
-                        f"invalid command: [exp_id: {exp_id}][command: {command}]"
-                    )
-
-                processResult.success_ids.append(exp_id)
-
-            except Exception as e:
-                self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
-                error = e
-
-                processResult.failure_ids.append(exp_id)
-
-            finally:
-                self.__process_dataset_postprocess(flag_file, command, error)
-
-                if error:
-                    self.logger_.error("finish process dataset: [exp_id: %s]", exp_id)
-                else:
-                    self.logger_.info("finish process dataset: [exp_id: %s]", exp_id)
+        # 処理結果の集計
+        for result in results:
+            if result["success"]:
+                processResult.success_ids.append(result["exp_id"])
+            else:
+                processResult.failure_ids.append(result["exp_id"])
 
         # datasets処理完了後の後処理:
         with session_scope() as db:

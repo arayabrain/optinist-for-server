@@ -347,6 +347,7 @@ class ExpDbBatch:
                 pixlemaps_with_num
             ), f"generate pixelmaps failed in {expdb_path.pixelmap_dir}"
 
+    @stopwatch(callback=__stopwatch_callback)
     def generate_plots_using_cnmf_info(self, stat_data: StatData, cnmf_info: dict):
         self.logger_.info("process 'generate_pca_analysis_plots' start.")
 
