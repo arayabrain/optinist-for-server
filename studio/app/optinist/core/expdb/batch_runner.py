@@ -1,14 +1,14 @@
-import datetime
-import glob
 import concurrent.futures
+import datetime
+import functools
+import glob
 import logging
 import logging.config
 import os
 import pathlib
+import time
 import traceback
 from enum import Enum
-import functools
-import time
 
 import yaml
 from lauda import stopwatch
@@ -78,18 +78,16 @@ def init_process_logger(config_path, logger_name, process_id=None):
         process_id = os.getpid()
 
     # 設定ファイルの読み込み
-    logging_config = yaml.safe_load(
-        open(config_path, encoding="utf-8").read()
-    )
+    logging_config = yaml.safe_load(open(config_path, encoding="utf-8").read())
 
     # プロセス固有のログファイル名に変更（競合を避けるため）
-    if 'handlers' in logging_config and 'rotating_file' in logging_config['handlers']:
-        original_filename = logging_config['handlers']['rotating_file'].get('filename')
+    if "handlers" in logging_config and "rotating_file" in logging_config["handlers"]:
+        original_filename = logging_config["handlers"]["rotating_file"].get("filename")
         if original_filename:
             # ファイル名にプロセスIDを追加
             basename, ext = os.path.splitext(original_filename)
             new_filename = f"{basename}_pid{process_id}{ext}"
-            logging_config['handlers']['rotating_file']['filename'] = new_filename
+            logging_config["handlers"]["rotating_file"]["filename"] = new_filename
 
     # ログディレクトリの確認と作成
     log_file = (
@@ -100,7 +98,9 @@ def init_process_logger(config_path, logger_name, process_id=None):
         os.makedirs(log_dir, exist_ok=True)
 
     # ロギング設定の適用
-    logging_config_copy = logging_config.copy()  # 変更を他のプロセスに影響させないようコピー
+    logging_config_copy = (
+        logging_config.copy()
+    )  # 変更を他のプロセスに影響させないようコピー
     logging.config.dictConfig(logging_config_copy)
 
     # ロガー取得
@@ -125,7 +125,7 @@ def pickable_stopwatch(callback=None):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            logger = kwargs.get('logger')
+            logger = kwargs.get("logger")
             watch = Stopwatch()
             watch.start()
             try:
@@ -138,13 +138,15 @@ def pickable_stopwatch(callback=None):
         # モジュールレベルとして設定することで pickle 可能にする
         wrapper.__module__ = __name__
         return wrapper
+
     return decorator
 
+
 def stopwatch_callback(watch, function="(N/A)", logger=None):
-    if hasattr(function, '__func__'):
+    if hasattr(function, "__func__"):
         func_name = function.__func__.__name__
     else:
-        func_name = getattr(function, '__name__', "(N/A)")
+        func_name = getattr(function, "__name__", "(N/A)")
 
     if logger:
         logger.info(
@@ -155,14 +157,23 @@ def stopwatch_callback(watch, function="(N/A)", logger=None):
 
 
 @pickable_stopwatch(callback=stopwatch_callback)
-def process_single_dataset(flag_file: str, org_id: int, start_time: datetime.datetime, config_path: str, logger_name: str) -> dict:
+def process_single_dataset(
+    flag_file: str,
+    org_id: int,
+    start_time: datetime.datetime,
+    config_path: str,
+    logger_name: str,
+) -> dict:
     exp_id = get_exp_id_from_flag_file(flag_file)
     logger = init_process_logger(config_path, logger_name)
-    logger.info(f"Process {os.getpid()} starting to process exp_id: {exp_id}, flag_file: {flag_file}")
+    logger.info(
+        f"Process {os.getpid()} starting to \
+            process exp_id: {exp_id}, flag_file: {flag_file}"
+    )
 
     error = None
     command = None
-    result = {'success': False, 'exp_id': exp_id}
+    result = {"success": False, "exp_id": exp_id}
 
     try:
         # フラグファイル read
@@ -175,20 +186,20 @@ def process_single_dataset(flag_file: str, org_id: int, start_time: datetime.dat
         if command == ProcessCommand.REGIST.value:
             process_dataset_registration(exp_id=exp_id, org_id=org_id, logger=logger)
         elif command == ProcessCommand.REGIST_METADATA.value:
-            process_dataset_metadata_registration(exp_id=exp_id, org_id=org_id, logger=logger)
+            process_dataset_metadata_registration(
+                exp_id=exp_id, org_id=org_id, logger=logger
+            )
         elif command == ProcessCommand.DELETE.value:
             process_dataset_deletion(exp_id=exp_id, org_id=org_id, logger=logger)
         else:
-            raise ValueError(
-                f"invalid command: [exp_id: {exp_id}][command: {command}]"
-            )
+            raise ValueError(f"invalid command: [exp_id: {exp_id}][command: {command}]")
 
-        result['success'] = True
+        result["success"] = True
 
     except Exception as e:
         logger.error("%s: %s\n%s", type(e), e, traceback.format_exc())
         error = e
-        result['error'] = e
+        result["error"] = e
 
     finally:
         process_dataset_postprocess(flag_file, start_time, command, error)
@@ -258,7 +269,9 @@ def process_dataset_registration(exp_id: str, org_id: int, logger: logging) -> b
 
 
 @pickable_stopwatch(callback=stopwatch_callback)
-def process_dataset_metadata_registration(exp_id: str, org_id: int, logger: logging) -> bool:
+def process_dataset_metadata_registration(
+    exp_id: str, org_id: int, logger: logging
+) -> bool:
     """
     Metadata 登録処理
     """
@@ -291,6 +304,7 @@ def process_dataset_metadata_registration(exp_id: str, org_id: int, logger: logg
 
     return True
 
+
 @pickable_stopwatch(callback=stopwatch_callback)
 def process_dataset_deletion(exp_id: str, org_id: int, logger: logging) -> bool:
     """
@@ -304,6 +318,7 @@ def process_dataset_deletion(exp_id: str, org_id: int, logger: logging) -> bool:
         expdb_batch.cleanup_exp_record(db)
 
     return True
+
 
 def process_dataset_postprocess(
     flag_file: str, start_time: datetime.datetime, command: str, error: Exception = None
@@ -348,9 +363,7 @@ def process_dataset_postprocess(
     # 過去のフラグファイルが存在する場合はリネーム
     if os.path.isfile(renamed_flag_file):
         ps = pathlib.Path(renamed_flag_file).stat()
-        st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
-            "%Y%m%d%H%M%S"
-        )
+        st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime("%Y%m%d%H%M%S")
         os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
 
     # フラグファイルリネーム
@@ -487,21 +500,27 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        max_workers = min(len(target_flag_files), self.parallel_workers)  # 最大4スレッド並列実行
+        max_workers = min(
+            len(target_flag_files), self.parallel_workers
+        )  # 最大4スレッド並列実行
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
             len(target_flag_files),
             max_workers,
         )
-        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        ) as executor:
             # 各データセットの処理を並列実行し結果を取得
             futures = [
-                executor.submit(process_single_dataset,
-                                flag_file=flag_file,
-                                org_id=self.org_id,
-                                start_time=self.start_time,
-                                config_path=self.logging_config_file,
-                                logger_name=__class__.LOGGER_NAME)
+                executor.submit(
+                    process_single_dataset,
+                    flag_file=flag_file,
+                    org_id=self.org_id,
+                    start_time=self.start_time,
+                    config_path=self.logging_config_file,
+                    logger_name=__class__.LOGGER_NAME,
+                )
                 for flag_file in target_flag_files
             ]
 
@@ -536,5 +555,3 @@ class ExpDbBatchRunner:
         )
 
         return target_flag_files
-
-
