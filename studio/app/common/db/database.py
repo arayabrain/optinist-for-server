@@ -5,17 +5,17 @@ from sqlmodel import create_engine
 
 from .config import DATABASE_CONFIG
 
-engine = create_engine(
-    DATABASE_CONFIG.DATABASE_URL, pool_recycle=360, pool_size=DATABASE_CONFIG.POOL_SIZE
-)
-
-SessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
-)
-
 
 @contextmanager
 def session_scope():
+    engine = create_engine(
+        DATABASE_CONFIG.DATABASE_URL,
+        pool_recycle=360,
+        pool_size=DATABASE_CONFIG.POOL_SIZE,
+    )
+    SessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
+    )
     session = SessionLocal()
     try:
         yield session
@@ -29,7 +29,14 @@ def session_scope():
 
 def get_db():
     try:
-        db = SessionLocal()
+        engine = create_engine(
+            DATABASE_CONFIG.DATABASE_URL,
+            pool_recycle=360,
+            pool_size=DATABASE_CONFIG.POOL_SIZE,
+        )
+        db = sessionmaker(
+            autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
+        )
         yield db
     finally:
         db.close()

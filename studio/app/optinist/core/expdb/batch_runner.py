@@ -227,41 +227,45 @@ def process_dataset_registration(exp_id: str, org_id: int, logger: logging) -> b
         expdb_batch.cleanup_exp_record(db)
         db.commit()
 
-        # Analyze & Plotting
-        if expdb_batch.raw_path.microscope_file is None:
-            # 顕微鏡データがない場合、以下の処理をスキップ
-            pass
-            logger.warn("No microscope data found. Skip preprocessing.")
-        else:
-            stack = expdb_batch.preprocess()
-            expdb_batch.generate_orimaps(stack)
-            cnmf_info = expdb_batch.cell_detection_cnmf(stack)
-            del stack
+    # Analyze & Plotting
+    if expdb_batch.raw_path.microscope_file is None:
+        # 顕微鏡データがない場合、以下の処理をスキップ
+        pass
+        logger.warn("No microscope data found. Skip preprocessing.")
+    else:
+        stack = expdb_batch.preprocess()
+        expdb_batch.generate_orimaps(stack)
+        cnmf_info = expdb_batch.cell_detection_cnmf(stack)
+        del stack
 
-        stat_data = expdb_batch.generate_statdata()
-        expdb_batch.generate_cellmasks()
-        expdb_batch.generate_pixelmaps()
-        expdb_batch.generate_plots(stat_data=stat_data)
-        expdb_batch.generate_plots_using_cnmf_info(
-            stat_data=stat_data, cnmf_info=cnmf_info
-        )
+    stat_data = expdb_batch.generate_statdata()
+    expdb_batch.generate_cellmasks()
+    expdb_batch.generate_pixelmaps()
+    expdb_batch.generate_plots(stat_data=stat_data)
+    expdb_batch.generate_plots_using_cnmf_info(stat_data=stat_data, cnmf_info=cnmf_info)
 
-        # Read metadata
-        (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+    # Read metadata
+    (attributes, view_attributes) = expdb_batch.load_exp_metadata()
 
-        expdb_batch.save_nwb(attributes["metadata"]["metadata"])
+    expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
-        exp = create_experiment(
-            db,
-            ExpDbExperimentCreate(
-                experiment_id=exp_id,
-                organization_id=org_id,
-                attributes=attributes,
-                view_attributes=view_attributes,
-            ),
-        )
+    with session_scope() as db:
+        try:
+            exp = create_experiment(
+                db,
+                ExpDbExperimentCreate(
+                    experiment_id=exp_id,
+                    organization_id=org_id,
+                    attributes=attributes,
+                    view_attributes=view_attributes,
+                ),
+            )
 
-        bulk_insert_cells(db, exp.id, stat_data)
+            bulk_insert_cells(db, exp.id, stat_data)
+        except Exception as e:
+            logger.error(f"Error during create_experiment: {e}")
+            db.rollback()  # 明示的にrollback
+            raise
 
     return True
 

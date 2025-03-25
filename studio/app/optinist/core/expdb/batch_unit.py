@@ -170,6 +170,10 @@ class ExpDbBatch:
             delete_experiment(db, exp.id)
         except AssertionError:
             pass
+        except Exception as e:
+            self.logger_.error(f"Error during cleanup_exp_record: {e}")
+            db.rollback()  # 明示的にrollback
+            raise
 
         # Clean up raw path
         create_directory(self.raw_path.output_dir, delete_dir=True)
