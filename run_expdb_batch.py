@@ -14,8 +14,11 @@ if __name__ == "__main__":
         "-o", "--org_id", type=int, required=True, help="organization id"
     )
     parser.add_argument(
-        "-p", "--parallel_workers", type=int, default=1,
-        help="Number of parallel processes (default: 1)"
+        "-p",
+        "--parallel_workers",
+        type=int,
+        default=1,
+        help="Number of parallel processes (default: 1)",
     )
     from studio.app.optinist.microscopes.ND2Reader import ND2Reader
 
