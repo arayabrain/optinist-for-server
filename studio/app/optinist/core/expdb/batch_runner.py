@@ -98,9 +98,7 @@ def init_process_logger(config_path, logger_name, process_id=None):
         os.makedirs(log_dir, exist_ok=True)
 
     # ロギング設定の適用
-    logging_config_copy = (
-        logging_config.copy()
-    )  # 変更を他のプロセスに影響させないようコピー
+    logging_config_copy = logging_config.copy()  # 変更を他のプロセスに影響させないようコピー
     logging.config.dictConfig(logging_config_copy)
 
     # ロガー取得
@@ -500,9 +498,7 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        max_workers = min(
-            len(target_flag_files), self.parallel_workers
-        )  # 最大4スレッド並列実行
+        max_workers = min(len(target_flag_files), self.parallel_workers)  # 最大4スレッド並列実行
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
             len(target_flag_files),
