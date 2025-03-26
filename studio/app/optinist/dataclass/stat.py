@@ -125,6 +125,7 @@ class StatData(BaseData):
         self.cluster_labels = np.full(self.ncells, np.NaN)
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
+        # Add this: Initialize new analysis properties
         # --- my_new_analysis ---
         self.my_new_metric = None
         self.my_new_value = np.full(self.ncells, np.NaN)
@@ -347,6 +348,7 @@ class StatData(BaseData):
             data=np.zeros(1), columns=[0], file_name="cluster_time_course_001"
         )
 
+    # Add this
     def set_my_new_props(self):
         """Create visualization objects for my new analysis."""
         # Create primary visualization (e.g., histogram of values)
@@ -446,22 +448,16 @@ class StatData(BaseData):
 
         return nwb_dict
 
+    # Add this: Add your data to a dictionary
     @property
     def nwb_dict_my_new_analysis(self) -> dict:
         """Return NWB dictionary for my new analysis"""
+        # Only include fields that are defined in MY_NEW_ANALYSIS_TYPES
         nwb_dict = {}
-
-        if hasattr(self, "my_new_metric") and self.my_new_metric is not None:
-            nwb_dict["my_new_metric"] = self.my_new_metric
-        if hasattr(self, "my_summary_value") and self.my_summary_value is not None:
-            nwb_dict["my_summary_value"] = self.my_summary_value
-        if (
-            hasattr(self, "index_responsive_cells")
-            and self.index_responsive_cells is not None
-        ):
-            nwb_dict["index_responsive_cells"] = self.index_responsive_cells
-        if hasattr(self, "ncells_responsive") and self.ncells_responsive is not None:
-            nwb_dict["ncells_responsive"] = self.ncells_responsive
+        nwb_dict["my_new_metric"] = self.my_new_metric
+        nwb_dict["my_summary_value"] = self.my_summary_value
+        nwb_dict["index_responsive_cells"] = self.index_responsive_cells
+        nwb_dict["ncells_responsive"] = self.ncells_responsive
 
         return nwb_dict
 
@@ -474,6 +470,7 @@ class StatData(BaseData):
             **self.nwb_dict_curvefit,
             **self.nwb_dict_pca,
             **self.nwb_dict_kmeans,
+            # Add this: Add your new data dictionary to the NWB dictionary
             **self.nwb_dict_my_new_analysis,
         }
 
