@@ -1,5 +1,5 @@
 # studio/app/optinist/wrappers/expdb/my_new_analysis.py
-
+# Add this: A new analysis function
 import numpy as np
 
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
