@@ -3,15 +3,12 @@
 import numpy as np
 
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.dataclass import StatData
 
 
 def my_new_analysis(
-    stat,
-    cnmf_info,
-    output_dir,
-    params=None,
-    **kwargs,
-) -> dict:
+    stat: StatData, output_dir: str, params: dict = None, **kwargs
+) -> dict(stat=StatData):
     """
     Implement a new analysis and visualization method
 
@@ -19,8 +16,6 @@ def my_new_analysis(
     ----------
     stat : StatData
         The statistics data object to update
-    cnmf_info : dict
-        Dictionary of CNMF output data
     output_dir : str
         Output directory for results
     params : dict, optional
@@ -31,9 +26,6 @@ def my_new_analysis(
     dict
         Dictionary of outputs including updated stat object and visualizations
     """
-    # Get data from inputs
-    fluorescence = cnmf_info["fluorescence"].data
-
     # Set default parameters if none provided
     if params is None:
         params = {
@@ -42,12 +34,13 @@ def my_new_analysis(
             "max_value": 1,
         }
 
-    # Process data for your analysis
-    my_result_data = process_my_data(fluorescence, params["threshold"])
+    result_data = np.zeros(stat.ncells)
+    for i in range(stat.ncells):
+        result_data[i] = process_my_data(stat.data_table[i])
 
     # Store results in StatData object
-    stat.my_new_metric = my_result_data
-    stat.my_summary_value = np.mean(my_result_data, axis=1)
+    stat.my_new_metric = result_data
+    stat.my_summary_value = np.mean(result_data, axis=1)
     stat.index_responsive_cells = np.where(
         stat.my_summary_value >= params["threshold"], True, False
     )
@@ -61,7 +54,7 @@ def my_new_analysis(
         "stat": stat,
         "my_primary_plot": stat.my_primary_plot,
         "my_summary_plot": stat.my_summary_plot,
-        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
+        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_my_new_analysis},
     }
 
 
