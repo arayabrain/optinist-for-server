@@ -24,6 +24,7 @@ from studio.app.common.routers import (
     experiment,
     files,
     group,
+    logs,
     outputs,
     params,
     run,
@@ -60,6 +61,7 @@ app.include_router(algolist.router, dependencies=[Depends(get_current_user)])
 app.include_router(auth.router)
 app.include_router(experiment.router, dependencies=[Depends(get_current_user)])
 app.include_router(files.router, dependencies=[Depends(get_current_user)])
+app.include_router(logs.router, dependencies=[Depends(get_current_user)])
 app.include_router(outputs.router, dependencies=[Depends(get_current_user)])
 app.include_router(params.router, dependencies=[Depends(get_current_user)])
 app.include_router(run.router, dependencies=[Depends(get_current_user)])
@@ -137,11 +139,7 @@ def main(develop_mode: bool = False):
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
 
-    log_config_file = (
-        f"{DIRPATH.CONFIG_DIR}/logging.yaml"
-        if MODE.IS_STANDALONE
-        else f"{DIRPATH.CONFIG_DIR}/logging.multiuser.yaml"
-    )
+    logging_config = AppLogger.get_logging_config()
 
     if develop_mode:
         reload_options = {"reload_dirs": ["studio"]} if args.reload else {}
@@ -149,7 +147,7 @@ def main(develop_mode: bool = False):
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=log_config_file,
+            log_config=logging_config,
             reload=args.reload,
             **reload_options,
         )
@@ -158,6 +156,6 @@ def main(develop_mode: bool = False):
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=log_config_file,
+            log_config=logging_config,
             reload=False,
         )

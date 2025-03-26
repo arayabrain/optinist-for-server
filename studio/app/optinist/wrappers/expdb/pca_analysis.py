@@ -6,48 +6,82 @@ from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass.utils import save_thumbnail
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.dataclass import ExpDbData
 from studio.app.optinist.dataclass.stat import StatData
 
 logger = AppLogger.get_logger()
 
 
 def pca_analysis(
-    stat: StatData, cnmf_info: dict, output_dir: str, params: dict = None, **kwargs
+    stat: StatData,
+    cnmf_info: dict,
+    output_dir: str,
+    params: dict = None,
+    ts_file=None,
+    **kwargs,
 ) -> dict:
-    """Perform PCA analysis on CNMF results"""
+    """
+    Perform PCA analysis on CNMF results with trial structure support
+
+    Parameters
+    ----------
+    stat : StatData
+        StatData object to store analysis results
+    cnmf_info : dict
+        Dictionary containing CNMF results including fluorescence data
+    output_dir : str
+        Directory for saving output files
+    params : dict, optional
+        Dictionary of parameters for PCA analysis
+    ts_file : str, optional
+        Path to trial structure file for trial averaging
+    **kwargs : dict
+        Additional keyword arguments
+
+    Returns
+    -------
+    dict
+        Dictionary containing analysis results
+    """
 
     # Get the fluorescence data
     fluorescence = cnmf_info["fluorescence"].data
-
-    # If iscell data is available, use it to filter fluorescence
-    if "iscell" in cnmf_info and cnmf_info["iscell"] is not None:
-        iscell = cnmf_info["iscell"].data
-        if len(iscell) == fluorescence.shape[0]:
-            good_indices = np.where(iscell == 1)[0]
-            logger.info(f"Using iscell {len(iscell)} total cells for PCA")
-
-            if len(good_indices) > 0:
-                # Filter fluorescence to only include good components
-                fluorescence = fluorescence[good_indices]
-                # logger.info(f"Filtered fluorescence shape: {fluorescence.shape}")
-
     n_cells = fluorescence.shape[0]
-    logger.info(f"PCA will use {n_cells} cells")
+
+    # # If iscell data is available, use it to filter fluorescence
+    # if "iscell" in cnmf_info and cnmf_info["iscell"] is not None:
+    #     iscell = cnmf_info["iscell"].data
+    #     if len(iscell) == fluorescence.shape[0]:
+    #         good_indices = np.where(iscell == 1)[0]
+    #         logger.info(f"Using only iscell {len(good_indices)} ROI for KMeans")
+
+    #         if len(good_indices) > 0:
+    #             # Filter fluorescence to only include good components
+    #             fluorescence = fluorescence[good_indices]
+
+    # Get data shape
+    n_cells = fluorescence.shape[0]
+    logger.info(
+        f"PCA: fluorescence shape is {fluorescence.shape}, so n_cells = {n_cells}"
+    )
 
     # Check if we have enough ROIs for PCA
     if n_cells < 2:
-        # Handle the case of insufficient ROIs for PCA
-        # Create dummy placeholders to avoid errors in set_pca_props
+        logger.warning("Not enough cells for PCA analysis (minimum 2 required)")
+        # Create dummy placeholders
         dummy_scores = np.zeros((1, 1))
+        dummy_scores_ave = np.zeros((1, 1))
         dummy_components = np.zeros((1, 1))
         dummy_explained_variance = np.zeros(1)
 
+        # Store results in StatData
         stat.pca_scores = dummy_scores
+        stat.pca_scores_ave = dummy_scores_ave
         stat.pca_components = dummy_components
         stat.pca_explained_variance = dummy_explained_variance
 
         # Store ROI masks for visualization
-        stat.roi_masks = cnmf_info["cell_roi"].data
+        stat.roi_masks = cnmf_info["all_roi"].data
 
         # Still create visualization objects for proper UI display
         stat.set_pca_props()
@@ -56,6 +90,7 @@ def pca_analysis(
         nwbfile = kwargs.get("nwbfile", {})
         pca_dict = {
             "pca_scores": dummy_scores,
+            "pca_scores_ave": dummy_scores_ave,
             "pca_components": dummy_components,
             "pca_explained_variance": dummy_explained_variance,
         }
@@ -70,18 +105,22 @@ def pca_analysis(
             "pca_contribution": stat.pca_contribution,
             "nwbfile": nwbfile,
         }
+    logger.info(f"PCA will use {n_cells} cells")
 
     # Set default parameters if none provided
     if params is None:
-        params = {"n_components": min(50, n_cells), "standard_norm": True}
+        params = {"n_components": min(n_cells, 50), "standard_norm": True}
     else:
         # Extract parameters from the nested structure if present
         pca_params = params.get("PCA", {})
+
+        # Use min(n_cells, 50) as the default when the key is missing from parameters
         params = {
-            "n_components": min(pca_params.get("n_components", 50), n_cells),
+            "n_components": min(
+                pca_params.get("n_components", min(n_cells, 50)), n_cells
+            ),
             "standard_norm": params.get("standard_mean", True),
         }
-
     # Prepare data
     if params.get("standard_norm", True):
         # Center the data
@@ -95,18 +134,99 @@ def pca_analysis(
         data = fluorescence
 
     # Perform PCA
-    pca = PCA(n_components=params["n_components"])
+    pca = PCA(n_components=params["n_components"], svd_solver="randomized")
     scores = pca.fit_transform(data.T)  # time x components
     components = pca.components_  # components x cells
     explained_variance = pca.explained_variance_ratio_ * 100
 
+    if len(explained_variance) > 1:
+        # Get indices sorted by explained variance (descending)
+        sort_idx = np.argsort(explained_variance)[::-1]
+
+        # Reorder results
+        scores = scores[:, sort_idx]
+        components = components[sort_idx]
+        explained_variance = explained_variance[sort_idx]
+
+    # Initialize variables for trial-averaging
+    scores_ave = None
+
+    # Create an ExpDbData object with the trial structure file
+    expdb = ExpDbData(paths=[ts_file])
+    ts_data = expdb.ts
+    logger.info(f"Successfully loaded trial structure data from {ts_file}")
+
+    try:
+        stim_log = ts_data.stim_log
+        n_frames = fluorescence.shape[1]
+
+        # Check if stim_log exists and calculate dimensions
+        if stim_log is not None and len(stim_log) > 0:
+            n_stims = int(np.max(stim_log)) + 1
+
+            # Calculate and use only complete trials
+            complete_trials = len(stim_log) // n_stims
+            n_components = scores.shape[1]
+
+            if complete_trials > 0:
+                n_trials = complete_trials
+                # Use only the portion of stim_log that contains complete trials
+                usable_stim_log = stim_log[: n_stims * n_trials]
+
+                # Calculate frame dimensions
+                n_frames_ave = n_frames // n_trials
+                n_frames_epoch = n_frames_ave // n_stims
+
+                # Verify frame dimensions are compatible
+                if n_frames_epoch * n_stims * n_trials <= n_frames:
+                    # Now do reshaping with verified dimensions
+                    stim_matrix = np.reshape(usable_stim_log, (n_stims, n_trials))
+                    sort_idx_log = np.argsort(stim_matrix, axis=1).ravel() + np.repeat(
+                        np.arange(0, n_stims), n_trials
+                    )
+
+                    # Only use the portion of scores in complete trials
+                    usable_frames = n_frames_epoch * n_stims * n_trials
+                    scores_sort = np.reshape(
+                        scores[:usable_frames],
+                        (n_frames_epoch, n_stims * n_trials, n_components),
+                    )[:, sort_idx_log, :]
+
+                    # Final reshape and average as in original code
+                    scores_ave = np.mean(
+                        np.reshape(
+                            scores_sort,
+                            (n_frames_epoch * n_stims, n_trials, n_components),
+                        ),
+                        axis=1,
+                    )
+
+                    logger.info(f"Trial-averaged PCA scores shape: {scores_ave.shape}")
+                else:
+                    logger.warning(
+                        f"Dimensions mismatch: n_frames_epoch({n_frames_epoch}) "
+                        f"* n_stims({n_stims}) * n_trials({n_trials}) > "
+                        f"n_frames({n_frames})"
+                    )
+            else:
+                logger.warning(
+                    f"No complete trials available "
+                    f"(n_stims={n_stims}, stim_log length={len(stim_log)})"
+                )
+        else:
+            logger.warning("No stim_log data available in trial structure")
+    except Exception as e:
+        logger.error(f"Error computing trial-averaged PCA scores: {e}")
+
     # Store results in StatData
     stat.pca_scores = scores
+    stat.pca_scores_ave = scores_ave
     stat.pca_components = components
     stat.pca_explained_variance = explained_variance
 
     # Store ROI masks for visualization
-    stat.roi_masks = cnmf_info["cell_roi"].data
+    # Request from client to use data not filtered by iscell
+    stat.roi_masks = cnmf_info["all_roi"].data
 
     # Create visualization objects within the function
     stat.set_pca_props()
@@ -115,6 +235,7 @@ def pca_analysis(
     nwbfile = kwargs.get("nwbfile", {})
     pca_dict = {
         "pca_scores": scores,
+        "pca_scores_ave": scores_ave,
         "pca_components": components,
         "pca_explained_variance": explained_variance,
     }
@@ -124,9 +245,6 @@ def pca_analysis(
 
     return {
         "stat": stat,
-        "pca_analysis": stat.pca_analysis,
-        "pca_analysis_variance": stat.pca_analysis_variance,
-        "pca_contribution": stat.pca_contribution,
         "nwbfile": nwbfile,
     }
 
@@ -136,6 +254,7 @@ def generate_pca_visualization(
     explained_variance,
     components,
     roi_masks,
+    scores_ave,
     output_dir,
 ):
     """
@@ -166,7 +285,8 @@ def generate_pca_visualization(
             unique_ids = np.unique(roi_masks[non_nan_mask])
             for val in unique_ids:
                 count = np.sum(np.isclose(roi_masks, val))
-                logger.info(f"  ROI ID {val}: {count} pixels")
+                _ = count
+                # logger.info(f"  ROI ID {val}: {count} pixels")
         else:
             logger.warning("WARNING: All values in ROI mask are NaN")
 
@@ -197,22 +317,6 @@ def generate_pca_visualization(
         plt.close()
         save_thumbnail(variance_path)
 
-        # Create error image for scatter plot
-        plt.figure()
-        plt.text(
-            0.5,
-            0.5,
-            "Insufficient ROIs for PCA analysis.\nAt least 2 ROIs required.",
-            ha="center",
-            va="center",
-            transform=plt.gca().transAxes,
-        )
-        plt.axis("off")
-        scatter_path = join_filepath([output_dir, "pca_analysis.png"])
-        plt.savefig(scatter_path, bbox_inches="tight")
-        plt.close()
-        save_thumbnail(scatter_path)
-
         # Create error image for contribution plot
         plt.figure()
         plt.text(
@@ -224,7 +328,7 @@ def generate_pca_visualization(
             transform=plt.gca().transAxes,
         )
         plt.axis("off")
-        contrib_path = join_filepath([output_dir, "pca_contribution.png"])
+        contrib_path = join_filepath([output_dir, "pca_contribution_001.png"])
         plt.savefig(contrib_path, bbox_inches="tight")
         plt.close()
         save_thumbnail(contrib_path)
@@ -240,7 +344,7 @@ def generate_pca_visualization(
             transform=plt.gca().transAxes,
         )
         plt.axis("off")
-        spatial_path = join_filepath([output_dir, "pca_component_1_spatial.png"])
+        spatial_path = join_filepath([output_dir, "pca_component_spatial_001.png"])
         plt.savefig(spatial_path, bbox_inches="tight")
         plt.close()
         save_thumbnail(spatial_path)
@@ -256,7 +360,7 @@ def generate_pca_visualization(
             transform=plt.gca().transAxes,
         )
         plt.axis("off")
-        time_path = join_filepath([output_dir, "pca_component_1_time.png"])
+        time_path = join_filepath([output_dir, "pca_component_time_001.png"])
         plt.savefig(time_path, bbox_inches="tight")
         plt.close()
         save_thumbnail(time_path)
@@ -266,8 +370,8 @@ def generate_pca_visualization(
     # Number of components to visualize
     num_components = min(50, components.shape[0], scores.shape[1])
 
-    # Set to 10 as too many make legend illegible
-    plots_to_show = 10
+    # Set to 20 as too many make legend illegible
+    plots_to_show = 20
 
     # 1. Plot explained variance
     plt.figure()
@@ -283,42 +387,35 @@ def generate_pca_visualization(
     plt.close()
     save_thumbnail(variance_path)
 
-    # 2. Create PCA scatter plot (first 2-3 components)
-    plt.figure()
-    if scores.shape[1] >= 2:
-        plt.scatter(scores[:, 0], scores[:, 1], alpha=0.7)
-        plt.xlabel("PC 1")
-        plt.ylabel("PC 2")
-
-        if scores.shape[1] >= 3:
-            plt.figure()
-            plt.scatter(
-                scores[:, 0], scores[:, 1], c=scores[:, 2], cmap="viridis", alpha=0.7
-            )
-            plt.colorbar(label="PC 3")
-            plt.xlabel("PC 1")
-            plt.ylabel("PC 2")
-
-    scatter_path = join_filepath([output_dir, "pca_analysis.png"])
-    plt.savefig(scatter_path, bbox_inches="tight")
-    plt.close()
-    save_thumbnail(scatter_path)
-
-    # 3. For each component, create time course and spatial map
+    # For each component
     for i in range(num_components):
-        plt.figure()
-        plt.plot(scores[:, i], linewidth=2)
-        plt.title(f"PC {i+1} Time Course")
-        plt.xlabel("Time")
-        plt.ylabel("Component Value")
-        plt.grid(True, alpha=0.3)
+        # 2. Time course plots - trial-averaged scores are available
+        if scores_ave is not None and scores_ave.shape[1] > i:
+            plt.figure()
+            plt.plot(scores_ave[:, i], linewidth=2)
+            plt.title(f"PC {i+1} Trial-Averaged Time Course")
+            plt.xlabel("Time")
+            plt.ylabel("Component Value")
+            plt.grid(True, alpha=0.3)
+            time_path = join_filepath([output_dir, f"pca_component_time_{i+1:03d}.png"])
+            plt.savefig(time_path, bbox_inches="tight")
+            plt.close()
+            save_thumbnail(time_path)
 
-        time_path = join_filepath([output_dir, f"pca_component_{i+1}_time.png"])
-        plt.savefig(time_path, bbox_inches="tight")
-        plt.close()
-        save_thumbnail(time_path)
+        else:
+            plt.figure()
+            plt.plot(scores[:, i], linewidth=2)
+            plt.title(f"PC {i+1} Time Courses (All Trials)")
+            plt.xlabel("Time")
+            plt.ylabel("Component Value")
+            plt.grid(True, alpha=0.3)
 
-        # 4. Spatial map - attempt only if roi_masks has appropriate shape
+            time_path = join_filepath([output_dir, f"pca_component_time_{i+1:03d}.png"])
+            plt.savefig(time_path, bbox_inches="tight")
+            plt.close()
+            save_thumbnail(time_path)
+
+        # 3. Spatial map - attempt only if roi_masks has appropriate shape
         component_weights = components[i]  # Using actual weights, not absolute values
 
         # Create spatial component maps
@@ -360,8 +457,9 @@ def generate_pca_visualization(
                         plt.title(f"PC {i+1} Spatial Map")
 
                         spatial_path = join_filepath(
-                            [output_dir, f"pca_component_{i+1}_spatial.png"]
+                            [output_dir, f"pca_component_spatial_{i+1:03d}.png"]
                         )
+                        plt.grid(True, alpha=0.3)
                         plt.savefig(spatial_path, bbox_inches="tight")
                         plt.close()
                         save_thumbnail(spatial_path)
@@ -382,7 +480,7 @@ def generate_pca_visualization(
                 plt.grid(True, alpha=0.3)
 
                 spatial_path = join_filepath(
-                    [output_dir, f"pca_component_{i+1}_spatial.png"]
+                    [output_dir, f"pca_component_spatial_{i+1:03d}.png"]
                 )
                 plt.savefig(spatial_path, bbox_inches="tight")
                 plt.close()
@@ -399,29 +497,146 @@ def generate_pca_visualization(
             plt.grid(True, alpha=0.3)
 
             spatial_path = join_filepath(
-                [output_dir, f"pca_component_{i+1}_spatial.png"]
+                [output_dir, f"pca_component_spatial_{i+1:03d}.png"]
             )
             plt.savefig(spatial_path, bbox_inches="tight")
             plt.close()
             save_thumbnail(spatial_path)
 
-    # 5. Save the contribution weights as a separate visualization
-    plt.figure()
-    top_n = min(plots_to_show, components.shape[0])
-    for i in range(top_n):
-        plt.bar(
-            range(len(components[i])),
-            components[i],  # Using actual weights, not absolute values
-            alpha=0.7,
-            label=f"PC {i+1}",
-        )
-    plt.xlabel("Cell Index")
-    plt.ylabel("Component Weight")
-    plt.title("PCA Component Contributions")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    # 4. Save the contribution weights with PCA components
+    # Calculate how many plots we need based on the number of cells
+    logger.info(f"Components shape: {components.shape}")
+    logger.info(f"Number of scores dimensions: {scores.shape[1]}")
+    logger.info(f"Explained variance values: {len(explained_variance)}")
 
-    contrib_path = join_filepath([output_dir, "pca_contribution.png"])
-    plt.savefig(contrib_path, bbox_inches="tight")
-    plt.close()
-    save_thumbnail(contrib_path)
+    n_components = components.shape[0]
+    components_per_plot = 20
+    n_plots = int(np.ceil(n_components / components_per_plot))
+    logger.info(f"Number of plots: {n_plots}")
+
+    # Extract actual cell IDs from roi_masks
+    cell_ids = []
+    if roi_masks is not None and hasattr(roi_masks, "shape"):
+        try:
+            # Extract non-NaN values from roi_masks
+            non_nan_mask = (
+                ~np.isnan(roi_masks)
+                if np.any(np.isnan(roi_masks))
+                else np.ones_like(roi_masks, dtype=bool)
+            )
+
+            if np.any(non_nan_mask):
+                # Get unique cell IDs
+                valid_ids = np.unique(roi_masks[non_nan_mask])
+                cell_ids = list(np.sort(valid_ids))
+                logger.info(f"Found {len(cell_ids)} unique cell IDs in ROI masks")
+            else:
+                logger.warning("No valid values in ROI masks for cell ID extraction")
+        except Exception as e:
+            logger.error(f"Error extracting cell IDs from ROI masks: {str(e)}")
+
+    # If we couldn't extract cell IDs, use sequential numbering
+    if not cell_ids:
+        cell_ids = list(range(components.shape[1]))
+        logger.info("Using sequential numbering for cell IDs")
+
+    # Sort components by explained variance (descending)
+    if explained_variance is not None and len(explained_variance) == n_components:
+        # Get indices sorted by explained variance
+        sorted_indices = np.argsort(explained_variance)[::-1]
+        # Reorder components based on sorted indices
+        sorted_components = components[sorted_indices]
+        # Create mapping from new indices to original indices
+        sorted_to_original = {i: sorted_indices[i] for i in range(len(sorted_indices))}
+        logger.info("Sorted components by explained variance")
+    else:
+        sorted_components = components
+        sorted_to_original = {i: i for i in range(n_components)}
+        logger.warning("Could not sort components by variance - using original order")
+
+    for plot_idx in range(n_plots):
+        start_idx = plot_idx * components_per_plot
+        end_idx = min(start_idx + components_per_plot, n_components)
+
+        logger.info(
+            f"Contribution plot {plot_idx+1}: components {start_idx+1} to {end_idx}"
+        )
+
+        if start_idx >= n_components:
+            logger.warning(
+                f"Skipping plot {plot_idx+1} - start_idx {start_idx}"
+                f">= n_components {n_components}"
+            )
+            break
+
+        plt.figure()
+
+        # Get the components for this plot
+        plot_components = sorted_components[start_idx:end_idx]
+        n_cells = len(plot_components[0])
+
+        # Create x-axis labels for the PCA components
+        x_labels = [
+            f"PC {sorted_to_original[start_idx + i] + 1}"
+            for i in range(len(plot_components))
+        ]
+        x_positions = np.arange(len(x_labels))
+
+        # Calculate the total contribution magnitude for each cell
+        cell_total_contributions = []
+        for cell_idx in range(n_cells):
+            # Get this cell's contribution to each component in this plot
+            cell_contributions = [comp[cell_idx] for comp in plot_components]
+            # Use sum of absolute values to measure total contribution
+            total_contribution = sum(abs(c) for c in cell_contributions)
+            cell_total_contributions.append((cell_idx, total_contribution))
+
+        # Sort cells by their total contribution (descending)
+        sorted_cells = sorted(
+            cell_total_contributions, key=lambda x: x[1], reverse=True
+        )
+
+        # Limit to top 20 contributing cells for readability
+        top_cells = sorted_cells[:20]
+
+        # For each of the top contributing cells, plot its contribution
+        for rank, (cell_idx, _) in enumerate(top_cells):
+            # Get this cell's contribution to each component in this plot
+            cell_contributions = [comp[cell_idx] for comp in plot_components]
+
+            # Get the actual cell ID
+            cell_id = cell_ids[cell_idx] if cell_idx < len(cell_ids) else cell_idx
+            if isinstance(cell_id, (int, float)) and not np.isnan(cell_id):
+                cell_id_label = f"ROI {int(cell_id)}"
+            else:
+                cell_id_label = f"ROI {cell_id}"
+
+            # Plot the bar for this cell
+            plt.bar(
+                x_positions,
+                cell_contributions,
+                label=cell_id_label,  # Use actual cell ID in legend
+                width=0.8,
+                alpha=0.7,
+            )
+
+        # Add horizontal line at y=0
+        plt.axhline(y=0, color="black", linestyle="-", linewidth=1)
+
+        # Add labels and title
+        plt.xlabel("PCA Components (Sorted by Explained Variance)")
+        plt.ylabel("Cell Contribution")
+
+        plt.title(f"PCA Components {start_idx+1} to {end_idx} and Cell Contributions")
+
+        plt.xticks(x_positions, x_labels, rotation=45)
+        plt.tight_layout()
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+
+        # Save the figure
+        contrib_path = join_filepath(
+            [output_dir, f"pca_contribution_{plot_idx+1:03d}.png"]
+        )
+        plt.savefig(contrib_path, bbox_inches="tight")
+        plt.close()
+        save_thumbnail(contrib_path)

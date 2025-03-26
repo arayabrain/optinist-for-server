@@ -1,0 +1,97 @@
+# Experiment-level graphs
+#
+# [Template]
+# my_primary_plot:
+#   title: "My Primary Visualization"  # Display name in the UI
+#   dir: "plots"                       # Directory where plot is saved
+#   type: "single"                     # "single" for one image, "multi" for patterns
+
+responsivity_ratio:
+  title: "Responsivity Ratio"
+  dir: "plots"
+  type: "single"
+
+orientation_responsivity_ratio:
+  title: "Orientation Responsivity Ratio"
+  dir: "plots"
+  type: "single"
+
+preferred_direction:
+  title: "Preferred Direction"
+  dir: "plots"
+  type: "single"
+
+preferred_orientation:
+  title: "Preferred Orientation"
+  dir: "plots"
+  type: "single"
+
+selectivity:
+  title: "Selectivity"
+  dir: "plots"
+  type: "single"
+
+orientation_selectivity:
+  title: "Orientation Selectivity"
+  dir: "plots"
+  type: "single"
+
+best_responsivity:
+  title: "Peak Response"
+  dir: "plots"
+  type: "single"
+
+direction_tuning_width:
+  title: "Direction Tuning Width"
+  dir: "plots"
+  type: "single"
+
+orientation_tuning_width:
+  title: "Orientation Tuning Width"
+  dir: "plots"
+  type: "single"
+pca_analysis_variance:
+  title: "PCA Explained Variance"
+  dir: "plots"
+  type: "single"
+
+pca_contribution:
+  title: "PCA Component Contribution"
+  dir: "plots"
+  type: "multi"
+  pattern: "pca_contribution_*.png"
+
+pca_spatial_components:
+  title: "PCA Spatial Components"
+  dir: "plots"
+  type: "multi"
+  pattern: "pca_component_spatial_*.png"
+
+pca_time_components:
+  title: "PCA Time Components"
+  dir: "plots"
+  type: "multi"
+  pattern: "pca_component_time_*.png"
+
+cluster_silhouette_scores:
+  title: "K-means Silhouette Analysis"
+  dir: "plots"
+  type: "single"
+
+cluster_corr_matrix:
+  title: "K-means Clustering Analysis"
+  dir: "plots"
+  type: "multi"
+  pattern: "clustering_analysis_*.png"
+
+cluster_spatial_map:
+  title: "Cluster Spatial Map"
+  dir: "plots"
+  type: "multi"
+  pattern: "cluster_spatial_map_*.png"
+
+cluster_time_courses:
+  title: "Cluster Time Courses"
+  dir: "plots"
+  type: "multi"
+  pattern: "cluster_time_course_*.png"
