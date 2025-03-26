@@ -36,7 +36,7 @@ def get_db():
         )
         db = sessionmaker(
             autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
-        )
+        )()
         yield db
     finally:
         db.close()
