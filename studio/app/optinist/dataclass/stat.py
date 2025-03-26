@@ -348,7 +348,7 @@ class StatData(BaseData):
             data=np.zeros(1), columns=[0], file_name="cluster_time_course_001"
         )
 
-    # Add this
+    # Add this: Create a setter method for visualization objects
     def set_my_new_props(self):
         """Create visualization objects for my new analysis."""
         # Create primary visualization (e.g., histogram of values)

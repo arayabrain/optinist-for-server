@@ -95,3 +95,14 @@ cluster_time_courses:
   dir: "plots"
   type: "multi"
   pattern: "cluster_time_course_*.png"
+
+# Add this: Add for plots to appear in the website
+my_primary_plot:
+  title: "My Primary Analysis"
+  dir: "plots"
+  type: "single"
+
+my_summary_plot:
+  title: "Summary Statistics"
+  dir: "plots"
+  type: "single"

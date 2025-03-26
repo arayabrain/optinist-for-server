@@ -58,7 +58,7 @@ def my_new_analysis(
     }
 
 
-def process_my_data(data, threshold):
+def process_my_data(data):
     """
     Process input data for the analysis
 
@@ -80,8 +80,5 @@ def process_my_data(data, threshold):
     # Example processing
     processed_data = processed_data - np.mean(processed_data, axis=1, keepdims=True)
     processed_data = processed_data / np.std(processed_data, axis=1, keepdims=True)
-
-    # Apply threshold
-    processed_data[processed_data < threshold] = threshold
 
     return processed_data
