@@ -8,6 +8,8 @@ from glob import glob
 from typing import Optional, Tuple
 
 import numpy as np
+import scipy
+import scipy.sparse
 import tifffile
 from lauda import stopwatch
 from PIL import Image
@@ -43,10 +45,10 @@ from studio.app.optinist.core.expdb.crud_expdb import (
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
-from studio.app.optinist.dataclass.fluo import FluoData
 from studio.app.optinist.dataclass.microscope_expdb import MicroscopeExpdbData
 from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
     caiman_cnmf_preprocessing,
+    get_roi,
 )
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
@@ -59,6 +61,7 @@ from studio.app.optinist.wrappers.expdb.pca_analysis import (
     pca_analysis,
 )
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
+from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 
 @dataclass
@@ -180,7 +183,6 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def load_raw_cellmask_data(self) -> int:
-        # csr_matrix to numpy array
         cellmask = (
             loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
         )
@@ -317,52 +319,65 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def create_cnmf_info_from_mat_files(self):
         """
-        Create a minimal cnmf_info dictionary from existing mat files
+        Create a cnmf_info dictionary from existing mat files
         when microscope data is not available
 
         Returns:
-            dict: cnmf_info dictionary with fluorescence and cell_roi data
+            dict: cnmf_info dictionary with processed fluorescence and ROI data
         """
         try:
-            # Load existing data
-            timecourse = self.load_raw_timecourse_data()
-
+            # Load the cellmask from the .mat file
             cellmask, imxx, ncells = self.load_raw_cellmask_data()
-
             self.logger_.info(
-                f"Loaded timecourse shape: {timecourse.shape}, ncells: {ncells}"
-            )
-            self.logger_.info(f"Loaded cellmask shape: {cellmask.shape}")
-
-            # Transpose if necessary
-            if timecourse.shape[0] != ncells:
-                # Transpose to orientation: ncells x time_points
-                timecourse = timecourse.T
-                self.logger_.info(f"Timecourse transposed: {timecourse.shape}")
-
-            # The FluoData constructor doesn't change the data shape, just wraps it
-            fluorescence = FluoData(timecourse, file_name="fluorescence")
-
-            # Process the cellmask similar to generate_cellmasks method
-            imx = imy = int(math.sqrt(imxx))
-            cellmask_reshaped = np.reshape(cellmask, (imx, imy, ncells), order="F")
-
-            self.logger_.info(
-                f"Loaded cellmask cellmask_reshaped: {cellmask_reshaped.shape}"
+                f"Loaded cellmask shape: {cellmask.shape}, with {ncells} cells"
             )
 
-            # Create a 2D image where each pixel value is the cell index (1-based)
-            cell_masks_binary = np.where(cellmask_reshaped == 0, 0, 1)
-            roi_image = np.zeros((imx, imy))
-            for i in range(ncells):
-                # Add 1 because cell indices should be 1-based in visualization code
-                roi_image = np.where(
-                    (roi_image == 0) & (cell_masks_binary[:, :, i] > 0),
-                    i + 1,
-                    roi_image,
+            # Convert to dense matrix for get_roi function
+            if scipy.sparse.issparse(cellmask):
+                self.logger_.info(
+                    "Converting sparse matrix to dense for ROI processing"
                 )
-            # Make background NaN for visualization
-            roi_image = np.where(roi_image == 0, np.nan, roi_image)
+                cellmask_dense = cellmask.toarray()
+            else:
+                cellmask_dense = cellmask
+
+            # Calculate dimensions for reshaping
+            imx = imy = int(np.sqrt(imxx))
+            dims = (imx, imy)
+            self.logger_.info(f"Image dimensions: {dims}")
+
+            # Get parameters for ROI processing
+            params = get_default_params("caiman_cnmf_preprocessing")
+            flat_params = {}
+            recursive_flatten_params(params, flat_params)
+            roi_thr = flat_params.get("roi_thr", 0.9)
+            thr_method = "nrg"
+            swap_dim = False
+
+            # Process ROIs using the updated get_roi function
+            self.logger_.info("Processing ROIs with get_roi")
+            roi_image_list = get_roi(
+                cellmask_dense, roi_thr, thr_method, swap_dim, dims
+            )
+            self.logger_.info(f"Processed {len(roi_image_list)} ROIs out of {ncells}")
+
+            # Stack and process the ROI images
+            if roi_image_list and len(roi_image_list) > 0:
+                roi_image_3d = np.stack(roi_image_list).astype(float)
+                roi_image_3d[roi_image_3d == 0] = np.nan
+                roi_image_3d = roi_image_3d - 1  # Adjust indexing as in main workflow
+
+                # Create a 2D composite mask where each pixel is the cell ID
+                # This is the format expected by visualization functions
+                roi_image = np.nanmax(roi_image_3d, axis=0)
+
+                # Replace any -inf (from nanmax on all-NaN slices) with NaN
+                roi_image = np.where(np.isfinite(roi_image), roi_image, np.nan)
+
+                self.logger_.info("Created 2D composite mask with unique values")
+            else:
+                self.logger_.warning("No ROIs found! Creating empty array.")
+                roi_image = np.full(dims, np.nan)
 
             # Create simple container with just the data attribute
             class SimpleRoiContainer:
@@ -374,7 +389,6 @@ class ExpDbBatch:
 
             # Create minimal cnmf_info dictionary
             cnmf_info = {
-                "fluorescence": fluorescence,
                 "cell_roi": cell_roi,
                 "all_roi": all_roi,
                 "iscell": np.ones(ncells, dtype=int),
@@ -460,6 +474,11 @@ class ExpDbBatch:
     def generate_plots_using_cnmf_info(self, stat_data: StatData, cnmf_info: dict):
         self.logger_.info("process 'generate_pca_analysis_plots' start.")
 
+        timecourses = self.load_raw_timecourse_data()
+        ncells = stat_data.ncells
+        if timecourses.shape[0] != ncells:
+            timecourses = timecourses.T
+
         dir_path = self.raw_path.plot_dir
         create_directory(dir_path)
 
@@ -467,6 +486,7 @@ class ExpDbBatch:
         pca_results = pca_analysis(
             stat=stat_data,
             cnmf_info=cnmf_info,
+            fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
             params=get_default_params("pca_analysis"),
             ts_file=self.raw_path.ts_file,
@@ -496,6 +516,7 @@ class ExpDbBatch:
         kmeans_results = kmeans_analysis(
             stat=stat_data,
             cnmf_info=cnmf_info,
+            fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
             params=get_default_params("kmeans_analysis"),
             ts_file=self.raw_path.ts_file,

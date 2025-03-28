@@ -15,6 +15,7 @@ logger = AppLogger.get_logger()
 def pca_analysis(
     stat: StatData,
     cnmf_info: dict,
+    fluorescence: np.ndarray,
     output_dir: str,
     params: dict = None,
     ts_file=None,
@@ -28,7 +29,9 @@ def pca_analysis(
     stat : StatData
         StatData object to store analysis results
     cnmf_info : dict
-        Dictionary containing CNMF results including fluorescence data
+        Dictionary containing CNMF results
+    fluorescence data: np.ndarray
+        Fluorescence data matrix (cells x time)
     output_dir : str
         Directory for saving output files
     params : dict, optional
@@ -45,7 +48,6 @@ def pca_analysis(
     """
 
     # Get the fluorescence data
-    fluorescence = cnmf_info["fluorescence"].data
     n_cells = fluorescence.shape[0]
 
     # # If iscell data is available, use it to filter fluorescence

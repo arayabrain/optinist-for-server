@@ -17,6 +17,7 @@ logger = AppLogger.get_logger()
 def kmeans_analysis(
     stat: StatData,
     cnmf_info: dict,
+    fluorescence: np.ndarray,
     output_dir: str,
     params: dict = None,
     ts_file=None,
@@ -47,7 +48,6 @@ def kmeans_analysis(
     """
 
     # Get the fluorescence data
-    fluorescence = cnmf_info["fluorescence"].data
     n_cells = fluorescence.shape[0]
 
     # # If iscell data is available, use it to filter fluorescence

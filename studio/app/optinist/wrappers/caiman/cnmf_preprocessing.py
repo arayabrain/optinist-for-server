@@ -21,21 +21,41 @@ logger = AppLogger.get_logger()
 
 
 def get_roi(A, roi_thr, thr_method, swap_dim, dims):
+    import numpy as np
+    import scipy.sparse as sparse
     from scipy.ndimage import binary_fill_holes
     from skimage.measure import find_contours
 
+    # Determine if A is sparse or dense
+    is_sparse = sparse.issparse(A)
     d, nr = np.shape(A)
 
     # for each patches
     ims = []
     coordinates = []
     for i in range(nr):
-        pars = dict()
-        # we compute the cumulative sum of the energy of the Ath component
-        # that has been ordered from least to highest
-        patch_data = A.data[A.indptr[i] : A.indptr[i + 1]]
+        # Extract component data and indices based on matrix type
+        if is_sparse:
+            patch_data = A.data[A.indptr[i] : A.indptr[i + 1]]
+            indices = A.indices[A.indptr[i] : A.indptr[i + 1]]
+        else:
+            col_data = A[:, i]
+            nonzero_idx = np.nonzero(col_data)[0]
+            if len(nonzero_idx) == 0:
+                pars = dict(
+                    coordinates=np.array([]),
+                    CoM=np.array([np.NaN, np.NaN]),
+                    neuron_id=i + 1,
+                )
+                coordinates.append(pars)
+                continue
+            patch_data = col_data[nonzero_idx]
+            indices = nonzero_idx
+
+        # Sort indices if needed
         inx = np.argsort(patch_data)[::-1]
 
+        # Apply threshold method
         if thr_method == "nrg":
             cumEn = np.cumsum(patch_data[inx] ** 2)
             if len(cumEn) == 0:
@@ -46,17 +66,16 @@ def get_roi(A, roi_thr, thr_method, swap_dim, dims):
                 )
                 coordinates.append(pars)
                 continue
-            else:
-                # we work with normalized values
-                cumEn /= cumEn[-1]
-                Bvec = np.ones(d)
-                # we put it in a similar matrix
-                Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]][inx]] = cumEn
+
+            # we work with normalized values
+            cumEn /= cumEn[-1]
+            Bvec = np.ones(d)
+            # we put it in a similar matrix
+            Bvec[indices[inx]] = cumEn
         else:
             Bvec = np.zeros(d)
-            Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]]] = (
-                patch_data / patch_data.max()
-            )
+            if patch_data.size > 0:
+                Bvec[indices] = patch_data / patch_data.max()
 
         if swap_dim:
             Bmat = np.reshape(Bvec, dims, order="C")
