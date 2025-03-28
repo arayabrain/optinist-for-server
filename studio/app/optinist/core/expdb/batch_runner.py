@@ -98,7 +98,9 @@ def init_process_logger(config_path, logger_name, process_id=None):
         os.makedirs(log_dir, exist_ok=True)
 
     # ロギング設定の適用
-    logging_config_copy = logging_config.copy()  # 変更を他のプロセスに影響させないようコピー
+    logging_config_copy = (
+        logging_config.copy()
+    )  # 変更を他のプロセスに影響させないようコピー
     logging.config.dictConfig(logging_config_copy)
 
     # ロガー取得
@@ -152,224 +154,6 @@ def stopwatch_callback(watch, function="(N/A)", logger=None):
             func_name,
             watch.elapsed_time,
         )
-
-
-@pickable_stopwatch(callback=stopwatch_callback)
-def process_single_dataset(
-    flag_file: str,
-    org_id: int,
-    start_time: datetime.datetime,
-    config_path: str,
-    logger_name: str,
-) -> dict:
-    exp_id = get_exp_id_from_flag_file(flag_file)
-    logger = init_process_logger(config_path, logger_name)
-    logger.info(
-        f"Process {os.getpid()} starting to \
-            process exp_id: {exp_id}, flag_file: {flag_file}"
-    )
-
-    error = None
-    command = None
-    result = {"success": False, "exp_id": exp_id}
-
-    try:
-        # フラグファイル read
-        with open(flag_file) as cfile:
-            config = yaml.safe_load(cfile)
-
-        # コマンド判定
-        command = config.get("command") if config is not None else None
-
-        if command == ProcessCommand.REGIST.value:
-            process_dataset_registration(exp_id=exp_id, org_id=org_id, logger=logger)
-        elif command == ProcessCommand.REGIST_METADATA.value:
-            process_dataset_metadata_registration(
-                exp_id=exp_id, org_id=org_id, logger=logger
-            )
-        elif command == ProcessCommand.DELETE.value:
-            process_dataset_deletion(exp_id=exp_id, org_id=org_id, logger=logger)
-        else:
-            raise ValueError(f"invalid command: [exp_id: {exp_id}][command: {command}]")
-
-        result["success"] = True
-
-    except Exception as e:
-        logger.error("%s: %s\n%s", type(e), e, traceback.format_exc())
-        error = e
-        result["error"] = e
-
-    finally:
-        process_dataset_postprocess(flag_file, start_time, command, error)
-
-        if error:
-            logger.error("finish process dataset: [exp_id: %s]", exp_id)
-        else:
-            logger.info("finish process dataset: [exp_id: %s]", exp_id)
-
-    return result
-
-
-def get_exp_id_from_flag_file(flag_file: str) -> str:
-    return os.path.basename(flag_file).split(".", 1)[0]
-
-
-@pickable_stopwatch(callback=stopwatch_callback)
-def process_dataset_registration(exp_id: str, org_id: int, logger: logging) -> bool:
-    """
-    Dataset登録処理
-    """
-
-    logger.info("process dataset registration: %s", exp_id)
-    expdb_batch = ExpDbBatch(exp_id, org_id)
-
-    with session_scope() as db:
-        expdb_batch.cleanup_exp_record(db)
-        db.commit()
-
-    # Analyze & Plotting
-    if expdb_batch.raw_path.microscope_file is None:
-        # 顕微鏡データがない場合、以下の処理をスキップ
-        pass
-        logger.warn("No microscope data found. Skip preprocessing.")
-    else:
-        stack = expdb_batch.preprocess()
-        expdb_batch.generate_orimaps(stack)
-        cnmf_info = expdb_batch.cell_detection_cnmf(stack)
-        del stack
-
-    stat_data = expdb_batch.generate_statdata()
-    expdb_batch.generate_cellmasks()
-    expdb_batch.generate_pixelmaps()
-    expdb_batch.generate_plots(stat_data=stat_data)
-    expdb_batch.generate_plots_using_cnmf_info(stat_data=stat_data, cnmf_info=cnmf_info)
-
-    # Read metadata
-    (attributes, view_attributes) = expdb_batch.load_exp_metadata()
-
-    expdb_batch.save_nwb(attributes["metadata"]["metadata"])
-
-    with session_scope() as db:
-        try:
-            exp = create_experiment(
-                db,
-                ExpDbExperimentCreate(
-                    experiment_id=exp_id,
-                    organization_id=org_id,
-                    attributes=attributes,
-                    view_attributes=view_attributes,
-                ),
-            )
-
-            bulk_insert_cells(db, exp.id, stat_data)
-        except Exception as e:
-            logger.error(f"Error during create_experiment: {e}")
-            db.rollback()  # 明示的にrollback
-            raise
-
-    return True
-
-
-@pickable_stopwatch(callback=stopwatch_callback)
-def process_dataset_metadata_registration(
-    exp_id: str, org_id: int, logger: logging
-) -> bool:
-    """
-    Metadata 登録処理
-    """
-
-    logger.info("process dataset metadata registration: %s", exp_id)
-    expdb_batch = ExpDbBatch(exp_id, org_id)
-
-    with session_scope() as db:
-        try:
-            expdb_experiment = get_experiment(db, exp_id, org_id)
-        except AssertionError:
-            log = (
-                "No experiment found. skip metadata registration."
-                f" [org_id: {org_id}][exp_id: {exp_id}]"
-            )
-            logger.warning(log)
-            raise FileNotFoundError(log)
-
-        # Read metadata
-        (attributes, view_attributes) = expdb_batch.load_exp_metadata()
-
-        update_experiment(
-            db,
-            expdb_experiment.id,
-            ExpDbExperimentUpdate(
-                attributes=attributes,
-                view_attributes=view_attributes,
-            ),
-        )
-
-    return True
-
-
-@pickable_stopwatch(callback=stopwatch_callback)
-def process_dataset_deletion(exp_id: str, org_id: int, logger: logging) -> bool:
-    """
-    Dataset削除処理
-    """
-
-    logger.info("process dataset registration: %s", exp_id)
-    expdb_batch = ExpDbBatch(exp_id, org_id)
-
-    with session_scope() as db:
-        expdb_batch.cleanup_exp_record(db)
-
-    return True
-
-
-def process_dataset_postprocess(
-    flag_file: str, start_time: datetime.datetime, command: str, error: Exception = None
-) -> bool:
-    """
-    Dataset後処理
-    """
-
-    # ----------------------------------------
-    # 後処理
-    # - フラグファイル処理（ログ出力、リネーム）
-    # ----------------------------------------
-
-    # フラグファイル書き込みデータ作成
-    if not error:
-        result_log = {
-            "command": command,
-            "start_time": start_time,
-            "complete_time": datetime.datetime.now(),
-            "result": "success",
-            "log": "completed successfully.",
-        }
-    else:
-        result_log = {
-            "command": command,
-            "start_time": start_time,
-            "complete_time": datetime.datetime.now(),
-            "result": "error",
-            "log": "{}: {}".format(type(error), str(error)),
-        }
-
-    # フラグファイル内容アップデート
-    with open(flag_file, "w") as yf:
-        yaml.dump(result_log, yf)
-
-    # フラグファイル名作成
-    if not error:
-        renamed_flag_file = flag_file + ".done"
-    else:
-        renamed_flag_file = flag_file + ".error"
-
-    # 過去のフラグファイルが存在する場合はリネーム
-    if os.path.isfile(renamed_flag_file):
-        ps = pathlib.Path(renamed_flag_file).stat()
-        st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime("%Y%m%d%H%M%S")
-        os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
-
-    # フラグファイルリネーム
-    os.rename(flag_file, renamed_flag_file)
 
 
 class ExpDbBatchRunner:
@@ -502,7 +286,9 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        max_workers = min(len(target_flag_files), self.parallel_workers)  # 最大4スレッド並列実行
+        max_workers = min(
+            len(target_flag_files), self.parallel_workers
+        )  # 最大並列処理数(プロセス数)を制御
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
             len(target_flag_files),
@@ -514,7 +300,7 @@ class ExpDbBatchRunner:
             # 各データセットの処理を並列実行し結果を取得
             futures = [
                 executor.submit(
-                    process_single_dataset,
+                    ExpDbBatchConcurrentProcess.process_single_dataset,
                     flag_file=flag_file,
                     org_id=self.org_id,
                     start_time=self.start_time,
@@ -555,3 +341,242 @@ class ExpDbBatchRunner:
         )
 
         return target_flag_files
+
+
+class ExpDbBatchConcurrentProcess:
+    @staticmethod
+    def __get_exp_id_from_flag_file(flag_file: str) -> str:
+        return os.path.basename(flag_file).split(".", 1)[0]
+
+    @classmethod
+    @pickable_stopwatch(callback=stopwatch_callback)
+    def process_single_dataset(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        config_path: str,
+        logger_name: str,
+    ) -> dict:
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = init_process_logger(config_path, logger_name)
+        logger.info(
+            f"Process {os.getpid()} starting to \
+                process exp_id: {exp_id}, flag_file: {flag_file}"
+        )
+
+        error = None
+        command = None
+        result = {"success": False, "exp_id": exp_id}
+
+        try:
+            # フラグファイル read
+            with open(flag_file) as cfile:
+                config = yaml.safe_load(cfile)
+
+            # コマンド判定
+            command = config.get("command") if config is not None else None
+
+            if command == ProcessCommand.REGIST.value:
+                cls.process_dataset_registration(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            elif command == ProcessCommand.REGIST_METADATA.value:
+                cls.process_dataset_metadata_registration(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            elif command == ProcessCommand.DELETE.value:
+                cls.process_dataset_deletion(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            else:
+                raise ValueError(
+                    f"invalid command: [exp_id: {exp_id}][command: {command}]"
+                )
+
+            result["success"] = True
+
+        except Exception as e:
+            logger.error("%s: %s\n%s", type(e), e, traceback.format_exc())
+            error = e
+            result["error"] = e
+
+        finally:
+            cls.process_dataset_postprocess(flag_file, start_time, command, error)
+
+            if error:
+                logger.error("finish process dataset: [exp_id: %s]", exp_id)
+            else:
+                logger.info("finish process dataset: [exp_id: %s]", exp_id)
+
+        return result
+
+    @classmethod
+    @pickable_stopwatch(callback=stopwatch_callback)
+    def process_dataset_registration(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
+        """
+        Dataset登録処理
+        """
+
+        logger.info("process dataset registration: %s", exp_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id)
+
+        with session_scope() as db:
+            expdb_batch.cleanup_exp_record(db)
+            db.commit()
+
+        # Analyze & Plotting
+        if expdb_batch.raw_path.microscope_file is None:
+            # 顕微鏡データがない場合、以下の処理をスキップ
+            pass
+            logger.warn("No microscope data found. Skip preprocessing.")
+        else:
+            stack = expdb_batch.preprocess()
+            expdb_batch.generate_orimaps(stack)
+            cnmf_info = expdb_batch.cell_detection_cnmf(stack)
+            del stack
+
+        stat_data = expdb_batch.generate_statdata()
+        expdb_batch.generate_cellmasks()
+        expdb_batch.generate_pixelmaps()
+        expdb_batch.generate_plots(stat_data=stat_data)
+        expdb_batch.generate_plots_using_cnmf_info(
+            stat_data=stat_data, cnmf_info=cnmf_info
+        )
+
+        # Read metadata
+        (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+
+        expdb_batch.save_nwb(attributes["metadata"]["metadata"])
+
+        with session_scope() as db:
+            try:
+                exp = create_experiment(
+                    db,
+                    ExpDbExperimentCreate(
+                        experiment_id=exp_id,
+                        organization_id=org_id,
+                        attributes=attributes,
+                        view_attributes=view_attributes,
+                    ),
+                )
+
+                bulk_insert_cells(db, exp.id, stat_data)
+            except Exception as e:
+                logger.error(f"Error during create_experiment: {e}")
+                db.rollback()  # 明示的にrollback
+                raise
+
+        return True
+
+    @classmethod
+    @pickable_stopwatch(callback=stopwatch_callback)
+    def process_dataset_metadata_registration(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
+        """
+        Metadata 登録処理
+        """
+
+        logger.info("process dataset metadata registration: %s", exp_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id)
+
+        with session_scope() as db:
+            try:
+                expdb_experiment = get_experiment(db, exp_id, org_id)
+            except AssertionError:
+                log = (
+                    "No experiment found. skip metadata registration."
+                    f" [org_id: {org_id}][exp_id: {exp_id}]"
+                )
+                logger.warning(log)
+                raise FileNotFoundError(log)
+
+            # Read metadata
+            (attributes, view_attributes) = expdb_batch.load_exp_metadata()
+
+            update_experiment(
+                db,
+                expdb_experiment.id,
+                ExpDbExperimentUpdate(
+                    attributes=attributes,
+                    view_attributes=view_attributes,
+                ),
+            )
+
+        return True
+
+    @classmethod
+    @pickable_stopwatch(callback=stopwatch_callback)
+    def process_dataset_deletion(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
+        """
+        Dataset削除処理
+        """
+
+        logger.info("process dataset registration: %s", exp_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id)
+
+        with session_scope() as db:
+            expdb_batch.cleanup_exp_record(db)
+
+        return True
+
+    @classmethod
+    def process_dataset_postprocess(
+        cls,
+        flag_file: str,
+        start_time: datetime.datetime,
+        command: str,
+        error: Exception = None,
+    ) -> bool:
+        """
+        Dataset後処理
+        """
+
+        # ----------------------------------------
+        # 後処理
+        # - フラグファイル処理（ログ出力、リネーム）
+        # ----------------------------------------
+
+        # フラグファイル書き込みデータ作成
+        if not error:
+            result_log = {
+                "command": command,
+                "start_time": start_time,
+                "complete_time": datetime.datetime.now(),
+                "result": "success",
+                "log": "completed successfully.",
+            }
+        else:
+            result_log = {
+                "command": command,
+                "start_time": start_time,
+                "complete_time": datetime.datetime.now(),
+                "result": "error",
+                "log": "{}: {}".format(type(error), str(error)),
+            }
+
+        # フラグファイル内容アップデート
+        with open(flag_file, "w") as yf:
+            yaml.dump(result_log, yf)
+
+        # フラグファイル名作成
+        if not error:
+            renamed_flag_file = flag_file + ".done"
+        else:
+            renamed_flag_file = flag_file + ".error"
+
+        # 過去のフラグファイルが存在する場合はリネーム
+        if os.path.isfile(renamed_flag_file):
+            ps = pathlib.Path(renamed_flag_file).stat()
+            st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
+                "%Y%m%d%H%M%S"
+            )
+            os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
+
+        # フラグファイルリネーム
+        os.rename(flag_file, renamed_flag_file)
