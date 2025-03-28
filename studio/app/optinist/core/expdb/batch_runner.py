@@ -100,7 +100,7 @@ def init_process_logger(config_path, logger_name, process_id=None):
     # ロギング設定の適用
     logging_config_copy = (
         logging_config.copy()
-    )  # 変更を他のプロセスに影響させないようコピー
+    )  # Copy the changes to avoid affecting other processes
     logging.config.dictConfig(logging_config_copy)
 
     # ロガー取得
