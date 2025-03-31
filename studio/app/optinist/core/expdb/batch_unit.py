@@ -83,7 +83,7 @@ def save_image_with_thumb(img_path: str, img):
     img.save(img_path)
     w, h = img.size
     new_width = int(w * (THUMBNAIL_HEIGHT / h))
-    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.BILINEAR)
+    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.BICUBIC)
     thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
