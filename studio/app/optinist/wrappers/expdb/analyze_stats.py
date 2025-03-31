@@ -1,10 +1,10 @@
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import ExpDbData, StatData
-
-# Add this: Import your new analysis function
-from studio.app.optinist.wrappers.expdb import my_new_analysis
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
+
+# Add this: Import your new analysis function
+from studio.app.optinist.wrappers.expdb.my_new_analysis import my_new_analysis
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 

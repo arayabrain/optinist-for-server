@@ -2,6 +2,7 @@
 # Add this: A new analysis function
 import numpy as np
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import StatData
 
@@ -26,6 +27,8 @@ def my_new_analysis(
     dict
         Dictionary of outputs including updated stat object and visualizations
     """
+    logger = AppLogger.get_logger()
+    logger.info("Running my_new_analysis...")
     # Set default parameters if none provided
     if params is None:
         params = {
@@ -34,13 +37,20 @@ def my_new_analysis(
             "max_value": 1,
         }
 
+    # Store all processed data in a list
+    all_processed_data = []
+    # For summary statistics - one value per cell
     result_data = np.zeros(stat.ncells)
     for i in range(stat.ncells):
-        result_data[i] = process_my_data(stat.data_table[i])
+        # Process the data
+        processed = process_my_data(stat.data_table[i])
+        all_processed_data.append(processed)
+        # Calculate a summary statistic (e.g., mean) for each cell
+        result_data[i] = np.mean(processed)  # Calculate mean for this cell
 
     # Store results in StatData object
-    stat.my_new_metric = result_data
-    stat.my_summary_value = np.mean(result_data, axis=1)
+    stat.my_new_metric = all_processed_data
+    stat.my_summary_value = result_data
     stat.index_responsive_cells = np.where(
         stat.my_summary_value >= params["threshold"], True, False
     )
@@ -66,8 +76,6 @@ def process_my_data(data):
     ----------
     data : numpy.ndarray
         Raw input data to process
-    threshold : float
-        Processing threshold parameter
 
     Returns
     -------

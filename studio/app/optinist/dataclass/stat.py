@@ -1,5 +1,6 @@
 import numpy as np
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.dataclass.bar import BarData
 from studio.app.common.dataclass.base import BaseData
 from studio.app.common.dataclass.heatmap import HeatMapData
@@ -351,6 +352,8 @@ class StatData(BaseData):
     # Add this: Create a setter method for visualization objects
     def set_my_new_props(self):
         """Create visualization objects for my new analysis."""
+        logger = AppLogger.get_logger()
+        logger.info("Creating visualizations for my_new_analysis...")
         # Create primary visualization (e.g., histogram of values)
         self.my_primary_plot = HistogramData(
             data=self.my_summary_value[~np.isnan(self.my_summary_value)],
