@@ -390,7 +390,7 @@ def generate_pca_visualization(
         # 2. Time course plots - trial-averaged scores are available
         if scores_ave is not None and scores_ave.shape[1] > i:
             plt.figure()
-            plt.plot(scores_ave[:, i], linewidth=2)
+            plt.plot(scores_ave[:, i], linewidth=2.3, color="black")
             plt.title(f"PC {i+1} Trial-Averaged Time Course")
             plt.xlabel("Time")
             plt.ylabel("Component Value")
@@ -402,7 +402,7 @@ def generate_pca_visualization(
 
         else:
             plt.figure()
-            plt.plot(scores[:, i], linewidth=2)
+            plt.plot(scores[:, i], linewidth=2.3, color="black")
             plt.title(f"PC {i+1} Time Courses (All Trials)")
             plt.xlabel("Time")
             plt.ylabel("Component Value")

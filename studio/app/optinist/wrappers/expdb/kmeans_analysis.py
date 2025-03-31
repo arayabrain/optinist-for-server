@@ -571,13 +571,12 @@ def generate_kmeans_visualization(
             cluster_mask = labels == cluster
 
             if np.any(cluster_mask):
-                cluster_avg = np.mean(fluo_data[cluster_mask], axis=0)
-                plt.plot(cluster_avg, linewidth=2, color=colors[i])
-
                 # Add individual ROI traces with lower alpha
                 for roi_idx in np.where(cluster_mask)[0]:
                     plt.plot(fluo_data[roi_idx], alpha=0.2, linewidth=0.5)
-
+                # Then plot trial-averaged scores with thicker black line
+                cluster_avg = np.mean(fluo_data[cluster_mask], axis=0)
+                plt.plot(cluster_avg, linewidth=2.3, color="black")
                 plt.title(f"Cluster {i+1} {time_course_type} Time Course")
                 plt.xlabel("Time")
                 plt.ylabel("Fluorescence")
