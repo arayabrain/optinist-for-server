@@ -207,6 +207,7 @@ class ExpDbBatch:
     def process_roi_masks(self):
         """
         Process cellmask data  from .mat file to create ROI image.
+        Uses cnmf.get_roi function that is used in creating cnmf_info.
         Returns roi_image : ndarray
             2D composite ROI mask
         """
