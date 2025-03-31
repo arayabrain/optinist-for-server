@@ -83,7 +83,7 @@ def save_image_with_thumb(img_path: str, img):
     img.save(img_path)
     w, h = img.size
     new_width = int(w * (THUMBNAIL_HEIGHT / h))
-    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.BILINEAR)
+    thumb_img = img.resize((new_width, THUMBNAIL_HEIGHT), Image.Resampling.BICUBIC)
     thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
@@ -182,10 +182,11 @@ class ExpDbBatch:
             create_directory(self.pub_path.output_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
-    def load_raw_cellmask_data(self) -> int:
-        cellmask = (
-            loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME).toarray()
-        )
+    def load_raw_cellmask_data(self, sparse: bool = False) -> int:
+        cellmask = loadmat(self.raw_path.cellmask_file).get(CELLMASK_FIELDNAME)
+
+        if not sparse:
+            cellmask = cellmask.toarray()
 
         imxx, ncells = cellmask.shape
         return (cellmask, imxx, ncells)
@@ -196,13 +197,80 @@ class ExpDbBatch:
         Load timecourse data from .mat file
         Returns the timecourse data array
         """
-        from scipy.io import loadmat
-
         timecourse = loadmat(self.raw_path.tc_file).get(TC_FIELDNAME)
         if timecourse is None:
             self.logger_.info(f"Failed to load timecourse from {self.raw_path.tc_file}")
 
         return timecourse
+
+    @stopwatch(callback=__stopwatch_callback)
+    def process_roi_masks(self):
+        """
+        Process cellmask data  from .mat file to create ROI image.
+        Uses cnmf.get_roi function that is used in creating cnmf_info.
+        Returns roi_image : ndarray
+            2D composite ROI mask
+        """
+
+        cellmask_data = self.load_raw_cellmask_data(sparse=True)[0]
+
+        # Handle sparse matrix format
+        if not scipy.sparse.issparse(cellmask_data):
+            self.logger_.info("Converting to sparse matrix")
+            cellmask_data = scipy.sparse.csc_matrix(cellmask_data)
+        else:
+            self.logger_.info("Using provided sparse matrix")
+
+        # Get dimensions from shape
+        d, nr = cellmask_data.shape
+        imx = imy = int(np.sqrt(d))
+        dims = (imx, imy)
+        self.logger_.info(f"Cellmask shape: {d}x{nr}, Image dimensions: {dims}")
+
+        # Log matrix sparsity
+        self.logger_.info(
+            f"Matrix has {cellmask_data.nnz} non-zero elements out of {d*nr} total"
+        )
+
+        # Get parameters for ROI processing
+        params = get_default_params("caiman_cnmf_preprocessing")
+        flat_params = {}
+        recursive_flatten_params(params, flat_params)
+        roi_thr = flat_params.get("roi_thr", 0.9)
+        thr_method = "nrg"
+        swap_dim = False  # Use F-order reshaping
+
+        # Process ROIs
+        self.logger_.info("Processing ROIs with get_roi")
+        roi_image_list = get_roi(cellmask_data, roi_thr, thr_method, swap_dim, dims)
+        self.logger_.info(f"get_roi returned {len(roi_image_list)} ROI images")
+
+        # Check if we have results
+        if roi_image_list and len(roi_image_list) > 0:
+            # Stack images
+            roi_image_3d = np.stack(roi_image_list).astype(float)
+            self.logger_.info(f"3D ROI shape: {roi_image_3d.shape}")
+
+            # Process ROI images
+            roi_image_3d[roi_image_3d == 0] = np.nan
+            roi_image_3d = np.where(
+                np.isnan(roi_image_3d), roi_image_3d, roi_image_3d - 1
+            )
+
+            # Create composite mask
+            roi_image = np.nanmax(roi_image_3d, axis=0)
+
+            # Ensure finite values
+            roi_image = np.where(np.isfinite(roi_image), roi_image, np.nan)
+
+            # Count non-NaN values
+            non_nan_count = np.sum(~np.isnan(roi_image))
+            self.logger_.info(f"ROI mask has {non_nan_count} non-NaN pixels")
+        else:
+            self.logger_.warning("No ROIs found! Creating empty array.")
+            roi_image = np.full(dims, np.nan)
+
+        return roi_image
 
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
@@ -317,93 +385,6 @@ class ExpDbBatch:
         return ncells
 
     @stopwatch(callback=__stopwatch_callback)
-    def create_cnmf_info_from_mat_files(self):
-        """
-        Create a cnmf_info dictionary from existing mat files
-        when microscope data is not available
-
-        Returns:
-            dict: cnmf_info dictionary with processed fluorescence and ROI data
-        """
-        try:
-            # Load the cellmask from the .mat file
-            cellmask, imxx, ncells = self.load_raw_cellmask_data()
-            self.logger_.info(
-                f"Loaded cellmask shape: {cellmask.shape}, with {ncells} cells"
-            )
-
-            # Convert to dense matrix for get_roi function
-            if scipy.sparse.issparse(cellmask):
-                self.logger_.info(
-                    "Converting sparse matrix to dense for ROI processing"
-                )
-                cellmask_dense = cellmask.toarray()
-            else:
-                cellmask_dense = cellmask
-
-            # Calculate dimensions for reshaping
-            imx = imy = int(np.sqrt(imxx))
-            dims = (imx, imy)
-            self.logger_.info(f"Image dimensions: {dims}")
-
-            # Get parameters for ROI processing
-            params = get_default_params("caiman_cnmf_preprocessing")
-            flat_params = {}
-            recursive_flatten_params(params, flat_params)
-            roi_thr = flat_params.get("roi_thr", 0.9)
-            thr_method = "nrg"
-            swap_dim = False
-
-            # Process ROIs using the updated get_roi function
-            self.logger_.info("Processing ROIs with get_roi")
-            roi_image_list = get_roi(
-                cellmask_dense, roi_thr, thr_method, swap_dim, dims
-            )
-            self.logger_.info(f"Processed {len(roi_image_list)} ROIs out of {ncells}")
-
-            # Stack and process the ROI images
-            if roi_image_list and len(roi_image_list) > 0:
-                roi_image_3d = np.stack(roi_image_list).astype(float)
-                roi_image_3d[roi_image_3d == 0] = np.nan
-                roi_image_3d = roi_image_3d - 1  # Adjust indexing as in main workflow
-
-                # Create a 2D composite mask where each pixel is the cell ID
-                # This is the format expected by visualization functions
-                roi_image = np.nanmax(roi_image_3d, axis=0)
-
-                # Replace any -inf (from nanmax on all-NaN slices) with NaN
-                roi_image = np.where(np.isfinite(roi_image), roi_image, np.nan)
-
-                self.logger_.info("Created 2D composite mask with unique values")
-            else:
-                self.logger_.warning("No ROIs found! Creating empty array.")
-                roi_image = np.full(dims, np.nan)
-
-            # Create simple container with just the data attribute
-            class SimpleRoiContainer:
-                def __init__(self, data):
-                    self.data = data
-
-            cell_roi = SimpleRoiContainer(roi_image)
-            all_roi = SimpleRoiContainer(roi_image)
-
-            # Create minimal cnmf_info dictionary
-            cnmf_info = {
-                "cell_roi": cell_roi,
-                "all_roi": all_roi,
-                "iscell": np.ones(ncells, dtype=int),
-            }
-
-            self.logger_.info(
-                f"Created cnmf_info from existing files: {ncells} ROI found"
-            )
-            return cnmf_info
-
-        except Exception as e:
-            self.logger_.info(f"Error creating cnmf_info from existing files: {str(e)}")
-            return None
-
-    @stopwatch(callback=__stopwatch_callback)
     def generate_plots(self, stat_data: StatData):
         self.logger_.info("process 'generate_plots' start.")
 
@@ -471,7 +452,7 @@ class ExpDbBatch:
             self._copy_plots(self.raw_path.pixelmap_dir, self.pub_path.pixelmap_dir)
 
     @stopwatch(callback=__stopwatch_callback)
-    def generate_plots_using_cnmf_info(self, stat_data: StatData, cnmf_info: dict):
+    def generate_plots_spatial(self, stat_data: StatData):
         self.logger_.info("process 'generate_pca_analysis_plots' start.")
 
         timecourses = self.load_raw_timecourse_data()
@@ -479,13 +460,15 @@ class ExpDbBatch:
         if timecourses.shape[0] != ncells:
             timecourses = timecourses.T
 
+        roi_masks = self.process_roi_masks()
+
         dir_path = self.raw_path.plot_dir
         create_directory(dir_path)
 
         # Perform PCA analysis
         pca_results = pca_analysis(
             stat=stat_data,
-            cnmf_info=cnmf_info,
+            roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
             params=get_default_params("pca_analysis"),
@@ -505,7 +488,7 @@ class ExpDbBatch:
             scores=stat_data.pca_scores,
             explained_variance=stat_data.pca_explained_variance,
             components=stat_data.pca_components,
-            roi_masks=cnmf_info["cell_roi"].data,
+            roi_masks=roi_masks,
             scores_ave=stat_data.pca_scores_ave,
             output_dir=dir_path,
         )
@@ -515,7 +498,7 @@ class ExpDbBatch:
         # Perform KMeans analysis
         kmeans_results = kmeans_analysis(
             stat=stat_data,
-            cnmf_info=cnmf_info,
+            roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
             params=get_default_params("kmeans_analysis"),
@@ -534,7 +517,7 @@ class ExpDbBatch:
             all_labels=stat_data.all_labels,
             all_sorted_matrices=stat_data.all_sorted_matrices,
             fluorescence=stat_data.fluorescence,
-            roi_masks=cnmf_info["cell_roi"].data,
+            roi_masks=roi_masks,
             silhouette_scores=stat_data.silhouette_scores,
             optimal_clusters=stat_data.optimal_clusters,
             fluorescence_ave=stat_data.fluorescence_ave,
