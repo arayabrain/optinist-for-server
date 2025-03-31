@@ -33,8 +33,6 @@ def my_new_analysis(
     if params is None:
         params = {
             "threshold": 0.5,
-            "min_value": 0,
-            "max_value": 1,
         }
 
     # Store all processed data in a list

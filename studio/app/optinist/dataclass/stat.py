@@ -354,17 +354,14 @@ class StatData(BaseData):
         """Create visualization objects for my new analysis."""
         logger = AppLogger.get_logger()
         logger.info("Creating visualizations for my_new_analysis...")
-        # Create primary visualization (e.g., histogram of values)
+        # Create primary visualization (histogram of values)
+        # HistogramData only accepts data and file_name parameters
         self.my_primary_plot = HistogramData(
             data=self.my_summary_value[~np.isnan(self.my_summary_value)],
-            bins=20,  # Adjust as needed
-            title="My Primary Analysis",
-            xlabel="Value",
-            ylabel="Count",
             file_name="my_primary_plot",  # Must match property name
         )
-
-        # Create summary visualization (e.g., pie chart of responsive cells)
+        # Create summary visualization (pie chart of responsive cells)
+        # PieData requires data and labels parameters
         self.my_summary_plot = PieData(
             data=np.array(
                 (
@@ -374,8 +371,7 @@ class StatData(BaseData):
                 dtype=np.float64,
             ),
             labels=["Responsive", "Non-responsive"],
-            title="Responsive Cells Summary",
-            file_name="my_summary_plot",  # Must match property name
+            file_name="my_summary_plot",
         )
 
     @property

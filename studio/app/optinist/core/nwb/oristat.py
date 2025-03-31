@@ -131,7 +131,7 @@ KMEANS_TYPES = {
 
 # Add this: Define types for your new analysis
 MY_NEW_ANALYSIS_TYPES = {
-    "my_new_metric": ("float", (None,)),
+    "my_new_metric": ("float", (None, None)),
     "my_summary_value": ("float", (None,)),
     "index_responsive_cells": ("bool", (None,)),
     "ncells_responsive": ("int", ()),
