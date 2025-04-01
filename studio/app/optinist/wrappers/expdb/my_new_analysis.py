@@ -35,23 +35,27 @@ def my_new_analysis(
             "threshold": 0.5,
         }
 
-    # Store all processed data in a list
+    # Process data and calculate summary statistics
     all_processed_data = []
-    # For summary statistics - one value per cell
-    result_data = np.zeros(stat.ncells)
+    mean_data = np.zeros(stat.ncells)
+
     for i in range(stat.ncells):
-        # Process the data
         processed = process_my_data(stat.data_table[i])
         all_processed_data.append(processed)
-        # Calculate a summary statistic (e.g., mean) for each cell
-        result_data[i] = np.mean(processed)  # Calculate mean for this cell
+        mean_data[i] = np.mean(processed)  # Summary statistic (mean)
 
-    # Store results in StatData object
-    stat.my_new_metric = all_processed_data
-    stat.my_summary_value = result_data
-    stat.index_responsive_cells = np.where(
-        stat.my_summary_value >= params["threshold"], True, False
-    )
+    # Create 3D array from processed data
+    if all_processed_data:
+        first_array = all_processed_data[0]
+        if hasattr(first_array, "shape"):
+            rows, cols = first_array.shape
+            stat.my_new_metric = np.array(all_processed_data).reshape(
+                len(all_processed_data), rows, cols
+            )
+
+    # Store results and calculate responsive cells
+    stat.my_summary_value = mean_data
+    stat.index_responsive_cells = mean_data >= params["threshold"]
     stat.ncells_responsive = np.sum(stat.index_responsive_cells)
 
     # Call the setter to create visualization objects
