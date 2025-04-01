@@ -1189,15 +1189,17 @@ const DatabaseExperiments = ({
         filterModel={model.filter}
         onFilterModelChange={handleFilter}
         onRowClick={handleRowClick}
-        sx={{ height: "calc(100% - 50px)" }}
+        sx={{ flex: 1, minHeight: 0 }}
       />
       {dataExperiments?.items.length > 0 ? (
-        <PaginationCustom
-          data={dataExperiments}
-          handlePage={handlePage}
-          handleLimit={handleLimit}
-          limit={Number(limit)}
-        />
+        <Box sx={{ mt: 2 }}>
+          <PaginationCustom
+            data={dataExperiments}
+            handlePage={handlePage}
+            handleLimit={handleLimit}
+            limit={Number(limit)}
+          />
+        </Box>
       ) : null}
       <DialogImage
         open={dataDialog.type === "image"}
@@ -1254,7 +1256,9 @@ const DatabaseExperiments = ({
 
 const DatabaseExperimentsWrapper = styled(Box)(() => ({
   width: "100%",
-  height: "calc(100vh - 250px)",
+  height: "calc(100vh - 220px)",
+  display: "flex",
+  flexDirection: "column",
 }))
 
 const Content = styled("textarea")(() => ({
