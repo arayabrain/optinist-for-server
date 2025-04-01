@@ -398,11 +398,10 @@ class ExpDbBatchConcurrentProcess:
                 logger.warning(
                     "No microscope data found. Will use existing processed data."
                 )
-                cnmf_info = expdb_batch.create_cnmf_info_from_mat_files()
             else:
                 stack = expdb_batch.preprocess()
                 expdb_batch.generate_orimaps(stack)
-                cnmf_info = expdb_batch.cell_detection_cnmf(stack)
+                expdb_batch.cell_detection_cnmf(stack)
                 del stack
 
             stat_data = expdb_batch.generate_statdata()
@@ -414,9 +413,7 @@ class ExpDbBatchConcurrentProcess:
             expdb_batch.generate_cellmasks()
             expdb_batch.generate_pixelmaps()
             expdb_batch.generate_plots(stat_data=stat_data)
-            expdb_batch.generate_plots_using_cnmf_info(
-                stat_data=stat_data, cnmf_info=cnmf_info
-            )
+            expdb_batch.generate_plots_spatial(stat_data=stat_data)
 
         # Metadata registration process
         with stopwatchcm(dataset_process_stopwatch_callback):
