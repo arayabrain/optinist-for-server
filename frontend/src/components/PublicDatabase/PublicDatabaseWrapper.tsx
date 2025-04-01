@@ -20,7 +20,6 @@ const PublicDatabaseWrapper: FC<{ children: ReactNode }> = ({ children }) => {
       <Box
         sx={{
           paddingTop: 2,
-          paddingBottom: 5,
         }}
       >
         <Box>

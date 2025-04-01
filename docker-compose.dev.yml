@@ -5,7 +5,7 @@ version: "3"
 #   ```
 #   cd {APP_SRC_DIR}
 #   mkdir .snakemake ../experiments_datasets ../experiments_public
-#   chmod 777 ./ logs/ logs/* .snakemake/ ../experiments_datasets/ ../experiments_public/
+#   chmod 777 .snakemake/ ../experiments_datasets/ ../experiments_public/
 #   ```
 
 services:

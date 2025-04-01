@@ -160,7 +160,16 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   }
 
   return (
-    <Dialog open={open} fullWidth maxWidth="lg">
+    <Dialog
+      open={open}
+      fullWidth
+      maxWidth="lg"
+      onClose={(event, reason) => {
+        if (reason === "escapeKeyDown") {
+          onClickCancel()
+        }
+      }}
+    >
       <DialogTitle>Experiments</DialogTitle>
       <DialogContent dividers>
         <DatabaseExperiments
