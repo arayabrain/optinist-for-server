@@ -1,5 +1,6 @@
 import numpy as np
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.dataclass.bar import BarData
 from studio.app.common.dataclass.base import BaseData
 from studio.app.common.dataclass.heatmap import HeatMapData
@@ -124,6 +125,14 @@ class StatData(BaseData):
         # --- kmeans ---
         self.cluster_labels = np.full(self.ncells, np.NaN)
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
+
+        # Add this: Initialize new analysis properties
+        # --- my_new_analysis ---
+        self.my_new_metric = None
+        self.my_new_value = np.full(self.ncells, np.NaN)
+        self.my_summary_value = np.full(self.ncells, np.NaN)
+        self.index_responsive_cells = None
+        self.ncells_responsive = None
 
     # --- stat_file_convert ---
     def set_file_convert_props(self, sf_params=None):
@@ -340,6 +349,31 @@ class StatData(BaseData):
             data=np.zeros(1), columns=[0], file_name="cluster_time_course_001"
         )
 
+    # Add this: Create a setter method for visualization objects
+    def set_my_new_props(self):
+        """Create visualization objects for my new analysis."""
+        logger = AppLogger.get_logger()
+        logger.info("Creating visualizations for my_new_analysis...")
+        # Create primary visualization (histogram of values)
+        # HistogramData only accepts data and file_name parameters
+        self.my_primary_plot = HistogramData(
+            data=self.my_summary_value[~np.isnan(self.my_summary_value)],
+            file_name="my_primary_plot",  # Must match property name
+        )
+        # Create summary visualization (pie chart of responsive cells)
+        # PieData requires data and labels parameters
+        self.my_summary_plot = PieData(
+            data=np.array(
+                (
+                    self.ncells_responsive,
+                    self.ncells - self.ncells_responsive,
+                ),
+                dtype=np.float64,
+            ),
+            labels=["Responsive", "Non-responsive"],
+            file_name="my_summary_plot",
+        )
+
     @property
     def nwb_dict_file_convert(self) -> dict:
         nwb_dict = {
@@ -413,6 +447,19 @@ class StatData(BaseData):
 
         return nwb_dict
 
+    # Add this: Add your data to a dictionary
+    @property
+    def nwb_dict_my_new_analysis(self) -> dict:
+        """Return NWB dictionary for my new analysis"""
+        # Only include fields that are defined in MY_NEW_ANALYSIS_TYPES
+        nwb_dict = {}
+        nwb_dict["my_new_metric"] = self.my_new_metric
+        nwb_dict["my_summary_value"] = self.my_summary_value
+        nwb_dict["index_responsive_cells"] = self.index_responsive_cells
+        nwb_dict["ncells_responsive"] = self.ncells_responsive
+
+        return nwb_dict
+
     @property
     def nwb_dict_all(self) -> dict:
         return {
@@ -422,6 +469,8 @@ class StatData(BaseData):
             **self.nwb_dict_curvefit,
             **self.nwb_dict_pca,
             **self.nwb_dict_kmeans,
+            # Add this: Add your new data dictionary to the NWB dictionary
+            **self.nwb_dict_my_new_analysis,
         }
 
     @classmethod

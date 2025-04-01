@@ -4,6 +4,9 @@ from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
 from studio.app.optinist.wrappers.expdb.analyze_stats import analyze_stats
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
+
+# Add this: Import your new analysis function
+from studio.app.optinist.wrappers.expdb.my_new_analysis import my_new_analysis
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
@@ -41,6 +44,11 @@ expdb_wrapper_dict = {
             },
             "curvefit_tuning": {
                 "function": curvefit_tuning,
+                "conda_name": "expdb",
+            },
+            # Add this: Register your new analysis
+            "my_new_analysis": {
+                "function": my_new_analysis,
                 "conda_name": "expdb",
             },
         },

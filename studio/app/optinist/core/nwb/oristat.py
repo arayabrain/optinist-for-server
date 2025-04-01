@@ -129,6 +129,14 @@ KMEANS_TYPES = {
     "optimal_clusters": "int",
 }
 
+# Add this: Define types for your new analysis
+MY_NEW_ANALYSIS_TYPES = {
+    "my_new_metric": ("float", (None, None, None)),  # 3D array with shape (10, 20, 5)
+    "my_summary_value": ("float", (None,)),  # 1D array with shape (10,)
+    "index_responsive_cells": ("bool", (None,)),  # 1D boolean array
+    "ncells_responsive": "int",  # Single integer value
+}
+
 
 def get_dataset_list(types: dict) -> list:
     return [
@@ -155,6 +163,8 @@ oristat_ext = NWBGroupSpec(
         *get_dataset_list(CURVEFIT_PROPS),
         *get_dataset_list(PCA_TYPES),
         *get_dataset_list(KMEANS_TYPES),
+        # Add this: Add your new analysis types
+        *get_dataset_list(MY_NEW_ANALYSIS_TYPES),
     ],
     name="oristats",
     neurodata_type_def="Oristats",

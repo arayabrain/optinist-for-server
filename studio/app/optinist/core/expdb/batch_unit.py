@@ -409,6 +409,11 @@ class ExpDbBatch:
 
             stat_data.direction_tuning_width.save_plot(dir_path)
             stat_data.orientation_tuning_width.save_plot(dir_path)
+
+            # Add this: to generate and save visualizations
+            stat_data.my_primary_plot.save_plot(dir_path)
+            stat_data.my_summary_plot.save_plot(dir_path)
+
         else:
             stat_data.sf_tuning_curve.save_plot(dir_path)
             stat_data.stim_selectivity.save_plot(dir_path)

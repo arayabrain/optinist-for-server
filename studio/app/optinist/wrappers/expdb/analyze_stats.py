@@ -2,6 +2,9 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.wrappers.expdb.anova1_mult import anova1_mult
 from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
+
+# Add this: Import your new analysis function
+from studio.app.optinist.wrappers.expdb.my_new_analysis import my_new_analysis
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
 
@@ -13,6 +16,8 @@ def analyze_stats(
     stat = anova1_mult(stat, output_dir, params).get("stat")
     stat = vector_average(stat, output_dir, params).get("stat")
     stat = curvefit_tuning(stat, output_dir, params).get("stat")
+    # Add this: Call your new analysis
+    stat = my_new_analysis(stat, output_dir, params).get("stat")
 
     return {
         "stat": stat,
@@ -31,5 +36,8 @@ def analyze_stats(
         "sf_responsivity": stat.stim_responsivity,
         "sf_responsivity_ratio": stat.sf_responsivity_ratio,
         "spatial_frequency_tuning": stat.sf_tuning_curve,
+        # Add this: Return your new analysis results
+        "my_primary_plot": stat.my_primary_plot,
+        "my_summary_plot": stat.my_summary_plot,
         "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
     }

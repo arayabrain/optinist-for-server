@@ -19,3 +19,11 @@ use_fourier: True
 sf_min_value: 0
 sf_max_value: 1
 sf_unit: "normalized"
+
+# Add this: Add analysis parameters
+# my_new_analysis
+threshold: 0.5
+min_value: 0
+max_value: 1
+units: "normalized"
+use_normalization: true
