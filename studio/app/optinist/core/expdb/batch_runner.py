@@ -98,7 +98,9 @@ def init_process_logger(config_path, logger_name, process_id=None):
         os.makedirs(log_dir, exist_ok=True)
 
     # ロギング設定の適用
-    logging_config_copy = logging_config.copy()  # 変更を他のプロセスに影響させないようコピー
+    logging_config_copy = (
+        logging_config.copy()
+    )  # 変更を他のプロセスに影響させないようコピー
     logging.config.dictConfig(logging_config_copy)
 
     # ロガー取得
@@ -229,20 +231,19 @@ def process_dataset_registration(exp_id: str, org_id: int, logger: logging) -> b
 
     # Analyze & Plotting
     if expdb_batch.raw_path.microscope_file is None:
-        # 顕微鏡データがない場合、以下の処理をスキップ
-        pass
-        logger.warn("No microscope data found. Skip preprocessing.")
+        # If no microscope data, create cnmf_info from existing mat files
+        logger.warning("No microscope data found. Will use existing processed data.")
     else:
         stack = expdb_batch.preprocess()
         expdb_batch.generate_orimaps(stack)
-        cnmf_info = expdb_batch.cell_detection_cnmf(stack)
+        expdb_batch.cell_detection_cnmf(stack)
         del stack
 
     stat_data = expdb_batch.generate_statdata()
     expdb_batch.generate_cellmasks()
     expdb_batch.generate_pixelmaps()
     expdb_batch.generate_plots(stat_data=stat_data)
-    expdb_batch.generate_plots_using_cnmf_info(stat_data=stat_data, cnmf_info=cnmf_info)
+    expdb_batch.generate_plots_spatial(stat_data=stat_data)
 
     # Read metadata
     (attributes, view_attributes) = expdb_batch.load_exp_metadata()
@@ -502,7 +503,9 @@ class ExpDbBatchRunner:
             return processResult
 
         # 処理対象datasets検索：フラグファイルを走査
-        max_workers = min(len(target_flag_files), self.parallel_workers)  # 最大4スレッド並列実行
+        max_workers = min(
+            len(target_flag_files), self.parallel_workers
+        )  # 最大4スレッド並列実行
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
             len(target_flag_files),
