@@ -20,6 +20,7 @@ if __name__ == "__main__":
         default=1,
         help="Number of parallel processes (default: 1)",
     )
+
     from studio.app.optinist.microscopes.ND2Reader import ND2Reader
 
     # Note: @v1.2.0
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     # MicroscopeReader と caiman 間で .so (libtiff) のバージョン競合が生じることから、
     # ここで事前に（ExpDbBatchRunnerのimport前に） MicroscopeReader を 初期化し、
     # MicroscopeReader に必要な .so を先行loadする対処をとっている。
-    ND2Reader()
+    if ND2Reader.is_available():
+        ND2Reader()
 
     main(parser.parse_args())

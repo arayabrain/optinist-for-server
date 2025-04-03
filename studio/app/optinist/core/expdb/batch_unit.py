@@ -139,7 +139,9 @@ class ExpDbPath:
 
 
 class ExpDbBatch:
-    LOGGER_NAME = None  # Note: use root logger (empty name)
+    # Note: This LOGGER_NAME must be the same as
+    #   ExpDbBatchConcurrentProcess.LOGGER_NAME.
+    LOGGER_NAME = "batch_process_logger"
 
     def __init__(self, exp_id: str, org_id: int) -> None:
         self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
