@@ -257,7 +257,7 @@ def caiman_cnmf_preprocessing(
         stop_server(dview=dview)  # noqa: F821
 
     c, dview, n_processes = setup_cluster(
-        backend="local", n_processes=None, single_thread=True
+        backend="local", n_processes=None, single_thread=True, ignore_preexisting=True
     )
 
     if use_online:

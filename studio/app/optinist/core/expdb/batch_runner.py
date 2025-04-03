@@ -1,3 +1,4 @@
+import concurrent.futures
 import datetime
 import glob
 import logging
@@ -8,7 +9,7 @@ import traceback
 from enum import Enum
 
 import yaml
-from lauda import stopwatch
+from lauda import stopwatch, stopwatchcm
 from zc import lockfile
 
 from studio.app.common.core.users.crud_organizations import get_organization
@@ -60,17 +61,18 @@ class ProcessResult:
 
 
 class ExpDbBatchRunner:
-    LOGGER_NAME = None  # Note: use root logger (empty name)
+    LOGGER_NAME = "batch_runner_logger"
+    LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
-    def __init__(self, organization_id: int):
+    def __init__(self, organization_id: int, parallel_workers: int = 1):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
+        self.parallel_workers = parallel_workers
 
     def __init_logger(self):
-        logging_config_file = DIRPATH.CONFIG_DIR + "/logging.expdb_batch.yaml"
         logging_config = yaml.safe_load(
-            open(logging_config_file, encoding="utf-8").read()
+            open(__class__.LOGGING_CONFIG_FILE, encoding="utf-8").read()
         )
 
         # ログ出力先フォルダ生成（初回のみの処理）
@@ -187,53 +189,41 @@ class ExpDbBatchRunner:
             self.logger_.info("No datasets found.")
             return processResult
 
-        # 処理対象datasets検索：フラグファイルを走査
-        for flag_file in target_flag_files:
-            exp_id = self.__get_exp_id_from_flag_file(flag_file)
-            self.logger_.info(
-                "start process dataset: [exp_id: %s][flag_file: %s]", exp_id, flag_file
-            )
-            self.start_time = datetime.datetime.now()
+        # 最大並列処理Process数を規定
+        max_workers = min(len(target_flag_files), self.parallel_workers)
+        self.logger_.info(
+            "Start processing datasets. [total: %d][max_workers: %d]",
+            len(target_flag_files),
+            max_workers,
+        )
 
-            error: Exception = None
+        # datasets処理開始（並列処理）
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        ) as executor:
+            # 各datasetsの処理を並列実行し結果を取得
+            futures = [
+                executor.submit(
+                    ExpDbBatchConcurrentProcess.process_single_dataset,
+                    flag_file=flag_file,
+                    org_id=self.org_id,
+                    start_time=self.start_time,
+                    logger_name=__class__.LOGGER_NAME,
+                )
+                # 処理対象datasets検索：フラグファイル走査
+                for flag_file in target_flag_files
+            ]
 
-            # フラグファイル read
-            with open(flag_file) as cfile:
-                config = yaml.safe_load(cfile)
+            process_results = []
+            for future in concurrent.futures.as_completed(futures):
+                process_results.append(future.result())
 
-            # 対象データフォルダ存在チェック
-            # データが存在しない場合はエラー扱いとし、次のデータ処理へスキップ
-
-            # コマンド判定
-            try:
-                command = config.get("command") if config is not None else None
-
-                if command == ProcessCommand.REGIST.value:
-                    self.__process_dataset_registration(flag_file)
-                elif command == ProcessCommand.REGIST_METADATA.value:
-                    self.__process_dataset_metadata_registration(flag_file)
-                elif command == ProcessCommand.DELETE.value:
-                    self.__process_dataset_deletion(flag_file)
-                else:
-                    raise ValueError(
-                        f"invalid command: [exp_id: {exp_id}][command: {command}]"
-                    )
-
-                processResult.success_ids.append(exp_id)
-
-            except Exception as e:
-                self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
-                error = e
-
-                processResult.failure_ids.append(exp_id)
-
-            finally:
-                self.__process_dataset_postprocess(flag_file, command, error)
-
-                if error:
-                    self.logger_.error("finish process dataset: [exp_id: %s]", exp_id)
-                else:
-                    self.logger_.info("finish process dataset: [exp_id: %s]", exp_id)
+        # datasets処理結果の集計
+        for result in process_results:
+            if result["success"]:
+                processResult.success_ids.append(result["exp_id"])
+            else:
+                processResult.failure_ids.append(result["exp_id"])
 
         # datasets処理完了後の後処理:
         with session_scope() as db:
@@ -256,27 +246,156 @@ class ExpDbBatchRunner:
 
         return target_flag_files
 
-    def __get_exp_id_from_flag_file(self, flag_file: str) -> str:
+
+def dataset_process_stopwatch_callback(watch, function=None):
+    logging.getLogger(ExpDbBatchConcurrentProcess.LOGGER_NAME).info(
+        "processing done. [%s()][elapsed_time: %.6f sec]",
+        (function.__name__ if function is not None else "(N/A)"),
+        watch.elapsed_time,
+    )
+
+
+class ExpDbBatchConcurrentProcess:
+    LOGGER_NAME = "batch_process_logger"
+    LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
+
+    @classmethod
+    def __init_process_logger(cls, exp_id: str):
+        """
+        各プロセスで独自のロガーを初期化する関数
+
+        Args:
+            exp_id: dataset ID（ログファイルの識別に利用）
+
+        Returns:
+            初期化されたロガーインスタンス
+        """
+
+        logging_config = yaml.safe_load(
+            open(cls.LOGGING_CONFIG_FILE, encoding="utf-8").read()
+        )
+
+        # プロセス固有のログファイル名に変更（競合を避けるため）
+        if (
+            "handlers" in logging_config
+            and "rotating_file" in logging_config["handlers"]
+        ):
+            original_filename = logging_config["handlers"]["rotating_file"].get(
+                "filename"
+            )
+            if original_filename:
+                # ファイル名にプロセスIDを追加
+                basename, ext = os.path.splitext(original_filename)
+                new_filename = f"{basename}.{exp_id}{ext}"
+                logging_config["handlers"]["rotating_file"]["filename"] = new_filename
+
+        # ログディレクトリの確認と作成
+        log_file = (
+            logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
+        )
+        log_dir = os.path.dirname(log_file) if log_file else None
+        if log_dir and (not os.path.isdir(log_dir)):
+            os.makedirs(log_dir, exist_ok=True)
+
+        # ロギング設定の適用
+        logging_config_copy = (
+            logging_config.copy()
+        )  # Copy the changes to avoid affecting other processes
+        logging.config.dictConfig(logging_config_copy)
+
+        # ロガー取得
+        return logging.getLogger(cls.LOGGER_NAME)
+
+    @staticmethod
+    def __get_exp_id_from_flag_file(flag_file: str) -> str:
         return os.path.basename(flag_file).split(".", 1)[0]
 
-    @stopwatch(callback=__stopwatch_callback)
-    def __process_dataset_registration(self, flag_file: str) -> bool:
+    @classmethod
+    @stopwatch(callback=dataset_process_stopwatch_callback)
+    def process_single_dataset(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        logger_name: str,
+    ) -> dict:
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = cls.__init_process_logger(exp_id)
+        logger.info(
+            f"Process {os.getpid()} starting to \
+                process exp_id: {exp_id}, flag_file: {flag_file}"
+        )
+
+        error = None
+        command = None
+        result = {"success": False, "exp_id": exp_id}
+
+        try:
+            # フラグファイル read
+            with open(flag_file) as cfile:
+                config = yaml.safe_load(cfile)
+
+            # コマンド判定
+            command = config.get("command") if config is not None else None
+
+            if command == ProcessCommand.REGIST.value:
+                cls.process_dataset_registration(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            elif command == ProcessCommand.REGIST_METADATA.value:
+                cls.process_dataset_metadata_registration(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            elif command == ProcessCommand.DELETE.value:
+                cls.process_dataset_deletion(
+                    exp_id=exp_id, org_id=org_id, logger=logger
+                )
+            else:
+                raise ValueError(
+                    f"invalid command: [exp_id: {exp_id}][command: {command}]"
+                )
+
+            result["success"] = True
+
+        except Exception as e:
+            logger.error("%s: %s\n%s", type(e), e, traceback.format_exc())
+            error = e
+            result["error"] = e
+
+        finally:
+            cls.process_dataset_postprocess(flag_file, command, start_time, error)
+
+            if error:
+                logger.error("finish process dataset: [exp_id: %s]", exp_id)
+            else:
+                logger.info("finish process dataset: [exp_id: %s]", exp_id)
+
+        return result
+
+    @classmethod
+    @stopwatch(callback=dataset_process_stopwatch_callback)
+    def process_dataset_registration(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
         """
         Dataset登録処理
         """
 
-        self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = self.__get_exp_id_from_flag_file(flag_file)
-        expdb_batch = ExpDbBatch(exp_id, self.org_id)
+        logger.info("process dataset registration: %s", exp_id)
+
+        expdb_batch = ExpDbBatch(exp_id, org_id)
 
         with session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
             db.commit()
 
-            # Analyze & Plotting
+        # Analysis process
+        with stopwatchcm(dataset_process_stopwatch_callback):
+            logger.info("Run Analysis process")
+
             if expdb_batch.raw_path.microscope_file is None:
                 # If no microscope data, create cnmf_info from existing mat files
-                self.logger_.warning(
+                logger.warning(
                     "No microscope data found. Will use existing processed data."
                 )
             else:
@@ -286,49 +405,67 @@ class ExpDbBatchRunner:
                 del stack
 
             stat_data = expdb_batch.generate_statdata()
+
+        # Imaging process
+        with stopwatchcm(dataset_process_stopwatch_callback):
+            logger.info("Run Imaging process")
+
             expdb_batch.generate_cellmasks()
             expdb_batch.generate_pixelmaps()
             expdb_batch.generate_plots(stat_data=stat_data)
             expdb_batch.generate_plots_spatial(stat_data=stat_data)
 
-            # Read metadata
+        # Metadata registration process
+        with stopwatchcm(dataset_process_stopwatch_callback):
+            logger.info("Run Metadata registration process")
+
             (attributes, view_attributes) = expdb_batch.load_exp_metadata()
 
+            # Save NWB
             expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
-            exp = create_experiment(
-                db,
-                ExpDbExperimentCreate(
-                    experiment_id=exp_id,
-                    organization_id=self.org_id,
-                    attributes=attributes,
-                    view_attributes=view_attributes,
-                ),
-            )
+            with session_scope() as db:
+                try:
+                    exp = create_experiment(
+                        db,
+                        ExpDbExperimentCreate(
+                            experiment_id=exp_id,
+                            organization_id=org_id,
+                            attributes=attributes,
+                            view_attributes=view_attributes,
+                        ),
+                    )
 
-            bulk_insert_cells(db, exp.id, stat_data)
+                    bulk_insert_cells(db, exp.id, stat_data)
+                except Exception as e:
+                    logger.error(f"Error during create_experiment: {e}")
+                    db.rollback()  # 明示的にrollback
+                    raise
 
         return True
 
-    @stopwatch(callback=__stopwatch_callback)
-    def __process_dataset_metadata_registration(self, flag_file: str) -> bool:
+    @classmethod
+    @stopwatch(callback=dataset_process_stopwatch_callback)
+    def process_dataset_metadata_registration(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
         """
         Metadata 登録処理
         """
 
-        self.logger_.info("process dataset metadata registration: %s", flag_file)
-        exp_id = self.__get_exp_id_from_flag_file(flag_file)
-        expdb_batch = ExpDbBatch(exp_id, self.org_id)
+        logger.info("process dataset metadata registration: %s", exp_id)
+
+        expdb_batch = ExpDbBatch(exp_id, org_id)
 
         with session_scope() as db:
             try:
-                expdb_experiment = get_experiment(db, exp_id, self.org_id)
+                expdb_experiment = get_experiment(db, exp_id, org_id)
             except AssertionError:
                 log = (
                     "No experiment found. skip metadata registration."
-                    f" [org_id: {self.org_id}][exp_id: {exp_id}]"
+                    f" [org_id: {org_id}][exp_id: {exp_id}]"
                 )
-                self.logger_.warning(log)
+                logger.warning(log)
                 raise FileNotFoundError(log)
 
             # Read metadata
@@ -345,23 +482,31 @@ class ExpDbBatchRunner:
 
         return True
 
-    @stopwatch(callback=__stopwatch_callback)
-    def __process_dataset_deletion(self, flag_file: str) -> bool:
+    @classmethod
+    @stopwatch(callback=dataset_process_stopwatch_callback)
+    def process_dataset_deletion(
+        cls, exp_id: str, org_id: int, logger: logging
+    ) -> bool:
         """
         Dataset削除処理
         """
 
-        self.logger_.info("process dataset registration: %s", flag_file)
-        exp_id = self.__get_exp_id_from_flag_file(flag_file)
-        expdb_batch = ExpDbBatch(exp_id, self.org_id)
+        logger.info("process dataset registration: %s", exp_id)
+
+        expdb_batch = ExpDbBatch(exp_id, org_id)
 
         with session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
 
         return True
 
-    def __process_dataset_postprocess(
-        self, flag_file: str, command: str, error: Exception = None
+    @classmethod
+    def process_dataset_postprocess(
+        cls,
+        flag_file: str,
+        command: str,
+        start_time: datetime.datetime,
+        error: Exception = None,
     ) -> bool:
         """
         Dataset後処理
@@ -376,7 +521,7 @@ class ExpDbBatchRunner:
         if not error:
             result_log = {
                 "command": command,
-                "start_time": self.start_time,
+                "start_time": start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "success",
                 "log": "completed successfully.",
@@ -384,7 +529,7 @@ class ExpDbBatchRunner:
         else:
             result_log = {
                 "command": command,
-                "start_time": self.start_time,
+                "start_time": start_time,
                 "complete_time": datetime.datetime.now(),
                 "result": "error",
                 "log": "{}: {}".format(type(error), str(error)),
