@@ -14,9 +14,15 @@ from studio.app.common.schemas.outputs import PlotMetaData
 
 class PieData(BaseData):
     def __init__(
-        self, data, labels: list, file_name="pie", meta: Optional[PlotMetaData] = None
+        self,
+        data,
+        labels: list,
+        file_name="pie",
+        meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
     ):
         super().__init__(file_name)
+        self.title = title
 
         if isinstance(data, list):
             data = np.array(data)
@@ -53,6 +59,8 @@ class PieData(BaseData):
             loc="upper right",
             bbox_to_anchor=(1, 0, 0.5, 1),
         )
+        if self.title:
+            plt.title(self.title)
         plt.axis("equal")  # Equal aspect ratio ensures the pie chart is circular.
         plt.tight_layout()
         plot_file = join_filepath([output_dir, f"{self.file_name}.png"])

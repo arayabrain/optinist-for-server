@@ -34,9 +34,9 @@ export type DatabaseType = {
     r_best_dir?: string
     dir_tuning_width?: string
     ori_tuning_width?: string
-    sf_bandwidth?: string
-    best_sf?: string
-    sf_si?: string
+    tuning_width?: string
+    best_stim?: string
+    norm_si?: string
   }
   graph_urls: ImageUrls[]
   share_type?: number

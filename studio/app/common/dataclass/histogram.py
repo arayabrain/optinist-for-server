@@ -18,8 +18,14 @@ class HistogramData(BaseData):
         data,
         file_name="histogram",
         meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
+        xtitle: Optional[str] = None,
+        ytitle: Optional[str] = None,
     ):
         super().__init__(file_name)
+        self.title = title
+        self.xtitle = xtitle
+        self.ytitle = ytitle
 
         if isinstance(data, list):
             data = np.array(data)
@@ -39,6 +45,12 @@ class HistogramData(BaseData):
     def save_plot(self, output_dir):
         plt.figure()
         plt.hist(self.data[0], bins=20)
+        if self.title:
+            plt.title(self.title)
+        if self.xtitle:
+            plt.xlabel(self.xtitle)
+        if self.ytitle:
+            plt.ylabel(self.ytitle)
         plot_file = join_filepath([output_dir, f"{self.file_name}.png"])
         plt.savefig(plot_file, bbox_inches="tight")
         plt.close()

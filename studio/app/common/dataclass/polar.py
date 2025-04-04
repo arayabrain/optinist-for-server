@@ -14,13 +14,22 @@ from studio.app.common.schemas.outputs import PlotMetaData
 
 class PolarData(BaseData):
     def __init__(
-        self, data, thetas, file_name="polar", meta: Optional[PlotMetaData] = None
+        self,
+        data,
+        thetas,
+        file_name="polar",
+        meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
+        xtitle: Optional[str] = None,
+        ytitle: Optional[str] = None,
     ):
         # thetas: specify in degrees
         super().__init__(file_name)
-
         self.data = data
         self.columns = thetas
+        self.title = title
+        self.xtitle = xtitle
+        self.ytitle = ytitle
 
     def save_json(self, json_dir):
         self.json_path = join_filepath([json_dir, f"{self.file_name}.json"])
@@ -75,6 +84,12 @@ class PolarData(BaseData):
                     color="#636EFA",
                     linewidth=1.5,
                 )
+            if self.title:
+                plt.title(self.title)
+            if self.xtitle:
+                plt.xlabel(self.xtitle)
+            if self.ytitle:
+                plt.ylabel(self.ytitle)
 
             plot_file = join_filepath([output_dir, f"{self.file_name}_{i}.png"])
             plt.tight_layout()

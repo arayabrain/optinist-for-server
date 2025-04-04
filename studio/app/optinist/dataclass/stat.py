@@ -51,18 +51,17 @@ class StatData(BaseData):
         self.r_min_ori = np.full(self.ncells, np.NaN)
         self.oi = np.full(self.ncells, np.NaN)
         self.osi = None
-        self.best_sf = np.full(self.ncells, np.NaN)
-        self.min_sf = np.full(self.ncells, np.NaN)
-        self.r_best_sf = np.full(self.ncells, np.NaN)
-        self.r_min_sf = np.full(self.ncells, np.NaN)
-        self.si = np.full(self.ncells, np.NaN)
-        self.sf_si = np.full(self.ncells, np.NaN)
-        self.sf_si = np.full(self.ncells, np.NaN)
-        self.sf_bandwidth = np.full(self.ncells, np.NaN)
-        self.index_sf_responsive_cell = None
-        self.ncells_sf_responsive_cell = None
-        self.index_sf_selective_cell = None
-        self.ncells_sf_selective_cell = None
+        self.best_stim = np.full(self.ncells, np.NaN)
+        self.min_stim = np.full(self.ncells, np.NaN)
+        self.r_best_stim = np.full(self.ncells, np.NaN)
+        self.r_min_stim = np.full(self.ncells, np.NaN)
+        self.stim_si = np.full(self.ncells, np.NaN)
+        self.norm_si = np.full(self.ncells, np.NaN)
+        self.tuning_width = np.full(self.ncells, np.NaN)
+        self.index_stim_responsive_cell = None
+        self.ncells_stim_responsive_cell = None
+        self.index_stim_selective_cell = None
+        self.ncells_stim_selective_cell = None
 
         # --- anova1_mult ---
         self.p_value_resp = np.full(self.ncells, np.NaN)
@@ -126,7 +125,7 @@ class StatData(BaseData):
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
     # --- stat_file_convert ---
-    def set_file_convert_props(self, sf_params=None):
+    def set_file_convert_props(self, stim_params=None):
         """Set up standard tuning curve and spatial frequency properties"""
         # Original direction/orientation calculations
         self.dsi = (self.r_best_dir - np.maximum(self.r_null_dir, 0)) / (
@@ -139,6 +138,9 @@ class StatData(BaseData):
             data=self.dir_ratio_change,
             columns=np.arange(0, 360, 360 / self.nstim_per_trial),
             file_name="tuning_curve",
+            title="Tuning Curve (Direction)",
+            xtitle="Angle (degrees)",
+            ytitle="Response Amplitude",
         )
         self.tuning_curve_polar = PolarData(
             data=self.dir_ratio_change,
@@ -146,64 +148,77 @@ class StatData(BaseData):
                 0, 360, self.dir_ratio_change[0].shape[0], endpoint=False
             ),
             file_name="tuning_curve_polar",
+            title="Tuning Curve (Polar)",
+            xtitle="Angle (degrees)",
+            ytitle="Response Amplitude",
         )
 
-        # Spatial frequency responsive and selective cells
-        self.index_sf_responsive_cell = np.where(
-            (self.r_best_sf >= self.r_best_threshold) & (~np.isnan(self.r_best_sf)),
+        # Responsive and selective cells (non-ciruclar)
+        self.index_stim_responsive_cell = np.where(
+            (self.r_best_stim >= self.r_best_threshold) & (~np.isnan(self.r_best_stim)),
             True,
             False,
         )
-        self.ncells_sf_responsive_cell = np.sum(self.index_sf_responsive_cell)
+        self.ncells_stim_responsive_cell = np.sum(self.index_stim_responsive_cell)
 
-        self.index_sf_selective_cell = np.where(
-            self.index_sf_responsive_cell & (self.sf_si >= self.si_threshold),
+        self.index_stim_selective_cell = np.where(
+            self.index_stim_responsive_cell & (self.norm_si >= self.si_threshold),
             True,
             False,
         )
-        self.ncells_sf_selective_cell = np.sum(self.index_sf_selective_cell)
+        self.ncells_stim_selective_cell = np.sum(self.index_stim_selective_cell)
 
         # Create spatial frequency visualization data structures
         self.stim_selectivity = HistogramData(
-            data=self.sf_si[self.index_sf_responsive_cell]
-            if np.any(self.index_sf_responsive_cell)
+            data=self.norm_si[self.index_stim_responsive_cell]
+            if np.any(self.index_stim_responsive_cell)
             else np.array([0]),
             file_name="selectivity",
+            title="Selectivity (Non-Circular)",
+            xtitle="Selectivity Index",
+            ytitle="Cell Count",
         )
 
         self.stim_responsivity = HistogramData(
-            data=self.r_best_sf[self.index_sf_responsive_cell] * 100
-            if np.any(self.index_sf_responsive_cell)
+            data=self.r_best_stim[self.index_stim_responsive_cell] * 100
+            if np.any(self.index_stim_responsive_cell)
             else np.array([0]),
             file_name="best_responsivity",
+            title="Peak Response",
+            xtitle="Response Amplitude",
+            ytitle="Cell Count",
         )
 
-        self.sf_responsivity_ratio = PieData(
+        self.stim_responsivity_ratio = PieData(
             data=np.array(
                 (
-                    self.ncells_sf_selective_cell,
-                    self.ncells_sf_responsive_cell - self.ncells_sf_selective_cell,
-                    self.ncells - self.ncells_sf_responsive_cell,
+                    self.ncells_stim_selective_cell,
+                    self.ncells_stim_responsive_cell - self.ncells_stim_selective_cell,
+                    self.ncells - self.ncells_stim_responsive_cell,
                 ),
                 dtype=np.float64,
             ),
             labels=["Spatial freq selective", "Non-selective", "Non-responsive"],
             file_name="responsivity_ratio",
+            title="Response Property (Non-Circular)",
         )
 
         # Use spatial frequency parameters for scaling if provided
-        sf_min = 0
-        sf_max = 1
-        if sf_params:
-            sf_min = sf_params.get("sf_min_value", 0)
-            sf_max = sf_params.get("sf_max_value", 1)
+        stim_min = 0
+        stim_max = 1
+        if stim_params:
+            stim_min = stim_params.get("stim_min_value", 0)
+            stim_max = stim_params.get("stim_max_value", 1)
 
         # Create spatial frequency tuning curve with appropriate scaling
-        num_sf_points = self.dir_ratio_change.shape[1]
-        self.sf_tuning_curve = LineData(
+        num_stim_points = self.dir_ratio_change.shape[1]
+        self.stim_tuning_curve = LineData(
             data=self.dir_ratio_change,
-            columns=np.linspace(sf_min, sf_max, num_sf_points),
+            columns=np.linspace(stim_min, stim_max, num_stim_points),
             file_name="tuning_curve",
+            title="Tuning Curve (Non-Circular)",
+            xtitle="Angle (degrees)",
+            ytitle="Response Amplitude",
         )
 
     # --- anova ---
@@ -248,6 +263,7 @@ class StatData(BaseData):
             ),
             labels=["Direction Selective", "Non-selective", "Non-responsive"],
             file_name="responsivity_ratio",
+            title="Response Property (Direction)",
         )
 
         self.orientation_responsivity_ratio = PieData(
@@ -261,21 +277,31 @@ class StatData(BaseData):
             ),
             labels=["Orientation Selective", "Non-selective", "Non-responsive"],
             file_name="orientation_responsivity_ratio",
+            title="Response Property (Orientation)",
         )
 
         self.direction_selectivity = HistogramData(
             data=self.dsi[self.index_direction_selective_cell],
             file_name="selectivity",
+            title="Selectivity (Direction)",
+            xtitle="Selectivity Index",
+            ytitle="Cell Count",
         )
 
         self.orientation_selectivity = HistogramData(
             data=self.osi[self.index_orientation_selective_cell],
             file_name="orientation_selectivity",
+            title="Selectivity (Orientation)",
+            xtitle="Selectivity Index",
+            ytitle="Cell Count",
         )
 
         self.best_responsivity = HistogramData(
             data=self.r_best_dir[self.index_visually_responsive_cell] * 100,
             file_name="best_responsivity",
+            title="Peak Response",
+            xtitle="Response Amplitude",
+            ytitle="Cell Count",
         )
 
     # --- vector_average ---
@@ -283,11 +309,17 @@ class StatData(BaseData):
         self.preferred_direction = HistogramData(
             data=self.dir_vector_angle[self.index_direction_selective_cell],
             file_name="preferred_direction",
+            title="Preferred Direction",
+            xtitle="Angle (degrees)",
+            ytitle="Cell Count",
         )
 
         self.preferred_orientation = HistogramData(
             data=self.ori_vector_angle[self.index_orientation_selective_cell],
             file_name="preferred_orientation",
+            title="Preferred Orientation",
+            xtitle="Angle (degrees)",
+            ytitle="Cell Count",
         )
 
     # --- curvefit_tuning ---
@@ -295,11 +327,17 @@ class StatData(BaseData):
         self.direction_tuning_width = HistogramData(
             data=self.dir_tuning_width[self.index_direction_selective_cell],
             file_name="direction_tuning_width",
+            title="Tuning Width (Direction)",
+            xtitle="Angle (degrees)",
+            ytitle="Cell Count",
         )
 
         self.orientation_tuning_width = HistogramData(
             data=self.ori_tuning_width[self.index_orientation_selective_cell],
             file_name="orientation_tuning_width",
+            title="Tuning Width (Orientation)",
+            xtitle="Angle (degrees)",
+            ytitle="Cell Count",
         )
 
     # --- pca ---

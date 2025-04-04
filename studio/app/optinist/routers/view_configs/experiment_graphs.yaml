@@ -7,12 +7,12 @@
 #   type: "single"                     # "single" for one image, "multi" for patterns
 
 responsivity_ratio:
-  title: "Responsivity Ratio"
+  title: "Response Property"
   dir: "plots"
   type: "single"
 
 orientation_responsivity_ratio:
-  title: "Orientation Responsivity Ratio"
+  title: "Orientation Response Property"
   dir: "plots"
   type: "single"
 
@@ -50,6 +50,7 @@ orientation_tuning_width:
   title: "Orientation Tuning Width"
   dir: "plots"
   type: "single"
+
 pca_analysis_variance:
   title: "PCA Explained Variance"
   dir: "plots"
