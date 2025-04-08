@@ -45,12 +45,33 @@ class PieData(BaseData):
 
     def save_plot(self, output_dir):
         plt.figure(figsize=(6.4, 4.8))
+
+        # Calculate percentages to determine label positioning
+        total = sum(self.data[0])
+        percentages = [100 * val / total for val in self.data[0]]
+
+        # Create an "explode" array to push out smaller slices
+        explode = []
+        for pct in percentages:
+            # Push smaller slices further out
+            if pct == 0:
+                explode.append(0.3)
+            elif pct < 2:
+                explode.append(0.2)
+            elif pct < 5:
+                explode.append(0.1)
+            else:
+                explode.append(0.0)
+
         wedges, texts, autotexts = plt.pie(
             self.data[0],
             labels=self.columns,
+            explode=explode,
             counterclock=False,
             startangle=90,
-            autopct="%1.0f%%",  # Add percentage labels
+            autopct="%1.0f%%",
+            pctdistance=0.85,
+            labeldistance=1.1,
         )
         plt.legend(
             wedges,
@@ -61,7 +82,7 @@ class PieData(BaseData):
         )
         if self.title:
             plt.title(self.title)
-        plt.axis("equal")  # Equal aspect ratio ensures the pie chart is circular.
+        plt.axis("equal")
         plt.tight_layout()
         plot_file = join_filepath([output_dir, f"{self.file_name}.png"])
         plt.savefig(plot_file, bbox_inches="tight")
