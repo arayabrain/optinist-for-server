@@ -416,43 +416,43 @@ const statistics = () => [
     },
   },
   {
-    field: "sf_bandwidth",
-    headerName: "SF Bandwidth",
+    field: "tuning_width",
+    headerName: "Tuning Width",
     filterable: false,
     sortable: false,
     width: 120,
     renderCell: (params: { row: DatabaseType }) => {
       return (
-        <Tooltip title={params.row.statistics?.sf_bandwidth}>
-          <SpanCustom>{params.row.statistics?.sf_bandwidth ?? "NA"}</SpanCustom>
+        <Tooltip title={params.row.statistics?.tuning_width}>
+          <SpanCustom>{params.row.statistics?.tuning_width ?? "NA"}</SpanCustom>
         </Tooltip>
       )
     },
   },
   {
-    field: "best_sf",
-    headerName: "Best SF",
+    field: "best_stim",
+    headerName: "Best Stim",
     filterable: false,
     sortable: false,
     width: 120,
     renderCell: (params: { row: DatabaseType }) => {
       return (
-        <Tooltip title={params.row.statistics?.best_sf}>
-          <SpanCustom>{params.row.statistics?.best_sf ?? "NA"}</SpanCustom>
+        <Tooltip title={params.row.statistics?.best_stim}>
+          <SpanCustom>{params.row.statistics?.best_stim ?? "NA"}</SpanCustom>
         </Tooltip>
       )
     },
   },
   {
-    field: "sf_si",
-    headerName: "SF Selectivity",
+    field: "norm_si",
+    headerName: "Selectivity",
     filterable: false,
     sortable: false,
     width: 120,
     renderCell: (params: { row: DatabaseType }) => {
       return (
-        <Tooltip title={params.row.statistics?.sf_si}>
-          <SpanCustom>{params.row.statistics?.sf_si ?? "NA"}</SpanCustom>
+        <Tooltip title={params.row.statistics?.norm_si}>
+          <SpanCustom>{params.row.statistics?.norm_si ?? "NA"}</SpanCustom>
         </Tooltip>
       )
     },

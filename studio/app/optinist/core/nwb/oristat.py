@@ -44,7 +44,7 @@ FILE_CONVERT_PROPS = {
     "tuning_curve_polar": ("float", (None, None)),
     "stim_selectivity": ("float", (None, None)),
     "stim_responsivity": ("float", (None, None)),
-    "sf_responsivity_ratio": ("float", (None, None)),
+    "stim_responsivity_ratio": ("float", (None, None)),
 }
 
 ANOVA_TYPES = {

@@ -416,10 +416,10 @@ class ExpDbBatch:
             stat_data.direction_tuning_width.save_plot(dir_path)
             stat_data.orientation_tuning_width.save_plot(dir_path)
         else:
-            stat_data.sf_tuning_curve.save_plot(dir_path)
+            stat_data.stim_tuning_curve.save_plot(dir_path)
             stat_data.stim_selectivity.save_plot(dir_path)
             stat_data.stim_responsivity.save_plot(dir_path)
-            stat_data.sf_responsivity_ratio.save_plot(dir_path)
+            stat_data.stim_responsivity_ratio.save_plot(dir_path)
 
         # Copy all plots to pub path
         if self.raw_path.plot_dir != self.pub_path.plot_dir:
