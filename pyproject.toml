@@ -130,11 +130,11 @@ profile = "black"
 
 [tool.pytest.ini_options]
 pythonpath = "."
-testpaths = "studio/tests"
+testpaths = "/app/studio/tests"
 env = [
-  "OPTINIST_DIR=studio/test_data",
-  "EXPDB_DIR=studio/test_data/dataset",
-  "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
+  "OPTINIST_DIR=/app/studio/test_data",
+  "EXPDB_DIR=/app/studio/test_data/dataset",
+  "PUBLIC_EXPDB_DIR=/app/studio/test_data/dataset_public",
   "GRAPH_HOST=http://localhost:8000/datasets",
   "IS_TEST=True",
 ]
