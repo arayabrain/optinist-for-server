@@ -5,4 +5,4 @@
 cd $(cd $(dirname $0); pwd)/../
 
 conda activate expdb_batch && \
-  python run_expdb_batch.py -o 1 -k 5
+  python run_expdb_batch.py -o 1 -p 5
