@@ -46,22 +46,12 @@ class PieData(BaseData):
     def save_plot(self, output_dir):
         plt.figure(figsize=(6.4, 4.8))
 
-        # Calculate percentages to determine label positioning
-        total = sum(self.data[0])
-        percentages = [100 * val / total for val in self.data[0]]
-
-        # Create an "explode" array to push out smaller slices
+        # Create an "explode" array to avoid overlapping labels
         explode = []
-        for pct in percentages:
-            # Push smaller slices further out
-            if pct == 0:
-                explode.append(0.3)
-            elif pct < 2:
-                explode.append(0.2)
-            elif pct < 5:
-                explode.append(0.1)
-            else:
-                explode.append(0.0)
+        explode_value = 0.1
+        for _ in self.data[0]:
+            explode.append(explode_value)
+            explode_value += 0.1
 
         wedges, texts, autotexts = plt.pie(
             self.data[0],
