@@ -6,6 +6,7 @@ import logging.config
 import os
 import pathlib
 import traceback
+from contextlib import contextmanager
 from enum import Enum
 
 import yaml
@@ -260,6 +261,15 @@ def dataset_process_stopwatch_callback(watch, function=None):
     )
 
 
+@contextmanager
+def concurrent_db_session_scope():
+    """
+    Database session getter for muitl-processing (force cache off)
+    """
+    with session_scope(use_cache=False) as session:
+        yield session
+
+
 class ExpDbBatchConcurrentProcess:
     LOGGER_NAME = "batch_process_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
@@ -386,9 +396,9 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        # CleanUp database records
+        with concurrent_db_session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
-            db.commit()
 
         # Analysis process
         with stopwatchcm(dataset_process_stopwatch_callback):
@@ -425,7 +435,8 @@ class ExpDbBatchConcurrentProcess:
             # Save NWB
             expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
-            with session_scope() as db:
+            # Database record registration
+            with concurrent_db_session_scope() as db:
                 try:
                     exp = create_experiment(
                         db,
@@ -458,7 +469,7 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        with concurrent_db_session_scope() as db:
             try:
                 expdb_experiment = get_experiment(db, exp_id, org_id)
             except AssertionError:
@@ -496,7 +507,7 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        with concurrent_db_session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
 
         return True
