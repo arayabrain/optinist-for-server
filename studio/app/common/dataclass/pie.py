@@ -45,12 +45,23 @@ class PieData(BaseData):
 
     def save_plot(self, output_dir):
         plt.figure(figsize=(6.4, 4.8))
+
+        # Create an "explode" array to avoid overlapping labels
+        explode = []
+        explode_value = 0.1
+        for _ in self.data[0]:
+            explode.append(explode_value)
+            explode_value += 0.1
+
         wedges, texts, autotexts = plt.pie(
             self.data[0],
             labels=self.columns,
+            explode=explode,
             counterclock=False,
             startangle=90,
-            autopct="%1.0f%%",  # Add percentage labels
+            autopct="%1.0f%%",
+            pctdistance=0.85,
+            labeldistance=1.1,
         )
         plt.legend(
             wedges,
@@ -61,7 +72,7 @@ class PieData(BaseData):
         )
         if self.title:
             plt.title(self.title)
-        plt.axis("equal")  # Equal aspect ratio ensures the pie chart is circular.
+        plt.axis("equal")
         plt.tight_layout()
         plot_file = join_filepath([output_dir, f"{self.file_name}.png"])
         plt.savefig(plot_file, bbox_inches="tight")

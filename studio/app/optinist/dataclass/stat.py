@@ -198,7 +198,7 @@ class StatData(BaseData):
                 ),
                 dtype=np.float64,
             ),
-            labels=["Spatial freq selective", "Non-selective", "Non-responsive"],
+            labels=["Selective", "Non-selective", "Non-responsive"],
             file_name="responsivity_ratio",
             title="Response Property (Non-Circular)",
         )
