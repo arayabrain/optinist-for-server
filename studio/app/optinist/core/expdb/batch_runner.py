@@ -75,11 +75,16 @@ class ExpDbBatchRunner:
             open(__class__.LOGGING_CONFIG_FILE, encoding="utf-8").read()
         )
 
-        # ログ出力先フォルダ生成（初回のみの処理）
-        # ※ logging.config.dictConfig() の前に実施必要
+        # Adjust log file path
         log_file = (
             logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
         )
+        if log_file:
+            log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
+            logging_config["handlers"]["rotating_file"]["filename"] = log_file
+
+        # Create log output directory (if none exists)
+        # ※ logging.config.dictConfig() の前に実施必要
         log_dir = os.path.dirname(log_file) if log_file else None
         if log_dir and (not os.path.isdir(log_dir)):
             os.mkdir(log_dir)
@@ -280,30 +285,26 @@ class ExpDbBatchConcurrentProcess:
             "handlers" in logging_config
             and "rotating_file" in logging_config["handlers"]
         ):
-            original_filename = logging_config["handlers"]["rotating_file"].get(
-                "filename"
+            # Adjust log file path
+            log_file = (
+                logging_config.get("handlers", {})
+                .get("rotating_file", {})
+                .get("filename")
             )
-            if original_filename:
-                # ファイル名にプロセスIDを追加
-                basename, ext = os.path.splitext(original_filename)
-                new_filename = f"{basename}.{exp_id}{ext}"
-                logging_config["handlers"]["rotating_file"]["filename"] = new_filename
+            if log_file:
+                # Add process ID to file name
+                basepath, ext = os.path.splitext(log_file)
+                new_log_file = f"{basepath}.{exp_id}{ext}"
 
-        # ログディレクトリの確認と作成
-        log_file = (
-            logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
-        )
-        log_dir = os.path.dirname(log_file) if log_file else None
-        if log_dir and (not os.path.isdir(log_dir)):
-            os.makedirs(log_dir, exist_ok=True)
+                # Convert to absolute path
+                new_log_file = f"{DIRPATH.DATA_DIR}/{new_log_file}"
+
+                logging_config["handlers"]["rotating_file"]["filename"] = new_log_file
 
         # ロギング設定の適用
-        logging_config_copy = (
-            logging_config.copy()
-        )  # Copy the changes to avoid affecting other processes
-        logging.config.dictConfig(logging_config_copy)
+        # *Copy the changes to avoid affecting other processes
+        logging.config.dictConfig(logging_config.copy())
 
-        # ロガー取得
         return logging.getLogger(cls.LOGGER_NAME)
 
     @staticmethod
