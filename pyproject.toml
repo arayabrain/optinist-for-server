@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "studio"
 description = "analysis studio"
-version = "2.1.0"
+version = "2.2.0"
 license = "GPL-3.0"
 authors = ["Ohki Lab <email@example.com>"]
 readme = "README.md"
@@ -87,6 +87,7 @@ pymatreader = "^0.0.32"
 xmltodict = "*"
 matplotlib = "3.7.*"
 scikit-image = "0.21"
+concurrent-log-handler = "^0.9.25"
 
 [tool.poetry.group.dev]
 optional = true
@@ -130,11 +131,11 @@ profile = "black"
 
 [tool.pytest.ini_options]
 pythonpath = "."
-testpaths = "studio/tests"
+testpaths = "/app/studio/tests"
 env = [
-  "OPTINIST_DIR=studio/test_data",
-  "EXPDB_DIR=studio/test_data/dataset",
-  "PUBLIC_EXPDB_DIR=studio/test_data/dataset_public",
+  "OPTINIST_DIR=/app/studio/test_data",
+  "EXPDB_DIR=/app/studio/test_data/dataset",
+  "PUBLIC_EXPDB_DIR=/app/studio/test_data/dataset_public",
   "GRAPH_HOST=http://localhost:8000/datasets",
   "IS_TEST=True",
 ]

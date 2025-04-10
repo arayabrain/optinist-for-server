@@ -6,6 +6,7 @@ import logging.config
 import os
 import pathlib
 import traceback
+from contextlib import contextmanager
 from enum import Enum
 
 import yaml
@@ -75,11 +76,16 @@ class ExpDbBatchRunner:
             open(__class__.LOGGING_CONFIG_FILE, encoding="utf-8").read()
         )
 
-        # ログ出力先フォルダ生成（初回のみの処理）
-        # ※ logging.config.dictConfig() の前に実施必要
+        # Adjust log file path
         log_file = (
             logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
         )
+        if log_file:
+            log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
+            logging_config["handlers"]["rotating_file"]["filename"] = log_file
+
+        # Create log output directory (if none exists)
+        # ※ logging.config.dictConfig() の前に実施必要
         log_dir = os.path.dirname(log_file) if log_file else None
         if log_dir and (not os.path.isdir(log_dir)):
             os.mkdir(log_dir)
@@ -204,7 +210,7 @@ class ExpDbBatchRunner:
             # 各datasetsの処理を並列実行し結果を取得
             futures = [
                 executor.submit(
-                    ExpDbBatchConcurrentProcess.process_single_dataset,
+                    ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
                     flag_file=flag_file,
                     org_id=self.org_id,
                     start_time=self.start_time,
@@ -255,6 +261,15 @@ def dataset_process_stopwatch_callback(watch, function=None):
     )
 
 
+@contextmanager
+def concurrent_db_session_scope():
+    """
+    Database session getter for muitl-processing (force cache off)
+    """
+    with session_scope(use_cache=False) as session:
+        yield session
+
+
 class ExpDbBatchConcurrentProcess:
     LOGGER_NAME = "batch_process_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
@@ -280,35 +295,45 @@ class ExpDbBatchConcurrentProcess:
             "handlers" in logging_config
             and "rotating_file" in logging_config["handlers"]
         ):
-            original_filename = logging_config["handlers"]["rotating_file"].get(
-                "filename"
+            # Adjust log file path
+            log_file = (
+                logging_config.get("handlers", {})
+                .get("rotating_file", {})
+                .get("filename")
             )
-            if original_filename:
-                # ファイル名にプロセスIDを追加
-                basename, ext = os.path.splitext(original_filename)
-                new_filename = f"{basename}.{exp_id}{ext}"
-                logging_config["handlers"]["rotating_file"]["filename"] = new_filename
+            if log_file:
+                # Add process ID to file name
+                basepath, ext = os.path.splitext(log_file)
+                new_log_file = f"{basepath}.{exp_id}{ext}"
 
-        # ログディレクトリの確認と作成
-        log_file = (
-            logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
-        )
-        log_dir = os.path.dirname(log_file) if log_file else None
-        if log_dir and (not os.path.isdir(log_dir)):
-            os.makedirs(log_dir, exist_ok=True)
+                # Convert to absolute path
+                new_log_file = f"{DIRPATH.DATA_DIR}/{new_log_file}"
+
+                logging_config["handlers"]["rotating_file"]["filename"] = new_log_file
 
         # ロギング設定の適用
-        logging_config_copy = (
-            logging_config.copy()
-        )  # Copy the changes to avoid affecting other processes
-        logging.config.dictConfig(logging_config_copy)
+        # *Copy the changes to avoid affecting other processes
+        logging.config.dictConfig(logging_config.copy())
 
-        # ロガー取得
         return logging.getLogger(cls.LOGGER_NAME)
 
     @staticmethod
     def __get_exp_id_from_flag_file(flag_file: str) -> str:
         return os.path.basename(flag_file).split(".", 1)[0]
+
+    @classmethod
+    def process_single_dataset_entrypoint(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        logger_name: str,
+    ) -> dict:
+        """
+        ATTENTION: This method does not use decorator (stopwatch)
+            because it is an entrypoint of ProcessPoolExecutor.
+        """
+        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
@@ -385,9 +410,9 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        # CleanUp database records
+        with concurrent_db_session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
-            db.commit()
 
         # Analysis process
         with stopwatchcm(dataset_process_stopwatch_callback):
@@ -424,7 +449,8 @@ class ExpDbBatchConcurrentProcess:
             # Save NWB
             expdb_batch.save_nwb(attributes["metadata"]["metadata"])
 
-            with session_scope() as db:
+            # Database record registration
+            with concurrent_db_session_scope() as db:
                 try:
                     exp = create_experiment(
                         db,
@@ -457,7 +483,7 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        with concurrent_db_session_scope() as db:
             try:
                 expdb_experiment = get_experiment(db, exp_id, org_id)
             except AssertionError:
@@ -495,7 +521,7 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id)
 
-        with session_scope() as db:
+        with concurrent_db_session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
 
         return True
