@@ -14,9 +14,15 @@ from studio.app.common.schemas.outputs import PlotMetaData
 
 class PieData(BaseData):
     def __init__(
-        self, data, labels: list, file_name="pie", meta: Optional[PlotMetaData] = None
+        self,
+        data,
+        labels: list,
+        file_name="pie",
+        meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
     ):
         super().__init__(file_name)
+        self.title = title
 
         if isinstance(data, list):
             data = np.array(data)
@@ -38,22 +44,25 @@ class PieData(BaseData):
         return OutputPath(path=self.json_path, type=OutputType.PIE)
 
     def save_plot(self, output_dir):
-        plt.figure()
+        plt.figure(figsize=(6.4, 4.8))
         wedges, texts, autotexts = plt.pie(
             self.data[0],
-            labels=self.columns,
+            labels=None,
             counterclock=False,
             startangle=90,
-            autopct="%1.0f%%",  # Add percentage labels
+            autopct="%1.0f%%",
+            pctdistance=1.1,
         )
         plt.legend(
             wedges,
             self.columns,
             title="Categories",
-            loc="center left",
+            loc="upper right",
             bbox_to_anchor=(1, 0, 0.5, 1),
         )
-        plt.axis("equal")  # Equal aspect ratio ensures the pie chart is circular.
+        if self.title:
+            plt.title(self.title)
+        plt.axis("equal")
         plt.tight_layout()
         plot_file = join_filepath([output_dir, f"{self.file_name}.png"])
         plt.savefig(plot_file, bbox_inches="tight")

@@ -15,7 +15,7 @@ interp_method: 'spline'
 p_threshold: 0.05
 use_fourier: True
 
-# spatial_frequency
-sf_min_value: 0
-sf_max_value: 1
-sf_unit: "normalized"
+# stim (non-ciruclar)
+stim_min_value: 0
+stim_max_value: 1
+stim_unit: "normalized"

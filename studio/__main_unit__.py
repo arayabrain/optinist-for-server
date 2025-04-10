@@ -136,23 +136,27 @@ def main(develop_mode: bool = False):
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
 
-    log_config_file = (
-        f"{DIRPATH.CONFIG_DIR}/logging.yaml"
-        if MODE.IS_STANDALONE
-        else f"{DIRPATH.CONFIG_DIR}/logging.multiuser.yaml"
-    )
+    logging_config = AppLogger.get_logging_config()
 
     if develop_mode:
-        reload_options = {"reload_dirs": ["studio"]} if args.reload else {}
+        if args.workers > 1:
+            reload = False
+            reload_options = {}
+        else:
+            reload = args.reload
+            reload_options = {"reload_dirs": ["studio"]} if args.reload else {}
+
         uvicorn.run(
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=log_config_file,
-            reload=args.reload,
+            log_config=logging_config,
+            workers=args.workers,
+            reload=reload,
             **reload_options,
         )
     else:
@@ -160,6 +164,7 @@ def main(develop_mode: bool = False):
             "studio.__main_unit__:app",
             host=args.host,
             port=args.port,
-            log_config=log_config_file,
+            log_config=logging_config,
+            workers=args.workers,
             reload=False,
         )

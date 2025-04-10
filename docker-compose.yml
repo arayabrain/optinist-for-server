@@ -21,7 +21,6 @@ services:
     volumes:
       # optinist data outputs directories
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
-      - ../optinist-docker-volumes/logs/:/app/logs
       - ../optinist-docker-volumes/studio_data/:/app/studio_data
 
       # external datasets directories
@@ -33,7 +32,7 @@ services:
         bash -c "
           sh init_docker_services.sh &&
           alembic upgrade head &&
-          python main.py --host 0.0.0.0 --port 8000
+          python main.py --host 0.0.0.0 --port 8000 --workers=20
         "
     user: optinist
     environment:
@@ -52,7 +51,6 @@ services:
     volumes:
       # optinist data outputs directories
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
-      - ../optinist-docker-volumes/logs/:/app/logs
       - ../optinist-docker-volumes/studio_data/:/app/studio_data
 
       # external datasets directories

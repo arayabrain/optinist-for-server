@@ -57,6 +57,7 @@ import {
   selectVisualizeSaveFormat,
   selectImageItemRangeUnit,
 } from "store/slice/VisualizeItem/VisualizeItemSelectors"
+import { setTimeSeriesItemDrawOrder } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import { AppDispatch } from "store/store"
 
 export const TimeSeriesPlot = memo(function TimeSeriesPlot() {
@@ -141,6 +142,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
       ...Object.keys(timeSeriesData).map(
         (e) => Object.keys(timeSeriesData[e]).length,
       ),
+      1,
     )
     setMaxDim?.(max)
   }, [setMaxDim, timeSeriesData])
@@ -157,9 +159,10 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
     (num: number) => {
       return (
         !isExistFilterRoi ||
-        filterParam?.roi?.some(
-          (roi) => num >= (roi.start || 0) && (!roi.end || num < roi.end),
-        )
+        filterParam?.roi?.some((roi) => {
+          const roiStart = roi.start || 0
+          return num >= roiStart && num < (roi.end || roiStart + 1)
+        })
       )
     },
     [filterParam?.roi, isExistFilterRoi],
@@ -338,7 +341,7 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
                   ? xrange.left / frameRate
                   : -2.5,
                 typeof xrange.right !== "undefined"
-                  ? xrange.right / frameRate
+                  ? (xrange.right || 0) / frameRate
                   : dataXrange.length / frameRate + 6.8,
               ],
         showgrid: showgrid,
@@ -390,7 +393,16 @@ const TimeSeriesPlotImple = memo(function TimeSeriesPlotImple() {
       setRoiSelected(Number(clickedSeriesId))
       return false
     }
-    if (itemIdRoi) setRoisClick(Number(itemIdRoi), Number(clickedSeriesId))
+    if (itemIdRoi) {
+      setRoisClick(Number(itemIdRoi), Number(clickedSeriesId))
+    } else {
+      dispatch(
+        setTimeSeriesItemDrawOrder({
+          itemId,
+          drawOrder: clickedSeriesId,
+        }),
+      )
+    }
     // set DisplayNumbers
     if (!drawOrderList.includes(clickedSeriesId)) {
       dispatch(getTimeSeriesDataById({ path, index: clickedSeriesId }))

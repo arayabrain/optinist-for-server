@@ -6,13 +6,13 @@
 #   dir: "plots"                       # Directory where plot is saved
 #   type: "single"                     # "single" for one image, "multi" for patterns
 
-direction_responsivity_ratio:
-  title: "Direction Responsivity Ratio"
+responsivity_ratio:
+  title: "Response Property"
   dir: "plots"
   type: "single"
 
 orientation_responsivity_ratio:
-  title: "Orientation Responsivity Ratio"
+  title: "Orientation Response Property"
   dir: "plots"
   type: "single"
 
@@ -26,8 +26,8 @@ preferred_orientation:
   dir: "plots"
   type: "single"
 
-direction_selectivity:
-  title: "Direction Selectivity"
+selectivity:
+  title: "Selectivity"
   dir: "plots"
   type: "single"
 
@@ -37,7 +37,7 @@ orientation_selectivity:
   type: "single"
 
 best_responsivity:
-  title: "Best Responsivity"
+  title: "Peak Response"
   dir: "plots"
   type: "single"
 
@@ -48,21 +48,6 @@ direction_tuning_width:
 
 orientation_tuning_width:
   title: "Orientation Tuning Width"
-  dir: "plots"
-  type: "single"
-
-sf_selectivity:
-  title: "Spatial Selectivity"
-  dir: "plots"
-  type: "single"
-
-sf_responsivity:
-  title: "Spatial Peak Response"
-  dir: "plots"
-  type: "single"
-
-sf_responsivity_ratio:
-  title: "Spatial Response Ratio"
   dir: "plots"
   type: "single"
 

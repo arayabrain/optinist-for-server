@@ -14,13 +14,22 @@ from studio.app.common.schemas.outputs import PlotMetaData
 
 class PolarData(BaseData):
     def __init__(
-        self, data, thetas, file_name="polar", meta: Optional[PlotMetaData] = None
+        self,
+        data,
+        thetas,
+        file_name="polar",
+        meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
+        xtitle: Optional[str] = None,
+        ytitle: Optional[str] = None,
     ):
         # thetas: specify in degrees
         super().__init__(file_name)
-
         self.data = data
         self.columns = thetas
+        self.title = title
+        self.xtitle = xtitle
+        self.ytitle = ytitle
 
     def save_json(self, json_dir):
         self.json_path = join_filepath([json_dir, f"{self.file_name}.json"])
@@ -52,6 +61,21 @@ class PolarData(BaseData):
                 ["0°", "45°", "90°", "135°", "180°", "225°", "270°", "315°"]
             )
 
+            # Control number of radial tick labels
+            data_min = np.min(self.data[i])
+            data_max = np.max(self.data[i])
+            max_radial_labels = 5
+            r_ticks = np.linspace(data_min, data_max, max_radial_labels)
+            ax.set_yticks(r_ticks)
+
+            # Format radial tick labels with appropriate precision
+            value_range = data_max - data_min
+            if value_range < 0.1:
+                # Use 2 decimal places for small ranges
+                ax.set_yticklabels([f"{tick:.2f}" for tick in r_ticks])
+            else:
+                # Use 1 decimal place for larger ranges
+                ax.set_yticklabels([f"{tick:.1f}" for tick in r_ticks])
             # Close the line
             if len(theta_rad) > 0:
                 ax.plot(
@@ -60,6 +84,12 @@ class PolarData(BaseData):
                     color="#636EFA",
                     linewidth=1.5,
                 )
+            if self.title:
+                plt.title(self.title)
+            if self.xtitle:
+                plt.xlabel(self.xtitle)
+            if self.ytitle:
+                plt.ylabel(self.ytitle)
 
             plot_file = join_filepath([output_dir, f"{self.file_name}_{i}.png"])
             plt.tight_layout()

@@ -13,12 +13,21 @@ from studio.app.common.schemas.outputs import PlotMetaData
 
 class LineData(BaseData):
     def __init__(
-        self, data, columns, file_name="line", meta: Optional[PlotMetaData] = None
+        self,
+        data,
+        columns,
+        file_name="line",
+        meta: Optional[PlotMetaData] = None,
+        title: Optional[str] = None,
+        xtitle: Optional[str] = None,
+        ytitle: Optional[str] = None,
     ):
         super().__init__(file_name)
-
         self.data = data
         self.columns = columns
+        self.title = title
+        self.xtitle = xtitle
+        self.ytitle = ytitle
 
     def save_json(self, json_dir):
         self.json_path = join_filepath([json_dir, f"{self.file_name}.json"])
@@ -34,8 +43,14 @@ class LineData(BaseData):
             plt.figure()
             plt.plot(self.columns, self.data[i])
             plt.grid(True, linestyle="--", alpha=0.7)
+            if self.title:
+                plt.title(self.title)
+            if self.xtitle:
+                plt.xlabel(self.xtitle)
+            if self.ytitle:
+                plt.ylabel(self.ytitle)
+
             plot_file = join_filepath([output_dir, f"{self.file_name}_{i}.png"])
             plt.savefig(plot_file, bbox_inches="tight")
             plt.close()
-
             save_thumbnail(plot_file)

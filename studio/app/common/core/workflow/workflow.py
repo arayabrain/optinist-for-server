@@ -58,6 +58,7 @@ class NodeType:
     HDF5: str = "HDF5FileNode"
     MATLAB: str = "MatlabFileNode"
     MICROSCOPE: str = "MicroscopeFileNode"
+    MICROSCOPE_EXPDB: str = "MicroscopeExpdbFileNode"
     EXPDB: str = "ExpDbNode"
 
     # Data Type (Includes above DataType Nodes)
@@ -81,6 +82,7 @@ class NodeTypeUtil:
             NodeType.HDF5,
             NodeType.MATLAB,
             NodeType.MICROSCOPE,
+            NodeType.MICROSCOPE_EXPDB,
             NodeType.EXPDB,
         ]:
             return NodeType.DATA
@@ -101,6 +103,7 @@ class NodeTypeUtil:
             FILETYPE.HDF5,
             FILETYPE.MATLAB,
             FILETYPE.MICROSCOPE,
+            FILETYPE.MICROSCOPE_EXPDB,
             FILETYPE.EXPDB,
         ]:
             return NodeType.DATA
@@ -145,7 +148,7 @@ class Message:
 @dataclass
 class DataFilterRangeParam:
     start: int
-    end: int
+    end: Optional[int]
 
 
 @dataclass
@@ -165,10 +168,15 @@ class DataFilterParam:
 
         mask = np.zeros(max_size, dtype=bool)
         for range in dim_range:
-            if isinstance(range, dict):
-                mask[range["start"] : range["end"]] = True
-            else:
-                mask[range.start : range.end] = True
+            start, end = (
+                (range["start"], range["end"])
+                if isinstance(range, dict)
+                else (range.start, range.end)
+            )
+
+            end = end or start + 1
+
+            mask[start:end] = True
         return mask
 
     def dim1_mask(self, max_size):

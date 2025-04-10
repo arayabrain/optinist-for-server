@@ -1,5 +1,7 @@
 from pynwb import get_class, load_namespaces
-from pynwb.spec import NWBDatasetSpec, NWBGroupSpec, NWBNamespaceBuilder
+from pynwb.spec import NWBDatasetSpec, NWBGroupSpec
+
+from studio.app.optinist.core.nwb.nwb_loader import export_nwb_namespace_file
 
 name = "oristats"
 ns_path = f"{name}.namespace.yaml"
@@ -44,7 +46,7 @@ FILE_CONVERT_PROPS = {
     "tuning_curve_polar": ("float", (None, None)),
     "stim_selectivity": ("float", (None, None)),
     "stim_responsivity": ("float", (None, None)),
-    "sf_responsivity_ratio": ("float", (None, None)),
+    "stim_responsivity_ratio": ("float", (None, None)),
 }
 
 ANOVA_TYPES = {
@@ -161,9 +163,8 @@ oristat_ext = NWBGroupSpec(
     neurodata_type_inc="NWBContainer",
 )
 
-ns_builder = NWBNamespaceBuilder(f"{name} extensions", name, version="0.1.0")
-ns_builder.add_spec(ext_source, oristat_ext)
-ns_builder.export(ns_path)
+export_nwb_namespace_file(name, ns_path, ext_source, oristat_ext)
+
 load_namespaces(ns_path)
 
 Oristats = get_class("Oristats", name)

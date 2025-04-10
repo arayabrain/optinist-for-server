@@ -12,6 +12,7 @@ import {
   deleteUser,
   createUser,
   updateUser,
+  proxyLogin,
 } from "store/slice/User/UserActions"
 import { USER_SLICE_NAME, User } from "store/slice/User/UserType"
 import {
@@ -45,11 +46,6 @@ export const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(login.fulfilled, (_, action) => {
-        saveToken(action.payload.access_token)
-        saveRefreshToken(action.payload.refresh_token)
-        saveExToken(action.payload.ex_token)
-      })
       .addCase(getMe.fulfilled, (state, action) => {
         state.currentUser = action.payload
       })
@@ -64,6 +60,14 @@ export const userSlice = createSlice({
       .addCase(getListGroupSearch.fulfilled, (state, action) => {
         state.listGroupSearch = action.payload
       })
+      .addMatcher(
+        isAnyOf(login.fulfilled, proxyLogin.fulfilled),
+        (_, action) => {
+          saveToken(action.payload.access_token)
+          saveRefreshToken(action.payload.refresh_token)
+          saveExToken(action.payload.ex_token)
+        },
+      )
       .addMatcher(
         isAnyOf(
           getListUserSearch.rejected,

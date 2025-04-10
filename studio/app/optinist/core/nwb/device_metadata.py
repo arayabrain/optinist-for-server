@@ -1,5 +1,7 @@
 from pynwb import get_class, load_namespaces
-from pynwb.spec import NWBDatasetSpec, NWBGroupSpec, NWBNamespaceBuilder
+from pynwb.spec import NWBDatasetSpec, NWBGroupSpec
+
+from studio.app.optinist.core.nwb.nwb_loader import export_nwb_namespace_file
 
 name = "device_metadata"
 ns_path = f"{name}.namespace.yaml"
@@ -138,9 +140,8 @@ device_ext = NWBGroupSpec(
     neurodata_type_inc="Device",
 )
 
-ns_builder = NWBNamespaceBuilder(f"{name} extensions", name, version="0.1.0")
-ns_builder.add_spec(ext_source, device_ext)
-ns_builder.export(ns_path)
+export_nwb_namespace_file(name, ns_path, ext_source, device_ext)
+
 load_namespaces(ns_path)
 
 ImagingMetaData = get_class("ImagingMetaData", name)

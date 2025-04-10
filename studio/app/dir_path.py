@@ -31,6 +31,7 @@ class DIRPATH:
     CONDAENV_DIR = (
         f"{os.path.dirname(os.path.dirname(os.path.dirname(__file__)))}/conda"
     )
+    SNAKEMAKE_CONDA_ENV_DIR = f"{ROOT_DIR}/.snakemake/conda"
 
     SNAKEMAKE_FILEPATH = f"{APP_DIR}/Snakefile"
     EXPERIMENT_YML = "experiment.yaml"
@@ -48,7 +49,7 @@ class DIRPATH:
     MICROSCOPE_LIB_DIR = f"{APP_DIR}/optinist/microscopes/libs"
     MICROSCOPE_LIB_ZIP = f"{APP_DIR}/optinist/microscopes/libs.zip"
 
-    LOG_FILE_PATH = f"{ROOT_DIR}/logs/studio.log"
+    LOG_FILE_PATH = f"{DATA_DIR}/logs/studio.log"
 
 
 class CORE_PARAM_PATH(Enum):

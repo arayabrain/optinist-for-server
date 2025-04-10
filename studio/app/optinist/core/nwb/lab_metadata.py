@@ -1,5 +1,7 @@
 from pynwb import get_class, load_namespaces
-from pynwb.spec import NWBDatasetSpec, NWBGroupSpec, NWBNamespaceBuilder
+from pynwb.spec import NWBDatasetSpec, NWBGroupSpec
+
+from studio.app.optinist.core.nwb.nwb_loader import export_nwb_namespace_file
 
 name = "lab_specific_metadata"
 ns_path = f"{name}.namespace.yaml"
@@ -130,9 +132,8 @@ lab_specific_ext = NWBGroupSpec(
     neurodata_type_inc="LabMetaData",
 )
 
-ns_builder = NWBNamespaceBuilder(f"{name} extensions", name, version="0.1.0")
-ns_builder.add_spec(ext_source, lab_specific_ext)
-ns_builder.export(ns_path)
+export_nwb_namespace_file(name, ns_path, ext_source, lab_specific_ext)
+
 load_namespaces(ns_path)
 
 SpecimenTypeMetaData = get_class("SpecimenTypeMetaData", name)

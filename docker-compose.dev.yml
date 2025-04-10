@@ -5,7 +5,7 @@ version: "3"
 #   ```
 #   cd {APP_SRC_DIR}
 #   mkdir .snakemake ../experiments_datasets ../experiments_public
-#   chmod 777 ./ logs/ logs/* .snakemake/ ../experiments_datasets/ ../experiments_public/
+#   chmod 777 .snakemake/ ../experiments_datasets/ ../experiments_public/
 #   ```
 
 services:
@@ -30,7 +30,6 @@ services:
 
       # optinist data outputs directories
       - ../optinist-docker-volumes/.snakemake/:/app/.snakemake
-      - ../optinist-docker-volumes/logs/:/app/logs
       - ../optinist-docker-volumes/studio_data/:/app/studio_data
 
       # external datasets directories
