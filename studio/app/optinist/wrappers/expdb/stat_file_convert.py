@@ -297,7 +297,6 @@ def stat_file_convert(
         "stat": stat,
         "tuning_curve": stat.tuning_curve,
         "tuning_curve_polar": stat.tuning_curve_polar,
-        "spatial_frequency_tuning": stat.tuning_curve,
         "nwbfile": {
             NWBDATASET.ORISTATS: stat.nwb_dict_file_convert,
         },
