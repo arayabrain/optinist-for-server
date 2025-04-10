@@ -45,23 +45,13 @@ class PieData(BaseData):
 
     def save_plot(self, output_dir):
         plt.figure(figsize=(6.4, 4.8))
-
-        # Create an "explode" array to avoid overlapping labels
-        explode = []
-        explode_value = 0.1
-        for _ in self.data[0]:
-            explode.append(explode_value)
-            explode_value += 0.1
-
         wedges, texts, autotexts = plt.pie(
             self.data[0],
-            labels=self.columns,
-            explode=explode,
+            labels=None,
             counterclock=False,
             startangle=90,
             autopct="%1.0f%%",
-            pctdistance=0.85,
-            labeldistance=1.1,
+            pctdistance=1.1,
         )
         plt.legend(
             wedges,
