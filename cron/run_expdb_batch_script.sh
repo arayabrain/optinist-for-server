@@ -3,7 +3,7 @@
 . ~/.bashrc
 cd $(cd $(dirname $0); pwd)/../
 
-# Set enviroments
+# Set environments
 if [ -z "${OPTINIST_DIR}" ] && [ -d "/app" ]; then
  export OPTINIST_DIR="/app/studio_data"
 fi
