@@ -210,7 +210,7 @@ class ExpDbBatchRunner:
             # 各datasetsの処理を並列実行し結果を取得
             futures = [
                 executor.submit(
-                    ExpDbBatchConcurrentProcess.process_single_dataset,
+                    ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
                     flag_file=flag_file,
                     org_id=self.org_id,
                     start_time=self.start_time,
@@ -320,6 +320,20 @@ class ExpDbBatchConcurrentProcess:
     @staticmethod
     def __get_exp_id_from_flag_file(flag_file: str) -> str:
         return os.path.basename(flag_file).split(".", 1)[0]
+
+    @classmethod
+    def process_single_dataset_entrypoint(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        logger_name: str,
+    ) -> dict:
+        """
+        ATTENTION: This method does not use decorator (stopwatch)
+            because it is an entrypoint of ProcessPoolExecutor.
+        """
+        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
