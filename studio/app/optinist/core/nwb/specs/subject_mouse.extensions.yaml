@@ -1,0 +1,18 @@
+groups:
+- neurodata_type_def: SubjectMouse
+  neurodata_type_inc: Subject
+  name: Species Mouse
+  doc: meta data for mouse subject
+  datasets:
+  - name: Scientific name
+    dtype: text
+    doc: Scientific name
+  - name: Genetic Background
+    dtype: text
+    doc: Genetic Background
+  - name: Stage
+    dtype: text
+    doc: Stage
+  - name: Vendor
+    dtype: text
+    doc: Vendor

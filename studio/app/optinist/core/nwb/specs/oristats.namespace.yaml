@@ -1,0 +1,7 @@
+namespaces:
+- doc: oristats extensions
+  name: oristats
+  schema:
+  - namespace: core
+  - source: oristats.extensions.yaml
+  version: 0.1.0
