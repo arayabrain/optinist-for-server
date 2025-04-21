@@ -17,6 +17,7 @@ from pynwb.ophys import (
     TwoPhotonSeries,
 )
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.optinist.core.nwb.device_metadata import (
     DeviceMetaData,
     ImagingMetaData,
@@ -39,7 +40,6 @@ from studio.app.optinist.core.nwb.lab_metadata import (
     SpecimenTypeMetaData,
     TechniqueVirusInjectionMetaData,
 )
-from studio.app.common.core.logger import AppLogger
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import ConfigData, PostProcess
 from studio.app.optinist.core.nwb.oristat import Oristats
