@@ -8,7 +8,7 @@ from studio.app.common.dataclass.line import LineData
 from studio.app.common.dataclass.pie import PieData
 from studio.app.common.dataclass.polar import PolarData
 from studio.app.common.dataclass.scatter import ScatterData
-from studio.app.optinist.core.nwb.oristat import (
+from studio.app.optinist.core.nwb.specs.oristat_spec import (
     ANOVA_PROPS,
     ANOVA_TYPES,
     CURVEFIT_PROPS,
@@ -170,9 +170,11 @@ class StatData(BaseData):
 
         # Create spatial frequency visualization data structures
         self.stim_selectivity = HistogramData(
-            data=self.norm_si[self.index_stim_responsive_cell]
-            if np.any(self.index_stim_responsive_cell)
-            else np.array([0]),
+            data=(
+                self.norm_si[self.index_stim_responsive_cell]
+                if np.any(self.index_stim_responsive_cell)
+                else np.array([0])
+            ),
             file_name="selectivity",
             title="Selectivity (Non-Circular)",
             xtitle="Selectivity Index",
@@ -180,9 +182,11 @@ class StatData(BaseData):
         )
 
         self.stim_responsivity = HistogramData(
-            data=self.r_best_stim[self.index_stim_responsive_cell] * 100
-            if np.any(self.index_stim_responsive_cell)
-            else np.array([0]),
+            data=(
+                self.r_best_stim[self.index_stim_responsive_cell] * 100
+                if np.any(self.index_stim_responsive_cell)
+                else np.array([0])
+            ),
             file_name="best_responsivity",
             title="Peak Response",
             xtitle="Response Amplitude",
