@@ -42,9 +42,9 @@ if __name__ == "__main__":
     )
     from studio.app.optinist.core.nwb.specs.oristat_spec import NAME as ORISTAT_NAME
 
-    export_spec_files(OPTINIST_NAME, OPTINIST_GROUP_SPEC, 0)
     export_spec_files(DEVMETA_NAME, DEVMETA_GROUP_SPEC, 0)
     export_spec_files(LABMETA_NAME, LABMETA_GROUP_SPEC, 0)
     export_spec_files(MARMOSET_NAME, MARMOSET_GROUP_SPEC, 0)
     export_spec_files(MOUSE_NAME, MOUSE_GROUP_SPEC, 0)
+    export_spec_files(OPTINIST_NAME, OPTINIST_GROUP_SPEC, 0)
     export_spec_files(ORISTAT_NAME, ORISTAT_GROUP_SPEC, 0)
