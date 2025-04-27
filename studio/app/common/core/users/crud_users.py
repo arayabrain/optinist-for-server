@@ -103,7 +103,6 @@ async def list_user(
                     "data_usage"
                 ),
             )
-            .join(UserModel.role)
             .outerjoin(WorkspaceCapacity, WorkspaceCapacity.c.user_id == UserModel.id)
             .outerjoin(ExperimentCapacity, ExperimentCapacity.c.user_id == UserModel.id)
             .join(UserRoleModel, UserRoleModel.user_id == UserModel.id, isouter=True)

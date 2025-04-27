@@ -1,7 +1,7 @@
 """Add data capacity
 
 Revision ID: 0b3a8e2ca9c1
-Revises: a19721f73cfb
+Revises: 7d90a45053f1
 Create Date: 2025-03-17 11:53:34.527465
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
 revision = "0b3a8e2ca9c1"
-down_revision = "a19721f73cfb"
+down_revision = "7d90a45053f1"
 branch_labels = None
 depends_on = None
 
