@@ -35,6 +35,7 @@ class ExptConfig:
     snakemake: Optional[SmkParam] = SmkParam(
         **ConfigReader.read(CORE_PARAM_PATH.snakemake.value)
     )
+    data_usage: Optional[int] = 0
 
 
 @dataclass

@@ -38,6 +38,7 @@ import {
   GridSortDirection,
   GridSortItem,
   GridSortModel,
+  GridValidRowModel,
 } from "@mui/x-data-grid"
 import { isRejectedWithValue } from "@reduxjs/toolkit"
 
@@ -66,6 +67,7 @@ import {
   selectLoading,
 } from "store/slice/User/UserSelector"
 import { AppDispatch } from "store/store"
+import { convertBytes } from "utils"
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -842,6 +844,13 @@ const AccountManager = () => {
             </div>
           </Tooltip>
         )
+      },
+    },
+    {
+      headerName: "Data size",
+      field: "data_usage",
+      renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
+        return convertBytes(params.value)
       },
     },
     {
