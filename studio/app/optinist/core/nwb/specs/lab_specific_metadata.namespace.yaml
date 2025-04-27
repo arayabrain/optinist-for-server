@@ -1,0 +1,7 @@
+namespaces:
+- doc: lab_specific_metadata extensions
+  name: lab_specific_metadata
+  schema:
+  - namespace: core
+  - source: lab_specific_metadata.extensions.yaml
+  version: 0.1.0

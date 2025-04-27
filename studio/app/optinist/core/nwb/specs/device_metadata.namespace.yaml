@@ -1,0 +1,7 @@
+namespaces:
+- doc: device_metadata extensions
+  name: device_metadata
+  schema:
+  - namespace: core
+  - source: device_metadata.extensions.yaml
+  version: 0.1.0

@@ -1,0 +1,7 @@
+namespaces:
+- doc: subject_mouse extensions
+  name: subject_mouse
+  schema:
+  - namespace: core
+  - source: subject_mouse.extensions.yaml
+  version: 0.1.0

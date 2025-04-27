@@ -2,7 +2,10 @@ import datetime
 
 from sqlmodel import Session
 
-from studio.app.optinist.core.nwb.lab_metadata import MODALITY_IMAGING_KEY, SPECIMEN_KEY
+from studio.app.optinist.core.nwb.specs.lab_metadata_spec import (
+    MODALITY_IMAGING_KEY,
+    SPECIMEN_KEY,
+)
 from studio.app.optinist.models import Experiment as ExperimentModel
 from studio.app.optinist.models.expdb.experiment import (
     ExperimentShareUser as ExperimentShareUserModel,
