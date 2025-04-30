@@ -27,14 +27,6 @@ from studio.app.optinist.core.nwb.device_metadata import (
     PixelsMetaData,
 )
 from studio.app.optinist.core.nwb.lab_metadata import (
-    LAB_SPECIFIC_KEY,
-    LAB_SPECIFIC_TYPES,
-    MODALITY_IMAGING_KEY,
-    MODALITY_IMAGING_TYPES,
-    SPECIMEN_KEY,
-    SPECIMEN_TYPES,
-    TECHNIQUE_VIRUS_INJECTION_KEY,
-    TECHNIQUE_VIRUS_INJECTION_TYPES,
     LabSpecificMetaData,
     ModalityImagingMetaData,
     SpecimenTypeMetaData,
@@ -43,14 +35,26 @@ from studio.app.optinist.core.nwb.lab_metadata import (
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.optinist_data import ConfigData, PostProcess
 from studio.app.optinist.core.nwb.oristat import Oristats
-from studio.app.optinist.core.nwb.oristat import name as ORISTATS_NWB_ATTR_NAME
-from studio.app.optinist.core.nwb.subject.marmoset import (
+from studio.app.optinist.core.nwb.specs.lab_metadata_spec import (
+    LAB_SPECIFIC_KEY,
+    LAB_SPECIFIC_TYPES,
+    MODALITY_IMAGING_KEY,
+    MODALITY_IMAGING_TYPES,
+    SPECIMEN_KEY,
+    SPECIMEN_TYPES,
+    TECHNIQUE_VIRUS_INJECTION_KEY,
+    TECHNIQUE_VIRUS_INJECTION_TYPES,
+)
+from studio.app.optinist.core.nwb.specs.marmoset_spec import (
     SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
 )
-from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
-from studio.app.optinist.core.nwb.subject.mouse import (
+from studio.app.optinist.core.nwb.specs.mouse_spec import (
     SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
 )
+from studio.app.optinist.core.nwb.specs.oristat_spec import (
+    NAME as ORISTATS_NWB_ATTR_NAME,
+)
+from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
 from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
 
 

@@ -1,0 +1,21 @@
+groups:
+- neurodata_type_def: SubjectMarmoset
+  neurodata_type_inc: Subject
+  name: Species Marmoset
+  doc: meta data for marmoset subject
+  datasets:
+  - name: Scientific name
+    dtype: text
+    doc: Scientific name
+  - name: Genetic Background
+    dtype: text
+    doc: Genetic Background
+  - name: Stage
+    dtype: text
+    doc: Stage
+  - name: Family
+    dtype: text
+    doc: Family
+  - name: RIKEN ID
+    dtype: text
+    doc: RIKEN ID

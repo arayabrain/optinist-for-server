@@ -1,0 +1,184 @@
+groups:
+- neurodata_type_def: LabSpecificMetaData
+  neurodata_type_inc: LabMetaData
+  name: Lab specific metadata
+  doc: Lab specific metadata
+  datasets:
+  - name: DOI
+    dtype: text
+    doc: DOI
+  - name: Title
+    dtype: text
+    doc: Title
+  - name: Abstract
+    dtype: text
+    doc: Abstract
+  - name: Additional Notes
+    dtype: text
+    doc: Additional Notes
+  - name: Data Creator
+    dtype: text
+    shape:
+    - null
+    doc: Data Creator
+  - name: Publisher
+    dtype: text
+    doc: Publisher
+  - name: Publication Date
+    dtype: text
+    doc: Publication Date
+  - name: Funding
+    dtype: text
+    shape:
+    - null
+    doc: Funding
+  - name: Data collection date
+    dtype: text
+    shape:
+    - null
+    doc: Data collection date
+  - name: License
+    dtype: text
+    shape:
+    - null
+    doc: License
+  - name: DOI for paper publication
+    dtype: text
+    doc: DOI for paper publication
+  - name: DOI for related work
+    dtype: text
+    shape:
+    - null
+    doc: DOI for related work
+  - name: Journal
+    dtype: text
+    doc: Journal
+  - name: Version
+    dtype: text
+    doc: Version
+  - name: DOI for initial version of this dataset
+    dtype: text
+    doc: DOI for initial version of this dataset
+  - name: Keywords
+    dtype: text
+    shape:
+    - null
+    doc: Keywords
+  - name: Laboratory
+    dtype: text
+    doc: Laboratory
+  groups:
+  - neurodata_type_def: SpecimenTypeMetaData
+    neurodata_type_inc: LabMetaData
+    name: Specimen type Brain region
+    doc: Specimen type Brain region
+    datasets:
+    - name: Specimen type
+      dtype: text
+      doc: Specimen type
+    - name: Brain region
+      dtype: text
+      shape:
+      - - null
+      - - null
+        - null
+      doc: Brain region
+  - neurodata_type_def: ModalityImagingMetaData
+    neurodata_type_inc: LabMetaData
+    name: Modality Imaging
+    doc: Modality Imaging
+    datasets:
+    - name: Modality
+      dtype: text
+      doc: Modality
+    - name: Imaging method
+      dtype: text
+      doc: Imaging method
+    - name: Ca Imaging
+      dtype: text
+      doc: Ca Imaging
+    - name: Ca Imaging>Indicator
+      dtype: text
+      doc: Ca Imaging>Indicator
+    - name: Ca Imaging>Promoter
+      dtype: text
+      doc: Ca Imaging>Promoter
+    - name: Ca Imaging>Depth
+      dtype: text
+      doc: Ca Imaging>Depth
+    - name: Ca Imaging>Field of view
+      dtype: text
+      doc: Ca Imaging>Field of view
+    - name: Ca Imaging>Field of view x
+      dtype: text
+      doc: Ca Imaging>Field of view x
+    - name: Ca Imaging>Field of view y
+      dtype: text
+      doc: Ca Imaging>Field of view y
+    - name: Ca Imaging>Image size x
+      dtype: text
+      doc: Ca Imaging>Image size x
+    - name: Ca Imaging>Image size y
+      dtype: text
+      doc: Ca Imaging>Image size y
+    - name: Ca Imaging>Sampling speed
+      dtype: text
+      doc: Ca Imaging>Sampling speed
+    - name: Ca Imaging>Optical resolution (psf)
+      dtype: text
+      doc: Ca Imaging>Optical resolution (psf)
+    - name: Intrinsic imaging
+      dtype: text
+      doc: Intrinsic imaging
+    - name: Other imaging Sensor
+      dtype: text
+      doc: Other imaging Sensor
+    - name: Photo Multiplier Tube
+      dtype: text
+      doc: Photo Multiplier Tube
+    - name: Optics company
+      dtype: text
+      doc: Optics company
+    - name: Optics product ID
+      dtype: text
+      doc: Optics product ID
+    - name: Photon
+      dtype: text
+      doc: Photon
+    - name: Analyte
+      dtype: text
+      doc: Analyte
+  - neurodata_type_def: TechniqueVirusInjectionMetaData
+    neurodata_type_inc: LabMetaData
+    name: Technique Virus injection
+    doc: Technique Virus injection
+    datasets:
+    - name: Technique
+      dtype: text
+      doc: Technique
+    - name: Virus type
+      dtype: text
+      doc: Virus type
+    - name: serotypes
+      dtype: text
+      doc: serotypes
+    - name: Virus
+      dtype: text
+      shape:
+      - - null
+      - - null
+        - null
+      doc: Virus
+    - name: Injection region
+      dtype: text
+      shape:
+      - - null
+      - - null
+        - null
+      doc: Injection region
+    - name: Injection age
+      dtype: text
+      doc: Injection age
+    - name: Incubation period
+      dtype: text
+      doc: Incubation period

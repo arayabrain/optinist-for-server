@@ -10,8 +10,6 @@ dist
 
 requirements.*.txt
 
-*.extensions.yaml
-*.namespace.yaml
 *.namespace.yaml.lock
 
 files/*
