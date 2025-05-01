@@ -38,6 +38,7 @@ class User(BaseModel):
     organization: Organization
     role_id: Optional[int]
     groups: List[Group]
+    data_usage: Optional[int]
 
     @property
     def is_admin(self) -> bool:
