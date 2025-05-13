@@ -150,7 +150,7 @@ class ExpDbBatch:
 
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbPath(self.exp_id)
-        self.nwb_input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
+        self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
         self.nwbfile = {}
         self._configure_matplotlib()
 
