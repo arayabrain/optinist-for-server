@@ -1,4 +1,5 @@
 import gc
+import json
 import os
 
 import numpy as np
@@ -84,8 +85,8 @@ def caiman_cnmf_preprocessing(
 
     from studio.app.expdb_dir_path import EXPDB_DIRPATH
 
-    function_id = output_dir.split("/")[-1]  # get function_id from output_dir path
-    logger.info(f"start caiman_cnmf: {function_id}")
+    function_id = "caiman_cnmf"
+    logger.info(f"start {function_id}")
 
     # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
     util_download_model_files()
@@ -257,7 +258,8 @@ def caiman_cnmf_preprocessing(
             kargs["rejected"] = i in cnm.estimates.rejected_list
         roi_list.append(kargs)
 
-    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
+    nwbfile[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
+    # nwbfile[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"all_roi_img": im}}
 
     # Add iscell to NWB
@@ -283,6 +285,14 @@ def caiman_cnmf_preprocessing(
             }
         }
     }
+
+    # Config
+    if NWBDATASET.CONFIG not in nwbfile:
+        nwbfile[NWBDATASET.CONFIG] = {}
+    if function_id not in nwbfile[NWBDATASET.CONFIG]:
+        nwbfile[NWBDATASET.CONFIG][function_id] = {}
+    params_str = json.dumps(params, separators=(",", ":"))
+    nwbfile[NWBDATASET.CONFIG][function_id]["node_params"] = params_str
 
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),

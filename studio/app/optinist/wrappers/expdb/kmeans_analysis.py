@@ -6,6 +6,7 @@ from sklearn.metrics import silhouette_score
 
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
+from studio.app.common.dataclass.heatmap import HeatMapData
 from studio.app.common.dataclass.utils import save_thumbnail
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.expdb import ExpDbData
@@ -102,24 +103,29 @@ def kmeans_analysis(
         # Create visualization objects within the function
         stat.set_kmeans_props()
 
-        # Add to nwbfile if needed
+        # Add to nwbfile
         nwbfile = kwargs.get("nwbfile", {})
-        clustering_dict = {
-            "cluster_labels": cluster_labels,
-            "cluster_corr_matrix": corr_matrix,
-            "silhouette_scores": None,
-            "optimal_clusters": 1,
-        }
-        nwbfile = {
-            NWBDATASET.ORISTATS: {
-                **nwbfile.get(NWBDATASET.ORISTATS, {}),
-                **clustering_dict,
-            }
-        }
+
+        function_id = "kmeans_analysis"
+        if function_id not in nwbfile[NWBDATASET.ORISTATS]:
+            nwbfile[NWBDATASET.ORISTATS][function_id] = {}
+
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "cluster_labels"
+        ] = stat.cluster_labels
+
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "cluster_corr_matrix"
+        ] = stat.cluster_corr_matrix.data
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "cluster_silhouette_scores"
+        ] = stat.silhouette_scores
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "cluster_optimal_num"
+        ] = stat.optimal_clusters
 
         return {
             "stat": stat,
-            # "cluster_corr_matrix": stat.cluster_corr_matrix,
             "nwbfile": nwbfile,
         }
     logger.info(f"KMeans will use {n_rois} ROIs")
@@ -314,17 +320,24 @@ def kmeans_analysis(
     # Create visualization objects within the function
     stat.set_kmeans_props()
 
-    # Add to nwbfile if needed
+    # Add to nwbfile
     nwbfile = kwargs.get("nwbfile", {})
-    clustering_dict = {
-        "cluster_labels": cluster_labels,
-        "cluster_corr_matrix": corr_matrix,
-        "silhouette_scores": silhouette_values,
-        "optimal_clusters": k_optimal,
-    }
-    nwbfile = {
-        NWBDATASET.ORISTATS: {**nwbfile.get(NWBDATASET.ORISTATS, {}), **clustering_dict}
-    }
+
+    function_id = "kmeans_analysis"
+    if function_id not in nwbfile[NWBDATASET.ORISTATS]:
+        nwbfile[NWBDATASET.ORISTATS][function_id] = {}
+
+    nwbfile[NWBDATASET.ORISTATS][function_id]["cluster_labels"] = stat.cluster_labels
+
+    nwbfile[NWBDATASET.ORISTATS][function_id]["cluster_corr_matrix"] = HeatMapData(
+        all_sorted_matrices["optimal"]
+    ).data
+    nwbfile[NWBDATASET.ORISTATS][function_id][
+        "cluster_silhouette_scores"
+    ] = stat.silhouette_scores
+    nwbfile[NWBDATASET.ORISTATS][function_id][
+        "cluster_optimal_num"
+    ] = stat.optimal_clusters
 
     return {
         "stat": stat,
