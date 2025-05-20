@@ -1,5 +1,4 @@
 import gc
-import json
 import os
 
 import numpy as np
@@ -284,14 +283,6 @@ def caiman_cnmf_preprocessing(
             }
         }
     }
-
-    # Config
-    if NWBDATASET.CONFIG not in nwbfile:
-        nwbfile[NWBDATASET.CONFIG] = {}
-    if function_id not in nwbfile[NWBDATASET.CONFIG]:
-        nwbfile[NWBDATASET.CONFIG][function_id] = {}
-    params_str = json.dumps(params, separators=(",", ":"))
-    nwbfile[NWBDATASET.CONFIG][function_id]["node_params"] = params_str
 
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
