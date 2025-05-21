@@ -31,5 +31,5 @@ def analyze_stats(
         "stim_responsivity": stat.stim_responsivity,
         "stim_responsivity_ratio": stat.stim_responsivity_ratio,
         "stim_tuning_curve": stat.stim_tuning_curve,
-        "nwbfile": {NWBDATASET.ORISTATS: stat.nwb_dict_all},
+        "nwbfile": {NWBDATASET.ORISTATS: {"stats_analysis": stat.nwb_dict_all}},
     }

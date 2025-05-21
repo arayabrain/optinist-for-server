@@ -67,17 +67,12 @@ def pca_analysis(
     # Check if we have enough ROIs for PCA
     if n_rois < 2:
         logger.warning("Not enough ROIs for PCA analysis (minimum 2 required)")
-        # Create dummy placeholders
-        dummy_scores = np.zeros((1, 1))
-        dummy_scores_ave = np.zeros((1, 1))
-        dummy_components = np.zeros((1, 1))
-        dummy_explained_variance = np.zeros(1)
 
-        # Store results in StatData
-        stat.pca_scores = dummy_scores
-        stat.pca_scores_ave = dummy_scores_ave
-        stat.pca_components = dummy_components
-        stat.pca_explained_variance = dummy_explained_variance
+        # Store dummy results for StatData
+        stat.pca_scores = np.zeros((1, 1))
+        stat.pca_scores_ave = np.zeros((1, 1))
+        stat.pca_components = np.zeros((1, 1))
+        stat.pca_explained_variance = np.zeros(1)
 
         # Store ROI masks for visualization
         stat.roi_masks = roi_masks
@@ -87,21 +82,23 @@ def pca_analysis(
 
         # Add message to nwbfile
         nwbfile = kwargs.get("nwbfile", {})
-        pca_dict = {
-            "pca_scores": dummy_scores,
-            "pca_scores_ave": dummy_scores_ave,
-            "pca_components": dummy_components,
-            "pca_explained_variance": dummy_explained_variance,
-        }
-        nwbfile = {
-            NWBDATASET.ORISTATS: {**nwbfile.get(NWBDATASET.ORISTATS, {}), **pca_dict}
-        }
+        function_id = "pca_analysis"
+        if function_id not in nwbfile[NWBDATASET.ORISTATS]:
+            nwbfile[NWBDATASET.ORISTATS][function_id] = {}
+
+        nwbfile[NWBDATASET.ORISTATS][function_id]["pca_scores"] = stat.pca_scores
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "pca_scores_ave"
+        ] = stat.pca_scores_ave
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "pca_components"
+        ] = stat.pca_components
+        nwbfile[NWBDATASET.ORISTATS][function_id][
+            "pca_explained_variance"
+        ] = stat.pca_explained_variance
 
         return {
             "stat": stat,
-            "pca_analysis": stat.pca_analysis,
-            "pca_analysis_variance": stat.pca_analysis_variance,
-            "pca_contribution": stat.pca_contribution,
             "nwbfile": nwbfile,
         }
     logger.info(f"PCA will use {n_rois} ROIs")
@@ -231,15 +228,19 @@ def pca_analysis(
 
     # Add to nwbfile if needed
     nwbfile = kwargs.get("nwbfile", {})
-    pca_dict = {
-        "pca_scores": scores,
-        "pca_scores_ave": scores_ave,
-        "pca_components": components,
-        "pca_explained_variance": explained_variance,
-    }
-    nwbfile = {
-        NWBDATASET.ORISTATS: {**nwbfile.get(NWBDATASET.ORISTATS, {}), **pca_dict}
-    }
+
+    function_id = "pca_analysis"
+    if NWBDATASET.ORISTATS not in nwbfile:
+        nwbfile[NWBDATASET.ORISTATS] = {}
+    if function_id not in nwbfile[NWBDATASET.ORISTATS]:
+        nwbfile[NWBDATASET.ORISTATS][function_id] = {}
+
+    nwbfile[NWBDATASET.ORISTATS][function_id]["pca_scores"] = stat.pca_scores
+    nwbfile[NWBDATASET.ORISTATS][function_id]["pca_scores_ave"] = stat.pca_scores_ave
+    nwbfile[NWBDATASET.ORISTATS][function_id]["pca_components"] = stat.pca_components
+    nwbfile[NWBDATASET.ORISTATS][function_id][
+        "pca_explained_variance"
+    ] = stat.pca_explained_variance
 
     return {
         "stat": stat,

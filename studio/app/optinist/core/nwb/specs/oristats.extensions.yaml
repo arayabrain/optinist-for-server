@@ -534,13 +534,13 @@ groups:
     - null
     doc: cluster_corr_matrix
     quantity: '?'
-  - name: silhouette_scores
+  - name: cluster_silhouette_scores
     dtype: float
     shape:
     - null
-    doc: silhouette_scores
+    doc: cluster_silhouette_scores
     quantity: '?'
-  - name: optimal_clusters
+  - name: cluster_optimal_num
     dtype: int
-    doc: optimal_clusters
+    doc: cluster_optimal_num
     quantity: '?'

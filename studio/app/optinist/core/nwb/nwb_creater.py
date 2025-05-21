@@ -635,7 +635,7 @@ def set_nwbconfig(nwbfile, config):
     if NWBDATASET.ROI in config:
         for function_key in config[NWBDATASET.ROI]:
             nwbfile = NWBCreater.roi(
-                nwbfile, function_key, config[NWBDATASET.ROI][function_key]
+                nwbfile, function_key, config[NWBDATASET.ROI][function_key]["roi_list"]
             )
 
     if NWBDATASET.COLUMN in config:
@@ -653,7 +653,10 @@ def set_nwbconfig(nwbfile, config):
             )
 
     if NWBDATASET.ORISTATS in config:
-        nwbfile = NWBCreater.oristats(nwbfile, config[NWBDATASET.ORISTATS])
+        combined_data = {}
+        for function_key in config[NWBDATASET.ORISTATS]:
+            combined_data.update(config[NWBDATASET.ORISTATS][function_key])
+        nwbfile = NWBCreater.oristats(nwbfile, combined_data)
 
     if NWBDATASET.LAB_METADATA in config:
         nwbfile = NWBCreater.lab_metadata(nwbfile, config[NWBDATASET.LAB_METADATA])
