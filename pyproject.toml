@@ -88,6 +88,8 @@ xmltodict = "*"
 matplotlib = "3.7.*"
 scikit-image = "0.21"
 concurrent-log-handler = "^0.9.25"
+numpydoc = "*"
+yapf = "*"
 
 [tool.poetry.group.dev]
 optional = true
