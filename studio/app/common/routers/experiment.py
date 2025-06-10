@@ -8,17 +8,16 @@ from sqlmodel import Session
 
 from studio.app.common.core.experiment.experiment import ExptConfig
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
+from studio.app.common.core.experiment.experiment_services import ExperimentService
 from studio.app.common.core.experiment.experiment_writer import ExptDataWriter
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.utils.filepath_creater import join_filepath
+from studio.app.common.core.snakemake.snakemake_reader import SmkConfigReader
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
     is_workspace_owner,
 )
-from studio.app.common.core.workspace.workspace_services import WorkspaceService
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.experiment import CopyItem, DeleteItem, RenameItem
-from studio.app.dir_path import DIRPATH
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
@@ -32,13 +31,12 @@ logger = AppLogger.get_logger()
 )
 async def get_experiments(workspace_id: str):
     exp_config = {}
-    config_paths = glob(
-        join_filepath([DIRPATH.OUTPUT_DIR, workspace_id, "*", DIRPATH.EXPERIMENT_YML])
-    )
+    config_paths = glob(ExptConfigReader.get_config_yaml_wild_path(workspace_id))
     for path in config_paths:
         try:
-            config = ExptConfigReader.read(path)
-            exp_config[config.unique_id] = config
+            config = ExptConfigReader.read_from_path(path)
+            if ExptConfigReader.validate_experiment_config(config):
+                exp_config[config.unique_id] = config
         except Exception as e:
             logger.error(e, exc_info=True)
             pass
@@ -79,12 +77,21 @@ async def delete_experiment(
     workspace_id: str, unique_id: str, db: Session = Depends(get_db)
 ):
     try:
-        WorkspaceService.delete_workspace_experiment(
+        result = ExperimentService.delete_experiment(
             db, workspace_id, unique_id, auto_commit=True
         )
 
-        return True
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete experiment [{workspace_id}/{unique_id}]",
+            )
 
+        return result
+
+    except HTTPException as e:
+        logger.error(e, exc_info=True)
+        raise e
     except Exception as e:
         logger.error("Deletion failed: %s", e, exc_info=True)
         raise HTTPException(
@@ -102,12 +109,32 @@ async def delete_experiment_list(
     workspace_id: str, deleteItem: DeleteItem, db: Session = Depends(get_db)
 ):
     try:
+        deleted_statuses = {}
+
         for unique_id in deleteItem.uidList:
-            WorkspaceService.delete_workspace_experiment(
+            result = ExperimentService.delete_experiment(
                 db, workspace_id, unique_id, auto_commit=True
+            )
+            deleted_statuses[unique_id] = result
+
+        deleted_failed_statuses = [
+            id for id, res in deleted_statuses.items() if not res
+        ]
+
+        if deleted_failed_statuses:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=(
+                    f"Failed to delete some experiments "
+                    f"[{workspace_id}] / {deleted_failed_statuses}"
+                ),
             )
 
         return True
+
+    except HTTPException as e:
+        logger.error(e, exc_info=True)
+        raise e
     except Exception as e:
         logger.error(e, exc_info=True)
         raise HTTPException(
@@ -125,7 +152,7 @@ async def copy_experiment_list(
     workspace_id: str, copyItem: CopyItem, db: Session = Depends(get_db)
 ):
     try:
-        WorkspaceService.copy_workspace_experiment(db, workspace_id, copyItem=copyItem)
+        ExperimentService.copy_experiment(db, workspace_id, copyItem=copyItem)
         return True
 
     except Exception as e:
@@ -141,9 +168,7 @@ async def copy_experiment_list(
     dependencies=[Depends(is_workspace_available)],
 )
 async def download_config_experiment(workspace_id: str, unique_id: str):
-    config_filepath = join_filepath(
-        [DIRPATH.OUTPUT_DIR, workspace_id, unique_id, DIRPATH.SNAKEMAKE_CONFIG_YML]
-    )
+    config_filepath = SmkConfigReader.get_config_yaml_path(workspace_id, unique_id)
     if os.path.exists(config_filepath):
         return FileResponse(config_filepath)
     else:
