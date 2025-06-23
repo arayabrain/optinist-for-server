@@ -28,6 +28,6 @@ conda/envs/*
 tensorflow-*.whl
 
 .env*
-!*.env.example
+!*.env*.example
 
 process.lock
