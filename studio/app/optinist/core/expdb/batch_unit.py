@@ -43,7 +43,7 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     get_experiment,
 )
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.core.nwb.nwb_creater import save_nwb
+from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope_expdb import MicroscopeExpdbData
 from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
@@ -150,7 +150,7 @@ class ExpDbBatch:
 
         self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbPath(self.exp_id)
-        self.nwb_input_config = ConfigReader.read(filepath=find_param_filepath("nwb"))
+        self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
         self.nwbfile = {}
         self._configure_matplotlib()
 
@@ -319,12 +319,25 @@ class ExpDbBatch:
     def cell_detection_cnmf(self, stack: ImageData):
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        return caiman_cnmf_preprocessing(
+        cnmf_params = get_default_params("caiman_cnmf_preprocessing")
+        function_id = "caiman_cnmf"
+        result = caiman_cnmf_preprocessing(
             images=stack,
             output_dir=self.raw_path.preprocess_dir,
-            params=get_default_params("caiman_cnmf_preprocessing"),
+            params=cnmf_params,
             nwbfile=self.nwb_input_config,
         )
+        if NWBDATASET.CONFIG not in self.nwbfile:
+            self.nwbfile[NWBDATASET.CONFIG] = {}
+        if function_id not in self.nwbfile[NWBDATASET.CONFIG]:
+            self.nwbfile[NWBDATASET.CONFIG][function_id] = {}
+        params_str = json.dumps(cnmf_params, separators=(",", ":"))
+        self.nwbfile[NWBDATASET.CONFIG][function_id]["node_params"] = params_str
+
+        if "nwbfile" in result:
+            self.nwbfile = merge_nwbfile(self.nwbfile, result["nwbfile"])
+
+        return result
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
@@ -337,7 +350,8 @@ class ExpDbBatch:
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
 
-        self.nwbfile[NWBDATASET.ORISTATS] = result["nwbfile"][NWBDATASET.ORISTATS]
+        if "nwbfile" in result:
+            self.nwbfile = merge_nwbfile(self.nwbfile, result["nwbfile"])
 
         return stat
 
@@ -483,7 +497,8 @@ class ExpDbBatch:
         )
 
         # Update nwbfile with PCA results
-        self.nwbfile = pca_results["nwbfile"]
+        if "nwbfile" in pca_results:
+            self.nwbfile = merge_nwbfile(self.nwbfile, pca_results["nwbfile"])
 
         # Save visualization objects with correct names
         stat_data.pca_analysis_variance.save_plot(dir_path)
@@ -513,7 +528,8 @@ class ExpDbBatch:
         )
 
         # Update nwbfile with clustering results
-        self.nwbfile = kmeans_results["nwbfile"]
+        if "nwbfile" in kmeans_results:
+            self.nwbfile = merge_nwbfile(self.nwbfile, kmeans_results["nwbfile"])
 
         # Save visualization object
         stat_data.cluster_corr_matrix.save_plot(dir_path)

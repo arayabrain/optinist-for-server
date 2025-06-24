@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from datetime import datetime
@@ -16,6 +17,7 @@ from pynwb.ophys import (
     TwoPhotonSeries,
 )
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.optinist.core.nwb.device_metadata import (
     DeviceMetaData,
     ImagingMetaData,
@@ -25,6 +27,15 @@ from studio.app.optinist.core.nwb.device_metadata import (
     PixelsMetaData,
 )
 from studio.app.optinist.core.nwb.lab_metadata import (
+    LabSpecificMetaData,
+    ModalityImagingMetaData,
+    SpecimenTypeMetaData,
+    TechniqueVirusInjectionMetaData,
+)
+from studio.app.optinist.core.nwb.nwb import NWBDATASET
+from studio.app.optinist.core.nwb.optinist_data import ConfigData, PostProcess
+from studio.app.optinist.core.nwb.oristat import Oristats
+from studio.app.optinist.core.nwb.specs.lab_metadata_spec import (
     LAB_SPECIFIC_KEY,
     LAB_SPECIFIC_TYPES,
     MODALITY_IMAGING_KEY,
@@ -33,22 +44,17 @@ from studio.app.optinist.core.nwb.lab_metadata import (
     SPECIMEN_TYPES,
     TECHNIQUE_VIRUS_INJECTION_KEY,
     TECHNIQUE_VIRUS_INJECTION_TYPES,
-    LabSpecificMetaData,
-    ModalityImagingMetaData,
-    SpecimenTypeMetaData,
-    TechniqueVirusInjectionMetaData,
 )
-from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.core.nwb.optinist_data import PostProcess
-from studio.app.optinist.core.nwb.oristat import Oristats
-from studio.app.optinist.core.nwb.oristat import name as ORISTATS_NWB_ATTR_NAME
-from studio.app.optinist.core.nwb.subject.marmoset import (
+from studio.app.optinist.core.nwb.specs.marmoset_spec import (
     SUBJECT_TYPES as SUBJECT_MARMOSET_TYPES,
 )
-from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
-from studio.app.optinist.core.nwb.subject.mouse import (
+from studio.app.optinist.core.nwb.specs.mouse_spec import (
     SUBJECT_TYPES as SUBJECT_MOUSE_TYPES,
 )
+from studio.app.optinist.core.nwb.specs.oristat_spec import (
+    NAME as ORISTATS_NWB_ATTR_NAME,
+)
+from studio.app.optinist.core.nwb.subject.marmoset import SubjectMarmoset
 from studio.app.optinist.core.nwb.subject.mouse import SubjectMouse
 
 
@@ -426,6 +432,40 @@ class NWBCreater:
         return nwbfile
 
     @classmethod
+    def store_config(cls, nwbfile, function_id, config_data):
+        """Add configuration data to the NWB file."""
+        logger = AppLogger.get_logger()
+        for key, value in config_data.items():
+            config_name = f"{function_id}_{key}"
+
+            try:
+                # Convert any non-string data to JSON
+                if not isinstance(value, str):
+                    value = json.dumps(value)
+
+                # Pass config_json as an initializer argument
+                config_container = ConfigData(name=config_name, config_json=value)
+
+                # Create "config" processing module if it doesn't exist
+                if "config" not in nwbfile.processing:
+                    nwbfile.create_processing_module(
+                        name="config",
+                        description="Configuration data for the experiment",
+                    )
+
+                try:
+                    nwbfile.processing["config"].add_container(config_container)
+                except ValueError:
+                    # Remove existing container if it exists
+                    nwbfile.processing["config"].data_interfaces.pop(config_name)
+                    nwbfile.processing["config"].add_container(config_container)
+
+            except Exception as e:
+                logger.warning(f"Failed to add config data to NWB: {e}")
+
+        return nwbfile
+
+    @classmethod
     def re_acquisition(cls, nwbfile: NWBFile):
         new_nwbfile = NWBFile(
             session_description=nwbfile.session_description,
@@ -595,7 +635,7 @@ def set_nwbconfig(nwbfile, config):
     if NWBDATASET.ROI in config:
         for function_key in config[NWBDATASET.ROI]:
             nwbfile = NWBCreater.roi(
-                nwbfile, function_key, config[NWBDATASET.ROI][function_key]
+                nwbfile, function_key, config[NWBDATASET.ROI][function_key]["roi_list"]
             )
 
     if NWBDATASET.COLUMN in config:
@@ -613,10 +653,19 @@ def set_nwbconfig(nwbfile, config):
             )
 
     if NWBDATASET.ORISTATS in config:
-        nwbfile = NWBCreater.oristats(nwbfile, config[NWBDATASET.ORISTATS])
+        combined_data = {}
+        for function_key in config[NWBDATASET.ORISTATS]:
+            combined_data.update(config[NWBDATASET.ORISTATS][function_key])
+        nwbfile = NWBCreater.oristats(nwbfile, combined_data)
 
     if NWBDATASET.LAB_METADATA in config:
         nwbfile = NWBCreater.lab_metadata(nwbfile, config[NWBDATASET.LAB_METADATA])
+
+    if NWBDATASET.CONFIG in config:
+        for function_key in config[NWBDATASET.CONFIG]:
+            nwbfile = NWBCreater.store_config(
+                nwbfile, function_key, config[NWBDATASET.CONFIG][function_key]
+            )
 
     return nwbfile
 
@@ -675,6 +724,7 @@ def merge_nwbfile(old_nwbfile, new_nwbfile):
         NWBDATASET.IMAGE_SERIES,
         NWBDATASET.ORISTATS,
         NWBDATASET.LAB_METADATA,
+        NWBDATASET.CONFIG,
     ]:
         if pattern in old_nwbfile and pattern in new_nwbfile:
             for function_id in new_nwbfile[pattern]:

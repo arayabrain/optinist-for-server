@@ -13,3 +13,4 @@ class NWBDATASET:
     IMAGE_SERIES: str = "image_series"
     ORISTATS: str = "ORISTATS"
     LAB_METADATA: str = "LAB_METADATA"
+    CONFIG: str = "CONFIG"

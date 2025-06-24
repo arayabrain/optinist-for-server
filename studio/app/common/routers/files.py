@@ -10,17 +10,23 @@ import requests
 import tifffile
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from requests.models import Response
+from sqlmodel import Session
 from tqdm import tqdm
 
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.file_reader import JsonReader
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
 )
+from studio.app.common.core.workspace.workspace_data_capacity_services import (
+    WorkspaceDataCapacityService,
+)
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
     is_workspace_owner,
 )
+from studio.app.common.db.database import get_db
 from studio.app.common.schemas.files import (
     DownloadFileRequest,
     DownloadStatus,
@@ -31,6 +37,8 @@ from studio.app.const import ACCEPT_FILE_EXT, FILETYPE
 from studio.app.dir_path import DIRPATH
 
 router = APIRouter(prefix="/files", tags=["files"])
+
+logger = AppLogger.get_logger()
 
 
 class DirTreeGetter:
@@ -180,7 +188,13 @@ async def set_shape(workspace_id: str, filepath: str):
     response_model=FilePath,
     dependencies=[Depends(is_workspace_owner)],
 )
-async def create_file(workspace_id: str, filename: str, file: UploadFile = File(...)):
+async def create_file(
+    workspace_id: str,
+    filename: str,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
     create_directory(join_filepath([DIRPATH.INPUT_DIR, workspace_id]))
 
     filepath = join_filepath([DIRPATH.INPUT_DIR, workspace_id, filename])
@@ -189,6 +203,11 @@ async def create_file(workspace_id: str, filename: str, file: UploadFile = File(
         shutil.copyfileobj(file.file, f)
 
     update_image_shape(workspace_id, filename)
+
+    if WorkspaceDataCapacityService.is_available():
+        background_tasks.add_task(
+            WorkspaceDataCapacityService.update_workspace_data_usage, db, workspace_id
+        )
 
     return {"file_path": filename}
 
@@ -201,14 +220,28 @@ DOWNLOAD_STATUS: Dict[str, DownloadStatus] = {}
     response_model=bool,
     dependencies=[Depends(is_workspace_owner)],
 )
-async def delete_file(workspace_id: str, filename: str):
+async def delete_file(
+    workspace_id: str,
+    filename: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     filepath = join_filepath([DIRPATH.INPUT_DIR, workspace_id, filename])
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="File not found.")
     try:
         os.remove(filepath)
+
+        if WorkspaceDataCapacityService.is_available():
+            background_tasks.add_task(
+                WorkspaceDataCapacityService.update_workspace_data_usage,
+                db,
+                workspace_id,
+            )
+
         return True
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -233,6 +266,7 @@ async def download_file(
     workspace_id: str,
     file: DownloadFileRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
     path = PurePath(urlparse(file.url).path)
     if path.suffix not in ACCEPT_FILE_EXT.ALL_EXT.value:
@@ -245,12 +279,14 @@ async def download_file(
         res.raise_for_status()
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-    background_tasks.add_task(download, res, path.name, workspace_id)
+    background_tasks.add_task(download, db, res, path.name, workspace_id)
     background_tasks.add_task(update_image_shape, workspace_id, path.name)
     return {"file_name": path.name}
 
 
-def download(res: Response, file_name: str, workspace_id: str, chunk_size=1024):
+def download(
+    db: Session, res: Response, file_name: str, workspace_id: str, chunk_size=1024
+):
     total = int(res.headers.get("content-length", 0))
     filepath = join_filepath([DIRPATH.INPUT_DIR, workspace_id, file_name])
     current = 0
@@ -270,3 +306,6 @@ def download(res: Response, file_name: str, workspace_id: str, chunk_size=1024):
                 bar.update(size)
     except Exception as e:
         DOWNLOAD_STATUS[filepath] = DownloadStatus(error=str(e))
+
+    if WorkspaceDataCapacityService.is_available():
+        WorkspaceDataCapacityService.update_workspace_data_usage(db, workspace_id)

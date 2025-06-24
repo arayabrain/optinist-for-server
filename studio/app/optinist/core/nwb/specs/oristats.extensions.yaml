@@ -1,0 +1,546 @@
+groups:
+- neurodata_type_def: Oristats
+  neurodata_type_inc: NWBContainer
+  name: oristats
+  doc: oristats
+  datasets:
+  - name: ncells
+    dtype: int
+    doc: ncells
+    quantity: '?'
+  - name: ntrials
+    dtype: int
+    doc: ntrials
+    quantity: '?'
+  - name: nstimplus
+    dtype: int
+    doc: nstimplus
+    quantity: '?'
+  - name: data_table
+    dtype: float
+    shape:
+    - - null
+      - null
+    - - null
+      - null
+      - null
+    - - null
+      - null
+      - null
+      - null
+    doc: data_table
+    quantity: '?'
+  - name: nstim
+    dtype: int
+    doc: nstim
+    quantity: '?'
+  - name: p_value_threshold
+    dtype: float
+    doc: p_value_threshold
+    quantity: '?'
+  - name: r_best_threshold
+    dtype: float
+    doc: r_best_threshold
+    quantity: '?'
+  - name: si_threshold
+    dtype: float
+    doc: si_threshold
+    quantity: '?'
+  - name: nstim_per_trial
+    dtype: int
+    doc: nstim_per_trial
+    quantity: '?'
+  - name: dir_ratio_change
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: dir_ratio_change
+    quantity: '?'
+  - name: best_dir
+    dtype: float
+    shape:
+    - null
+    doc: best_dir
+    quantity: '?'
+  - name: null_dir
+    dtype: float
+    shape:
+    - null
+    doc: null_dir
+    quantity: '?'
+  - name: r_best_dir
+    dtype: float
+    shape:
+    - null
+    doc: r_best_dir
+    quantity: '?'
+  - name: r_null_dir
+    dtype: float
+    shape:
+    - null
+    doc: r_null_dir
+    quantity: '?'
+  - name: r_min_dir
+    dtype: float
+    shape:
+    - null
+    doc: r_min_dir
+    quantity: '?'
+  - name: di
+    dtype: float
+    shape:
+    - null
+    doc: di
+    quantity: '?'
+  - name: dsi
+    dtype: float
+    shape:
+    - null
+    doc: dsi
+    quantity: '?'
+  - name: ori_ratio_change
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: ori_ratio_change
+    quantity: '?'
+  - name: best_ori
+    dtype: float
+    shape:
+    - null
+    doc: best_ori
+    quantity: '?'
+  - name: null_ori
+    dtype: float
+    shape:
+    - null
+    doc: null_ori
+    quantity: '?'
+  - name: r_best_ori
+    dtype: float
+    shape:
+    - null
+    doc: r_best_ori
+    quantity: '?'
+  - name: r_null_ori
+    dtype: float
+    shape:
+    - null
+    doc: r_null_ori
+    quantity: '?'
+  - name: r_min_ori
+    dtype: float
+    shape:
+    - null
+    doc: r_min_ori
+    quantity: '?'
+  - name: oi
+    dtype: float
+    shape:
+    - null
+    doc: oi
+    quantity: '?'
+  - name: osi
+    dtype: float
+    shape:
+    - null
+    doc: osi
+    quantity: '?'
+  - name: tuning_curve
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: tuning_curve
+    quantity: '?'
+  - name: tuning_curve_polar
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: tuning_curve_polar
+    quantity: '?'
+  - name: stim_selectivity
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: stim_selectivity
+    quantity: '?'
+  - name: stim_responsivity
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: stim_responsivity
+    quantity: '?'
+  - name: stim_responsivity_ratio
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: stim_responsivity_ratio
+    quantity: '?'
+  - name: p_value_resp
+    dtype: float
+    shape:
+    - null
+    doc: p_value_resp
+    quantity: '?'
+  - name: sig_epochs_resp
+    dtype: float
+    shape:
+    - null
+    - null
+    - null
+    doc: sig_epochs_resp
+    quantity: '?'
+  - name: p_value_sel
+    dtype: float
+    shape:
+    - null
+    doc: p_value_sel
+    quantity: '?'
+  - name: sig_epochs_sel
+    dtype: float
+    shape:
+    - null
+    - null
+    - null
+    doc: sig_epochs_sel
+    quantity: '?'
+  - name: dir_sig
+    dtype: float
+    shape:
+    - null
+    doc: dir_sig
+    quantity: '?'
+  - name: p_value_ori_resp
+    dtype: float
+    shape:
+    - null
+    doc: p_value_ori_resp
+    quantity: '?'
+  - name: sig_epochs_ori_resp
+    dtype: float
+    shape:
+    - null
+    - null
+    - null
+    doc: sig_epochs_ori_resp
+    quantity: '?'
+  - name: p_value_ori_sel
+    dtype: float
+    shape:
+    - null
+    doc: p_value_ori_sel
+    quantity: '?'
+  - name: sig_epochs_ori_sel
+    dtype: float
+    shape:
+    - null
+    - null
+    - null
+    doc: sig_epochs_ori_sel
+    quantity: '?'
+  - name: index_visually_responsive_cell
+    dtype: bool
+    shape:
+    - null
+    doc: index_visually_responsive_cell
+    quantity: '?'
+  - name: ncells_visually_responsive_cell
+    dtype: int
+    doc: ncells_visually_responsive_cell
+    quantity: '?'
+  - name: index_direction_selective_cell
+    dtype: bool
+    shape:
+    - null
+    doc: index_direction_selective_cell
+    quantity: '?'
+  - name: ncells_direction_selective_cell
+    dtype: int
+    doc: ncells_direction_selective_cell
+    quantity: '?'
+  - name: index_orientation_selective_cell
+    dtype: bool
+    shape:
+    - null
+    doc: index_orientation_selective_cell
+    quantity: '?'
+  - name: ncells_orientation_selective_cell
+    dtype: int
+    doc: ncells_orientation_selective_cell
+    quantity: '?'
+  - name: direction_responsivity_ratio
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: direction_responsivity_ratio
+    quantity: '?'
+  - name: orientation_responsivity_ratio
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: orientation_responsivity_ratio
+    quantity: '?'
+  - name: direction_selectivity
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: direction_selectivity
+    quantity: '?'
+  - name: orientation_selectivity
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: orientation_selectivity
+    quantity: '?'
+  - name: best_responsivity
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: best_responsivity
+    quantity: '?'
+  - name: dir_vector_angle
+    dtype: float
+    shape:
+    - null
+    doc: dir_vector_angle
+    quantity: '?'
+  - name: dir_vector_mag
+    dtype: float
+    shape:
+    - null
+    doc: dir_vector_mag
+    quantity: '?'
+  - name: dir_vector_tune
+    dtype: float
+    shape:
+    - null
+    doc: dir_vector_tune
+    quantity: '?'
+  - name: ori_vector_angle
+    dtype: float
+    shape:
+    - null
+    doc: ori_vector_angle
+    quantity: '?'
+  - name: ori_vector_mag
+    dtype: float
+    shape:
+    - null
+    doc: ori_vector_mag
+    quantity: '?'
+  - name: ori_vector_tune
+    dtype: float
+    shape:
+    - null
+    doc: ori_vector_tune
+    quantity: '?'
+  - name: preferred_direction
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: preferred_direction
+    quantity: '?'
+  - name: preferred_orientation
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: preferred_orientation
+    quantity: '?'
+  - name: best_dir_interp
+    dtype: float
+    shape:
+    - null
+    doc: best_dir_interp
+    quantity: '?'
+  - name: null_dir_interp
+    dtype: float
+    shape:
+    - null
+    doc: null_dir_interp
+    quantity: '?'
+  - name: r_best_dir_interp
+    dtype: float
+    shape:
+    - null
+    doc: r_best_dir_interp
+    quantity: '?'
+  - name: r_null_dir_interp
+    dtype: float
+    shape:
+    - null
+    doc: r_null_dir_interp
+    quantity: '?'
+  - name: di_interp
+    dtype: float
+    shape:
+    - null
+    doc: di_interp
+    quantity: '?'
+  - name: best_dir_fit
+    dtype: float
+    shape:
+    - null
+    doc: best_dir_fit
+    quantity: '?'
+  - name: null_dir_fit
+    dtype: float
+    shape:
+    - null
+    doc: null_dir_fit
+    quantity: '?'
+  - name: r_best_dir_fit
+    dtype: float
+    shape:
+    - null
+    doc: r_best_dir_fit
+    quantity: '?'
+  - name: r_null_dir_fit
+    dtype: float
+    shape:
+    - null
+    doc: r_null_dir_fit
+    quantity: '?'
+  - name: di_fit
+    dtype: float
+    shape:
+    - null
+    doc: di_fit
+    quantity: '?'
+  - name: ds
+    dtype: float
+    shape:
+    - null
+    doc: ds
+    quantity: '?'
+  - name: dir_tuning_width
+    dtype: float
+    shape:
+    - null
+    doc: dir_tuning_width
+    quantity: '?'
+  - name: dir_a1
+    dtype: float
+    shape:
+    - null
+    doc: dir_a1
+    quantity: '?'
+  - name: dir_a2
+    dtype: float
+    shape:
+    - null
+    doc: dir_a2
+    quantity: '?'
+  - name: dir_k1
+    dtype: float
+    shape:
+    - null
+    doc: dir_k1
+    quantity: '?'
+  - name: dir_k2
+    dtype: float
+    shape:
+    - null
+    doc: dir_k2
+    quantity: '?'
+  - name: best_ori_fit
+    dtype: float
+    shape:
+    - null
+    doc: best_ori_fit
+    quantity: '?'
+  - name: ori_tuning_width
+    dtype: float
+    shape:
+    - null
+    doc: ori_tuning_width
+    quantity: '?'
+  - name: ori_a1
+    dtype: float
+    shape:
+    - null
+    doc: ori_a1
+    quantity: '?'
+  - name: ori_k1
+    dtype: float
+    shape:
+    - null
+    doc: ori_k1
+    quantity: '?'
+  - name: direction_tuning_width
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: direction_tuning_width
+    quantity: '?'
+  - name: orientation_tuning_width
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: orientation_tuning_width
+    quantity: '?'
+  - name: pca_scores
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: pca_scores
+    quantity: '?'
+  - name: pca_explained_variance
+    dtype: float
+    shape:
+    - null
+    doc: pca_explained_variance
+    quantity: '?'
+  - name: pca_components
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: pca_components
+    quantity: '?'
+  - name: pca_scores_ave
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: pca_scores_ave
+    quantity: '?'
+  - name: cluster_labels
+    dtype: int
+    shape:
+    - null
+    doc: cluster_labels
+    quantity: '?'
+  - name: cluster_corr_matrix
+    dtype: float
+    shape:
+    - null
+    - null
+    doc: cluster_corr_matrix
+    quantity: '?'
+  - name: cluster_silhouette_scores
+    dtype: float
+    shape:
+    - null
+    doc: cluster_silhouette_scores
+    quantity: '?'
+  - name: cluster_optimal_num
+    dtype: int
+    doc: cluster_optimal_num
+    quantity: '?'

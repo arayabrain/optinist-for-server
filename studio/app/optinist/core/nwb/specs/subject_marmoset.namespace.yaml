@@ -1,0 +1,7 @@
+namespaces:
+- doc: subject_marmoset extensions
+  name: subject_marmoset
+  schema:
+  - namespace: core
+  - source: subject_marmoset.extensions.yaml
+  version: 0.1.0

@@ -35,6 +35,20 @@ class ExptConfig:
     snakemake: Optional[SmkParam] = SmkParam(
         **ConfigReader.read(CORE_PARAM_PATH.snakemake.value)
     )
+    data_usage: Optional[int] = 0
+
+    @staticmethod
+    def required_fields():
+        return [
+            "workspace_id",
+            "unique_id",
+            "name",
+            "started_at",
+            "hasNWB",
+            "function",
+            "nwb",
+            "snakemake",
+        ]
 
 
 @dataclass

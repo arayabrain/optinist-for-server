@@ -1,8 +1,9 @@
 import argparse
+import os
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi_pagination import add_pagination
@@ -37,14 +38,29 @@ from studio.app.common.routers import (
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.routers import expdb, hdf5, mat, nwb, roi
+from studio.app.version import Version
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup event
+    """
+    Startup event
+    """
+    import platform
+    import sys
+
+    sys_version = sys.version.replace("\n", " ")
     mode = "standalone" if MODE.IS_STANDALONE else "multiuser"
+
     logger = AppLogger.get_logger()
-    logger.info(f'"Studio" application startup complete. [mode: {mode}]')
+    logger.info(
+        f'"Studio" application startup complete.\n'
+        f"    # Platform: {platform.platform()}\n"
+        f"    # Python Version: {sys_version}\n"
+        f"    # App Version: {Version.APP_VERSION}\n"
+        f"    # Env:DATA_DIR: {DIRPATH.DATA_DIR}\n"
+        f"    # Mode: {mode}\n"
+    )
 
     yield
 
@@ -99,13 +115,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FRONTEND_DIRPATH = DIRPATH.ROOT_DIR + "/frontend"
 
-app.mount(
-    "/static",
-    StaticFiles(directory=f"{FRONTEND_DIRPATH}/build/static"),
-    name="static",
-)
+@app.get("/is_standalone", response_model=bool, tags=["others"])
+async def is_standalone():
+    return MODE.IS_STANDALONE
+
 
 if EXPDB_DIRPATH.SELFHOST_GRAPH:
     app.mount(
@@ -114,22 +128,40 @@ if EXPDB_DIRPATH.SELFHOST_GRAPH:
         name="datasets",
     )
 
-templates = Jinja2Templates(directory=f"{FRONTEND_DIRPATH}/build")
 
+os.makedirs(f"{DIRPATH.FRONTEND_DIRS.BUILD}/static", exist_ok=True)
+app.mount(
+    "/static",
+    StaticFiles(directory=f"{DIRPATH.FRONTEND_DIRS.BUILD}/static"),
+    name="static",
+)
 
-@app.get("/is_standalone", response_model=bool, tags=["others"])
-async def is_standalone():
-    return MODE.IS_STANDALONE
+public_templates = Jinja2Templates(directory=DIRPATH.FRONTEND_DIRS.PUBLIC)
+build_templates = Jinja2Templates(directory=DIRPATH.FRONTEND_DIRS.BUILD)
 
 
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    if os.path.exists(f"{DIRPATH.FRONTEND_DIRS.BUILD}/index.html"):
+        return build_templates.TemplateResponse("index.html", {"request": request})
+    else:
+        return public_templates.TemplateResponse(
+            "no-built-pages.html", {"request": request}
+        )
 
 
 @app.get("/{_:path}")
-async def index(request: Request):
-    return await root(request)
+async def any_pages(request: Request):
+    """
+    Requests that don't match any routers come here.
+    """
+    # For backend API requests, it returns 404
+    # (Determined by request.headers)
+    if "application/json" in request.headers.get("accept", ""):
+        return Response(status_code=status.HTTP_404_NOT_FOUND, content="")
+    # In all other cases, forward to frontend.
+    else:
+        return await root(request)
 
 
 def main(develop_mode: bool = False):

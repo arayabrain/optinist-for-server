@@ -28,11 +28,13 @@ import DeleteConfirmModal from "components/common/DeleteConfirmModal"
 import Loading from "components/common/Loading"
 import {
   deleteMe,
+  getMe,
   updateMe,
   updateMePassword,
 } from "store/slice/User/UserActions"
 import { selectCurrentUser, selectLoading } from "store/slice/User/UserSelector"
 import { AppDispatch } from "store/store"
+import { convertBytes } from "utils"
 
 const Account = () => {
   const user = useSelector(selectCurrentUser)
@@ -52,6 +54,10 @@ const Account = () => {
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })
   }
+
+  useEffect(() => {
+    dispatch(getMe())
+  }, [dispatch])
 
   useEffect(() => {
     if (!user) return
@@ -169,7 +175,8 @@ const Account = () => {
         onClose={handleCloseDeleteComfirmModal}
         open={isDeleteConfirmModalOpen}
         onSubmit={onConfirmDelete}
-        description="Delete account will erase all of your data."
+        description="Delete account will erase all of your data. "
+        iconType="warning"
       />
       <ChangePasswordModal
         onSubmit={onConfirmChangePw}
@@ -210,6 +217,10 @@ const Account = () => {
       <BoxFlex>
         <TitleData>Role</TitleData>
         <BoxData>{getRole(user?.role_id)}</BoxData>
+      </BoxFlex>
+      <BoxFlex>
+        <TitleData>Data size</TitleData>
+        <BoxData>{convertBytes(user?.data_usage || 0)}</BoxData>
       </BoxFlex>
       <BoxFlex sx={{ justifyContent: "space-between", mt: 10, maxWidth: 600 }}>
         <Button variant="contained" color="primary" onClick={onChangePwClick}>

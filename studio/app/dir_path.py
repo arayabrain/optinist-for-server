@@ -1,9 +1,16 @@
 import os
+import platform
 from enum import Enum
+from types import SimpleNamespace
 
 from dotenv import load_dotenv
 
-_DEFAULT_DIR = "/tmp/studio"
+_TMP_DIR = (
+    os.environ.get("TEMP", os.environ.get("TMP", "C:\\temp"))
+    if platform.system() == "Windows"
+    else "/tmp"
+)
+_DEFAULT_DIR = f"{_TMP_DIR}/studio"
 _ENV_DIR = os.environ.get("OPTINIST_DIR")
 
 
@@ -13,12 +20,10 @@ class DIRPATH:
     INPUT_DIR = f"{DATA_DIR}/input"
     OUTPUT_DIR = f"{DATA_DIR}/output"
 
-    if not os.path.exists(INPUT_DIR):
-        os.makedirs(INPUT_DIR)
+    os.makedirs(INPUT_DIR, exist_ok=True)
     assert os.path.exists(INPUT_DIR)
 
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     assert os.path.exists(OUTPUT_DIR)
 
     ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -27,6 +32,16 @@ class DIRPATH:
     CONFIG_DIR = f"{STUDIO_DIR}/config"
     if os.path.isfile(f"{CONFIG_DIR}/.env"):
         load_dotenv(f"{CONFIG_DIR}/.env")
+
+    FRONTEND_DIR = f"{ROOT_DIR}/frontend"
+    FRONTEND_DIRS = SimpleNamespace(
+        PUBLIC=f"{FRONTEND_DIR}/public",
+        BUILD=f"{FRONTEND_DIR}/build",
+    )
+
+    LOCKFILE_DIR = f"{_DEFAULT_DIR}/locks"
+    os.makedirs(LOCKFILE_DIR, exist_ok=True)
+    assert os.path.exists(LOCKFILE_DIR)
 
     CONDAENV_DIR = (
         f"{os.path.dirname(os.path.dirname(os.path.dirname(__file__)))}/conda"

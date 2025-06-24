@@ -10,8 +10,6 @@ dist
 
 requirements.*.txt
 
-*.extensions.yaml
-*.namespace.yaml
 *.namespace.yaml.lock
 
 files/*
@@ -27,9 +25,9 @@ studio/config.production*
 
 docs/_build
 conda/envs/*
-tensorflow-2.4.1-py3-none-any.whl
+tensorflow-*.whl
 
 .env*
-!*.env.example
+!*.env*.example
 
 process.lock

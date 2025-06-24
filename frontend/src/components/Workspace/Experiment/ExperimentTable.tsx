@@ -65,6 +65,7 @@ import {
   selectExperimentsErrorMessage,
   selectExperimentList,
   selectExperimentHasNWB,
+  selectExperimentDataUsage,
 } from "store/slice/Experiments/ExperimentsSelectors"
 import { ExperimentSortKeys } from "store/slice/Experiments/ExperimentsType"
 import {
@@ -77,6 +78,7 @@ import {
   selectIsWorkspaceOwner,
 } from "store/slice/Workspace/WorkspaceSelector"
 import { AppDispatch, RootState } from "store/store"
+import { convertBytes } from "utils"
 
 export const ExperimentUidContext = createContext<string>("")
 
@@ -86,8 +88,10 @@ export const ExperimentTable: FC = () => {
   const isError = useSelector(selectExperimentsStatusIsError)
   const dispatch = useDispatch<AppDispatch>()
   useEffect(() => {
-    if (isUninitialized) {
-      dispatch(getExperiments())
+    if (!isUninitialized) return
+    const timeout = setTimeout(() => dispatch(getExperiments()), 1000)
+    return () => {
+      clearTimeout(timeout)
     }
   }, [dispatch, isUninitialized])
 
@@ -111,7 +115,6 @@ const ExperimentsErrorView: FC = () => {
 }
 
 const LOCAL_STORAGE_KEY_PER_PAGE = "optinist_experiment_table_per_page"
-
 const TableImple = memo(function TableImple() {
   const isOwner = useSelector(selectIsWorkspaceOwner)
   const currentPipelineUid = useSelector(selectPipelineLatestUid)
@@ -120,7 +123,8 @@ const TableImple = memo(function TableImple() {
   const experimentListKeys = Object.keys(experimentList)
   const dispatch = useDispatch<AppDispatch>()
   const [checkedList, setCheckedList] = useState<string[]>([])
-  const [open, setOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [page, setPage] = useState(0)
   const [openCopy, setOpenCopy] = useState(false)
   const isRunning = useSelector((state: RootState) => {
     const currentUid = selectPipelineLatestUid(state)
@@ -178,7 +182,7 @@ const TableImple = memo(function TableImple() {
   const recordsIsEmpty = experimentListKeys.length === 0
 
   const onClickDelete = () => {
-    setOpen(true)
+    setDeleteOpen(true)
   }
   const onClickOk = () => {
     dispatch(deleteExperimentByList(checkedList))
@@ -189,14 +193,11 @@ const TableImple = memo(function TableImple() {
       .catch(() => {
         enqueueSnackbar("Failed to delete", { variant: "error" })
       })
-
     checkedList.filter((v) => v === currentPipelineUid).length > 0 &&
       dispatch(clearCurrentPipeline())
     setCheckedList([])
-    setOpen(false)
+    setDeleteOpen(false)
   }
-
-  const [page, setPage] = useState(0)
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage)
@@ -273,8 +274,8 @@ const TableImple = memo(function TableImple() {
         )}
       </Box>
       <ConfirmDialog
-        open={open}
-        setOpen={setOpen}
+        open={deleteOpen}
+        setOpen={setDeleteOpen}
         onConfirm={onClickOk}
         title="Delete records?"
         content={
@@ -460,6 +461,15 @@ const HeadItem = memo(function HeadItem({
             Name
           </TableSortLabel>
         </TableCell>
+        <TableCell>
+          <TableSortLabel
+            active={sortTarget === "data_usage"}
+            direction={order}
+            onClick={sortHandler("data_usage")}
+          >
+            Data size
+          </TableSortLabel>
+        </TableCell>
         <TableCell>Success</TableCell>
         <TableCell>Reproduce</TableCell>
         <TableCell>Workflow</TableCell>
@@ -486,6 +496,7 @@ const RowItem = memo(function RowItem({
   const uid = useContext(ExperimentUidContext)
   const startedAt = useSelector(selectExperimentStartedAt(uid))
   const finishedAt = useSelector(selectExperimentFinishedAt(uid))
+  const dataUsage = useSelector(selectExperimentDataUsage(uid))
   const status = useSelector(selectExperimentStatus(uid))
   const name = useSelector(selectExperimentName(uid))
   const hasNWB = useSelector(selectExperimentHasNWB(uid))
@@ -597,6 +608,7 @@ const RowItem = memo(function RowItem({
             </>
           )}
         </TableCell>
+        <TableCell>{convertBytes(dataUsage)}</TableCell>
         <TableCell>
           <ExperimentStatusIcon status={status} />
         </TableCell>

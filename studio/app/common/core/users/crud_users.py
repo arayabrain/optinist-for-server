@@ -2,13 +2,19 @@ from fastapi import HTTPException
 from fastapi_pagination.ext.sqlmodel import paginate
 from firebase_admin import auth as firebase_auth
 from firebase_admin.auth import UserRecord
+from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from sqlmodel import Session, select
 
 from studio.app.common.core.auth.auth import authenticate_user
+from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.workspace.workspace_services import WorkspaceService
 from studio.app.common.models import Group as GroupModel
 from studio.app.common.models import Role as RoleModel
 from studio.app.common.models import User as UserModel
 from studio.app.common.models import UserRole as UserRoleModel
+from studio.app.common.models.experiment import ExperimentRecord
+from studio.app.common.models.workspace import Workspace
 from studio.app.common.schemas.auth import UserAuth
 from studio.app.common.schemas.base import SortOptions
 from studio.app.common.schemas.users import (
@@ -18,6 +24,8 @@ from studio.app.common.schemas.users import (
     UserSearchOptions,
     UserUpdate,
 )
+
+logger = AppLogger.get_logger()
 
 
 async def get_user(db: Session, user_id: int, organization_id: int) -> User:
@@ -37,8 +45,10 @@ async def get_user(db: Session, user_id: int, organization_id: int) -> User:
         user.__dict__["role_id"] = role_id
         return User.from_orm(user)
     except AssertionError as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -48,15 +58,61 @@ async def list_user(
     options: UserSearchOptions,
     sortOptions: SortOptions,
 ):
+    def user_transformer(items):
+        users = []
+        for item in items:
+            user, role_id, data_usage = item
+            user.__dict__["role_id"] = role_id
+            user.__dict__["data_usage"] = data_usage
+            users.append(user)
+        return users
+
     try:
+        workspace_capacity_subq = (
+            select(
+                Workspace.user_id,
+                func.coalesce(func.sum(Workspace.input_data_usage), 0).label(
+                    "input_workspace_capacity"
+                ),
+            )
+            .where(Workspace.deleted.is_(False))
+            .group_by(Workspace.user_id)
+            .subquery()
+        )
+        experiment_capacity_subq = (
+            select(
+                Workspace.user_id,
+                func.coalesce(func.sum(ExperimentRecord.data_usage), 0).label(
+                    "experiment_capacity"
+                ),
+            )
+            .join(ExperimentRecord, ExperimentRecord.workspace_id == Workspace.id)
+            .where(Workspace.deleted.is_(False))
+            .group_by(Workspace.user_id)
+            .subquery()
+        )
+
+        WorkspaceCapacity = aliased(workspace_capacity_subq)
+        ExperimentCapacity = aliased(experiment_capacity_subq)
+
         sa_sort_list = sortOptions.get_sa_sort_list(
             sa_table=UserModel,
             mapping={"role_id": RoleModel.id, "role": RoleModel.role},
         )
         users = paginate(
             db,
-            query=select(UserModel)
-            .join(UserModel.role)
+            query=select(
+                UserModel,
+                func.min(UserRoleModel.role_id),
+                func.coalesce(WorkspaceCapacity.c.input_workspace_capacity, 0)
+                + func.coalesce(ExperimentCapacity.c.experiment_capacity, 0).label(
+                    "data_usage"
+                ),
+            )
+            .outerjoin(WorkspaceCapacity, WorkspaceCapacity.c.user_id == UserModel.id)
+            .outerjoin(ExperimentCapacity, ExperimentCapacity.c.user_id == UserModel.id)
+            .join(UserRoleModel, UserRoleModel.user_id == UserModel.id, isouter=True)
+            .join(RoleModel, RoleModel.id == UserRoleModel.role_id, isouter=True)
             .filter(
                 UserModel.active.is_(True),
                 UserModel.organization_id == organization_id,
@@ -65,11 +121,14 @@ async def list_user(
                 UserModel.name.like("%{0}%".format(options.name)),
                 UserModel.email.like("%{0}%".format(options.email)),
             )
+            .group_by(UserModel.id)
             .order_by(*sa_sort_list),
+            transformer=user_transformer,
             unique=False,
         )
         return users
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -95,6 +154,7 @@ async def create_user(db: Session, data: UserCreate, organization_id: int):
         db.refresh(user_db)
         return User.from_orm(user_db)
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -130,8 +190,10 @@ async def update_user(
         db.refresh(user_db)
         return User.from_orm(user_db)
     except AssertionError as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -149,11 +211,36 @@ async def update_password(
         user = firebase_auth.update_user(user.uid, password=data.new_password)
         return True
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
 async def delete_user(db: Session, user_id: int, organization_id: int) -> bool:
     try:
+        # ----------------------------------------
+        # Delete a User workspace contents
+        # ----------------------------------------
+
+        workspaces = (
+            db.query(Workspace)
+            .filter(
+                Workspace.user_id == user_id,
+                Workspace.deleted.is_(False),
+            )
+            .all()
+        )
+        workspace_ids = [ws.id for ws in workspaces]
+
+        # Delete owned workspaces
+        for workspace_id in workspace_ids:
+            WorkspaceService.process_workspace_deletion(
+                db=db, workspace_id=workspace_id, user_id=user_id
+            )
+
+        # ----------------------------------------
+        # Delete a User database record
+        # ----------------------------------------
+
         user_db = (
             db.query(UserModel)
             .filter(
@@ -164,11 +251,28 @@ async def delete_user(db: Session, user_id: int, organization_id: int) -> bool:
             .first()
         )
         assert user_db is not None, "User not found"
+
         user_db.active = False
-        db.commit()
+
+        # ----------------------------------------
+        # Delete a User firebase account
+        # ----------------------------------------
+
         firebase_auth.delete_user(user_db.uid)
+
+        # The transaction is committed at this point
+        # ATTENTION:
+        #   - If an exception occurs when deleting a Firebase account,
+        #     this commit may not be executed and the account may become undeletable.
+        #   - One possible solution to this issue is to add a status
+        #     when an error occurs (such as "Account suspended").
+        db.commit()
+
         return True
+
     except AssertionError as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))

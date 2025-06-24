@@ -2,141 +2,24 @@ import gc
 import os
 
 import numpy as np
-import requests
 import scipy
 
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.utils.filepath_creater import (
-    create_directory,
-    join_filepath,
-)
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
 from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
+from studio.app.optinist.wrappers.caiman.cnmf import (
+    get_roi,
+    util_cleanup_image_memmap,
+    util_download_model_files,
+    util_get_image_memmap,
+)
 from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 logger = AppLogger.get_logger()
-
-
-def get_roi(A, roi_thr, thr_method, swap_dim, dims):
-    from scipy.ndimage import binary_fill_holes
-    from skimage.measure import find_contours
-
-    d, nr = np.shape(A)
-
-    # for each patches
-    ims = []
-    coordinates = []
-    for i in range(nr):
-        pars = dict()
-        # we compute the cumulative sum of the energy of the Ath component
-        # that has been ordered from least to highest
-        patch_data = A.data[A.indptr[i] : A.indptr[i + 1]]
-        inx = np.argsort(patch_data)[::-1]
-
-        if thr_method == "nrg":
-            cumEn = np.cumsum(patch_data[inx] ** 2)
-            if len(cumEn) == 0:
-                pars = dict(
-                    coordinates=np.array([]),
-                    CoM=np.array([np.NaN, np.NaN]),
-                    neuron_id=i + 1,
-                )
-                coordinates.append(pars)
-                continue
-            else:
-                # we work with normalized values
-                cumEn /= cumEn[-1]
-                Bvec = np.ones(d)
-                # we put it in a similar matrix
-                Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]][inx]] = cumEn
-        else:
-            Bvec = np.zeros(d)
-            Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]]] = (
-                patch_data / patch_data.max()
-            )
-
-        if swap_dim:
-            Bmat = np.reshape(Bvec, dims, order="C")
-        else:
-            Bmat = np.reshape(Bvec, dims, order="F")
-
-        r_mask = np.zeros_like(Bmat, dtype="bool")
-        contour = find_contours(Bmat, roi_thr)
-        for c in contour:
-            r_mask[np.round(c[:, 0]).astype("int"), np.round(c[:, 1]).astype("int")] = 1
-
-        # Fill in the hole created by the contour boundary
-        r_mask = binary_fill_holes(r_mask)
-        ims.append(r_mask + (i * r_mask))
-
-    return ims
-
-
-def util_get_memmap(images: np.ndarray, file_path: str):
-    """
-    convert np.ndarray to mmap
-    """
-    from caiman.mmapping import prepare_shape
-    from caiman.paths import memmap_frames_filename
-
-    order = "C"
-    dims = images.shape[1:]
-    T = images.shape[0]
-    shape_mov = (np.prod(dims), T)
-
-    dir_path = join_filepath(file_path.split("/")[:-1])
-    basename = file_path.split("/")[-1]
-    fname_tot = memmap_frames_filename(basename, dims, T, order)
-    mmap_path = join_filepath([dir_path, fname_tot])
-
-    mmap_images = np.memmap(
-        mmap_path,
-        mode="w+",
-        dtype=np.float32,
-        shape=prepare_shape(shape_mov),
-        order=order,
-    )
-
-    mmap_images = np.reshape(mmap_images.T, [T] + list(dims), order="F")
-    mmap_images[:] = images[:]
-    return mmap_images, dims, mmap_path
-
-
-def util_download_model_files():
-    """
-    download model files for component evaluation
-    """
-    # NOTE: We specify the version of the CaImAn to download.
-    base_url = "https://github.com/flatironinstitute/CaImAn/raw/v1.9.12/model"
-    model_files = [
-        "cnn_model.h5",
-        "cnn_model.h5.pb",
-        "cnn_model.json",
-        "cnn_model_online.h5",
-        "cnn_model_online.h5.pb",
-        "cnn_model_online.json",
-    ]
-
-    caiman_data_dir = os.path.join(os.path.expanduser("~"), "caiman_data")
-    if not os.path.exists(caiman_data_dir):
-        create_directory(caiman_data_dir)
-
-    model_dir = join_filepath([caiman_data_dir, "model"])
-    if not os.path.exists(model_dir):
-        create_directory(join_filepath(model_dir))
-
-    if len(os.listdir(model_dir)) < len(model_files):
-        for model in model_files:
-            url = f"{base_url}/{model}"
-            file_path = join_filepath([model_dir, model])
-            if not os.path.exists(file_path):
-                logger.info(f"Downloading {model}")
-                response = requests.get(url)
-                with open(file_path, "wb") as f:
-                    f.write(response.content)
 
 
 def mm_fun(A: np.ndarray, Y: np.ndarray) -> np.ndarray:
@@ -201,8 +84,8 @@ def caiman_cnmf_preprocessing(
 
     from studio.app.expdb_dir_path import EXPDB_DIRPATH
 
-    function_id = output_dir.split("/")[-1]  # get function_id from output_dir path
-    logger.info(f"start caiman_cnmf: {function_id}")
+    function_id = "caiman_cnmf"
+    logger.info(f"start {function_id}")
 
     # NOTE: evaluate_components requires cnn_model files in caiman_data directory.
     util_download_model_files()
@@ -222,9 +105,12 @@ def caiman_cnmf_preprocessing(
         file_path = file_path[0]
 
     exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
+
     images = images.data
+    mmap_paths = []
     T = images.shape[0]
-    mmap_images, dims, mmap_path = util_get_memmap(images, file_path)
+    mmap_images, dims, mmap_path = util_get_image_memmap(function_id, images, file_path)
+    mmap_paths.append(mmap_path)
 
     del images
     gc.collect()
@@ -371,10 +257,10 @@ def caiman_cnmf_preprocessing(
             kargs["rejected"] = i in cnm.estimates.rejected_list
         roi_list.append(kargs)
 
-    nwbfile[NWBDATASET.ROI] = {function_id: roi_list}
+    nwbfile[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"all_roi_img": im}}
 
-    # iscellを追加
+    # Add iscell to NWB
     nwbfile[NWBDATASET.COLUMN] = {
         function_id: {
             "name": "iscell",
@@ -421,5 +307,12 @@ def caiman_cnmf_preprocessing(
         "edit_roi_data": EditRoiData(mmap_images, im),
         "nwbfile": nwbfile,
     }
+
+    # Clean up temporary files
+    try:
+        util_cleanup_image_memmap(mmap_paths)
+    except Exception as e:
+        logger.error("Failed to cleanup memmap files.")
+        logger.error(e)
 
     return info

@@ -1,0 +1,271 @@
+groups:
+- neurodata_type_def: DeviceMetaData
+  neurodata_type_inc: Device
+  doc: Device metadata
+  groups:
+  - neurodata_type_def: MicroscopeOMEMetaData
+    neurodata_type_inc: NWBContainer
+    name: MicroscopeOMEMetaData
+    doc: OME metadata
+    quantity: '?'
+    groups:
+    - neurodata_type_def: ImagingMetaData
+      neurodata_type_inc: NWBContainer
+      name: Image
+      doc: Imaging metadata
+      quantity: '?'
+      datasets:
+      - name: Name
+        dtype: text
+        doc: Name
+        quantity: '?'
+      - name: AcquisitionDate
+        dtype: text
+        doc: AcquisitionDate
+        quantity: '?'
+      - name: ImagingRate
+        dtype: numeric
+        doc: ImagingRate
+        quantity: '?'
+    - neurodata_type_def: PixelsMetaData
+      neurodata_type_inc: NWBContainer
+      name: Pixels
+      doc: Pixels metadata
+      quantity: '?'
+      datasets:
+      - name: SizeC
+        dtype: numeric
+        doc: SizeC
+        quantity: '?'
+      - name: SizeT
+        dtype: numeric
+        doc: SizeT
+        quantity: '?'
+      - name: SizeX
+        dtype: numeric
+        doc: SizeX
+        quantity: '?'
+      - name: SizeY
+        dtype: numeric
+        doc: SizeY
+        quantity: '?'
+      - name: SizeZ
+        dtype: numeric
+        doc: SizeZ
+        quantity: '?'
+      - name: PhysicalSizeX
+        dtype: numeric
+        doc: PhysicalSizeX
+        quantity: '?'
+      - name: PhysicalSizeXUnit
+        dtype: text
+        doc: PhysicalSizeXUnit
+        quantity: '?'
+      - name: PhysicalSizeY
+        dtype: numeric
+        doc: PhysicalSizeY
+        quantity: '?'
+      - name: PhysicalSizeYUnit
+        dtype: text
+        doc: PhysicalSizeYUnit
+        quantity: '?'
+      - name: SignificantBits
+        dtype: numeric
+        doc: SignificantBits
+        quantity: '?'
+      - name: Type
+        dtype: text
+        doc: Type
+        quantity: '?'
+    - neurodata_type_def: ObjectiveMetaData
+      neurodata_type_inc: NWBContainer
+      name: Objective
+      doc: Objective metadata
+      quantity: '?'
+      datasets:
+      - name: Model
+        dtype: text
+        doc: Model
+        quantity: '?'
+  - neurodata_type_def: MicroscopeLabMetaData
+    neurodata_type_inc: NWBContainer
+    name: MicroscopeLabMetaData
+    doc: Lab specific microscope metadata
+    quantity: '?'
+    datasets:
+    - name: uiWidth
+      dtype: numeric
+      doc: uiWidth
+      quantity: '?'
+    - name: uiHeight
+      dtype: numeric
+      doc: uiHeight
+      quantity: '?'
+    - name: Loops
+      dtype: numeric
+      doc: Loops
+      quantity: '?'
+    - name: ZSlicenum
+      dtype: numeric
+      doc: ZSlicenum
+      quantity: '?'
+    - name: ZInterval
+      dtype: numeric
+      doc: ZInterval
+      quantity: '?'
+    - name: ObjectiveName
+      dtype: text
+      doc: ObjectiveName
+      quantity: '?'
+    - name: Date
+      dtype: text
+      doc: Date
+      quantity: '?'
+    - name: uiWidthBytes
+      dtype: numeric
+      doc: uiWidthBytes
+      quantity: '?'
+    - name: uiColor
+      dtype: numeric
+      doc: uiColor
+      quantity: '?'
+    - name: uiBpcInMemory
+      dtype: numeric
+      doc: uiBpcInMemory
+      quantity: '?'
+    - name: uiBpcSignificant
+      dtype: numeric
+      doc: uiBpcSignificant
+      quantity: '?'
+    - name: uiSequenceCount
+      dtype: numeric
+      doc: uiSequenceCount
+      quantity: '?'
+    - name: uiTileWidth
+      dtype: numeric
+      doc: uiTileWidth
+      quantity: '?'
+    - name: uiTileHeight
+      dtype: numeric
+      doc: uiTileHeight
+      quantity: '?'
+    - name: uiCompression
+      dtype: numeric
+      doc: uiCompression
+      quantity: '?'
+    - name: uiQuality
+      dtype: numeric
+      doc: uiQuality
+      quantity: '?'
+    - name: Type
+      dtype: text
+      doc: Type
+      quantity: '?'
+    - name: dTimeStart
+      dtype: numeric
+      doc: dTimeStart
+      quantity: '?'
+    - name: MicroPerPixel
+      dtype: numeric
+      doc: MicroPerPixel
+      quantity: '?'
+    - name: PixelAspect
+      dtype: numeric
+      doc: PixelAspect
+      quantity: '?'
+    - name: dObjectiveMag
+      dtype: numeric
+      doc: dObjectiveMag
+      quantity: '?'
+    - name: dObjectiveNA
+      dtype: numeric
+      doc: dObjectiveNA
+      quantity: '?'
+    - name: dZoom
+      dtype: numeric
+      doc: dZoom
+      quantity: '?'
+    - name: wszDescription
+      dtype: text
+      doc: wszDescription
+      quantity: '?'
+    - name: wszCapturing
+      dtype: text
+      doc: wszCapturing
+      quantity: '?'
+    - name: nChannel
+      dtype: numeric
+      doc: nChannel
+      quantity: '?'
+    - name: PixelLengthX
+      dtype: numeric
+      doc: PixelLengthX
+      quantity: '?'
+    - name: PixelLengthY
+      dtype: numeric
+      doc: PixelLengthY
+      quantity: '?'
+    - name: TInterval
+      dtype: numeric
+      doc: TInterval
+      quantity: '?'
+    - name: ZStart
+      dtype: numeric
+      doc: ZStart
+      quantity: '?'
+    - name: ZEnd
+      dtype: numeric
+      doc: ZEnd
+      quantity: '?'
+    - name: ObjectiveMag
+      dtype: numeric
+      doc: ObjectiveMag
+      quantity: '?'
+    - name: ObjectiveNA
+      dtype: numeric
+      doc: ObjectiveNA
+      quantity: '?'
+    - name: ReflectiveIndex
+      dtype: numeric
+      doc: ReflectiveIndex
+      quantity: '?'
+    - name: Immersion
+      dtype: text
+      doc: Immersion
+      quantity: '?'
+    - name: NumberOfGroup
+      dtype: numeric
+      doc: NumberOfGroup
+      quantity: '?'
+    - name: NumberOfLevel
+      dtype: numeric
+      doc: NumberOfLevel
+      quantity: '?'
+    - name: NumberOfArea
+      dtype: numeric
+      doc: NumberOfArea
+      quantity: '?'
+    - name: ByteDepthCh0
+      dtype: numeric
+      doc: ByteDepthCh0
+      quantity: '?'
+    - name: SystemName
+      dtype: text
+      doc: SystemName
+      quantity: '?'
+    - name: SystemVersion
+      dtype: text
+      doc: SystemVersion
+      quantity: '?'
+    - name: DeviceName
+      dtype: text
+      doc: DeviceName
+      quantity: '?'
+    - name: UserName
+      dtype: text
+      doc: UserName
+      quantity: '?'
+    - name: CommentByUser
+      dtype: text
+      doc: CommentByUser
+      quantity: '?'

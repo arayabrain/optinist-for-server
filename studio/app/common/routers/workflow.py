@@ -2,12 +2,11 @@ import os
 import shutil
 from dataclasses import asdict
 
-import yaml
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from studio.app.common.core.experiment.experiment_reader import ExptConfigReader
-from studio.app.common.core.experiment.experiment_utils import ExptUtils
+from studio.app.common.core.experiment.experiment_services import ExperimentService
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
@@ -17,7 +16,7 @@ from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
 )
-from studio.app.common.schemas.workflow import WorkflowConfig, WorkflowWithResults
+from studio.app.common.schemas.workflow import WorkflowWithResults
 from studio.app.dir_path import DIRPATH
 
 router = APIRouter(prefix="/workflow", tags=["workflow"])
@@ -32,20 +31,12 @@ logger = AppLogger.get_logger()
 )
 async def fetch_last_experiment(workspace_id: str):
     try:
-        last_expt_config = ExptUtils.get_last_experiment(workspace_id)
+        last_expt_config = ExperimentService.get_last_experiment(workspace_id)
         if last_expt_config:
             unique_id = last_expt_config.unique_id
 
             # fetch workflow
-            workflow_config_path = join_filepath(
-                [
-                    DIRPATH.OUTPUT_DIR,
-                    workspace_id,
-                    unique_id,
-                    DIRPATH.WORKFLOW_YML,
-                ]
-            )
-            workflow_config = WorkflowConfigReader.read(workflow_config_path)
+            workflow_config = WorkflowConfigReader.read(workspace_id, unique_id)
             return WorkflowWithResults(
                 **asdict(last_expt_config), **asdict(workflow_config)
             )
@@ -70,17 +61,17 @@ async def fetch_last_experiment(workspace_id: str):
 )
 async def reproduce_experiment(workspace_id: str, unique_id: str):
     try:
-        experiment_config_path = join_filepath(
-            [DIRPATH.OUTPUT_DIR, workspace_id, unique_id, DIRPATH.EXPERIMENT_YML]
+        experiment_config_path = ExptConfigReader.get_config_yaml_path(
+            workspace_id, unique_id
         )
-        workflow_config_path = join_filepath(
-            [DIRPATH.OUTPUT_DIR, workspace_id, unique_id, DIRPATH.WORKFLOW_YML]
+        workflow_config_path = WorkflowConfigReader.get_config_yaml_path(
+            workspace_id, unique_id
         )
         if os.path.exists(experiment_config_path) and os.path.exists(
             workflow_config_path
         ):
-            experiment_config = ExptConfigReader.read(experiment_config_path)
-            workflow_config = WorkflowConfigReader.read(workflow_config_path)
+            experiment_config = ExptConfigReader.read(workspace_id, unique_id)
+            workflow_config = WorkflowConfigReader.read(workspace_id, unique_id)
             return WorkflowWithResults(
                 **asdict(experiment_config), **asdict(workflow_config)
             )
@@ -105,9 +96,7 @@ async def reproduce_experiment(workspace_id: str, unique_id: str):
     dependencies=[Depends(is_workspace_available)],
 )
 async def download_workspace_config(workspace_id: str, unique_id: str):
-    config_filepath = join_filepath(
-        [DIRPATH.OUTPUT_DIR, workspace_id, unique_id, DIRPATH.WORKFLOW_YML]
-    )
+    config_filepath = WorkflowConfigReader.get_config_yaml_path(workspace_id, unique_id)
     if os.path.exists(config_filepath):
         return FileResponse(config_filepath, filename=DIRPATH.WORKFLOW_YML)
     else:
@@ -119,13 +108,10 @@ async def download_workspace_config(workspace_id: str, unique_id: str):
 @router.post("/import")
 async def import_workflow_config(file: UploadFile = File(...)):
     try:
-        contents = yaml.safe_load(await file.read())
-        if contents is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid yaml file"
-            )
-        return WorkflowConfig(**contents)
+        contents = WorkflowConfigReader.read_from_bytes(await file.read())
+        return contents
     except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Parsing yaml failed: {str(e)}",

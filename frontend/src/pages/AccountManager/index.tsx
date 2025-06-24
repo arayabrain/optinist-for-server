@@ -38,12 +38,14 @@ import {
   GridSortDirection,
   GridSortItem,
   GridSortModel,
+  GridValidRowModel,
 } from "@mui/x-data-grid"
 import { isRejectedWithValue } from "@reduxjs/toolkit"
 
 import { ROLE } from "@types"
 import { AddUserDTO, UserDTO } from "api/users/UsersApiDTO"
 import { ConfirmDialog } from "components/common/ConfirmDialog"
+import DeleteConfirmModal from "components/common/DeleteConfirmModal"
 import InputError from "components/common/InputError"
 import Loading from "components/common/Loading"
 import PaginationCustom from "components/common/PaginationCustom"
@@ -66,6 +68,7 @@ import {
   selectLoading,
 } from "store/slice/User/UserSelector"
 import { AppDispatch } from "store/store"
+import { convertBytes } from "utils"
 
 let timeout: NodeJS.Timeout | undefined = undefined
 
@@ -845,6 +848,13 @@ const AccountManager = () => {
       },
     },
     {
+      headerName: "Data size",
+      field: "data_usage",
+      renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
+        return convertBytes(params.value)
+      },
+    },
+    {
       headerName: "",
       field: "action",
       sortable: false,
@@ -961,20 +971,14 @@ const AccountManager = () => {
           limit={Number(limit)}
         />
       ) : null}
-      <ConfirmDialog
+      <DeleteConfirmModal
         open={openDel?.open || false}
-        onCancel={handleClosePopupDel}
-        onConfirm={handleOkDel}
-        title="Delete Account?"
-        content={
-          <>
-            <Typography>ID: {openDel?.id}</Typography>
-            <Typography>Name: {openDel?.name}</Typography>
-          </>
-        }
-        confirmLabel="delete"
+        onClose={handleClosePopupDel}
+        onSubmit={handleOkDel}
+        titleSubmit="Delete Account"
+        description={`Do you want to delete ID:${openDel?.id} Name:${openDel?.name}? `}
+        loading={loading}
         iconType="warning"
-        confirmButtonColor="error"
       />
       <ConfirmDialog
         open={!!userWaitingProxy}

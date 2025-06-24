@@ -9,13 +9,14 @@ from studio.app.common.core.workflow.workflow import (
     NodeItem,
     RunItem,
 )
+from studio.app.common.core.workflow.workflow_filter import WorkflowNodeDataFilter
 from studio.app.common.core.workflow.workflow_result import (
     WorkflowMonitor,
     WorkflowResult,
 )
-from studio.app.common.core.workflow.workflow_runner import (
-    WorkflowNodeDataFilter,
-    WorkflowRunner,
+from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
+from studio.app.common.core.workspace.workspace_data_capacity_services import (
+    WorkspaceDataCapacityService,
 )
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
@@ -97,9 +98,21 @@ async def run_id(
     response_model=Dict[str, Message],
     dependencies=[Depends(is_workspace_available)],
 )
-async def run_result(workspace_id: str, uid: str, nodeDict: NodeItem):
+async def run_result(
+    workspace_id: str,
+    uid: str,
+    nodeDict: NodeItem,
+    background_tasks: BackgroundTasks,
+):
     try:
-        return WorkflowResult(workspace_id, uid).observe(nodeDict.pendingNodeIdList)
+        res = WorkflowResult(workspace_id, uid).observe(nodeDict.pendingNodeIdList)
+        if res:
+            background_tasks.add_task(
+                WorkspaceDataCapacityService.update_experiment_data_usage,
+                workspace_id,
+                uid,
+            )
+        return res
     except Exception as e:
         logger.error(e, exc_info=True)
         raise HTTPException(
@@ -129,12 +142,21 @@ async def cancel_run(workspace_id: str, uid: str):
 
 @router.post("/filter/{workspace_id}/{uid}/{node_id}", response_model=bool)
 async def apply_filter(
-    workspace_id: str, uid: str, node_id: str, params: Optional[DataFilterParam] = None
+    workspace_id: str,
+    uid: str,
+    node_id: str,
+    background_tasks: BackgroundTasks,
+    params: Optional[DataFilterParam] = None,
 ):
     try:
         WorkflowNodeDataFilter(
             workspace_id=workspace_id, unique_id=uid, node_id=node_id
         ).filter_node_data(params)
+
+        background_tasks.add_task(
+            WorkspaceDataCapacityService.update_experiment_data_usage, workspace_id, uid
+        )
+
         return True
     except Exception as e:
         logger.error(e, exc_info=True)
