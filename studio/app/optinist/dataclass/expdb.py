@@ -79,3 +79,6 @@ class ExpDbData(BaseData):
                 self.tc = TcData(path)
             elif path.endswith(f"{TS_SUFFIX}.mat"):
                 self.ts = TsData(path)
+
+    def save_json(self, json_dir):
+        pass

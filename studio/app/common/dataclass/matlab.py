@@ -21,3 +21,6 @@ class MatlabData(BaseData):
                 ), "Expected field name '{}' was not found in {}".format(
                     field_name, os.path.basename(data)
                 )
+
+    def save_json(self, json_dir):
+        pass
