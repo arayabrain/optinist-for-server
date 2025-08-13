@@ -11,13 +11,13 @@ import {
 } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
 import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
+import { FILE_TYPE_NODE_NAME_ALIAS } from "config/fileTypes.config"
 import { HANDLE_STYLE } from "const/flowchart"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
 import {
   selectMicroscopeExpdbInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
-import { FILE_TYPE_NODE_NAME_ALIAS } from "store/slice/InputNode/InputNodeType"
 
 export const MicroscopeExpdbFileNode = memo(function MicroscopeExpdbFileNode(
   element: NodeProps,
