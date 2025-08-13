@@ -124,6 +124,9 @@ class StatData(BaseData):
         self.cluster_labels = np.full(self.ncells, np.NaN)
         self.cluster_corr_matrix = np.full((self.ncells, self.ncells), np.NaN)
 
+    def save_json(self, json_dir):
+        pass
+
     # --- stat_file_convert ---
     def set_file_convert_props(self, stim_params=None):
         """Set up standard tuning curve and spatial frequency properties"""
