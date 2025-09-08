@@ -4,8 +4,9 @@ import { Handle, Position, NodeProps } from "reactflow"
 
 import FolderIcon from "@mui/icons-material/Folder"
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
-import { Typography } from "@mui/material"
+import { Box, Checkbox, Typography, Tooltip, Divider } from "@mui/material"
 import Button from "@mui/material/Button"
+import { CheckboxProps } from "@mui/material/Checkbox"
 import Dialog from "@mui/material/Dialog"
 import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
@@ -106,7 +107,20 @@ const ItemSelect = memo(function ItemSelect({
   open,
   setOpen,
 }: ItemSelectProps) {
+  const dispatch = useDispatch<AppDispatch>()
+  const [fileSelect, setFileSelect] = useState("")
+
   const structureFileName = useSelector(selectInputNodeHDF5Path(nodeId))
+
+  const onClickOk = () => {
+    dispatch(setInputNodeHDF5Path({ nodeId, path: fileSelect }))
+    setOpen?.(false)
+  }
+
+  const onClickCancel = () => {
+    setFileSelect("")
+    setOpen?.(false)
+  }
 
   return (
     <>
@@ -114,18 +128,17 @@ const ItemSelect = memo(function ItemSelect({
         {structureFileName ? structureFileName : "No structure is selected."}
       </Typography>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
-        <DialogTitle>{"Select File"}</DialogTitle>
-        <Structure nodeId={nodeId} />
+        <DialogTitle>Select Structure</DialogTitle>
+        <Structure
+          nodeId={nodeId}
+          fileSelect={fileSelect}
+          setFileSelect={setFileSelect}
+        />
         <DialogActions>
-          <Button onClick={() => setOpen(false)} variant="outlined">
+          <Button onClick={onClickCancel} color="primary" variant="outlined">
             cancel
           </Button>
-          <Button
-            onClick={() => setOpen(false)}
-            color="primary"
-            variant="contained"
-            autoFocus
-          >
+          <Button onClick={onClickOk} variant="contained" autoFocus>
             OK
           </Button>
         </DialogActions>
@@ -134,7 +147,11 @@ const ItemSelect = memo(function ItemSelect({
   )
 })
 
-const Structure = memo(function Structure({ nodeId }: NodeIdProps) {
+const Structure = memo(function Structure({
+  nodeId,
+  fileSelect,
+  setFileSelect,
+}: NodeIdProps) {
   const theme = useTheme()
   return (
     <DialogContent dividers>
@@ -148,20 +165,40 @@ const Structure = memo(function Structure({ nodeId }: NodeIdProps) {
           borderColor: theme.palette.divider,
         }}
       >
-        <FileTreeView nodeId={nodeId} />
+        <FileTreeView
+          nodeId={nodeId}
+          fileSelect={fileSelect}
+          setFileSelect={setFileSelect}
+        />
       </div>
+      <Typography>Selected Path</Typography>
+      <Typography variant="subtitle2">{fileSelect || "---"}</Typography>
     </DialogContent>
   )
 })
 
-const FileTreeView = memo(function FileTreeView({ nodeId }: NodeIdProps) {
+const FileTreeView = memo(function FileTreeView({
+  nodeId,
+  fileSelect,
+  setFileSelect,
+}: NodeIdProps) {
   const [tree, isLoading] = useHDF5Tree(nodeId)
   return (
     <div>
       {isLoading && <LinearProgress />}
+      <Box display={"flex"} paddingBottom={1}>
+        <Box flexGrow={4}>Structure</Box>
+        <Box flexGrow={2}>Type</Box>
+        <Box flexGrow={3}>Shape</Box>
+        <Box flexGrow={2}>Nbytes</Box>
+        <Box flexGrow={1}></Box>
+      </Box>
+      <Divider />
       <TreeView>
         {tree?.map((node, i) => (
           <TreeNode
+            fileSelect={fileSelect}
+            setFileSelect={setFileSelect}
             key={`hdf5tree-${nodeId}-${i}`}
             node={node}
             nodeId={nodeId}
@@ -172,15 +209,76 @@ const FileTreeView = memo(function FileTreeView({ nodeId }: NodeIdProps) {
   )
 })
 
+interface TreeItemLabelProps {
+  isFile: boolean
+  shape: number[]
+  type: string | null
+  label: string
+  nbytes?: string
+  checkboxProps: CheckboxProps
+}
+
+const TreeItemLabel = memo(function TreeItemLabel({
+  isFile = false,
+  label,
+  shape,
+  type,
+  nbytes,
+  checkboxProps,
+}: TreeItemLabelProps) {
+  return (
+    <Box display="flex" alignItems="center" gap={2}>
+      <Tooltip
+        title={<span style={{ fontSize: 14 }}>{label}</span>}
+        placement={"left"}
+      >
+        <Box
+          width={isFile ? "25%" : "22%"}
+          overflow={"hidden"}
+          textOverflow={"ellipsis"}
+        >
+          {label}
+        </Box>
+      </Tooltip>
+      <Box width={"15%"}>{type}</Box>
+      <Box width={"25%"}>{shape ? `(${shape.join(", ")})` : ""}</Box>
+      <Box width={"15%"}>{nbytes}</Box>
+      <Box>
+        <Checkbox
+          {...checkboxProps}
+          disableRipple
+          size="small"
+          sx={{
+            marginRight: "4px",
+            padding: "2px",
+          }}
+        />
+      </Box>
+    </Box>
+  )
+})
+
 interface TreeNodeProps extends NodeIdProps {
+  setFileSelect?: (value: string) => void
+  fileSelect?: string
   node: HDF5TreeNodeType
 }
 
-const TreeNode = memo(function TreeNode({ node, nodeId }: TreeNodeProps) {
+const TreeNode = memo(function TreeNode({
+  node,
+  nodeId,
+  setFileSelect,
+  fileSelect,
+}: TreeNodeProps) {
   const dispatch = useDispatch()
-
+  const structureFileName = useSelector(selectInputNodeHDF5Path(nodeId))
+  useEffect(() => {
+    if (!structureFileName) return
+    setFileSelect?.(structureFileName)
+    //eslint-disable-next-line
+  }, [dispatch, structureFileName])
   const onClickFile = (path: string) => {
-    dispatch(setInputNodeHDF5Path({ nodeId, path }))
+    setFileSelect?.(path === fileSelect ? "" : path)
   }
 
   if (node.isDir) {
@@ -192,7 +290,13 @@ const TreeNode = memo(function TreeNode({ node, nodeId }: TreeNodeProps) {
         label={node.name}
       >
         {node.nodes.map((childNode, i) => (
-          <TreeNode node={childNode} key={i} nodeId={nodeId} />
+          <TreeNode
+            setFileSelect={setFileSelect}
+            fileSelect={fileSelect}
+            node={childNode}
+            key={i}
+            nodeId={nodeId}
+          />
         ))}
       </TreeItem>
     )
@@ -202,7 +306,18 @@ const TreeNode = memo(function TreeNode({ node, nodeId }: TreeNodeProps) {
       <TreeItem
         icon={<InsertDriveFileOutlinedIcon fontSize="small" />}
         nodeId={node.path}
-        label={node.name + `   (shape=${node.shape}, nbytes=${node.nbytes})`}
+        label={
+          <TreeItemLabel
+            isFile={true}
+            label={node.name}
+            type={node.dataType}
+            shape={node.shape || []}
+            nbytes={node.nbytes}
+            checkboxProps={{
+              checked: fileSelect === node.path,
+            }}
+          />
+        }
         onClick={() => onClickFile(node.path)}
       />
     )

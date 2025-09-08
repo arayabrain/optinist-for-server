@@ -128,7 +128,7 @@ const ItemSelect = memo(function ItemSelect({
         {structureFileName ? structureFileName : "No structure is selected."}
       </Typography>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
-        <DialogTitle>{"Select File"}</DialogTitle>
+        <DialogTitle>Select Structure</DialogTitle>
         <Structure
           nodeId={nodeId}
           fileSelect={fileSelect}
@@ -171,7 +171,7 @@ const Structure = memo(function Structure({
           setFileSelect={setFileSelect}
         />
       </div>
-      <Typography>Select File</Typography>
+      <Typography>Selected Path</Typography>
       <Typography variant="subtitle2">{fileSelect || "---"}</Typography>
     </DialogContent>
   )
@@ -190,6 +190,7 @@ const FileTreeView = memo(function FileTreeView({
         <Box flexGrow={4}>Structure</Box>
         <Box flexGrow={2}>Type</Box>
         <Box flexGrow={3}>Shape</Box>
+        <Box flexGrow={2}>Nbytes</Box>
         <Box flexGrow={1}></Box>
       </Box>
       <Divider />
@@ -213,6 +214,7 @@ interface TreeItemLabelProps {
   shape: number[]
   type: string | null
   label: string
+  nbytes?: string
   checkboxProps: CheckboxProps
 }
 
@@ -221,6 +223,7 @@ const TreeItemLabel = memo(function TreeItemLabel({
   label,
   shape,
   type,
+  nbytes,
   checkboxProps,
 }: TreeItemLabelProps) {
   return (
@@ -230,15 +233,16 @@ const TreeItemLabel = memo(function TreeItemLabel({
         placement={"left"}
       >
         <Box
-          width={isFile ? "35%" : "32%"}
+          width={isFile ? "25%" : "22%"}
           overflow={"hidden"}
           textOverflow={"ellipsis"}
         >
           {label}
         </Box>
       </Tooltip>
-      <Box width={"20%"}>{type}</Box>
+      <Box width={"15%"}>{type}</Box>
       <Box width={"25%"}>{shape ? `(${shape.join(", ")})` : ""}</Box>
+      <Box width={"15%"}>{nbytes}</Box>
       <Box>
         <Checkbox
           {...checkboxProps}
@@ -307,7 +311,8 @@ const TreeNode = memo(function TreeNode({
             isFile={true}
             label={node.name}
             type={node.dataType}
-            shape={node.shape}
+            shape={node.shape || []}
+            nbytes={node.nbytes}
             checkboxProps={{
               checked: fileSelect === node.path,
             }}
@@ -316,7 +321,6 @@ const TreeNode = memo(function TreeNode({
         onClick={() => onClickFile(node.path)}
       />
     )
-    return null
   }
 })
 
