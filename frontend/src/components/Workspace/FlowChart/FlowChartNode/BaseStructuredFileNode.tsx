@@ -169,7 +169,9 @@ const ItemSelect = memo(function ItemSelect({
   return (
     <>
       <Typography className="selectFilePath" variant="caption">
-        {structureFileName ? structureFileName : "No structure is selected."}
+        {structureFileName
+          ? `\u21B3 ${structureFileName}`
+          : "No structure is selected."}
       </Typography>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
         <DialogTitle>Select Structure</DialogTitle>
