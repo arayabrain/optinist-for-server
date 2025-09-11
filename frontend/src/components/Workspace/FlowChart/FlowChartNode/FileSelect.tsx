@@ -17,7 +17,7 @@ import ButtonGroup from "@mui/material/ButtonGroup"
 
 import { FILE_TREE_TYPE, FILE_TREE_TYPE_SET } from "api/files/Files"
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
-import { ParamSettingDialog } from "components/Workspace/FlowChart/FlowChartNode/CsvFileNode"
+import { CsvParamSettingDialog } from "components/Workspace/FlowChart/FlowChartNode/CsvParamSettingDialog"
 import { LinearProgressWithLabel } from "components/Workspace/FlowChart/FlowChartNode/LinerProgressWithLabel"
 import { FileNodeFactory } from "factories/FileNodeFactory"
 import { getFilesTree } from "store/slice/FilesTree/FilesTreeAction"
@@ -247,7 +247,7 @@ export const FileSelectImple = memo(function FileSelectImple({
         {fileTreeType === FILE_TREE_TYPE_SET.CSV && !!filePath && !!nodeId && (
           <Tooltip title={"Settings"}>
             <span>
-              <ParamSettingDialog
+              <CsvParamSettingDialog
                 nodeId={nodeId}
                 filePath={filePath as string}
                 disabled={!!isPending}
