@@ -287,6 +287,53 @@ const FileTreeView = memo(function FileTreeView({
     }
   }
 
+  // Check all functionality
+  const getAllFiles = useCallback((): string[] => {
+    if (!tree) return []
+    const files: string[] = []
+    const collectFiles = (nodes: TreeNodeType[]) => {
+      nodes.forEach((node) => {
+        if (!node.isDir) {
+          files.push(node.path)
+        } else if (node.nodes) {
+          collectFiles(node.nodes)
+        }
+      })
+    }
+    collectFiles(tree)
+    return files
+  }, [tree])
+
+  const isAllChecked = useCallback(() => {
+    if (!Array.isArray(selectedFilePath) || !tree) return false
+    const allFiles = getAllFiles()
+    return (
+      allFiles.length > 0 &&
+      allFiles.every((file) => selectedFilePath.includes(file))
+    )
+  }, [selectedFilePath, tree, getAllFiles])
+
+  const isSomeChecked = useCallback(() => {
+    if (!Array.isArray(selectedFilePath) || !tree) return false
+    const allFiles = getAllFiles()
+    return (
+      allFiles.some((file) => selectedFilePath.includes(file)) &&
+      !isAllChecked()
+    )
+  }, [selectedFilePath, tree, getAllFiles, isAllChecked])
+
+  const handleCheckAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        const allFiles = getAllFiles()
+        setSelectedFilePath(allFiles)
+      } else {
+        setSelectedFilePath([])
+      }
+    },
+    [getAllFiles, setSelectedFilePath],
+  )
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -345,9 +392,24 @@ const FileTreeView = memo(function FileTreeView({
             paddingBottom: "6px",
           }}
         >
-          <Typography sx={{ width: `${columnWidth}%`, ...ellipsisStyle }}>
-            Files
-          </Typography>
+          <Box
+            sx={{
+              width: `${columnWidth}%`,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {multiSelect && (
+              <StyledCheckbox
+                checked={isAllChecked()}
+                indeterminate={isSomeChecked()}
+                onChange={(e) => handleCheckAll(e.target.checked)}
+                size="small"
+                disableRipple
+              />
+            )}
+            <Typography sx={{ ...ellipsisStyle }}>Files</Typography>
+          </Box>
           <StyledColumnResizer
             sx={{ left: `calc(${columnWidth}% - 5px)` }}
             onMouseDown={handleMouseDown}
