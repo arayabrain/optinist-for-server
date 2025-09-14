@@ -32,7 +32,6 @@ import DeleteIcon from "@mui/icons-material/Delete"
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import FolderIcon from "@mui/icons-material/Folder"
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
 import { Divider, IconButton, Tooltip, Chip } from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -480,31 +479,37 @@ const TreeNode = memo(function TreeNode({
     const indeterminate = !(allChecked || allNotChecked)
     return (
       <TreeItem
-        icon={<FolderIcon htmlColor="skyblue" />}
         nodeId={node.path}
+        sx={{
+          "& .MuiTreeItem-iconContainer": {
+            width: 0,
+            minWidth: 0,
+          },
+        }}
         label={
-          multiSelect && node.nodes.filter((node) => !node.isDir).length > 0 ? (
-            <TreeItemLabel
-              multiSelect={multiSelect}
-              isDir={node.isDir}
-              fileType={fileType}
-              shape={node.shape}
-              label={node.name}
-              checkboxProps={{
-                indeterminate,
-                checked: allChecked,
-                onClick: (e) => {
-                  e.stopPropagation() // on/offのクリックにつられてTreeを開閉させないようにする
-                },
-                onChange: (e) => onCheckDir(node.path, e.target.checked),
-              }}
-              setSelectedFilePath={setSelectedFilePath}
-              selectedFilePath={selectedFilePath}
-              columnWidth={columnWidth}
-            />
-          ) : (
-            node.name
-          )
+          <TreeItemLabel
+            multiSelect={multiSelect}
+            isDir={node.isDir}
+            fileType={fileType}
+            shape={node.shape}
+            label={node.name}
+            icon={<FolderIcon htmlColor="skyblue" />}
+            checkboxProps={
+              multiSelect && node.nodes.filter((node) => !node.isDir).length > 0
+                ? {
+                    indeterminate,
+                    checked: allChecked,
+                    onClick: (e) => {
+                      e.stopPropagation() // on/offのクリックにつられてTreeを開閉させないようにする
+                    },
+                    onChange: (e) => onCheckDir(node.path, e.target.checked),
+                  }
+                : undefined
+            }
+            setSelectedFilePath={setSelectedFilePath}
+            selectedFilePath={selectedFilePath}
+            columnWidth={columnWidth}
+          />
         }
       >
         {node.nodes.map((childNode, i) => (
@@ -525,8 +530,13 @@ const TreeNode = memo(function TreeNode({
   } else {
     return (
       <TreeItem
-        icon={<InsertDriveFileOutlinedIcon fontSize="small" />}
         nodeId={node.path}
+        sx={{
+          "& .MuiTreeItem-iconContainer": {
+            width: 0,
+            minWidth: 0,
+          },
+        }}
         label={
           <TreeItemLabel
             multiSelect={multiSelect}
@@ -575,8 +585,9 @@ interface TreeItemLabelProps {
   fileType: FILE_TREE_TYPE
   shape: number[]
   label: string
-  checkboxProps: CheckboxProps
+  checkboxProps?: CheckboxProps
   isDir?: boolean
+  icon?: React.ReactNode
   setSelectedFilePath: (path: string[] | string) => void
   selectedFilePath: string[] | string
   multiSelect: boolean
@@ -589,6 +600,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
   label,
   isDir,
   checkboxProps,
+  icon,
   setSelectedFilePath,
   selectedFilePath,
   multiSelect,
@@ -652,11 +664,21 @@ export const TreeItemLabel = memo(function TreeItemLabel({
           <Box
             sx={{
               width: `${columnWidth}%`,
-              ...ellipsisStyle,
-              whiteSpace: "pre",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            {label}
+            {checkboxProps && (
+              <StyledCheckbox {...checkboxProps} size="small" disableRipple />
+            )}
+            {icon && (
+              <Box sx={{ display: "flex", alignItems: "center", mr: 0.5 }}>
+                {icon}
+              </Box>
+            )}
+            <Box sx={{ ...ellipsisStyle, whiteSpace: "pre", flex: 1 }}>
+              {label}
+            </Box>
           </Box>
         </Tooltip>
         {fileType === FILE_TREE_TYPE_SET.IMAGE ? (
@@ -682,10 +704,6 @@ export const TreeItemLabel = memo(function TreeItemLabel({
           </>
         ) : null}
         <Box display="flex" alignItems="center">
-          <Box>
-            <StyledCheckbox {...checkboxProps} size="small" disableRipple />
-          </Box>
-
           {!isDir && multiSelect ? (
             <IconButton
               sx={{ minWidth: 24 }}
@@ -701,7 +719,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
               event.stopPropagation()
               onOpenDeleteConfirmDialog(event)
             }}
-            disabled={checkboxProps.checked}
+            disabled={checkboxProps?.checked}
             data-testid="DeleteIconBtn"
           >
             <DeleteIcon />
