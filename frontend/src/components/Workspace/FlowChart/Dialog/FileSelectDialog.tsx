@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  createContext,
 } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -76,6 +77,14 @@ import { AppDispatch } from "store/store"
 const COLUMN_MIN_WIDTH = 20
 const COLUMN_MAX_WIDTH = 80
 const COLUMN_DEFAULT_WIDTH = 50
+
+// Context for file tree actions
+type FileTreeActionsContextType = {
+  onOpenDeleteDialog: (filePath: string, fileName: string) => void
+}
+const FileTreeActionsContext = createContext<FileTreeActionsContextType | null>(
+  null,
+)
 
 // Styled components (5+ attributes or commonly used)
 const StyledColumnResizer = styled(Box)({
@@ -231,6 +240,11 @@ const FileTreeView = memo(function FileTreeView({
   const [columnWidth, setColumnWidth] = useState(COLUMN_DEFAULT_WIDTH) // Column width in percentage
   const [isDragging, setIsDragging] = useState(false)
   const [filterText, setFilterText] = useState("") // Filter text state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTargetFile, setDeleteTargetFile] = useState<{
+    path: string
+    name: string
+  } | null>(null)
 
   // Helper function to check if a file exists in the tree
   const isFileInTree = (path: string, tree: TreeNodeType[] | null): boolean => {
@@ -405,6 +419,40 @@ const FileTreeView = memo(function FileTreeView({
   }, [])
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const dispatch = useDispatch<AppDispatch>()
+  const workspaceId = useSelector(selectCurrentWorkspaceId)
+
+  const onOpenDeleteDialog = useCallback(
+    (filePath: string, fileName: string) => {
+      setDeleteTargetFile({ path: filePath, name: fileName })
+      setDeleteDialogOpen(true)
+    },
+    [],
+  )
+
+  const onDeleteFile = useCallback(() => {
+    if (!workspaceId || !deleteTargetFile) return
+
+    // Remove the file from selectedFile state
+    if (Array.isArray(selectedFilePath)) {
+      setSelectedFilePath(
+        selectedFilePath.filter((file) => file !== deleteTargetFile.path),
+      )
+    }
+
+    dispatch(
+      deleteFile({ workspaceId, fileName: deleteTargetFile.path, fileType }),
+    )
+    setDeleteDialogOpen(false)
+    setDeleteTargetFile(null)
+  }, [
+    dispatch,
+    fileType,
+    selectedFilePath,
+    setSelectedFilePath,
+    workspaceId,
+    deleteTargetFile,
+  ])
 
   const handleMouseMove = useCallback(
     (e: Event) => {
@@ -535,23 +583,34 @@ const FileTreeView = memo(function FileTreeView({
         </Box>
         <Divider />
       </>
-      <Box sx={{ flex: 1, overflow: "auto", px: 1 }}>
-        <TreeView disableSelection={multiSelect} multiSelect={multiSelect}>
-          {filteredTree?.map((node) => (
-            <TreeNode
-              fileType={fileType}
-              key={node.name}
-              node={node}
-              selectedFilePath={selectedFilePath}
-              multiSelect={multiSelect}
-              onCheckDir={onCheckDir}
-              onCheckFile={onCheckFile}
-              setSelectedFilePath={setSelectedFilePath}
-              columnWidth={columnWidth}
-            />
-          ))}
-        </TreeView>
-      </Box>
+      <FileTreeActionsContext.Provider value={{ onOpenDeleteDialog }}>
+        <Box sx={{ flex: 1, overflow: "auto", px: 1 }}>
+          <TreeView disableSelection={multiSelect} multiSelect={multiSelect}>
+            {filteredTree?.map((node) => (
+              <TreeNode
+                fileType={fileType}
+                key={node.name}
+                node={node}
+                selectedFilePath={selectedFilePath}
+                multiSelect={multiSelect}
+                onCheckDir={onCheckDir}
+                onCheckFile={onCheckFile}
+                setSelectedFilePath={setSelectedFilePath}
+                columnWidth={columnWidth}
+              />
+            ))}
+          </TreeView>
+        </Box>
+      </FileTreeActionsContext.Provider>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        setOpen={setDeleteDialogOpen}
+        onConfirm={onDeleteFile}
+        title="Are you sure you want to delete this item?"
+        content={deleteTargetFile?.name || ""}
+        confirmLabel="delete"
+        iconType="warning"
+      />
     </div>
   )
 })
@@ -620,8 +679,6 @@ const TreeNode = memo(function TreeNode({
                   }
                 : undefined
             }
-            setSelectedFilePath={setSelectedFilePath}
-            selectedFilePath={selectedFilePath}
             columnWidth={columnWidth}
             filePath={node.path}
           />
@@ -686,8 +743,6 @@ const TreeNode = memo(function TreeNode({
                 }
               },
             }}
-            setSelectedFilePath={setSelectedFilePath}
-            selectedFilePath={selectedFilePath}
             columnWidth={columnWidth}
             filePath={node.path}
           />
@@ -704,8 +759,6 @@ interface TreeItemLabelProps {
   checkboxProps?: CheckboxProps
   isDir?: boolean
   icon?: React.ReactNode
-  setSelectedFilePath: (path: string[] | string) => void
-  selectedFilePath: string[] | string
   multiSelect: boolean
   columnWidth?: number
   filePath: string
@@ -718,15 +771,14 @@ export const TreeItemLabel = memo(function TreeItemLabel({
   isDir,
   checkboxProps,
   icon,
-  setSelectedFilePath,
-  selectedFilePath,
   multiSelect,
   columnWidth = COLUMN_DEFAULT_WIDTH,
   filePath,
 }: TreeItemLabelProps) {
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
-  const [deleteConfirmDialogOpen, setDeleteConfirmDialogOpen] = useState(false)
+  const fileTreeActions = useContext(FileTreeActionsContext)
+
   const onUpdate = useCallback(
     (event: MouseEvent, fileName: string) => {
       if (!workspaceId) return
@@ -735,29 +787,13 @@ export const TreeItemLabel = memo(function TreeItemLabel({
     },
     [dispatch, workspaceId],
   )
-  const onOpenDeleteConfirmDialog = useCallback(
+  const onOpenDeleteDialogClick = useCallback(
     (event: MouseEvent) => {
-      if (!workspaceId) return
+      if (!workspaceId || !fileTreeActions) return
       event.stopPropagation()
-      setDeleteConfirmDialogOpen(true)
+      fileTreeActions.onOpenDeleteDialog(filePath, label)
     },
-    [workspaceId],
-  )
-  const onDelete = useCallback(
-    (event: MouseEvent, fileName: string) => {
-      if (!workspaceId) return
-      event.stopPropagation()
-
-      // Remove the file from selectedFile state
-      if (Array.isArray(selectedFilePath)) {
-        setSelectedFilePath(
-          selectedFilePath.filter((file) => file !== fileName),
-        )
-      }
-
-      dispatch(deleteFile({ workspaceId, fileName, fileType }))
-    },
-    [dispatch, fileType, selectedFilePath, setSelectedFilePath, workspaceId],
+    [workspaceId, fileTreeActions, filePath, label],
   )
 
   return (
@@ -833,10 +869,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
           <IconButton
             sx={{ minWidth: 24 }}
             color="error"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenDeleteConfirmDialog(event)
-            }}
+            onClick={onOpenDeleteDialogClick}
             disabled={checkboxProps?.checked}
             data-testid="DeleteIconBtn"
           >
@@ -844,18 +877,6 @@ export const TreeItemLabel = memo(function TreeItemLabel({
           </IconButton>
         </Box>
       </Box>
-      <ConfirmDialog
-        open={deleteConfirmDialogOpen}
-        setOpen={setDeleteConfirmDialogOpen}
-        onConfirm={() => {
-          onDelete({ stopPropagation: () => {} } as MouseEvent, filePath)
-          setDeleteConfirmDialogOpen(false)
-        }}
-        title="Are you sure you want to delete this item?"
-        content={`${label}`}
-        confirmLabel="delete"
-        iconType="warning"
-      />
     </Box>
   )
 })

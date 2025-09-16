@@ -43,8 +43,6 @@ describe("TreeItemLabel Component", () => {
           label="testFile"
           isDir={false}
           checkboxProps={{ checked: false, onChange: jest.fn() }}
-          setSelectedFilePath={jest.fn()}
-          selectedFilePath={""}
           filePath="testFile"
         />
       </Provider>,
@@ -77,8 +75,6 @@ describe("TreeItemLabel Component", () => {
           label="testFile"
           isDir={false}
           checkboxProps={{ checked: false, onChange: jest.fn() }}
-          setSelectedFilePath={jest.fn()}
-          selectedFilePath={""}
           filePath="testFile"
         />
       </Provider>,
@@ -105,8 +101,6 @@ describe("TreeItemLabel Component", () => {
           label="testFile"
           isDir={false}
           checkboxProps={{ checked: true, onChange: jest.fn() }}
-          setSelectedFilePath={jest.fn()}
-          selectedFilePath={""}
           filePath="testFile"
         />
       </Provider>,
@@ -126,8 +120,6 @@ describe("TreeItemLabel Component", () => {
           label="testFile"
           isDir={false}
           checkboxProps={{ checked: false, onChange: jest.fn() }}
-          setSelectedFilePath={jest.fn()}
-          selectedFilePath={""}
           filePath="testFile"
         />
       </Provider>,
