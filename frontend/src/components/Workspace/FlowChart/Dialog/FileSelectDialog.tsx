@@ -6,6 +6,7 @@ import React, {
   MouseEvent,
   useCallback,
   useRef,
+  useMemo,
 } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -27,12 +28,21 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import AutorenewIcon from "@mui/icons-material/Autorenew"
+import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import DeleteIcon from "@mui/icons-material/Delete"
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import FolderIcon from "@mui/icons-material/Folder"
-import { Divider, IconButton, Tooltip, Chip } from "@mui/material"
+import SearchIcon from "@mui/icons-material/Search"
+import {
+  Divider,
+  IconButton,
+  Tooltip,
+  Chip,
+  InputAdornment,
+  TextField,
+} from "@mui/material"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Checkbox, { CheckboxProps } from "@mui/material/Checkbox"
@@ -220,6 +230,7 @@ const FileTreeView = memo(function FileTreeView({
   const [initialized, setInitialized] = useState(false)
   const [columnWidth, setColumnWidth] = useState(COLUMN_DEFAULT_WIDTH) // Column width in percentage
   const [isDragging, setIsDragging] = useState(false)
+  const [filterText, setFilterText] = useState("") // Filter text state
 
   // Helper function to check if a file exists in the tree
   const isFileInTree = (path: string, tree: TreeNodeType[] | null): boolean => {
@@ -286,9 +297,60 @@ const FileTreeView = memo(function FileTreeView({
     }
   }
 
-  // Check all functionality
+  // Filter functionality
+  const matchesFilter = useCallback((path: string, filter: string): boolean => {
+    if (!filter) return true
+
+    // Convert wildcard pattern to regex
+    const pattern = filter
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&") // Escape special regex chars
+      .replace(/\*/g, ".*") // Convert * to .*
+
+    const regex = new RegExp(pattern, "i") // Case insensitive
+    return regex.test(path)
+  }, [])
+
+  // Get filtered tree and counts
+  const { filteredTree, totalFileCount, filteredFileCount } = useMemo(() => {
+    if (!tree)
+      return { filteredTree: null, totalFileCount: 0, filteredFileCount: 0 }
+
+    let totalCount = 0
+    let filteredCount = 0
+
+    const filterNodes = (nodes: TreeNodeType[]): TreeNodeType[] => {
+      return nodes
+        .map((node) => {
+          if (node.isDir) {
+            const filteredChildren = filterNodes(node.nodes)
+            // Include directory if it has any visible children
+            if (filteredChildren.length > 0) {
+              return { ...node, nodes: filteredChildren }
+            }
+            return null
+          } else {
+            totalCount++
+            if (matchesFilter(node.path, filterText)) {
+              filteredCount++
+              return node
+            }
+            return null
+          }
+        })
+        .filter((node): node is TreeNodeType => node !== null)
+    }
+
+    const filtered = filterNodes(tree)
+    return {
+      filteredTree: filtered,
+      totalFileCount: totalCount,
+      filteredFileCount: filteredCount,
+    }
+  }, [tree, filterText, matchesFilter])
+
+  // Check all functionality (use filtered files)
   const getAllFiles = useCallback((): string[] => {
-    if (!tree) return []
+    if (!filteredTree) return []
     const files: string[] = []
     const collectFiles = (nodes: TreeNodeType[]) => {
       nodes.forEach((node) => {
@@ -299,27 +361,27 @@ const FileTreeView = memo(function FileTreeView({
         }
       })
     }
-    collectFiles(tree)
+    collectFiles(filteredTree)
     return files
-  }, [tree])
+  }, [filteredTree])
 
   const isAllChecked = useCallback(() => {
-    if (!Array.isArray(selectedFilePath) || !tree) return false
+    if (!Array.isArray(selectedFilePath) || !filteredTree) return false
     const allFiles = getAllFiles()
     return (
       allFiles.length > 0 &&
       allFiles.every((file) => selectedFilePath.includes(file))
     )
-  }, [selectedFilePath, tree, getAllFiles])
+  }, [selectedFilePath, filteredTree, getAllFiles])
 
   const isSomeChecked = useCallback(() => {
-    if (!Array.isArray(selectedFilePath) || !tree) return false
+    if (!Array.isArray(selectedFilePath) || !filteredTree) return false
     const allFiles = getAllFiles()
     return (
       allFiles.some((file) => selectedFilePath.includes(file)) &&
       !isAllChecked()
     )
-  }, [selectedFilePath, tree, getAllFiles, isAllChecked])
+  }, [selectedFilePath, filteredTree, getAllFiles, isAllChecked])
 
   const handleCheckAll = useCallback(
     (checked: boolean) => {
@@ -379,6 +441,54 @@ const FileTreeView = memo(function FileTreeView({
       style={{ display: "flex", flexDirection: "column", height: "100%" }}
     >
       {isLoading && <LinearProgress />}
+      {/* Filter input */}
+      <Box sx={{ px: 1, pt: 0.75, pb: 2 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Filter... (* as wildcard)"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: filterText && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setFilterText("")}
+                  edge="end"
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        {/* File count info */}
+        {filterText && (
+          <Box
+            sx={{ mt: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Showing
+            </Typography>
+            <Chip
+              label={filteredFileCount}
+              size="small"
+              sx={{ height: "18px", fontSize: "0.7rem" }}
+              color={filteredFileCount === 0 ? "default" : "primary"}
+              variant="outlined"
+            />
+            <Typography variant="caption" color="text.secondary">
+              of {totalFileCount} files
+            </Typography>
+          </Box>
+        )}
+      </Box>
       <>
         <Box
           sx={{
@@ -389,6 +499,10 @@ const FileTreeView = memo(function FileTreeView({
             zIndex: 5,
             userSelect: "none",
             paddingBottom: "6px",
+            borderTop: "1px solid",
+            borderTopColor: "divider",
+            px: 1,
+            pt: "6px",
           }}
         >
           <Box
@@ -421,9 +535,9 @@ const FileTreeView = memo(function FileTreeView({
         </Box>
         <Divider />
       </>
-      <Box sx={{ flex: 1, overflow: "auto" }}>
+      <Box sx={{ flex: 1, overflow: "auto", px: 1 }}>
         <TreeView disableSelection={multiSelect} multiSelect={multiSelect}>
-          {tree?.map((node) => (
+          {filteredTree?.map((node) => (
             <TreeNode
               fileType={fileType}
               key={node.name}
