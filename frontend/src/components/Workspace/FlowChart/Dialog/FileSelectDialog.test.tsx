@@ -45,6 +45,7 @@ describe("TreeItemLabel Component", () => {
           checkboxProps={{ checked: false, onChange: jest.fn() }}
           setSelectedFilePath={jest.fn()}
           selectedFilePath={""}
+          filePath="testFile"
         />
       </Provider>,
     )
@@ -61,7 +62,7 @@ describe("TreeItemLabel Component", () => {
       deleteFile({
         workspaceId: 123,
         fileName: "testFile",
-        fileType: "image",
+        fileType: "all",
       }),
     )
   })
@@ -78,6 +79,7 @@ describe("TreeItemLabel Component", () => {
           checkboxProps={{ checked: false, onChange: jest.fn() }}
           setSelectedFilePath={jest.fn()}
           selectedFilePath={""}
+          filePath="testFile"
         />
       </Provider>,
     )
@@ -105,6 +107,7 @@ describe("TreeItemLabel Component", () => {
           checkboxProps={{ checked: true, onChange: jest.fn() }}
           setSelectedFilePath={jest.fn()}
           selectedFilePath={""}
+          filePath="testFile"
         />
       </Provider>,
     )
@@ -125,6 +128,7 @@ describe("TreeItemLabel Component", () => {
           checkboxProps={{ checked: false, onChange: jest.fn() }}
           setSelectedFilePath={jest.fn()}
           selectedFilePath={""}
+          filePath="testFile"
         />
       </Provider>,
     )

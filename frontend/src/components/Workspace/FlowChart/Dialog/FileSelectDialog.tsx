@@ -623,6 +623,7 @@ const TreeNode = memo(function TreeNode({
             setSelectedFilePath={setSelectedFilePath}
             selectedFilePath={selectedFilePath}
             columnWidth={columnWidth}
+            filePath={node.path}
           />
         }
       >
@@ -688,6 +689,7 @@ const TreeNode = memo(function TreeNode({
             setSelectedFilePath={setSelectedFilePath}
             selectedFilePath={selectedFilePath}
             columnWidth={columnWidth}
+            filePath={node.path}
           />
         }
       />
@@ -706,6 +708,7 @@ interface TreeItemLabelProps {
   selectedFilePath: string[] | string
   multiSelect: boolean
   columnWidth?: number
+  filePath: string
 }
 
 export const TreeItemLabel = memo(function TreeItemLabel({
@@ -719,6 +722,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
   selectedFilePath,
   multiSelect,
   columnWidth = COLUMN_DEFAULT_WIDTH,
+  filePath,
 }: TreeItemLabelProps) {
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
@@ -821,7 +825,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
           {!isDir && multiSelect ? (
             <IconButton
               sx={{ minWidth: 24 }}
-              onClick={(event) => onUpdate(event, label)}
+              onClick={(event) => onUpdate(event, filePath)}
             >
               <AutorenewIcon />
             </IconButton>
@@ -844,7 +848,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
         open={deleteConfirmDialogOpen}
         setOpen={setDeleteConfirmDialogOpen}
         onConfirm={() => {
-          onDelete({ stopPropagation: () => {} } as MouseEvent, label)
+          onDelete({ stopPropagation: () => {} } as MouseEvent, filePath)
           setDeleteConfirmDialogOpen(false)
         }}
         title="Are you sure you want to delete this item?"
