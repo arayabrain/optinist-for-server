@@ -86,6 +86,23 @@ const FileTreeActionsContext = createContext<FileTreeActionsContextType | null>(
   null,
 )
 
+// Common style objects for reuse
+const commonStyles = {
+  ellipsis: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  flexCenter: {
+    display: "flex",
+    alignItems: "center",
+  },
+  iconButton: {
+    minWidth: 24,
+    padding: "2px",
+  },
+} as const
+
 // Styled components (5+ attributes or commonly used)
 const StyledColumnResizer = styled(Box)({
   width: "10px",
@@ -116,12 +133,155 @@ const StyledCheckbox = styled(Checkbox)({
   minWidth: 24,
 })
 
-// Common style objects for reuse
-const ellipsisStyle = {
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-} as const
+// Custom Hooks
+const useFilteredTree = (
+  tree: TreeNodeType[] | null | undefined,
+  filterText: string,
+) => {
+  const matchesFilter = useCallback((path: string, filter: string): boolean => {
+    if (!filter) return true
+    const pattern = filter
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+    const regex = new RegExp(pattern, "i")
+    return regex.test(path)
+  }, [])
+
+  return useMemo(() => {
+    if (!tree)
+      return { filteredTree: null, totalFileCount: 0, filteredFileCount: 0 }
+
+    let totalCount = 0
+    let filteredCount = 0
+
+    const filterNodes = (nodes: TreeNodeType[]): TreeNodeType[] => {
+      return nodes
+        .map((node) => {
+          if (node.isDir) {
+            const filteredChildren = filterNodes(node.nodes)
+            if (filteredChildren.length > 0) {
+              return { ...node, nodes: filteredChildren }
+            }
+            return null
+          } else {
+            totalCount++
+            if (matchesFilter(node.path, filterText)) {
+              filteredCount++
+              return node
+            }
+            return null
+          }
+        })
+        .filter((node): node is TreeNodeType => node !== null)
+    }
+
+    const filtered = filterNodes(tree)
+    return {
+      filteredTree: filtered,
+      totalFileCount: totalCount,
+      filteredFileCount: filteredCount,
+    }
+  }, [tree, filterText, matchesFilter])
+}
+
+const useColumnResize = (initialWidth = COLUMN_DEFAULT_WIDTH) => {
+  const [columnWidth, setColumnWidth] = useState(initialWidth)
+  const [isDragging, setIsDragging] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  const handleMouseMove = useCallback(
+    (e: Event) => {
+      if (!isDragging || !containerRef.current) return
+      const mouseEvent = e as unknown as MouseEvent
+      const rect = containerRef.current.getBoundingClientRect()
+      const newWidth = ((mouseEvent.clientX - rect.left) / rect.width) * 100
+      setColumnWidth(
+        Math.max(COLUMN_MIN_WIDTH, Math.min(COLUMN_MAX_WIDTH, newWidth)),
+      )
+    },
+    [isDragging],
+  )
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove)
+        document.removeEventListener("mouseup", handleMouseUp)
+        document.body.style.cursor = ""
+        document.body.style.userSelect = ""
+      }
+    }
+    return undefined
+  }, [isDragging, handleMouseMove, handleMouseUp])
+
+  return { columnWidth, handleMouseDown, containerRef }
+}
+
+const useFileSelection = (
+  selectedFilePath: string[] | string,
+  setSelectedFilePath: (path: string[] | string) => void,
+  filteredTree: TreeNodeType[] | null | undefined,
+) => {
+  const getAllFiles = useCallback((): string[] => {
+    if (!filteredTree) return []
+    const files: string[] = []
+    const collectFiles = (nodes: TreeNodeType[]) => {
+      nodes.forEach((node) => {
+        if (!node.isDir) {
+          files.push(node.path)
+        } else if (node.nodes) {
+          collectFiles(node.nodes)
+        }
+      })
+    }
+    collectFiles(filteredTree)
+    return files
+  }, [filteredTree])
+
+  const checkStatus = useMemo(() => {
+    if (!Array.isArray(selectedFilePath) || !filteredTree)
+      return { allChecked: false, someChecked: false }
+
+    const allFiles = getAllFiles()
+    if (allFiles.length === 0) return { allChecked: false, someChecked: false }
+
+    const checkedCount = allFiles.filter((file) =>
+      selectedFilePath.includes(file),
+    ).length
+
+    return {
+      allChecked: checkedCount === allFiles.length,
+      someChecked: checkedCount > 0 && checkedCount < allFiles.length,
+    }
+  }, [selectedFilePath, filteredTree, getAllFiles])
+
+  const handleCheckAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        const allFiles = getAllFiles()
+        setSelectedFilePath(allFiles)
+      } else {
+        setSelectedFilePath([])
+      }
+    },
+    [getAllFiles, setSelectedFilePath],
+  )
+
+  return { checkStatus, handleCheckAll, getAllFiles }
+}
 
 type FileSelectDialogProps = {
   initialFilePath: string[] | string
@@ -236,9 +396,6 @@ const FileTreeView = memo(function FileTreeView({
   multiSelect,
 }: FileTreeViewProps) {
   const [tree, isLoading] = useFileTree(fileType)
-  const [initialized, setInitialized] = useState(false)
-  const [columnWidth, setColumnWidth] = useState(COLUMN_DEFAULT_WIDTH) // Column width in percentage
-  const [isDragging, setIsDragging] = useState(false)
   const [filterText, setFilterText] = useState("") // Filter text state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTargetFile, setDeleteTargetFile] = useState<{
@@ -246,179 +403,98 @@ const FileTreeView = memo(function FileTreeView({
     name: string
   } | null>(null)
 
+  // Use custom hooks
+  const { columnWidth, handleMouseDown, containerRef } = useColumnResize()
+  const { filteredTree, totalFileCount, filteredFileCount } = useFilteredTree(
+    tree,
+    filterText,
+  )
+  const { checkStatus, handleCheckAll } = useFileSelection(
+    selectedFilePath,
+    setSelectedFilePath,
+    filteredTree,
+  )
+
   // Helper function to check if a file exists in the tree
-  const isFileInTree = (path: string, tree: TreeNodeType[] | null): boolean => {
-    if (!tree) return false
-    const checkNode = (node: TreeNodeType): boolean => {
-      if (node.path === path) return true
-      if (node.isDir && node.nodes) {
-        return node.nodes.some(checkNode)
+  const isFileInTree = useCallback(
+    (path: string, tree: TreeNodeType[] | null): boolean => {
+      if (!tree) return false
+      const checkNode = (node: TreeNodeType): boolean => {
+        if (node.path === path) return true
+        if (node.isDir && node.nodes) {
+          return node.nodes.some(checkNode)
+        }
+        return false
       }
-      return false
-    }
-    return tree.some(checkNode)
-  }
+      return tree.some(checkNode)
+    },
+    [],
+  )
 
   // Effect to remove selected file if it's not in the tree
   useEffect(() => {
-    if (!initialized && tree) {
+    if (!tree) return
+
+    const filterValidPaths = (paths: string | string[]) => {
+      if (Array.isArray(paths)) {
+        return paths.filter((p) => isFileInTree(p, tree))
+      }
+      return isFileInTree(paths, tree) ? paths : ""
+    }
+
+    const filtered = filterValidPaths(selectedFilePath)
+    if (JSON.stringify(filtered) !== JSON.stringify(selectedFilePath)) {
+      setSelectedFilePath(filtered)
+    }
+  }, [tree, isFileInTree, selectedFilePath, setSelectedFilePath])
+
+  // File selection handlers
+  const handleFileToggle = useCallback(
+    (path: string) => {
+      if (!Array.isArray(selectedFilePath)) {
+        setSelectedFilePath(path === selectedFilePath ? "" : path)
+        return
+      }
       if (Array.isArray(selectedFilePath)) {
-        const validPaths = selectedFilePath.filter((path) =>
-          isFileInTree(path, tree),
-        )
-        if (validPaths.length !== selectedFilePath.length) {
-          setSelectedFilePath(validPaths)
-        }
-      } else if (selectedFilePath && !isFileInTree(selectedFilePath, tree)) {
-        setSelectedFilePath([])
-      }
-      setInitialized(true) // Prevents re-running on every render
-    }
-  }, [tree, initialized, selectedFilePath, setSelectedFilePath])
-
-  // multiSelectでチェックボックスを使用する時用のハンドラ
-  const onCheckFile = (path: string) => {
-    if (Array.isArray(selectedFilePath)) {
-      if (selectedFilePath.includes(path)) {
         setSelectedFilePath(
-          selectedFilePath.filter((selectedPath) => path !== selectedPath),
+          selectedFilePath.includes(path)
+            ? selectedFilePath.filter((p: string) => p !== path)
+            : [...selectedFilePath, path],
         )
-      } else {
-        setSelectedFilePath(selectedFilePath.concat(path))
-      }
-    }
-  }
-  const onCheckDir = (path: string, checked: boolean) => {
-    if (tree != null && Array.isArray(selectedFilePath)) {
-      const node = getNodeByPath(path, tree)
-      if (node != null && node.isDir) {
-        const childrenFilePathList = node.nodes
-          .filter((node) => !node.isDir)
-          .map((node) => node.path)
-        if (checked) {
-          setSelectedFilePath(
-            // concat時の重複を削除
-            Array.from(new Set(selectedFilePath.concat(childrenFilePathList))),
-          )
-        } else {
-          setSelectedFilePath(
-            selectedFilePath.filter(
-              (selectedPath) => !childrenFilePathList.includes(selectedPath),
-            ),
-          )
-        }
-      }
-    }
-  }
-
-  // Filter functionality
-  const matchesFilter = useCallback((path: string, filter: string): boolean => {
-    if (!filter) return true
-
-    // Convert wildcard pattern to regex
-    const pattern = filter
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&") // Escape special regex chars
-      .replace(/\*/g, ".*") // Convert * to .*
-
-    const regex = new RegExp(pattern, "i") // Case insensitive
-    return regex.test(path)
-  }, [])
-
-  // Get filtered tree and counts
-  const { filteredTree, totalFileCount, filteredFileCount } = useMemo(() => {
-    if (!tree)
-      return { filteredTree: null, totalFileCount: 0, filteredFileCount: 0 }
-
-    let totalCount = 0
-    let filteredCount = 0
-
-    const filterNodes = (nodes: TreeNodeType[]): TreeNodeType[] => {
-      return nodes
-        .map((node) => {
-          if (node.isDir) {
-            const filteredChildren = filterNodes(node.nodes)
-            // Include directory if it has any visible children
-            if (filteredChildren.length > 0) {
-              return { ...node, nodes: filteredChildren }
-            }
-            return null
-          } else {
-            totalCount++
-            if (matchesFilter(node.path, filterText)) {
-              filteredCount++
-              return node
-            }
-            return null
-          }
-        })
-        .filter((node): node is TreeNodeType => node !== null)
-    }
-
-    const filtered = filterNodes(tree)
-    return {
-      filteredTree: filtered,
-      totalFileCount: totalCount,
-      filteredFileCount: filteredCount,
-    }
-  }, [tree, filterText, matchesFilter])
-
-  // Check all functionality (use filtered files)
-  const getAllFiles = useCallback((): string[] => {
-    if (!filteredTree) return []
-    const files: string[] = []
-    const collectFiles = (nodes: TreeNodeType[]) => {
-      nodes.forEach((node) => {
-        if (!node.isDir) {
-          files.push(node.path)
-        } else if (node.nodes) {
-          collectFiles(node.nodes)
-        }
-      })
-    }
-    collectFiles(filteredTree)
-    return files
-  }, [filteredTree])
-
-  const isAllChecked = useCallback(() => {
-    if (!Array.isArray(selectedFilePath) || !filteredTree) return false
-    const allFiles = getAllFiles()
-    return (
-      allFiles.length > 0 &&
-      allFiles.every((file) => selectedFilePath.includes(file))
-    )
-  }, [selectedFilePath, filteredTree, getAllFiles])
-
-  const isSomeChecked = useCallback(() => {
-    if (!Array.isArray(selectedFilePath) || !filteredTree) return false
-    const allFiles = getAllFiles()
-    return (
-      allFiles.some((file) => selectedFilePath.includes(file)) &&
-      !isAllChecked()
-    )
-  }, [selectedFilePath, filteredTree, getAllFiles, isAllChecked])
-
-  const handleCheckAll = useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        const allFiles = getAllFiles()
-        setSelectedFilePath(allFiles)
-      } else {
-        setSelectedFilePath([])
       }
     },
-    [getAllFiles, setSelectedFilePath],
+    [selectedFilePath, setSelectedFilePath],
   )
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+  const onCheckDir = useCallback(
+    (path: string, checked: boolean) => {
+      if (tree != null && Array.isArray(selectedFilePath)) {
+        const node = getNodeByPath(path, tree)
+        if (node != null && node.isDir) {
+          const childrenFilePathList = node.nodes
+            .filter((node) => !node.isDir)
+            .map((node) => node.path)
+          if (checked) {
+            setSelectedFilePath(
+              // concat時の重複を削除
+              Array.from(
+                new Set(selectedFilePath.concat(childrenFilePathList)),
+              ),
+            )
+          } else {
+            setSelectedFilePath(
+              selectedFilePath.filter(
+                (selectedPath) => !childrenFilePathList.includes(selectedPath),
+              ),
+            )
+          }
+        }
+      }
+    },
+    [tree, selectedFilePath, setSelectedFilePath],
+  )
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
-  const containerRef = useRef<HTMLDivElement>(null)
+  // Delete functionality
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
 
@@ -454,34 +530,7 @@ const FileTreeView = memo(function FileTreeView({
     deleteTargetFile,
   ])
 
-  const handleMouseMove = useCallback(
-    (e: Event) => {
-      if (!isDragging || !containerRef.current) return
-      const mouseEvent = e as unknown as MouseEvent
-      const rect = containerRef.current.getBoundingClientRect()
-      const newWidth = ((mouseEvent.clientX - rect.left) / rect.width) * 100
-      setColumnWidth(
-        Math.max(COLUMN_MIN_WIDTH, Math.min(COLUMN_MAX_WIDTH, newWidth)),
-      )
-    },
-    [isDragging],
-  )
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
-      document.body.style.cursor = "col-resize"
-      document.body.style.userSelect = "none"
-      return () => {
-        document.removeEventListener("mousemove", handleMouseMove)
-        document.removeEventListener("mouseup", handleMouseUp)
-        document.body.style.cursor = ""
-        document.body.style.userSelect = ""
-      }
-    }
-    return undefined
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  // All column resize and filter logic is now handled by custom hooks
 
   return (
     <div
@@ -562,21 +611,24 @@ const FileTreeView = memo(function FileTreeView({
           >
             {multiSelect && (
               <StyledCheckbox
-                checked={isAllChecked()}
-                indeterminate={isSomeChecked()}
+                checked={checkStatus.allChecked}
+                indeterminate={checkStatus.someChecked}
                 onChange={(e) => handleCheckAll(e.target.checked)}
                 size="small"
                 disableRipple
               />
             )}
-            <Typography sx={{ ...ellipsisStyle }}>Files</Typography>
+            <Typography sx={{ ...commonStyles.ellipsis }}>Files</Typography>
           </Box>
           <StyledColumnResizer
             sx={{ left: `calc(${columnWidth}% - 5px)` }}
             onMouseDown={handleMouseDown}
           />
           {fileType === FILE_TREE_TYPE_SET.IMAGE && (
-            <Typography sx={{ flex: 1, ...ellipsisStyle }} marginLeft={2}>
+            <Typography
+              sx={{ flex: 1, ...commonStyles.ellipsis }}
+              marginLeft={2}
+            >
               Shapes
             </Typography>
           )}
@@ -594,7 +646,7 @@ const FileTreeView = memo(function FileTreeView({
                 selectedFilePath={selectedFilePath}
                 multiSelect={multiSelect}
                 onCheckDir={onCheckDir}
-                onCheckFile={onCheckFile}
+                onCheckFile={handleFileToggle}
                 setSelectedFilePath={setSelectedFilePath}
                 columnWidth={columnWidth}
               />
@@ -636,60 +688,78 @@ const FileTreeNode = memo(function FileTreeNode({
   setSelectedFilePath,
   columnWidth = COLUMN_DEFAULT_WIDTH,
 }: FileTreeNodeProps) {
-  if (node.isDir) {
+  // Common tree item props
+  const treeItemProps = {
+    nodeId: node.path,
+    sx: {
+      "& .MuiTreeItem-iconContainer": {
+        width: 0,
+        minWidth: 0,
+      },
+    },
+  }
+
+  // Calculate checkbox props for directories
+  const getDirCheckboxProps = useCallback(() => {
+    if (!node.isDir || !multiSelect) return undefined
+
+    const fileNodes = node.nodes.filter((n) => !n.isDir)
+    if (fileNodes.length === 0) return undefined
+
+    const filePaths = fileNodes.map((n) => n.path)
     const allChecked =
       Array.isArray(selectedFilePath) &&
-      node.nodes
-        .filter((node) => !node.isDir)
-        .map((node) => node.path)
-        .every((filePath) => selectedFilePath.includes(filePath))
-    const allNotChecked =
+      filePaths.every((path) => selectedFilePath.includes(path))
+    const someChecked =
       Array.isArray(selectedFilePath) &&
-      node.nodes
-        .filter((node) => !node.isDir)
-        .map((node) => node.path)
-        .every((filePath) => !selectedFilePath.includes(filePath))
-    const indeterminate = !(allChecked || allNotChecked)
-    return (
-      <TreeItem
-        nodeId={node.path}
-        sx={{
-          "& .MuiTreeItem-iconContainer": {
-            width: 0,
-            minWidth: 0,
-          },
-        }}
-        label={
-          <FileTreeItemLabel
-            multiSelect={multiSelect}
-            isDir={node.isDir}
-            fileType={fileType}
-            shape={node.shape}
-            label={node.name}
-            icon={<FolderIcon htmlColor="skyblue" />}
-            checkboxProps={
-              multiSelect && node.nodes.filter((node) => !node.isDir).length > 0
-                ? {
-                    indeterminate,
-                    checked: allChecked,
-                    onClick: (e) => {
-                      e.stopPropagation() // on/offのクリックにつられてTreeを開閉させないようにする
-                    },
-                    onChange: (e) => onCheckDir(node.path, e.target.checked),
-                  }
-                : undefined
-            }
-            columnWidth={columnWidth}
-            filePath={node.path}
-          />
-        }
-      >
-        {node.nodes.map((childNode, i) => (
+      filePaths.some((path) => selectedFilePath.includes(path))
+
+    return {
+      indeterminate: someChecked && !allChecked,
+      checked: allChecked,
+      onClick: (e: React.MouseEvent) => e.stopPropagation(),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        onCheckDir(node.path, e.target.checked),
+    }
+  }, [node, multiSelect, selectedFilePath, onCheckDir])
+
+  // Calculate checkbox props for files
+  const getFileCheckboxProps = useCallback(() => {
+    const isChecked = multiSelect
+      ? Array.isArray(selectedFilePath) && selectedFilePath.includes(node.path)
+      : selectedFilePath === node.path
+
+    return {
+      checked: isChecked,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.stopPropagation()
+        onCheckFile(node.path)
+      },
+    }
+  }, [multiSelect, selectedFilePath, node.path, onCheckFile])
+
+  // Common label props
+  const labelProps = {
+    multiSelect,
+    isDir: node.isDir,
+    fileType,
+    shape: node.shape,
+    label: node.name,
+    columnWidth,
+    filePath: node.path,
+    icon: node.isDir ? <FolderIcon htmlColor="skyblue" /> : undefined,
+    checkboxProps: node.isDir ? getDirCheckboxProps() : getFileCheckboxProps(),
+  }
+
+  return (
+    <TreeItem {...treeItemProps} label={<FileTreeItemLabel {...labelProps} />}>
+      {node.isDir &&
+        node.nodes.map((childNode, i) => (
           <FileTreeNode
+            key={i}
             fileType={fileType}
             node={childNode}
             selectedFilePath={selectedFilePath}
-            key={i}
             multiSelect={multiSelect}
             onCheckDir={onCheckDir}
             onCheckFile={onCheckFile}
@@ -697,59 +767,8 @@ const FileTreeNode = memo(function FileTreeNode({
             columnWidth={columnWidth}
           />
         ))}
-      </TreeItem>
-    )
-  } else {
-    return (
-      <TreeItem
-        nodeId={node.path}
-        sx={{
-          "& .MuiTreeItem-iconContainer": {
-            width: 0,
-            minWidth: 0,
-          },
-        }}
-        label={
-          <FileTreeItemLabel
-            multiSelect={multiSelect}
-            isDir={node.isDir}
-            fileType={fileType}
-            shape={node.shape}
-            label={node.name}
-            checkboxProps={{
-              checked: multiSelect
-                ? Array.isArray(selectedFilePath) &&
-                  selectedFilePath.includes(node.path)
-                : selectedFilePath === node.path,
-              onChange: (e) => {
-                e.stopPropagation()
-
-                if (multiSelect) {
-                  if (Array.isArray(selectedFilePath)) {
-                    if (selectedFilePath.includes(node.path)) {
-                      setSelectedFilePath(
-                        selectedFilePath.filter((f) => f !== node.path),
-                      )
-                    } else {
-                      setSelectedFilePath([...selectedFilePath, node.path])
-                    }
-                  }
-                } else {
-                  if (selectedFilePath === node.path) {
-                    setSelectedFilePath("")
-                  } else {
-                    setSelectedFilePath(node.path)
-                  }
-                }
-              },
-            }}
-            columnWidth={columnWidth}
-            filePath={node.path}
-          />
-        }
-      />
-    )
-  }
+    </TreeItem>
+  )
 })
 
 interface FileTreeItemLabelProps {
@@ -779,21 +798,21 @@ export const FileTreeItemLabel = memo(function FileTreeItemLabel({
   const workspaceId = useSelector(selectCurrentWorkspaceId)
   const fileTreeActions = useContext(FileTreeActionsContext)
 
-  const onUpdate = useCallback(
-    (event: MouseEvent, fileName: string) => {
-      if (!workspaceId) return
-      event.stopPropagation()
-      dispatch(updateShape({ workspaceId, fileName }))
-    },
-    [dispatch, workspaceId],
-  )
-  const onOpenDeleteDialogClick = useCallback(
-    (event: MouseEvent) => {
-      if (!workspaceId || !fileTreeActions) return
-      event.stopPropagation()
-      fileTreeActions.onOpenDeleteDialog(filePath, label)
-    },
-    [workspaceId, fileTreeActions, filePath, label],
+  // Consolidated file actions
+  const fileActions = useMemo(
+    () => ({
+      updateShape: (event: MouseEvent) => {
+        if (!workspaceId) return
+        event.stopPropagation()
+        dispatch(updateShape({ workspaceId, fileName: filePath }))
+      },
+      deleteFile: (event: MouseEvent) => {
+        if (!workspaceId || !fileTreeActions) return
+        event.stopPropagation()
+        fileTreeActions.onOpenDeleteDialog(filePath, label)
+      },
+    }),
+    [dispatch, workspaceId, fileTreeActions, filePath, label],
   )
 
   return (
@@ -830,14 +849,19 @@ export const FileTreeItemLabel = memo(function FileTreeItemLabel({
                 {icon}
               </Box>
             )}
-            <Box sx={{ ...ellipsisStyle, whiteSpace: "pre", flex: 1 }}>
+            <Box sx={{ ...commonStyles.ellipsis, whiteSpace: "pre", flex: 1 }}>
               {label}
             </Box>
           </Box>
         </Tooltip>
         {fileType === FILE_TREE_TYPE_SET.IMAGE ? (
           <>
-            <Box flex={1} marginLeft={2} alignItems="center" sx={ellipsisStyle}>
+            <Box
+              flex={1}
+              marginLeft={2}
+              alignItems="center"
+              sx={commonStyles.ellipsis}
+            >
               {!isDir ? (
                 !shape ? (
                   <Tooltip
@@ -858,18 +882,18 @@ export const FileTreeItemLabel = memo(function FileTreeItemLabel({
           </>
         ) : null}
         <Box display="flex" alignItems="center">
-          {!isDir && multiSelect ? (
+          {!isDir && multiSelect && (
             <IconButton
-              sx={{ minWidth: 24 }}
-              onClick={(event) => onUpdate(event, filePath)}
+              sx={commonStyles.iconButton}
+              onClick={fileActions.updateShape}
             >
               <AutorenewIcon />
             </IconButton>
-          ) : null}
+          )}
           <IconButton
-            sx={{ minWidth: 24 }}
+            sx={commonStyles.iconButton}
             color="error"
-            onClick={onOpenDeleteDialogClick}
+            onClick={fileActions.deleteFile}
             disabled={checkboxProps?.checked}
             data-testid="DeleteIconBtn"
           >
