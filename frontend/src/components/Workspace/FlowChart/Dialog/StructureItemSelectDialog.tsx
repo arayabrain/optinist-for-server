@@ -209,6 +209,26 @@ interface StructureTreeItemLabelProps {
   checkboxProps: CheckboxProps
 }
 
+const formatBytes = (nbytesStr?: string): string => {
+  if (!nbytesStr) return ""
+
+  const nbytes = parseInt(nbytesStr, 10)
+  if (isNaN(nbytes)) return nbytesStr
+
+  const BYTES_PER_KB = 1024
+  const BYTES_PER_MB = 1024 * 1024
+
+  if (nbytes < BYTES_PER_KB) {
+    return `${nbytes} B`
+  } else if (nbytes < BYTES_PER_MB) {
+    const kb = nbytes / BYTES_PER_KB
+    return `${kb.toFixed(1)} KB`
+  } else {
+    const mb = nbytes / BYTES_PER_MB
+    return `${mb.toFixed(1)} MB`
+  }
+}
+
 export const StructureTreeItemLabel = memo(function StructureTreeItemLabel({
   isFile = false,
   label,
@@ -233,7 +253,7 @@ export const StructureTreeItemLabel = memo(function StructureTreeItemLabel({
       </Tooltip>
       <Box width={"15%"}>{type}</Box>
       <Box width={"25%"}>{shape ? `(${shape.join(", ")})` : ""}</Box>
-      <Box width={"15%"}>{nbytes}</Box>
+      <Box width={"15%"}>{formatBytes(nbytes)}</Box>
       <Box>
         <Checkbox
           {...checkboxProps}
