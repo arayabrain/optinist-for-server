@@ -215,8 +215,8 @@ const formatBytes = (nbytesStr?: string): string => {
   const nbytes = parseInt(nbytesStr, 10)
   if (isNaN(nbytes)) return nbytesStr
 
-  const BYTES_PER_KB = 1024
-  const BYTES_PER_MB = 1024 * 1024
+  const BYTES_PER_KB = 1000
+  const BYTES_PER_MB = BYTES_PER_KB * 1000
 
   if (nbytes < BYTES_PER_KB) {
     return `${nbytes} B`
