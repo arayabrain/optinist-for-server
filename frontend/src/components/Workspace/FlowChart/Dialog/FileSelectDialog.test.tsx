@@ -8,7 +8,7 @@ import "@testing-library/jest-dom"
 import { Store, AnyAction } from "@reduxjs/toolkit"
 import { render, screen } from "@testing-library/react"
 
-import { TreeItemLabel } from "components/Workspace/FlowChart/Dialog/FileSelectDialog"
+import { FileTreeItemLabel } from "components/Workspace/FlowChart/Dialog/FileSelectDialog"
 import { AppDispatch } from "store/store"
 
 // Create a mock context
@@ -40,13 +40,13 @@ describe("TreeItemLabel Component", () => {
     mockOnOpenDeleteDialog.mockClear()
   })
 
-  it("should render TreeItemLabel component", () => {
+  it("should render FileTreeItemLabel component", () => {
     render(
       <Provider store={store}>
         <MockFileTreeActionsContext.Provider
           value={{ onOpenDeleteDialog: mockOnOpenDeleteDialog }}
         >
-          <TreeItemLabel
+          <FileTreeItemLabel
             multiSelect={true}
             fileType="all"
             shape={[100, 100]}
@@ -70,7 +70,7 @@ describe("TreeItemLabel Component", () => {
         <MockFileTreeActionsContext.Provider
           value={{ onOpenDeleteDialog: mockOnOpenDeleteDialog }}
         >
-          <TreeItemLabel
+          <FileTreeItemLabel
             multiSelect={true}
             fileType="all"
             shape={[100, 100]}
@@ -93,7 +93,7 @@ describe("TreeItemLabel Component", () => {
         <MockFileTreeActionsContext.Provider
           value={{ onOpenDeleteDialog: mockOnOpenDeleteDialog }}
         >
-          <TreeItemLabel
+          <FileTreeItemLabel
             multiSelect={true}
             fileType="all"
             shape={[100, 100]}

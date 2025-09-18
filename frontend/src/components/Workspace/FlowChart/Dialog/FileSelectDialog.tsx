@@ -587,7 +587,7 @@ const FileTreeView = memo(function FileTreeView({
         <Box sx={{ flex: 1, overflow: "auto", px: 1 }}>
           <TreeView disableSelection={multiSelect} multiSelect={multiSelect}>
             {filteredTree?.map((node) => (
-              <TreeNode
+              <FileTreeNode
                 fileType={fileType}
                 key={node.name}
                 node={node}
@@ -615,7 +615,7 @@ const FileTreeView = memo(function FileTreeView({
   )
 })
 
-interface TreeNodeProps {
+interface FileTreeNodeProps {
   fileType: FILE_TREE_TYPE
   node: TreeNodeType
   selectedFilePath: string[] | string
@@ -626,7 +626,7 @@ interface TreeNodeProps {
   columnWidth?: number
 }
 
-const TreeNode = memo(function TreeNode({
+const FileTreeNode = memo(function FileTreeNode({
   fileType,
   node,
   selectedFilePath,
@@ -635,7 +635,7 @@ const TreeNode = memo(function TreeNode({
   onCheckFile,
   setSelectedFilePath,
   columnWidth = COLUMN_DEFAULT_WIDTH,
-}: TreeNodeProps) {
+}: FileTreeNodeProps) {
   if (node.isDir) {
     const allChecked =
       Array.isArray(selectedFilePath) &&
@@ -660,7 +660,7 @@ const TreeNode = memo(function TreeNode({
           },
         }}
         label={
-          <TreeItemLabel
+          <FileTreeItemLabel
             multiSelect={multiSelect}
             isDir={node.isDir}
             fileType={fileType}
@@ -685,7 +685,7 @@ const TreeNode = memo(function TreeNode({
         }
       >
         {node.nodes.map((childNode, i) => (
-          <TreeNode
+          <FileTreeNode
             fileType={fileType}
             node={childNode}
             selectedFilePath={selectedFilePath}
@@ -710,7 +710,7 @@ const TreeNode = memo(function TreeNode({
           },
         }}
         label={
-          <TreeItemLabel
+          <FileTreeItemLabel
             multiSelect={multiSelect}
             isDir={node.isDir}
             fileType={fileType}
@@ -752,7 +752,7 @@ const TreeNode = memo(function TreeNode({
   }
 })
 
-interface TreeItemLabelProps {
+interface FileTreeItemLabelProps {
   fileType: FILE_TREE_TYPE
   shape: number[]
   label: string
@@ -764,7 +764,7 @@ interface TreeItemLabelProps {
   filePath: string
 }
 
-export const TreeItemLabel = memo(function TreeItemLabel({
+export const FileTreeItemLabel = memo(function FileTreeItemLabel({
   fileType,
   shape,
   label,
@@ -774,7 +774,7 @@ export const TreeItemLabel = memo(function TreeItemLabel({
   multiSelect,
   columnWidth = COLUMN_DEFAULT_WIDTH,
   filePath,
-}: TreeItemLabelProps) {
+}: FileTreeItemLabelProps) {
   const dispatch = useDispatch<AppDispatch>()
   const workspaceId = useSelector(selectCurrentWorkspaceId)
   const fileTreeActions = useContext(FileTreeActionsContext)
