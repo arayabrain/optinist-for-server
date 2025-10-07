@@ -8,7 +8,7 @@ export type TreeHierarchyType =
 
 export interface FileTypeConfig {
   key: string
-  displayName: string
+  displayName?: string // Optional: If not provided, key will be used for display
   hasFilePath: boolean
   filePathType: "single" | "array"
   hasSpecialPath?: {
@@ -29,8 +29,12 @@ export interface FileTypeConfig {
 // Enhanced config with computed properties
 export interface EnhancedFileTypeConfig
   extends Required<
-    Omit<FileTypeConfig, "hasSpecialPath" | "stateFileType" | "treeHierarchy">
+    Omit<
+      FileTypeConfig,
+      "hasSpecialPath" | "stateFileType" | "treeHierarchy" | "displayName"
+    >
   > {
+  displayName: string // Required in enhanced config (defaults to key if not provided)
   hasSpecialPath?: FileTypeConfig["hasSpecialPath"]
   stateFileType?: string
   treeHierarchy: TreeHierarchyType // Required in enhanced config with default value
@@ -67,7 +71,7 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
 export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   IMAGE: {
     key: "image",
-    displayName: "imageData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "array",
     defaultParam: {},
@@ -75,7 +79,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   CSV: {
     key: "csv",
-    displayName: "csvData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -87,7 +91,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   HDF5: {
     key: "hdf5",
-    displayName: "hdf5Data",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -99,7 +103,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   FLUO: {
     key: "fluo",
-    displayName: "fluoData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -112,7 +116,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   BEHAVIOR: {
     key: "behavior",
-    displayName: "behaviorData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -125,7 +129,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MATLAB: {
     key: "matlab",
-    displayName: "matlabData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -137,7 +141,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MICROSCOPE: {
     key: "microscope",
-    displayName: "microscopeData",
+    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {},
@@ -160,6 +164,7 @@ const ENHANCED_FILE_TYPE_CONFIGS: Record<string, EnhancedFileTypeConfig> =
         {
           ...config,
           // Auto-generate missing properties
+          displayName: config.displayName || config.key, // Use key as fallback if displayName is not provided
           treeType: config.treeType || config.key,
           dataType: config.dataType || config.key,
           nodeType,
