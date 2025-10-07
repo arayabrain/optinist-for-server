@@ -1,3 +1,11 @@
+// Define tree hierarchy constants for better maintainability
+export const TREE_HIERARCHY = {
+  DATA: "Data",
+} as const
+
+export type TreeHierarchyType =
+  (typeof TREE_HIERARCHY)[keyof typeof TREE_HIERARCHY]
+
 export interface FileTypeConfig {
   key: string
   displayName: string
@@ -15,7 +23,7 @@ export interface FileTypeConfig {
   nodeType?: string // Unified: replaces nodeComponent and reactFlowNodeType
   componentPath?: string
   // Tree hierarchy configuration
-  treeHierarchy?: string // Parent node in tree hierarchy (e.g., "Data", "Sample Data")
+  treeHierarchy?: TreeHierarchyType // Parent node in tree hierarchy (e.g., "Data", "Sample Data")
 }
 
 // Enhanced config with computed properties
@@ -25,7 +33,7 @@ export interface EnhancedFileTypeConfig
   > {
   hasSpecialPath?: FileTypeConfig["hasSpecialPath"]
   stateFileType?: string
-  treeHierarchy: string // Required in enhanced config with default value
+  treeHierarchy: TreeHierarchyType // Required in enhanced config with default value
   // Backward compatibility properties
   nodeComponent: string // Same as nodeType for compatibility
   reactFlowNodeType: string // Same as nodeType for compatibility
@@ -155,7 +163,7 @@ const ENHANCED_FILE_TYPE_CONFIGS: Record<string, EnhancedFileTypeConfig> =
           treeType: config.treeType || config.key,
           dataType: config.dataType || config.key,
           nodeType,
-          treeHierarchy: config.treeHierarchy || "Data", // Default to "Data" hierarchy
+          treeHierarchy: config.treeHierarchy || TREE_HIERARCHY.DATA, // Default to "Data" hierarchy
           // Backward compatibility - both point to the same nodeType
           nodeComponent: nodeType,
           reactFlowNodeType: nodeType,
