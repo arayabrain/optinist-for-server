@@ -71,7 +71,6 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
 export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   IMAGE: {
     key: "image",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "array",
     defaultParam: {},
@@ -79,7 +78,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   CSV: {
     key: "csv",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -91,7 +89,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   HDF5: {
     key: "hdf5",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -103,7 +100,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   FLUO: {
     key: "fluo",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -116,7 +112,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   BEHAVIOR: {
     key: "behavior",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -129,7 +124,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MATLAB: {
     key: "matlab",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -141,7 +135,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MICROSCOPE: {
     key: "microscope",
-    displayName: undefined,
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {},
@@ -218,19 +211,3 @@ export function getFileTypeConfigsByHierarchy(): Record<
 
   return hierarchyGroups
 }
-
-// Auto-generated component mapping from ENHANCED_FILE_TYPE_CONFIGS
-export const COMPONENT_MAPPING = Object.fromEntries(
-  Object.values(ENHANCED_FILE_TYPE_CONFIGS).map((config) => [
-    config.nodeType,
-    config.nodeType,
-  ]),
-) as Record<string, string>
-
-// Auto-generated data type mapping from ENHANCED_FILE_TYPE_CONFIGS
-export const DATA_TYPE_MAPPING = Object.fromEntries(
-  Object.values(ENHANCED_FILE_TYPE_CONFIGS).map((config) => [
-    config.dataType,
-    config.dataType,
-  ]),
-) as Record<string, string>
