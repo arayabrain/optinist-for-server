@@ -24,8 +24,12 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
 # install conda & packages
 # ----------------------------------------
 
-RUN apt-get install --no-install-recommends -y gcc g++ libgl1 libgl1-mesa-dev libopencv-dev && \
+RUN apt-get install --no-install-recommends -y gcc g++ clang libgl1 libgl1-mesa-dev libopencv-dev && \
     apt-get autoremove -y && apt-get clean
+
+# Specify compiler (use clang)
+ENV CC=clang CXX=clang++
+
 RUN mkdir -p /opt/miniforge && \
     curl -L "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -o /opt/miniforge/Miniforge3.sh && \
     bash /opt/miniforge/Miniforge3.sh -b -u -p /opt/miniforge && \
@@ -81,7 +85,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
 RUN poetry export -f requirements.txt -o requirements.studio.txt && \
     sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
 
-RUN pip3 install -r requirements.studio.txt
+RUN pip3 install -r requirements.studio.txt --use-pep517
 
 # Setting permissions for operational user to some site-packages.
 RUN chown -R optinist /usr/local/lib/python3.9/site-packages/pynwb
@@ -100,7 +104,7 @@ USER optinist
 RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install -r requirements.batch.txt
+    pip3 install -r requirements.batch.txt --use-pep517
 
 # Some environment variable settings
 # - Settings for protobuf 3.20 compatibility
