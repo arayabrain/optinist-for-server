@@ -340,6 +340,50 @@ class ExpDbBatch:
         return result
 
     @stopwatch(callback=__stopwatch_callback)
+    def cell_detection_suite2p(self, stack: ImageData):
+        """
+        Run Suite2p cell detection pipeline.
+
+        Alternative to cell_detection_cnmf() using Suite2p algorithm.
+        Produces identical output format (ExpDbData) for analyze_stats.
+
+        Args:
+            stack: ImageData from preprocessing node
+
+        Returns:
+            Dictionary with processed_data (ExpDbData) and other outputs
+
+        Notes:
+            - Uses same output directory as CaImAn (preprocess/)
+            - Creates same file names (timecourse.mat, cellmask.mat)
+            - User must choose Suite2p OR CaImAn, not both
+        """
+        from studio.app.optinist.wrappers.suite2p.suite2p_preprocessing import (
+            suite2p_preprocessing,
+        )
+
+        self.logger_.info("process 'cell_detection_suite2p' start.")
+        suite2p_params = get_default_params("suite2p_preprocessing")
+        function_id = "suite2p_preprocessing"
+        result = suite2p_preprocessing(
+            images=stack,
+            output_dir=self.raw_path.preprocess_dir,
+            params=suite2p_params,
+            nwbfile=self.nwb_input_config,
+        )
+        if NWBDATASET.CONFIG not in self.nwbfile:
+            self.nwbfile[NWBDATASET.CONFIG] = {}
+        if function_id not in self.nwbfile[NWBDATASET.CONFIG]:
+            self.nwbfile[NWBDATASET.CONFIG][function_id] = {}
+        params_str = json.dumps(suite2p_params, separators=(",", ":"))
+        self.nwbfile[NWBDATASET.CONFIG][function_id]["node_params"] = params_str
+
+        if "nwbfile" in result:
+            self.nwbfile = merge_nwbfile(self.nwbfile, result["nwbfile"])
+
+        return result
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
         self.logger_.info("process 'generate_statdata' start.")
 

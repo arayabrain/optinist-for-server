@@ -1,0 +1,112 @@
+# Suite2p Preprocessing for ExpDB Workflow
+#
+# This configuration file contains parameters for Suite2p ROI detection
+# and conversion to ExpDB-compatible formats.
+#
+# Reference: https://suite2p.readthedocs.io/en/latest/settings.html
+
+# ----------------------------------------
+# Main Settings
+# ----------------------------------------
+
+# Calcium indicator timescale (seconds)
+tau: 1.0
+
+# ----------------------------------------
+# Cell Detection Parameters
+# ----------------------------------------
+
+cell_detection:
+  # Running mean subtraction window size (use low values for 1P imaging)
+  high_pass: 100
+
+  # Whether to run sparse mode detection
+  sparse_mode: True
+
+  # Cells with more overlap than this are removed during triage
+  max_overlap: 0.75
+
+  # Maximum number of binned frames for cell detection
+  nbinned: 5000
+
+  # Spatial scale: 0=multi-scale; 1=6px; 2=12px; 3=24px; 4=48px
+  spatial_scale: 0
+
+  # Adjust automatically determined threshold by this scalar
+  threshold_scaling: 1.0
+
+  # Maximum number of iterations for cell detection
+  max_iterations: 20
+
+# ----------------------------------------
+# ROI Extraction Parameters
+# ----------------------------------------
+
+ROI_extraction:
+  # Whether overlapping pixels are added to both ROIs (True) or thrown out (False)
+  allow_overlap: False
+
+  # Pixels to keep between ROI and neuropil donut
+  inner_neuropil_radius: 2
+
+  # Minimum number of pixels in the neuropil
+  min_neuropil_pixels: 350
+
+# ----------------------------------------
+# Classification Parameters
+# ----------------------------------------
+
+classification:
+  # Crop dendrites for cell classification stats like compactness
+  soma_crop: True
+
+# ----------------------------------------
+# ExpDB-Specific Parameters
+# ----------------------------------------
+
+# Neuropil correction coefficient
+# Formula: F_corrected = (F - neucoeff * Fneu) + mean(Fneu)
+neucoeff: 0.7
+
+# Apply AY-style energy normalization (recommended for ExpDB compatibility)
+normalize_by_energy: True
+
+# ----------------------------------------
+# Optional Outputs
+# ----------------------------------------
+
+# Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
+# Matches CaImAn behavior; archival only, not used by analyze_stats
+create_Yr: True
+
+# Create C_or.mat (original temporal components) - Archive only, not used by analyze_stats
+create_C_or: False
+
+# ----------------------------------------
+# Validation & Visualization
+# ----------------------------------------
+
+# Validate .mat files after creation (round-trip test)
+validate_outputs: True
+
+# ROI threshold for visualization (0-1)
+roi_thr: 0.9
+
+# ----------------------------------------
+# Advanced Settings (usually not modified)
+# ----------------------------------------
+
+advanced:
+  # 1-Photon specific settings
+  1P:
+    # Window for spatial high-pass filtering before detection
+    spatial_hp_detect: 25
+
+  # Output settings
+  Output:
+    # Apply classifier before signal extraction (0 = after, 0.3 = threshold)
+    preclassify: 0.0
+
+  # Classifier settings
+  use_builtin_classifier: True
+  classifier_path: null  # Path to custom classifier (null = use default)
