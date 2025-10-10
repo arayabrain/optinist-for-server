@@ -15,7 +15,13 @@ from studio.app.common.dataclass import ImageData
 from studio.app.const import TS_SUFFIX
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.dataclass import ExpDbData, FluoData, IscellData, RoiData
+from studio.app.optinist.dataclass import (
+    EditRoiData,
+    ExpDbData,
+    FluoData,
+    IscellData,
+    RoiData,
+)
 from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 from studio.app.optinist.wrappers.suite2p.utils import convert_suite2p_to_expdb_mats
 
@@ -24,7 +30,7 @@ logger = AppLogger.get_logger()
 
 def suite2p_preprocessing(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
-) -> dict:
+) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
     """
     Perform Suite2p cell detection and create ExpDB-compatible output files.
 
@@ -56,6 +62,7 @@ def suite2p_preprocessing(
             - images: Correlation image
             - mean_image: Temporal mean image
             - max_proj: Maximum projection image
+            - edit_roi_data: Data for manual ROI editing
             - nwbfile: NWB metadata
 
     Raises:
@@ -94,7 +101,9 @@ def suite2p_preprocessing(
     # Load image data
     image_stack = images.data
     T, Ly, Lx = image_stack.shape
-    logger.info(f"Image stack shape: T={T}, Ly={Ly}, Lx={Lx}")
+    logger.info(
+        f"Image stack shape: " f"T={T}, Ly={Ly}, Lx={Lx}, dtype={image_stack.dtype}"
+    )
 
     # Get NWB metadata
     nwbfile = kwargs.get("nwbfile", {})
@@ -115,29 +124,35 @@ def suite2p_preprocessing(
 
     logger.info(f"Trial structure file found: {trialstructure_path}")
 
-    # Setup Suite2p ops
-    ops = default_ops()
-    ops.update(
-        {
-            "Ly": Ly,
-            "Lx": Lx,
-            "nframes": T,
-            "fs": fs,
-            **params,
-        }
-    )
+    # Setup Suite2p ops - merge defaults with our parameters
+    # Use dict merge to preserve all default_ops values
+    ops = {
+        **default_ops(),
+        "Ly": Ly,
+        "Lx": Lx,
+        "nframes": T,
+        "fs": fs,
+        **params,
+    }
+
+    # Set required parameters for detection that are normally set during registration
+    # yrange and xrange define the ROI region to analyze (default to full frame)
+    ops["yrange"] = [0, Ly]
+    ops["xrange"] = [0, Lx]
 
     # Convert image stack to format Suite2p expects
     # Suite2p expects (Ly, Lx, T) for detection
-    image_stack_suite2p = np.transpose(image_stack, (1, 2, 0))
-
-    # Temporarily save as binary for Suite2p
-    # Suite2p works with binary files
+    # Optimize: Convert to int16 first, then transpose to avoid double memory usage
     import tempfile
 
     with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp_file:
         tmp_bin_path = tmp_file.name
-        image_stack_suite2p.astype(np.int16).tofile(tmp_file)
+        # Write directly in chunks to avoid holding full transposed array in memory
+        image_stack_int16 = image_stack.astype(np.int16)
+        image_stack_suite2p = np.transpose(image_stack_int16, (1, 2, 0))
+        image_stack_suite2p.tofile(tmp_file)
+        # Free memory immediately
+        del image_stack_int16
 
     ops["reg_file"] = tmp_bin_path
 
@@ -211,11 +226,12 @@ def suite2p_preprocessing(
                         med=s["med"],
                         do_crop=False,
                     ).to_array(Ly=Ly, Lx=Lx)
+                    array = array.astype(np.float32)
                     array *= i + 1
                     arrays.append(array)
                 else:
                     # Empty ROI if threshold filters everything
-                    arrays.append(np.zeros((Ly, Lx)))
+                    arrays.append(np.zeros((Ly, Lx), dtype=np.float32))
 
             im = np.stack(arrays)
             im[im == 0] = np.nan
@@ -243,18 +259,26 @@ def suite2p_preprocessing(
         cell_ims = im[idx_good].copy()
         cell_roi = np.nanmax(cell_ims, axis=0)
     else:
-        cell_ims = np.zeros((0, Ly, Lx))
+        cell_ims = np.zeros((0, Ly, Lx), dtype=np.float32)
         cell_roi = empty_roi.copy()
 
     if n_noncell_rois > 0:
-        non_cell_ims = im[idx_bad].copy()
+        # Create output array directly to avoid intermediate copy
+        non_cell_roi = np.full((Ly, Lx), np.nan, dtype=np.float32)
+        # Create modified non-cell images for later processing if needed
+        non_cell_ims = im[idx_bad].copy()  # Need copy here for renumbering
+
         # Renumber non-cells starting after cells
-        for i, j in enumerate(range(n_rois, n_rois + n_noncell_rois)):
-            non_cell_ims[i, :] = np.where(~np.isnan(non_cell_ims[i, :]), j, np.nan)
+        for idx, i in enumerate(range(n_rois, n_rois + n_noncell_rois)):
+            non_cell_ims[idx] = np.where(~np.isnan(non_cell_ims[idx]), i, np.nan)
         non_cell_roi = np.nanmax(non_cell_ims, axis=0)
     else:
-        non_cell_ims = np.zeros((0, Ly, Lx))
+        non_cell_ims = np.zeros((0, Ly, Lx), dtype=np.float32)
         non_cell_roi = empty_roi.copy()
+
+    # Recreate im array with properly separated and renumbered cells and non-cells
+    # This matches CaImAn's approach: im = np.vstack([cell_ims, non_cell_ims])
+    im = np.vstack([cell_ims, non_cell_ims])
 
     # Step 5: Convert Suite2p outputs to ExpDB .mat files
     # Creates timecourse.mat and cellmask.mat for analyze_stats pipeline
@@ -270,12 +294,13 @@ def suite2p_preprocessing(
             import scipy.io
 
             # Reshape image stack to Yr format: (pixels, T)
-            Yr = image_stack.reshape(T, Ly * Lx, order="F").T
+            Yr = image_stack.astype(np.float32).reshape(T, Ly * Lx, order="F").T
             scipy.io.savemat(
                 join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
                 {"Yr": Yr},
             )
-            logger.info("Created Yr.mat (debugging/archival)")
+            del Yr  # Free memory immediately
+            logger.info("Created Yr.mat")
 
         conversion_params = {
             "neucoeff": neucoeff,
@@ -310,22 +335,27 @@ def suite2p_preprocessing(
     # Step 6: Compute summary images & Create NWB metadata
     mean_img = np.mean(image_stack, axis=0)
     max_proj = np.max(image_stack, axis=0)
+    Vcorr = ops.get("Vcorr")  # correlation image
+    Vcorr[np.isnan(Vcorr)] = 0  # Handle NaN values before uint8 conversion
 
     nwbfile_out = {}
 
     # Add ROI metadata
+    # Note: Creating full image_mask for 2791 ROIs creates ~2.9GB of data
+    # Only store sparse representation (pixel indices) to save memory
     roi_list = []
     for i, s in enumerate(stat):
-        roi_mask = ROI(
-            ypix=s["ypix"],
-            xpix=s["xpix"],
-            lam=s["lam"],
-            med=s["med"],
-            do_crop=False,
-        ).to_array(Ly=Ly, Lx=Lx)
-
+        #     roi_mask = ROI(
+        #     ypix=s["ypix"],
+        #     xpix=s["xpix"],
+        #     lam=s["lam"],
+        #     med=s["med"],
+        #     do_crop=False,
+        # ).to_array(Ly=Ly, Lx=Lx)
         kargs = {
-            "image_mask": roi_mask,
+            # Store sparse pixel representation instead of full mask
+            "pixel_mask": np.array([s["ypix"], s["xpix"], s["lam"]]).T,
+            # "image_mask": roi_mask,
             "accepted": bool(iscell[i]),
             "rejected": not bool(iscell[i]),
         }
@@ -334,7 +364,8 @@ def suite2p_preprocessing(
     nwbfile_out[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile_out[NWBDATASET.POSTPROCESS] = {
         function_id: {
-            "all_roi_img": im,
+            # Don't store full im array to save memory (in development)
+            # "all_roi_img": im,
             "mean_img": mean_img,
             "max_proj": max_proj,
         }
@@ -362,31 +393,18 @@ def suite2p_preprocessing(
         }
     }
 
-    # Step 7: Create correlation image for visualization
-    if "Vcorr" in ops and ops["Vcorr"] is not None:
-        Cn = ops["Vcorr"]
-    else:
-        # Fallback: compute simple mean correlation image
-        logger.info("Computing correlation image...")
-        # Reshape for easier computation
-        frames_flat = image_stack.reshape(T, -1)  # (T, pixels)
-        # Use mean correlation as simple metric
-        Cn = np.corrcoef(frames_flat.T)[0].reshape(Ly, Lx)
-        Cn[np.isnan(Cn)] = 0
-        Cn = np.clip(Cn, 0, 1)  # Ensure in valid range
-
-    # Step 8: Prepare output dictionary
+    # Step 7: Prepare output dictionary
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
-        "images": ImageData(
-            np.array(Cn * 255, dtype=np.uint8),
-            output_dir=output_dir,
-            file_name="correlation_image",
-        ),
         "mean_image": ImageData(
             np.array(mean_img, dtype=np.uint16),
             output_dir=output_dir,
             file_name="mean_image",
+        ),
+        "Vcorr": ImageData(
+            Vcorr,
+            output_dir=output_dir,
+            file_name="Vcorr",
         ),
         "max_proj": ImageData(
             np.array(max_proj, dtype=np.uint16),
@@ -404,6 +422,7 @@ def suite2p_preprocessing(
         "non_cell_roi": RoiData(
             non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
         ),
+        "edit_roi_data": EditRoiData(images=image_stack, im=im),
         "nwbfile": nwbfile_out,
     }
 

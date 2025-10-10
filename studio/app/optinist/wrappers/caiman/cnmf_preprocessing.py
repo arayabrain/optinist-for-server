@@ -196,7 +196,10 @@ def caiman_cnmf_preprocessing(
         {"C_or": cnm.estimates.C},
     )
 
-    # contours plot
+    # Compute summary images
+    mean_img = np.mean(mmap_images, axis=0)
+
+    # Compute local correlations for visualization
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
     Cn[np.isnan(Cn)] = 0
 
@@ -286,10 +289,15 @@ def caiman_cnmf_preprocessing(
 
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
-        "images": ImageData(
+        "mean_image": ImageData(
+            np.array(mean_img, dtype=np.uint16),
+            output_dir=output_dir,
+            file_name="mean_image",
+        ),
+        "local_correlations": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,
-            file_name="images",
+            file_name="local_correlations",
         ),
         "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),

@@ -10,7 +10,10 @@
 # ----------------------------------------
 
 # Calcium indicator timescale (seconds)
-tau: 1.0
+tau: 1.25
+
+# Frame rate (Hz) - will be overridden by NWB metadata if available
+fs: 2.0
 
 # ----------------------------------------
 # Cell Detection Parameters
@@ -26,9 +29,6 @@ cell_detection:
   # Cells with more overlap than this are removed during triage
   max_overlap: 0.75
 
-  # Maximum number of binned frames for cell detection
-  nbinned: 5000
-
   # Spatial scale: 0=multi-scale; 1=6px; 2=12px; 3=24px; 4=48px
   spatial_scale: 0
 
@@ -37,6 +37,12 @@ cell_detection:
 
   # Maximum number of iterations for cell detection
   max_iterations: 20
+
+  # Use connected components for ROI detection
+  connected: True
+
+  # Window for spatial high-pass filtering before detection
+  spatial_hp_detect: 25
 
 # ----------------------------------------
 # ROI Extraction Parameters
@@ -52,6 +58,9 @@ ROI_extraction:
   # Minimum number of pixels in the neuropil
   min_neuropil_pixels: 350
 
+  # Extract neuropil traces
+  neuropil_extract: True
+
 # ----------------------------------------
 # Classification Parameters
 # ----------------------------------------
@@ -59,6 +68,20 @@ ROI_extraction:
 classification:
   # Crop dendrites for cell classification stats like compactness
   soma_crop: True
+
+# ----------------------------------------
+# Spike Deconvolution Parameters
+# ----------------------------------------
+
+spikedetect:
+  # Enable spike deconvolution
+  spikedetect: True
+
+  # Window for baseline calculation (seconds)
+  win_baseline: 60.0
+
+  # Gaussian sigma for baseline calculation (seconds)
+  sig_baseline: 10.0
 
 # ----------------------------------------
 # ExpDB-Specific Parameters
@@ -93,20 +116,8 @@ validate_outputs: True
 roi_thr: 0.9
 
 # ----------------------------------------
-# Advanced Settings (usually not modified)
+# Output Settings
 # ----------------------------------------
 
-advanced:
-  # 1-Photon specific settings
-  1P:
-    # Window for spatial high-pass filtering before detection
-    spatial_hp_detect: 25
-
-  # Output settings
-  Output:
-    # Apply classifier before signal extraction (0 = after, 0.3 = threshold)
-    preclassify: 0.0
-
-  # Classifier settings
-  use_builtin_classifier: True
-  classifier_path: null  # Path to custom classifier (null = use default)
+# Apply classifier before signal extraction (0 = after extraction)
+preclassify: 0.0

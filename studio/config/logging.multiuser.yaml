@@ -34,7 +34,8 @@ loggers:
   optinist:
     level: DEBUG
   sqlalchemy.engine:
-    level: INFO
+    level: WARNING
+    propagate: false
   snakemake:
     level: INFO
     handlers: [rotating_file]
