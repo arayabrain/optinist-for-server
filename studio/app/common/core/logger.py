@@ -3,11 +3,16 @@ import logging.config
 import os
 import platform
 import traceback
+from contextvars import ContextVar
+from typing import Optional
 
 import yaml
 
 from studio.app.common.core.mode import MODE
 from studio.app.dir_path import DIRPATH
+
+# Context variable for storing user_id per request/context
+_user_id_context: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
 
 
 class AppLogger:
@@ -16,6 +21,17 @@ class AppLogger:
     """
 
     LOGGER_NAME = "optinist"
+
+    class UserIdFilter(logging.Filter):
+        """
+        Logging filter to inject user_id from context into log records
+        """
+
+        def filter(self, record):
+            # Get user_id from context, default to "none" if not set
+            user_id = _user_id_context.get()
+            record.user_id = user_id if user_id is not None else "none"
+            return True
 
     @classmethod
     def init_logger(cls):
@@ -91,6 +107,20 @@ class AppLogger:
             log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
             logging_config["handlers"]["rotating_file"]["filename"] = log_file
 
+        # Add UserIdFilter configuration to filters section
+        if "filters" not in logging_config:
+            logging_config["filters"] = {}
+        logging_config["filters"]["user_id_filter"] = {
+            "()": "studio.app.common.core.logger.AppLogger.UserIdFilter"
+        }
+
+        # Add user_id_filter to all handlers
+        for handler_config in logging_config.get("handlers", {}).values():
+            if "filters" not in handler_config:
+                handler_config["filters"] = []
+            if "user_id_filter" not in handler_config["filters"]:
+                handler_config["filters"].append("user_id_filter")
+
         return logging_config
 
     @staticmethod
@@ -102,6 +132,20 @@ class AppLogger:
             __class__.init_logger()
 
         return logger
+
+    @staticmethod
+    def set_user_id(user_id: Optional[str]):
+        """
+        Set user_id in the current context for logging
+        """
+        _user_id_context.set(user_id)
+
+    @staticmethod
+    def get_user_id() -> Optional[str]:
+        """
+        Get user_id from the current context
+        """
+        return _user_id_context.get()
 
     @staticmethod
     def format_exc_traceback(e: Exception):

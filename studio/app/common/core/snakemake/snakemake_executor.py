@@ -1,7 +1,7 @@
 import os
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict
+from typing import Dict, Optional
 
 from snakemake import snakemake
 
@@ -24,11 +24,14 @@ logger = AppLogger.get_logger()
 
 
 def snakemake_execute(workspace_id: str, unique_id: str, params: SmkParam):
+    # Get user_id from current context to pass to subprocess
+    logging_user_id = AppLogger.get_user_id()
+
     with ProcessPoolExecutor(max_workers=1) as executor:
         logger.info("start snakemake running process.")
 
         future = executor.submit(
-            _snakemake_execute_process, workspace_id, unique_id, params
+            _snakemake_execute_process, workspace_id, unique_id, params, logging_user_id
         )
         future_result = future.result()
 
@@ -38,8 +41,14 @@ def snakemake_execute(workspace_id: str, unique_id: str, params: SmkParam):
 
 
 def _snakemake_execute_process(
-    workspace_id: str, unique_id: str, params: SmkParam
+    workspace_id: str,
+    unique_id: str,
+    params: SmkParam,
+    logging_user_id: Optional[str] = None,
 ) -> bool:
+    # Set logging_user_id in the subprocess context for logging
+    AppLogger.set_user_id(logging_user_id)
+
     # ------------------------------------------------------------
     # Snakemake execution process
     # ------------------------------------------------------------
