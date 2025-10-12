@@ -20,20 +20,35 @@ class LogLevel(str, Enum):
 class LogRecordReader(ContentUnitReader):
     """Log record reader that treats each log entry as a unit"""
 
-    def __init__(self, levels: list[LogLevel], **kwargs) -> None:
+    def __init__(
+        self,
+        levels: list[LogLevel],
+        filter_user_id: str = None,
+        **kwargs,
+    ) -> None:
         if LogLevel.ALL in levels:
             self.levels: list[bytes] = []
         else:
             self.levels: list[bytes] = [level.value.encode() for level in levels]
 
+        # User ID filter (None means no filtering)
+        self.filter_user_id: bytes = filter_user_id.encode() if filter_user_id else None
+
+        # Timestamp pattern shared between start_pattern and full pattern
+        timestamp_pattern = rb"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}"
+
+        # Pattern to detect the start of a log entry (for multiline support)
         self.start_pattern = re.compile(
-            rb"(?=^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})", re.MULTILINE
+            rb"(?=^" + timestamp_pattern + rb")", re.MULTILINE
         )
+
+        # Full pattern to parse complete log entries including user_id field
         self.pattern = re.compile(
-            rb"^(?P<asctime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) "
+            rb"^(?P<asctime>" + timestamp_pattern + rb") "
             rb"(?:\x1b\[\d+m)?(?P<levelprefix>\w+)(?:\x1b\[0m)?:?\s+"
             rb"\[(?P<name>[^\]]+)\] "
             rb"\((?P<process>\w+)\) "
+            rb"\(user:(?P<user_id>[^\)]*)\) "
             rb"(?P<funcName>\w+)\(\):(?P<lineno>\d+) - "
             rb"(?P<message>.*)",
             re.DOTALL,
@@ -57,6 +72,7 @@ class LogRecordReader(ContentUnitReader):
             "timestamp": components["asctime"],
             "level": components["levelprefix"],
             "name": components["name"],
+            "user_id": components["user_id"],
             "function": components["funcName"],
             "line": int(components["lineno"]),
             "message": components["message"],
@@ -72,8 +88,15 @@ class LogRecordReader(ContentUnitReader):
         if not unit_dict["parsed"]:
             return False
 
+        # Filter by log level
         if self.levels:
-            return unit_dict["level"] in self.levels
+            if unit_dict["level"] not in self.levels:
+                return False
+
+        # Filter by user_id
+        if self.filter_user_id is not None:
+            if unit_dict["user_id"] != self.filter_user_id:
+                return False
 
         return True
 
@@ -83,8 +106,9 @@ class LogReader(PaginatedFileReader):
         self,
         file_path=DIRPATH.LOG_FILE_PATH,
         levels: list[LogLevel] = [],
+        filter_user_id: str = None,
         **kwargs,
     ):
         super().__init__(file_path, **kwargs)
         self.file_path = file_path
-        self.unit_reader = LogRecordReader(levels=levels)
+        self.unit_reader = LogRecordReader(levels=levels, filter_user_id=filter_user_id)
