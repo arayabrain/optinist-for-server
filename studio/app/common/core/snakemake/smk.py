@@ -22,6 +22,7 @@ class FlowConfig:
     rules: Dict[str, Rule]
     last_output: list
     nwb_template: dict
+    user_id: str = None  # User ID for logging purposes
 
 
 class ForceRun(BaseModel):

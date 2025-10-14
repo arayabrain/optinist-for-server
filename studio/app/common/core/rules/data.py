@@ -23,6 +23,10 @@ def main():
         from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil
         from studio.app.const import FILETYPE
 
+        # Set user_id in logging context from snakemake config
+        user_id = snakemake.config.get("user_id")
+        AppLogger.set_user_id(user_id)
+
         last_output = snakemake.config["last_output"]
 
         rule_config = RuleConfigReader.read(snakemake.params.name)

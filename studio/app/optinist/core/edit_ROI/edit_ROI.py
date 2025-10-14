@@ -55,12 +55,15 @@ class EditRoiUtils:
 
     @classmethod
     def execute(cls, filepath: set):
+        # Get logging_user_id from current context to pass to subprocess
+        logging_user_id = AppLogger.get_user_id()
+
         result = False
 
         with ProcessPoolExecutor(max_workers=1) as executor:
             logger.info("start snakemake edit_roi process.")
 
-            future = executor.submit(cls._execute_process, filepath)
+            future = executor.submit(cls._execute_process, filepath, logging_user_id)
             result = future.result()
 
             logger.info("finish snakemake edit_roi process. result: %s", result)
@@ -70,7 +73,10 @@ class EditRoiUtils:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @classmethod
-    def _execute_process(cls, filepath: str) -> bool:
+    def _execute_process(cls, filepath: str, logging_user_id: str = None) -> bool:
+        # Set logging_user_id in the subprocess context for logging
+        AppLogger.set_user_id(logging_user_id)
+
         result = snakemake(
             DIRPATH.SNAKEMAKE_FILEPATH,
             use_conda=True,
@@ -80,6 +86,7 @@ class EditRoiUtils:
                 "type": "EDIT_ROI",
                 "algo": cls.get_algo(filepath),
                 "file_path": filepath,
+                "user_id": logging_user_id,  # Pass user_id to snakemake config
             },
         )
 

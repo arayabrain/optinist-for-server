@@ -18,6 +18,10 @@ def main():
     try:
         from studio.app.optinist.core.edit_ROI import EditROI
 
+        # Set user_id in logging context from snakemake config
+        user_id = snakemake.config.get("user_id")
+        AppLogger.set_user_id(user_id)
+
         config = snakemake.config
         EditROI(file_path=config["file_path"]).commit()
 

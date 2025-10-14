@@ -22,6 +22,10 @@ def main():
         from studio.app.common.core.utils.filepath_creater import join_filepath
         from studio.app.dir_path import DIRPATH
 
+        # Set user_id in logging context from snakemake config
+        user_id = snakemake.config.get("user_id")
+        AppLogger.set_user_id(user_id)
+
         last_output = [
             join_filepath([DIRPATH.OUTPUT_DIR, x])
             for x in snakemake.config["last_output"]
