@@ -137,9 +137,11 @@ class WorkflowRunner:
         nwb_template = get_typecheck_params(self.runItem.nwbParam, "nwb")
 
         # Get client_id from current logging context to pass to snakemake workflow
-        from studio.app.common.core.logger import AppLogger
+        from studio.app.common.core.logger_context_helpers import (
+            get_client_id_for_subprocess,
+        )
 
-        client_id = AppLogger.get_client_id()
+        client_id = get_client_id_for_subprocess()
 
         flow_config = FlowConfig(
             rules=rules,

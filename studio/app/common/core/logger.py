@@ -1,9 +1,11 @@
+import hashlib
 import logging
 import logging.config
 import os
 import platform
 import traceback
 from contextvars import ContextVar
+from datetime import datetime
 from typing import Optional
 
 import yaml
@@ -158,6 +160,34 @@ class AppLogger:
         Get client_id from the current context
         """
         return _client_id_context.get()
+
+    @staticmethod
+    def generate_client_id(uid: str, auto_refresh: bool = False) -> str:
+        """
+        Generate a client_id for logging based on the specified uid.
+
+        Args:
+            uid: User ID to generate client_id from
+            auto_refresh: If true, refresh id at period interval (weekly)
+
+        Returns:
+            Generated client_id (16 character hash)
+        """
+        if not uid:
+            return uid
+
+        if auto_refresh:
+            datetime_str = datetime.now().strftime(
+                "%Y-%m-%d-%w"
+            )  # Refresh by period (weekly)
+            hash_source = f"{uid}-{datetime_str}"
+        else:
+            hash_source = uid
+
+        client_id = hashlib.md5(hash_source.encode()).hexdigest()
+        client_id = client_id[0:16]
+
+        return client_id
 
     @staticmethod
     def format_exc_traceback(e: Exception):

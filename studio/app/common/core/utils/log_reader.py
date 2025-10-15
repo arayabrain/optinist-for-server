@@ -1,9 +1,7 @@
 import re
 from enum import Enum
 
-from studio.app.common.core.middleware.logging_middleware import (
-    ClientIdLoggingMiddleware,
-)
+from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.mode import MODE
 from studio.app.common.core.utils.file_reader import (
     ContentUnitReader,
@@ -36,7 +34,9 @@ class LogRecordReader(ContentUnitReader):
             self.levels: list[bytes] = [level.value.encode() for level in levels]
 
         # client_id filter (None means no filtering)
-        client_id = ClientIdLoggingMiddleware.generate_client_id(filter_user_id)
+        client_id = (
+            AppLogger.generate_client_id(filter_user_id) if filter_user_id else None
+        )
         self.filter_client_id: bytes = client_id.encode() if client_id else None
 
         # Timestamp pattern shared between start_pattern and full pattern

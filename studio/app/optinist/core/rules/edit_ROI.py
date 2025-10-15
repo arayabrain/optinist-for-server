@@ -9,7 +9,10 @@ from os.path import abspath, dirname
 ROOT_DIRPATH = dirname(dirname(dirname(dirname(dirname(dirname(abspath(__file__)))))))
 sys.path.append(ROOT_DIRPATH)
 
-from studio.app.common.core.logger import LOGGING_CLIENT_ID_KEY, AppLogger
+from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.logger_context_helpers import (
+    init_client_id_from_snakemake_config,
+)
 
 logger = AppLogger.get_logger()
 
@@ -18,9 +21,8 @@ def main():
     try:
         from studio.app.optinist.core.edit_ROI import EditROI
 
-        # Set client_id in logging context from snakemake config
-        client_id = snakemake.config.get(LOGGING_CLIENT_ID_KEY)
-        AppLogger.set_client_id(client_id)
+        # Initialize client_id from snakemake config
+        init_client_id_from_snakemake_config(snakemake.config)
 
         config = snakemake.config
         EditROI(file_path=config["file_path"]).commit()
