@@ -40,7 +40,9 @@ async def get_log_data(
 ):
     try:
         stop_offset = None
-        log_reader = LogReader(levels=levels, filter_user_id=current_user.uid)
+        log_reader = LogReader(
+            levels=levels, filter_user_id=current_user.uid if current_user else None
+        )
 
         if search:
             stop_offset, offset = log_reader.get_unit_position_from_search_text(

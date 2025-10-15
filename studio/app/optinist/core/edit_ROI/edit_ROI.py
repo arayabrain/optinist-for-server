@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 from snakemake import snakemake
 
 from studio.app.common.core.experiment.experiment import ExptOutputPathIds
-from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.logger import LOGGING_CLIENT_ID_KEY, AppLogger
 from studio.app.common.core.rules.runner import Runner
 from studio.app.common.core.snakemake.snakemake_reader import SmkConfigReader
 from studio.app.common.core.utils.filepath_creater import join_filepath
@@ -56,7 +56,7 @@ class EditRoiUtils:
     @classmethod
     def execute(cls, filepath: set):
         # Get logging_user_id from current context to pass to subprocess
-        logging_user_id = AppLogger.get_user_id()
+        logging_user_id = AppLogger.get_client_id()
 
         result = False
 
@@ -73,9 +73,9 @@ class EditRoiUtils:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @classmethod
-    def _execute_process(cls, filepath: str, logging_user_id: str = None) -> bool:
-        # Set logging_user_id in the subprocess context for logging
-        AppLogger.set_user_id(logging_user_id)
+    def _execute_process(cls, filepath: str, client_id: str = None) -> bool:
+        # Set client_id in the subprocess context for logging
+        AppLogger.set_client_id(client_id)
 
         result = snakemake(
             DIRPATH.SNAKEMAKE_FILEPATH,
@@ -86,7 +86,7 @@ class EditRoiUtils:
                 "type": "EDIT_ROI",
                 "algo": cls.get_algo(filepath),
                 "file_path": filepath,
-                "user_id": logging_user_id,  # Pass user_id to snakemake config
+                LOGGING_CLIENT_ID_KEY: client_id,
             },
         )
 

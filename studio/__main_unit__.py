@@ -14,7 +14,7 @@ from studio.app.common.core.auth.auth_dependencies import (
     get_current_user,
 )
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.middleware import UserIdLoggingMiddleware
+from studio.app.common.core.middleware import ClientIdLoggingMiddleware
 from studio.app.common.core.mode import MODE
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
@@ -111,8 +111,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add UserIdLoggingMiddleware to capture user_id for logging
-app.add_middleware(UserIdLoggingMiddleware)
+# Add LoggingMiddleware to capture client_id for logging
+app.add_middleware(ClientIdLoggingMiddleware)
 
 
 @app.get("/is_standalone", response_model=bool, tags=["others"])

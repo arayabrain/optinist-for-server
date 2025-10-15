@@ -2,6 +2,8 @@
 Middleware modules for the Studio application
 """
 
-from studio.app.common.core.middleware.logging_middleware import UserIdLoggingMiddleware
+from studio.app.common.core.middleware.logging_middleware import (
+    ClientIdLoggingMiddleware,
+)
 
-__all__ = ["UserIdLoggingMiddleware"]
+__all__ = ["ClientIdLoggingMiddleware"]

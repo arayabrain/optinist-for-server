@@ -11,8 +11,12 @@ import yaml
 from studio.app.common.core.mode import MODE
 from studio.app.dir_path import DIRPATH
 
-# Context variable for storing user_id per request/context
-_user_id_context: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
+LOGGING_CLIENT_ID_KEY = "client_id"
+
+# Context variable for storing client_id per request/context
+_client_id_context: ContextVar[Optional[str]] = ContextVar(
+    LOGGING_CLIENT_ID_KEY, default=None
+)
 
 
 class AppLogger:
@@ -22,15 +26,22 @@ class AppLogger:
 
     LOGGER_NAME = "optinist"
 
-    class UserIdFilter(logging.Filter):
+    class ClientIdFilter(logging.Filter):
         """
-        Logging filter to inject user_id from context into log records
+        Logging filter to inject client_id from context into log records
         """
 
+        # Alternate text to log if client_id is not obtained
+        NO_CLIENT_ID_DEFAULT_VALUE = "default"
+
         def filter(self, record):
-            # Get user_id from context, default to "none" if not set
-            user_id = _user_id_context.get()
-            record.user_id = user_id if user_id is not None else "none"
+            # Get client_id from context, default to "none" if not set
+            client_id = _client_id_context.get()
+            record.client_id = (
+                client_id
+                if client_id is not None
+                else __class__.NO_CLIENT_ID_DEFAULT_VALUE
+            )
             return True
 
     @classmethod
@@ -107,19 +118,20 @@ class AppLogger:
             log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
             logging_config["handlers"]["rotating_file"]["filename"] = log_file
 
-        # Add UserIdFilter configuration to filters section
+        # Add ClientIdFilter configuration to filters section
+        CLIENT_ID_FILTER_NAME = "client_id_filter"
         if "filters" not in logging_config:
             logging_config["filters"] = {}
-        logging_config["filters"]["user_id_filter"] = {
-            "()": "studio.app.common.core.logger.AppLogger.UserIdFilter"
+        logging_config["filters"][CLIENT_ID_FILTER_NAME] = {
+            "()": "studio.app.common.core.logger.AppLogger.ClientIdFilter"
         }
 
-        # Add user_id_filter to all handlers
+        # Add client_id_filter to all handlers
         for handler_config in logging_config.get("handlers", {}).values():
             if "filters" not in handler_config:
                 handler_config["filters"] = []
-            if "user_id_filter" not in handler_config["filters"]:
-                handler_config["filters"].append("user_id_filter")
+            if CLIENT_ID_FILTER_NAME not in handler_config["filters"]:
+                handler_config["filters"].append(CLIENT_ID_FILTER_NAME)
 
         return logging_config
 
@@ -134,18 +146,18 @@ class AppLogger:
         return logger
 
     @staticmethod
-    def set_user_id(user_id: Optional[str]):
+    def set_client_id(client_id: Optional[str]):
         """
-        Set user_id in the current context for logging
+        Set client_id in the current context for logging
         """
-        _user_id_context.set(user_id)
+        _client_id_context.set(client_id)
 
     @staticmethod
-    def get_user_id() -> Optional[str]:
+    def get_client_id() -> Optional[str]:
         """
-        Get user_id from the current context
+        Get client_id from the current context
         """
-        return _user_id_context.get()
+        return _client_id_context.get()
 
     @staticmethod
     def format_exc_traceback(e: Exception):
