@@ -38,22 +38,9 @@ def stat_to_cellmask(
 
     Returns:
         scipy.sparse.csc_matrix of shape (pixels, n_cells)
-            - pixels = Ly × Lx (flattened in Fortran order)
+            - pixels = Ly x Lx (flattened image)
             - Each column is one cell's spatial footprint
 
-    Mathematical Notes:
-        - CRITICAL: Uses Fortran (column-major) indexing
-            linear_index = x * Ly + y
-        - This matches MATLAB/CaImAn convention
-        - DO NOT use Python row-major: y * Lx + x
-
-    Example:
-        stat = [
-            {'ypix': [10, 11], 'xpix': [20, 20], 'lam': [0.8, 0.6]},
-            {'ypix': [50, 51], 'xpix': [60, 60], 'lam': [0.9, 0.7]}
-        ]
-        cellmask = stat_to_cellmask(stat, Ly=512, Lx=512)
-        # Shape: (262144, 2) = (512*512 pixels, 2 cells)
     """
     n_cells = len(stat)
     n_pixels = Ly * Lx
@@ -64,8 +51,6 @@ def stat_to_cellmask(
     col_ind = []
 
     for cell_idx, s in enumerate(stat):
-        # CRITICAL: Use Fortran order (column-major)
-        # linear_index = x * Ly + y
         ypix = np.array(s["ypix"])
         xpix = np.array(s["xpix"])
         lam = np.array(s["lam"])

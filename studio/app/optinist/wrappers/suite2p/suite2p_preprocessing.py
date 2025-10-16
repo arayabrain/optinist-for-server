@@ -10,7 +10,10 @@ import os
 import numpy as np
 
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.utils.filepath_creater import join_filepath
+from studio.app.common.core.utils.filepath_creater import (
+    create_directory,
+    join_filepath,
+)
 from studio.app.common.dataclass import ImageData
 from studio.app.const import TS_SUFFIX
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
@@ -41,14 +44,31 @@ def suite2p_preprocessing(
         images: ImageData from preprocessing node containing image stack (T, Y, X)
         output_dir: Directory for output files
         params: Configuration parameters including:
-            - tau: Timescale of calcium indicator (default: 1.0)
+            Cell Detection:
+            - tau: Timescale of calcium indicator (default: 1.25)
             - threshold_scaling: Detection threshold multiplier (default: 1.0)
             - max_overlap: Maximum allowed ROI overlap (default: 0.75)
+            - spatial_hp_detect: Spatial high-pass filter window (default: 25)
+            - connected: Use connected components for ROI detection (default: True)
+
+            ROI Extraction:
+            - neuropil_extract: Extract neuropil traces (default: True)
+            - inner_neuropil_radius: Pixels between ROI and neuropil (default: 2)
+            - min_neuropil_pixels: Minimum neuropil pixels (default: 350)
+
+            ExpDB-Specific:
             - neucoeff: Neuropil contamination coefficient (default: 0.7)
             - normalize_by_energy: Apply energy normalization (default: True)
-            - roi_thr: ROI pixel energy threshold (default: 0.9)
+
+            Visualization:
+            - roi_thr_bool: Apply energy thresholding to ROI pixels (default: False)
+            - roi_thr: ROI pixel energy threshold when roi_thr_bool=True (default: 0.9)
+
+            Output Control:
             - create_Yr: Create Yr.mat file (default: True)
             - create_C_or: Create C_or.mat file (default: False)
+            - validate_outputs: Validate .mat files after creation (default: True)
+            - require_trialstructure: Require trial structure file (default: False)
         **kwargs: Additional arguments including nwbfile metadata
 
     Returns:
@@ -86,7 +106,9 @@ def suite2p_preprocessing(
     create_Yr = params.pop("create_Yr", True)
     create_C_or = params.pop("create_C_or", False)
     validate_outputs = params.pop("validate_outputs", True)
+    roi_thr_bool = params.pop("roi_thr_bool", False)
     roi_thr = params.pop("roi_thr", 0.9)
+    require_trialstructure = params.pop("require_trialstructure", False)
 
     # Get file path and extract experiment ID
     file_path = images.path
@@ -110,51 +132,98 @@ def suite2p_preprocessing(
     fs = nwbfile.get("imaging_plane", {}).get("imaging_rate", 30)
     logger.info(f"Frame rate: {fs} Hz")
 
-    # Verify trial structure file exists
+    # Verify trial structure file exists (optional for testing)
     ts_filename = f"{exp_id}_{TS_SUFFIX}.mat"
     trialstructure_path = join_filepath(
         [EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id, ts_filename]
     )
 
     if not os.path.exists(trialstructure_path):
-        raise FileNotFoundError(
-            f"Required trial structure file not found: {trialstructure_path}\n"
-            f"This file must be created before running cell detection."
-        )
+        if require_trialstructure:
+            raise FileNotFoundError(
+                f"Required trial structure file not found: {trialstructure_path}\n"
+                f"This file must be created before running cell detection."
+            )
+        else:
+            logger.warning(f"Trial structure file not found: {trialstructure_path}")
+            logger.warning("Continuing without trial structure (testing mode)")
+            trialstructure_path = None
+    else:
+        logger.info(f"Trial structure file found: {trialstructure_path}")
 
-    logger.info(f"Trial structure file found: {trialstructure_path}")
-
-    # Setup Suite2p ops - merge defaults with our parameters
-    # Use dict merge to preserve all default_ops values
-    ops = {
-        **default_ops(),
-        "Ly": Ly,
-        "Lx": Lx,
-        "nframes": T,
-        "fs": fs,
-        **params,
-    }
-
-    # Set required parameters for detection that are normally set during registration
-    # yrange and xrange define the ROI region to analyze (default to full frame)
-    ops["yrange"] = [0, Ly]
-    ops["xrange"] = [0, Lx]
-
-    # Convert image stack to format Suite2p expects
-    # Suite2p expects (Ly, Lx, T) for detection
-    # Optimize: Convert to int16 first, then transpose to avoid double memory usage
+    # Setup Suite2p ops - use io.tiff_to_binary for proper preprocessing
+    # First, save the image stack as a temporary TIFF file
     import tempfile
 
-    with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp_file:
-        tmp_bin_path = tmp_file.name
-        # Write directly in chunks to avoid holding full transposed array in memory
-        image_stack_int16 = image_stack.astype(np.int16)
-        image_stack_suite2p = np.transpose(image_stack_int16, (1, 2, 0))
-        image_stack_suite2p.tofile(tmp_file)
-        # Free memory immediately
-        del image_stack_int16
+    import tifffile
+    from suite2p import io
 
-    ops["reg_file"] = tmp_bin_path
+    # Create temporary directory for Suite2p processing
+    temp_dir = tempfile.mkdtemp(prefix="suite2p_preprocessing_")
+    temp_tiff_path = join_filepath([temp_dir, f"{exp_id}_temp.tiff"])
+
+    # Normalize float data to int16 range (match suite2p_file_convert)
+    if image_stack.dtype == np.float32 or image_stack.dtype == np.float64:
+        logger.info(
+            f"Normalizing float data to int16 range: "
+            f"min={image_stack.min()}, max={image_stack.max()}"
+        )
+        image_stack_normalized = (image_stack - image_stack.min()) / (
+            image_stack.max() - image_stack.min()
+        )
+        image_stack_int16 = (image_stack_normalized * np.iinfo(np.int16).max).astype(
+            np.int16
+        )
+        del image_stack_normalized
+    else:
+        image_stack_int16 = image_stack.astype(np.int16)
+
+    # Write temporary TIFF file
+    logger.info(f"Writing temporary TIFF: {temp_tiff_path}")
+    tifffile.imwrite(temp_tiff_path, image_stack_int16)
+    del image_stack_int16
+
+    # Setup ops for io.tiff_to_binary
+    db = {
+        "data_path": [temp_dir],
+        "tiff_list": [os.path.basename(temp_tiff_path)],
+        "save_path0": output_dir,
+        "save_folder": "suite2p",
+    }
+
+    # Merge all ops together
+    # Note: params should come before fs to allow NWB metadata to override
+    ops = {
+        **default_ops(),
+        **params,
+        "fs": fs,  # NWB metadata overrides params
+        **db,
+    }
+
+    # Create suite2p output directory
+    suite2p_dir = join_filepath([ops["save_path0"], ops["save_folder"]])
+    create_directory(suite2p_dir)
+
+    # Use Suite2p's tiff_to_binary for proper preprocessing
+    # This computes meanImg, max_proj, Vcorr, and creates binary file
+    logger.info("Running Suite2p tiff_to_binary preprocessing...")
+    logger.info(
+        f"Pre-detection ops: fs={ops.get('fs')}, tau={ops.get('tau')}, "
+        f"high_pass={ops.get('high_pass')}, "
+        f"spatial_hp_detect={ops.get('spatial_hp_detect')}"
+    )
+    ops = io.tiff_to_binary(ops.copy())
+    logger.info("Suite2p preprocessing complete")
+    logger.info(f"Binary file created at: {ops.get('reg_file')}")
+
+    # Clean up temporary TIFF
+    os.remove(temp_tiff_path)
+    os.rmdir(temp_dir)
+
+    # Extract dimensions from ops
+    Ly = ops["Ly"]
+    Lx = ops["Lx"]
+    T = ops["nframes"]
 
     # Initialize default empty outputs
     empty_roi = np.full((Ly, Lx), np.nan)
@@ -182,6 +251,13 @@ def suite2p_preprocessing(
 
         # Step 1: ROI Detection
         logger.info("Running Suite2p ROI detection...")
+        logger.info(
+            f"Detection input: Ly={ops['Ly']}, Lx={ops['Lx']}, nframes={ops['nframes']}"
+        )
+        logger.info(
+            f"Binary file: {ops.get('reg_file')}, "
+            f"exists={os.path.exists(ops.get('reg_file', ''))}"
+        )
         ops, stat = detection.detect(ops=ops, classfile=classfile)
         logger.info(f"Detected {len(stat)} ROIs")
 
@@ -201,37 +277,49 @@ def suite2p_preprocessing(
                 f"{len(iscell) - np.sum(iscell)} non-cells"
             )
 
-            # Step 4: Create visualization ROIs with energy thresholding
+            # Step 4: Create visualization ROIs
             arrays = []
             for i, s in enumerate(stat):
-                # Apply energy threshold to ROI pixels (like CaImAn's get_roi)
-                lam = np.array(s["lam"])
-                idx = np.argsort(lam)[::-1]  # Sort by weight, highest first
-                cumEn = np.cumsum(lam[idx] ** 2)
-                cumEn /= cumEn[-1]  # Normalize to [0, 1]
+                if roi_thr_bool:
+                    # Apply energy threshold to ROI pixels (like CaImAn's get_roi)
+                    lam = np.array(s["lam"])
+                    idx = np.argsort(lam)[::-1]  # Sort by weight, highest first
+                    cumEn = np.cumsum(lam[idx] ** 2)
+                    cumEn /= cumEn[-1]  # Normalize to [0, 1]
 
-                # Keep pixels up to roi_thr cumulative energy
-                keep_idx = idx[cumEn <= roi_thr]
+                    # Keep pixels up to roi_thr cumulative energy
+                    keep_idx = idx[cumEn <= roi_thr]
 
-                if len(keep_idx) > 0:
-                    # Create thresholded ROI
-                    thresholded_ypix = np.array(s["ypix"])[keep_idx]
-                    thresholded_xpix = np.array(s["xpix"])[keep_idx]
-                    thresholded_lam = lam[keep_idx]
+                    if len(keep_idx) > 0:
+                        # Create thresholded ROI
+                        thresholded_ypix = np.array(s["ypix"])[keep_idx]
+                        thresholded_xpix = np.array(s["xpix"])[keep_idx]
+                        thresholded_lam = lam[keep_idx]
 
+                        array = ROI(
+                            ypix=thresholded_ypix,
+                            xpix=thresholded_xpix,
+                            lam=thresholded_lam,
+                            med=s["med"],
+                            do_crop=False,
+                        ).to_array(Ly=Ly, Lx=Lx)
+                        array = array.astype(np.float32)
+                        array *= i + 1
+                        arrays.append(array)
+                    else:
+                        # Empty ROI if threshold filters everything
+                        arrays.append(np.zeros((Ly, Lx), dtype=np.float32))
+                else:
+                    # Use all pixels (match suite2p_roi behavior)
                     array = ROI(
-                        ypix=thresholded_ypix,
-                        xpix=thresholded_xpix,
-                        lam=thresholded_lam,
+                        ypix=s["ypix"],
+                        xpix=s["xpix"],
+                        lam=s["lam"],
                         med=s["med"],
                         do_crop=False,
                     ).to_array(Ly=Ly, Lx=Lx)
-                    array = array.astype(np.float32)
                     array *= i + 1
                     arrays.append(array)
-                else:
-                    # Empty ROI if threshold filters everything
-                    arrays.append(np.zeros((Ly, Lx), dtype=np.float32))
 
             im = np.stack(arrays)
             im[im == 0] = np.nan
@@ -241,44 +329,23 @@ def suite2p_preprocessing(
             logger.warning("No ROIs detected in the data")
 
     finally:
-        # Clean up temporary binary file
-        if os.path.exists(tmp_bin_path):
-            os.remove(tmp_bin_path)
+        # Clean up Suite2p binary file if needed
+        reg_file = ops.get("reg_file")
+        if reg_file and os.path.exists(reg_file):
+            try:
+                os.remove(reg_file)
+                logger.info(f"Cleaned up temporary binary file: {reg_file}")
+            except Exception as e:
+                logger.warning(f"Could not remove binary file {reg_file}: {e}")
 
-    # Separate cells and non-cells for visualization
-    idx_good = np.where(iscell == 1)[0].tolist()
-    idx_bad = np.where(iscell == 0)[0].tolist()
-
-    n_rois = len(idx_good)
-    n_noncell_rois = len(idx_bad)
+    # Create cell and non-cell ROI images (match suite2p_roi.py behavior)
+    n_rois = np.sum(iscell == 1)
+    n_noncell_rois = np.sum(iscell == 0)
 
     logger.info(f"Accepted cells: {n_rois}, Rejected: {n_noncell_rois}")
 
-    # Create cell and non-cell ROI images
-    if n_rois > 0:
-        cell_ims = im[idx_good].copy()
-        cell_roi = np.nanmax(cell_ims, axis=0)
-    else:
-        cell_ims = np.zeros((0, Ly, Lx), dtype=np.float32)
-        cell_roi = empty_roi.copy()
-
-    if n_noncell_rois > 0:
-        # Create output array directly to avoid intermediate copy
-        non_cell_roi = np.full((Ly, Lx), np.nan, dtype=np.float32)
-        # Create modified non-cell images for later processing if needed
-        non_cell_ims = im[idx_bad].copy()  # Need copy here for renumbering
-
-        # Renumber non-cells starting after cells
-        for idx, i in enumerate(range(n_rois, n_rois + n_noncell_rois)):
-            non_cell_ims[idx] = np.where(~np.isnan(non_cell_ims[idx]), i, np.nan)
-        non_cell_roi = np.nanmax(non_cell_ims, axis=0)
-    else:
-        non_cell_ims = np.zeros((0, Ly, Lx), dtype=np.float32)
-        non_cell_roi = empty_roi.copy()
-
-    # Recreate im array with properly separated and renumbered cells and non-cells
-    # This matches CaImAn's approach: im = np.vstack([cell_ims, non_cell_ims])
-    im = np.vstack([cell_ims, non_cell_ims])
+    cell_roi = np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi
+    non_cell_roi = np.nanmax(im[iscell == 0], axis=0) if len(im) > 0 else empty_roi
 
     # Step 5: Convert Suite2p outputs to ExpDB .mat files
     # Creates timecourse.mat and cellmask.mat for analyze_stats pipeline
@@ -332,11 +399,13 @@ def suite2p_preprocessing(
         logger.warning("No ROIs detected - skipping .mat file creation")
         raise ValueError("Suite2p detected no ROIs. Cannot proceed with analysis.")
 
-    # Step 6: Compute summary images & Create NWB metadata
-    mean_img = np.mean(image_stack, axis=0)
-    max_proj = np.max(image_stack, axis=0)
+    # Step 6: Get summary images from ops (computed by io.tiff_to_binary)
+    # These are computed from the motion-corrected images during tiff_to_binary
+    mean_img = ops.get("meanImg")
+    max_proj = ops.get("max_proj")
     Vcorr = ops.get("Vcorr")  # correlation image
-    Vcorr[np.isnan(Vcorr)] = 0  # Handle NaN values before uint8 conversion
+    if Vcorr is not None:
+        Vcorr[np.isnan(Vcorr)] = 0  # Handle NaN values before uint8 conversion
 
     nwbfile_out = {}
 
@@ -394,8 +463,13 @@ def suite2p_preprocessing(
     }
 
     # Step 7: Prepare output dictionary
+    # Include trial structure only if it exists
+    processed_data_paths = [timecourse_path]
+    if trialstructure_path is not None:
+        processed_data_paths.append(trialstructure_path)
+
     info = {
-        "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
+        "processed_data": ExpDbData(processed_data_paths),
         "mean_image": ImageData(
             np.array(mean_img, dtype=np.uint16),
             output_dir=output_dir,

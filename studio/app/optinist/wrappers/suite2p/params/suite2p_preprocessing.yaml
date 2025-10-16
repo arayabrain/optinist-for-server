@@ -1,123 +1,88 @@
 # Suite2p Preprocessing for ExpDB Workflow
 #
-# This configuration file contains parameters for Suite2p ROI detection
-# and conversion to ExpDB-compatible formats.
+# Performs Suite2p ROI detection and generates ExpDB-compatible output files.
+# Combines suite2p_file_convert + suite2p_roi functionality with ExpDB integration.
 #
 # Reference: https://suite2p.readthedocs.io/en/latest/settings.html
+
+# ----------------------------------------
+# File Conversion Settings
+# ----------------------------------------
+
+# Force use of scikit-image TIFF reader (from suite2p_file_convert)
+# Note: suite2p_preprocessing writes its own temp TIFF, so this has limited effect
+force_sktiff: False
+
+# Batch size for TIFF reading (from suite2p_file_convert)
+# Used to determine which TIFF reader to use
+batch_size: 500
 
 # ----------------------------------------
 # Main Settings
 # ----------------------------------------
 
-# Calcium indicator timescale (seconds)
+# Calcium indicator timescale (seconds) - this is the main parameter for deconvolution
 tau: 1.25
 
-# Frame rate (Hz) - will be overridden by NWB metadata if available
-fs: 2.0
+classification:
+  soma_crop: True        # crop dendrites for cell classification stats like compactness
 
 # ----------------------------------------
 # Cell Detection Parameters
 # ----------------------------------------
 
 cell_detection:
-  # Running mean subtraction window size (use low values for 1P imaging)
-  high_pass: 100
+  high_pass: 100         # running mean subtraction with window of size 'high_pass(use low values for 1P)
+  sparse_mode: True      # whether or not to run sparse_mode
+  max_overlap: 0.75      # cells with more overlap than this get removed during triage before refinement
+  nbinned: 5000          # max number of binned frames for cell detection
+  spatial_scale: 0       # 0: multi-scale; 1: 6 pixels 2: 12 pixels 3: 24 pixels 4: 48 pixels
+  threshold_scaling: 1.0 # adjust the automatically determined threshold by this scalar multiplier
+  max_iterations: 20     # maximum number of iterations to do cell detection
 
-  # Whether to run sparse mode detection
-  sparse_mode: True
+# ----------------------------------------
+# 1P-Specific Parameters
+# ----------------------------------------
 
-  # Cells with more overlap than this are removed during triage
-  max_overlap: 0.75
-
-  # Spatial scale: 0=multi-scale; 1=6px; 2=12px; 3=24px; 4=48px
-  spatial_scale: 0
-
-  # Adjust automatically determined threshold by this scalar
-  threshold_scaling: 1.0
-
-  # Maximum number of iterations for cell detection
-  max_iterations: 20
-
-  # Use connected components for ROI detection
-  connected: True
-
-  # Window for spatial high-pass filtering before detection
+1P:
+  # Window for spatial high-pass filtering for neuropil subtraction before detection
   spatial_hp_detect: 25
+
+# ----------------------------------------
+# Output Settings
+# ----------------------------------------
+
+Output:
+  preclassify: 0.       # apply classifier before signal extraction with probability 0.3
 
 # ----------------------------------------
 # ROI Extraction Parameters
 # ----------------------------------------
 
 ROI_extraction:
-  # Whether overlapping pixels are added to both ROIs (True) or thrown out (False)
-  allow_overlap: False
+  allow_overlap: False      # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
+  inner_neuropil_radius: 2  # number of pixels to keep between ROI and neuropil donut
+  min_neuropil_pixels: 350  # minimum number of pixels in the neuropil
 
-  # Pixels to keep between ROI and neuropil donut
-  inner_neuropil_radius: 2
-
-  # Minimum number of pixels in the neuropil
-  min_neuropil_pixels: 350
-
-  # Extract neuropil traces
-  neuropil_extract: True
-
-# ----------------------------------------
-# Classification Parameters
-# ----------------------------------------
-
-classification:
-  # Crop dendrites for cell classification stats like compactness
-  soma_crop: True
-
-# ----------------------------------------
-# Spike Deconvolution Parameters
-# ----------------------------------------
-
-spikedetect:
-  # Enable spike deconvolution
-  spikedetect: True
-
-  # Window for baseline calculation (seconds)
-  win_baseline: 60.0
-
-  # Gaussian sigma for baseline calculation (seconds)
-  sig_baseline: 10.0
 
 # ----------------------------------------
 # ExpDB-Specific Parameters
 # ----------------------------------------
 
-# Neuropil correction coefficient
-# Formula: F_corrected = (F - neucoeff * Fneu) + mean(Fneu)
-neucoeff: 0.7
+ExpDB:
+  fs: 2.0           # Frame rate (Hz) - will be overridden by NWB metadata if available
+  neucoeff: 0.7    # Neuropil correction coefficient. Formula: F_corrected = (F - neucoeff * Fneu) + mean(Fneu)
+  normalize_by_energy: True   # Apply AY-style energy normalization (recommended for ExpDB compatibility)
+  create_Yr: True # Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
+  # Matches CaImAn behavior; archival only, not used by analyze_stats
+  create_C_or: False  # Create C_or.mat (original temporal components)
+  validate_outputs: True # Validate .mat files after creation (round-trip test)
 
-# Apply AY-style energy normalization (recommended for ExpDB compatibility)
-normalize_by_energy: True
+  # ----------------------------------------
+  # Visualization Parameters
+  # ----------------------------------------
 
-# ----------------------------------------
-# Optional Outputs
-# ----------------------------------------
-
-# Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
-# Matches CaImAn behavior; archival only, not used by analyze_stats
-create_Yr: True
-
-# Create C_or.mat (original temporal components) - Archive only, not used by analyze_stats
-create_C_or: False
-
-# ----------------------------------------
-# Validation & Visualization
-# ----------------------------------------
-
-# Validate .mat files after creation (round-trip test)
-validate_outputs: True
-
-# ROI threshold for visualization (0-1)
-roi_thr: 0.9
-
-# ----------------------------------------
-# Output Settings
-# ----------------------------------------
-
-# Apply classifier before signal extraction (0 = after extraction)
-preclassify: 0.0
+  roi_thr_bool: False  # Apply energy thresholding to ROI pixels for visualization
+  # Set to False to match suite2p_roi behavior (use all pixels)
+  roi_thr: 0.9  # ROI threshold for visualization when roi_thr_bool=True (0-1)
+  # Only used if roi_thr_bool is enabled
