@@ -62,7 +62,7 @@ class EditRoiUtils:
     @with_client_id_context  # Automatically set client_id for logging
     def _execute_process(cls, filepath: str, client_id: str = None) -> bool:
         result = snakemake(
-            DIRPATH.SNAKEMAKE_FILEPATH,
+            DIRPATH.SNAKEMAKE_EDIT_ROI_FILEPATH,
             use_conda=True,
             cores=2,
             workdir=f"{os.path.dirname(DIRPATH.STUDIO_DIR)}",
