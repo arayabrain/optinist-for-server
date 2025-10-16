@@ -9,7 +9,11 @@ from fastapi import HTTPException, status
 from snakemake import snakemake
 
 from studio.app.common.core.experiment.experiment import ExptOutputPathIds
-from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.logger import LOGGING_CLIENT_ID_KEY, AppLogger
+from studio.app.common.core.logger_context_helpers import (
+    get_client_id_for_subprocess,
+    with_client_id_context,
+)
 from studio.app.common.core.rules.runner import Runner
 from studio.app.common.core.snakemake.snakemake_reader import SmkConfigReader
 from studio.app.common.core.utils.filepath_creater import join_filepath
@@ -55,12 +59,16 @@ class EditRoiUtils:
 
     @classmethod
     def execute(cls, filepath: set):
+        client_id = get_client_id_for_subprocess()
+
         result = False
 
         with ProcessPoolExecutor(max_workers=1) as executor:
             logger.info("start snakemake edit_roi process.")
 
-            future = executor.submit(cls._execute_process, filepath)
+            future = executor.submit(
+                cls._execute_process, filepath, client_id=client_id
+            )
             result = future.result()
 
             logger.info("finish snakemake edit_roi process. result: %s", result)
@@ -70,7 +78,8 @@ class EditRoiUtils:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @classmethod
-    def _execute_process(cls, filepath: str) -> bool:
+    @with_client_id_context  # Automatically set client_id for logging
+    def _execute_process(cls, filepath: str, client_id: str = None) -> bool:
         result = snakemake(
             DIRPATH.SNAKEMAKE_FILEPATH,
             use_conda=True,
@@ -80,6 +89,7 @@ class EditRoiUtils:
                 "type": "EDIT_ROI",
                 "algo": cls.get_algo(filepath),
                 "file_path": filepath,
+                LOGGING_CLIENT_ID_KEY: client_id,
             },
         )
 
