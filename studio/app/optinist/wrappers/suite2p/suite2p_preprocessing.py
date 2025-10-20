@@ -18,8 +18,7 @@ from studio.app.common.dataclass import ImageData
 from studio.app.const import TS_SUFFIX
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
-from studio.app.optinist.dataclass import (
-    EditRoiData,
+from studio.app.optinist.dataclass import (  # EditRoiData,
     ExpDbData,
     FluoData,
     IscellData,
@@ -102,8 +101,8 @@ def suite2p_preprocessing(
 
     # Extract Suite2p-specific params
     neucoeff = params.pop("neucoeff", 0.7)
-    normalize_by_energy = params.pop("normalize_by_energy", True)
-    create_Yr = params.pop("create_Yr", True)
+    normalize_by_energy = params.pop("normalize_by_energy", False)
+    create_Yr = params.pop("create_Yr", False)
     create_C_or = params.pop("create_C_or", False)
     validate_outputs = params.pop("validate_outputs", True)
     roi_thr_bool = params.pop("roi_thr_bool", False)
@@ -227,7 +226,7 @@ def suite2p_preprocessing(
 
     # Initialize default empty outputs
     empty_roi = np.full((Ly, Lx), np.nan)
-    im = np.zeros((0, Ly, Lx))
+    # im = np.zeros((0, Ly, Lx))
     F = np.zeros((0, T))
     Fneu = np.zeros((0, T))
     iscell = np.array([], dtype=int)
@@ -277,9 +276,23 @@ def suite2p_preprocessing(
                 f"{len(iscell) - np.sum(iscell)} non-cells"
             )
 
+            # Filter to only accepted cells for timecourse.mat
+            # This prevents analyze_stats from receiving all ROIs
+            cell_mask = iscell == 1
+            F_cells = F[cell_mask, :]
+            Fneu_cells = Fneu[cell_mask, :]
+            stat_cells = [s for i, s in enumerate(stat) if cell_mask[i]]
+            logger.info(
+                f"Filtered to {len(stat_cells)} accepted cells "
+                f"for timecourse.mat (from {len(stat)} total ROIs)"
+            )
+
             # Step 4: Create visualization ROIs
             arrays = []
             for i, s in enumerate(stat):
+                if not iscell[i]:  # Skip rejected ROIs
+                    continue
+
                 if roi_thr_bool:
                     # Apply energy threshold to ROI pixels (like CaImAn's get_roi)
                     lam = np.array(s["lam"])
@@ -321,9 +334,10 @@ def suite2p_preprocessing(
                     array *= i + 1
                     arrays.append(array)
 
-            im = np.stack(arrays)
-            im[im == 0] = np.nan
-            im -= 1
+            # MEMORY OPTIMIZATION: Comment out stacking all ROIs
+            # im = np.stack(arrays)
+            # im[im == 0] = np.nan
+            # im -= 1
 
         else:
             logger.warning("No ROIs detected in the data")
@@ -344,8 +358,17 @@ def suite2p_preprocessing(
 
     logger.info(f"Accepted cells: {n_rois}, Rejected: {n_noncell_rois}")
 
-    cell_roi = np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi
-    non_cell_roi = np.nanmax(im[iscell == 0], axis=0) if len(im) > 0 else empty_roi
+    # MEMORY OPTIMIZATION: Only create cell_roi, skip non_cell_roi and all_roi
+    # cell_roi = np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi
+    # non_cell_roi = np.nanmax(im[iscell == 0], axis=0) if len(im) > 0 else empty_roi
+
+    # Create cell_roi from arrays (which now only contains accepted cells)
+    # Use above commented out logic for production
+    if len(arrays) > 0:
+        cell_roi = np.nanmax(np.stack(arrays), axis=0)
+        del arrays  # Free memory
+    else:
+        cell_roi = empty_roi
 
     # Step 5: Convert Suite2p outputs to ExpDB .mat files
     # Creates timecourse.mat and cellmask.mat for analyze_stats pipeline
@@ -360,12 +383,27 @@ def suite2p_preprocessing(
         if create_Yr:
             import scipy.io
 
-            # Reshape image stack to Yr format: (pixels, T)
-            Yr = image_stack.astype(np.float32).reshape(T, Ly * Lx, order="F").T
-            scipy.io.savemat(
-                join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
-                {"Yr": Yr},
-            )
+            # Process Yr.mat creation in chunks to reduce memory
+            logger.info("Creating Yr.mat in chunks to reduce memory usage...")
+            chunk_size = 100  # Process 100 frames at a time
+            yr_path = join_filepath([output_dir, f"{exp_id}_Yr.mat"])
+
+            # Pre-allocate Yr array using memory-mapped file for large datasets
+            n_pixels = Ly * Lx
+            Yr = np.zeros((n_pixels, T), dtype=np.float32)
+
+            for start_idx in range(0, T, chunk_size):
+                end_idx = min(start_idx + chunk_size, T)
+                chunk = image_stack[start_idx:end_idx].astype(np.float32)
+                # Reshape chunk: (chunk_frames, Ly, Lx) ->
+                # (chunk_frames, n_pixels) -> (n_pixels, chunk_frames)
+                chunk_reshaped = chunk.reshape(
+                    end_idx - start_idx, n_pixels, order="F"
+                ).T
+                Yr[:, start_idx:end_idx] = chunk_reshaped
+                del chunk, chunk_reshaped
+
+            scipy.io.savemat(yr_path, {"Yr": Yr})
             del Yr  # Free memory immediately
             logger.info("Created Yr.mat")
 
@@ -376,10 +414,11 @@ def suite2p_preprocessing(
             "validate_outputs": validate_outputs,
         }
 
+        # Use filtered arrays (only accepted cells) for ExpDB .mat files
         mat_paths = convert_suite2p_to_expdb_mats(
-            F=F,
-            Fneu=Fneu,
-            stat=stat,
+            F=F_cells,
+            Fneu=Fneu_cells,
+            stat=stat_cells,
             Ly=Ly,
             Lx=Lx,
             output_dir=output_dir,
@@ -409,9 +448,8 @@ def suite2p_preprocessing(
 
     nwbfile_out = {}
 
-    # Add ROI metadata
-    # Note: Creating full image_mask for 2791 ROIs creates ~2.9GB of data
-    # Only store sparse representation (pixel indices) to save memory
+    # Add ROI metadata (match caiman_cnmf_preprocessing)
+    # MEMORY OPTIMIZATION: Store sparse representation (pixel indices) to save memory
     roi_list = []
     for i, s in enumerate(stat):
         #     roi_mask = ROI(
@@ -425,15 +463,15 @@ def suite2p_preprocessing(
             # Store sparse pixel representation instead of full mask
             "pixel_mask": np.array([s["ypix"], s["xpix"], s["lam"]]).T,
             # "image_mask": roi_mask,
-            "accepted": bool(iscell[i]),
-            "rejected": not bool(iscell[i]),
+            "accepted": bool(iscell[i] == 1),
+            "rejected": bool(iscell[i] == 0),
         }
         roi_list.append(kargs)
 
     nwbfile_out[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile_out[NWBDATASET.POSTPROCESS] = {
         function_id: {
-            # Don't store full im array to save memory (in development)
+            # MEMORY OPTIMIZATION: Skip storing all_roi_img
             # "all_roi_img": im,
             "mean_img": mean_img,
             "max_proj": max_proj,
@@ -454,16 +492,16 @@ def suite2p_preprocessing(
         function_id: {
             "Fluorescence": {
                 "table_name": "ROIs",
-                "region": list(range(len(stat))),
+                "region": list(range(len(F))),
                 "name": "Fluorescence",
-                "data": F.T,  # Transpose to (T, n_cells)
+                "data": F.T,  # Transpose to (T, n_rois)
                 "unit": "lumens",
             }
         }
     }
 
     # Step 7: Prepare output dictionary
-    # Include trial structure only if it exists
+    # Include trial structure if it exists
     processed_data_paths = [timecourse_path]
     if trialstructure_path is not None:
         processed_data_paths.append(trialstructure_path)
@@ -487,16 +525,17 @@ def suite2p_preprocessing(
         ),
         "fluorescence": FluoData(F, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),
-        "all_roi": RoiData(
-            np.nanmax(im, axis=0) if len(im) > 0 else empty_roi,
-            output_dir=output_dir,
-            file_name="all_roi",
-        ),
+        # MEMORY OPTIMIZATION: Comment out all_roi and non_cell_roi outputs
+        # "all_roi": RoiData(
+        #     np.nanmax(im, axis=0) if len(im) > 0 else empty_roi,
+        #     output_dir=output_dir,
+        #     file_name="all_roi",
+        # ),
         "cell_roi": RoiData(cell_roi, output_dir=output_dir, file_name="cell_roi"),
-        "non_cell_roi": RoiData(
-            non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
-        ),
-        "edit_roi_data": EditRoiData(images=image_stack, im=im),
+        # "non_cell_roi": RoiData(
+        #     non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
+        # ),
+        # "edit_roi_data": EditRoiData(images=image_stack, im=im),
         "nwbfile": nwbfile_out,
     }
 

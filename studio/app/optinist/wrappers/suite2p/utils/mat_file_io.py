@@ -55,18 +55,14 @@ def save_timecourse_mat(
         raise ValueError(
             f"Timecourse data must be 2D, got shape {timecourse_data.shape}"
         )
-
-    # Auto-detect orientation (heuristic: T > n_cells)
-    # If first dimension is smaller, likely (n_cells, T) so transpose
-    if timecourse_data.shape[0] < timecourse_data.shape[1]:
-        timecourse_data = timecourse_data.T
-        warnings.warn(
-            f"Auto-transposed timecourse from {timecourse_data.T.shape} to "
-            f"{timecourse_data.shape}. "
-            "Assumed format was (n_cells, T), converted to (T, n_cells)."
-        )
-
     T, n_cells = timecourse_data.shape
+    # Sanity check: warn if dimensions look swapped based on typical values
+    if T > 10000 or n_cells < 10:
+        warnings.warn(
+            f"Timecourse shape ({T}, {n_cells}) looks unusual. "
+            f"Expected format is (T, n_cells). "
+            f"If T={T} is actually n_cells, please transpose before calling."
+        )
 
     # Basic shape validation
     if T < 10:

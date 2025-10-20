@@ -72,17 +72,12 @@ ROI_extraction:
 ExpDB:
   fs: 2.0           # Frame rate (Hz) - will be overridden by NWB metadata if available
   neucoeff: 0.7    # Neuropil correction coefficient. Formula: F_corrected = (F - neucoeff * Fneu) + mean(Fneu)
-  normalize_by_energy: True   # Apply AY-style energy normalization (recommended for ExpDB compatibility)
-  create_Yr: True # Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
+  normalize_by_energy: False   # Apply AY-style energy normalization (recommended for ExpDB compatibility)
+  create_Yr: False # Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
   # Matches CaImAn behavior; archival only, not used by analyze_stats
   create_C_or: False  # Create C_or.mat (original temporal components)
   validate_outputs: True # Validate .mat files after creation (round-trip test)
-
-  # ----------------------------------------
-  # Visualization Parameters
-  # ----------------------------------------
-
-  roi_thr_bool: False  # Apply energy thresholding to ROI pixels for visualization
+  roi_thr_bool: False  # Apply energy thresholding to ROI pixels for visualization (similar to CaImAn's get_roi)
   # Set to False to match suite2p_roi behavior (use all pixels)
   roi_thr: 0.9  # ROI threshold for visualization when roi_thr_bool=True (0-1)
   # Only used if roi_thr_bool is enabled
