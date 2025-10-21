@@ -30,9 +30,15 @@ import { RUN_STATUS } from "store/slice/Pipeline/PipelineType"
 import { handleWorkflowYamlError } from "store/slice/Pipeline/PipelineUtils"
 import { selectRunPostData } from "store/slice/Run/RunSelectors"
 import { selectModeStandalone } from "store/slice/Standalone/StandaloneSeclector"
-import { fetchWorkflow } from "store/slice/Workflow/WorkflowActions"
+import {
+  fetchWorkflow,
+  reproduceWorkflow,
+} from "store/slice/Workflow/WorkflowActions"
 import { getWorkspace } from "store/slice/Workspace/WorkspaceActions"
-import { selectIsWorkspaceOwner } from "store/slice/Workspace/WorkspaceSelector"
+import {
+  selectIsWorkspaceOwner,
+  selectCurrentWorkspaceId,
+} from "store/slice/Workspace/WorkspaceSelector"
 import {
   clearCurrentWorkspace,
   setActiveTab,
@@ -88,6 +94,7 @@ export function useRunPipeline() {
   const isStartedSuccess = useSelector(selectPipelineIsStartedSuccess)
   const runDisabled = useIsRunDisabled()
   const isExpdbBatchRun = useSelector(selectPipelineIsExpdbBatchRun)
+  const currentWorkspaceId = useSelector(selectCurrentWorkspaceId)
 
   const filePathIsUndefined = useSelector(selectFilePathIsUndefined)
   const algorithmNodeNotExist = useSelector(selectAlgorithmNodeNotExist)
@@ -181,6 +188,13 @@ export function useRunPipeline() {
   // タブ移動による再レンダリングするたびにスナックバーが実行されてしまう挙動を回避するために前回の値を保持
   const [prevStatus, setPrevStatus] = useState(status)
 
+  // Handle expdb batch run completion separately
+  const handleExpdbBatchRunCompletion = useCallback(() => {
+    if (uid && currentWorkspaceId) {
+      dispatch(reproduceWorkflow({ workspaceId: currentWorkspaceId, uid }))
+    }
+  }, [uid, currentWorkspaceId, dispatch])
+
   useEffect(() => {
     if (prevStatus !== status) {
       let isRunFinished = false
@@ -188,11 +202,17 @@ export function useRunPipeline() {
       if (status === RUN_STATUS.START_SUCCESS) {
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.FINISHED) {
+        // Show different message based on expdb batch run flag
+        const message = isExpdbBatchRun
+          ? "Analysis batch run started"
+          : "Workflow finished"
+        enqueueSnackbar(message, { variant: "success" })
+
+        // Update flowchart for expdb batch run
         if (isExpdbBatchRun) {
-          enqueueSnackbar("Analysis batch run started", { variant: "success" })
-        } else {
-          enqueueSnackbar("Workflow finished", { variant: "success" })
+          handleExpdbBatchRunCompletion()
         }
+
         isRunFinished = true
         dispatch(getExperiments())
       } else if (status === RUN_STATUS.ABORTED) {
@@ -212,7 +232,14 @@ export function useRunPipeline() {
 
       setPrevStatus(status)
     }
-  }, [dispatch, status, prevStatus, enqueueSnackbar, isExpdbBatchRun])
+  }, [
+    dispatch,
+    status,
+    prevStatus,
+    enqueueSnackbar,
+    isExpdbBatchRun,
+    handleExpdbBatchRunCompletion,
+  ])
 
   return {
     filePathIsUndefined,
