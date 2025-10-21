@@ -25,6 +25,9 @@ from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
+from studio.app.optinist.core.expdb.workflow_batch_runner import (
+    WorkflowExpdbBatchRunner,
+)
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.config import ExpDbExperimentFilterParams
@@ -937,8 +940,6 @@ def update_multiple_experiment_database_share_status(
     return True
 
 
-# TODO: Demo version of expdb_batch_run API
-# TODO: Permission control required
 @router.post(
     "/expdb/batch_run/{workspace_id}",
     response_model=str,
@@ -947,14 +948,18 @@ def update_multiple_experiment_database_share_status(
 async def expdb_batch_run(
     workspace_id: str, runItem: RunItem, background_tasks: BackgroundTasks
 ):
-    try:
-        unique_id = WorkflowRunner.create_workflow_unique_id()
+    # TODO: Demo version of expdb_batch_run API
+    # TODO: Permission control required
 
-        # TODO: Needs implementation
+    try:
+        new_unique_id = WorkflowRunner.create_workflow_unique_id()
+        WorkflowExpdbBatchRunner(
+            workspace_id, new_unique_id, runItem
+        ).run_batch_workflow(background_tasks)
 
         logger.info("Start processing expdb batch workflows.")
 
-        return unique_id
+        return new_unique_id
 
     except KeyError as e:
         logger.error(e, exc_info=True)
