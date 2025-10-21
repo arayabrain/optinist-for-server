@@ -419,14 +419,14 @@ class ExpDbBatchConcurrentProcess:
             logger.info("Run Analysis process")
 
             if expdb_batch.raw_path.microscope_file is None:
-                # If no microscope data, create cnmf_info from existing mat files
+                # If no microscope data, use existing processed mat files
                 logger.warning(
                     "No microscope data found. Will use existing processed data."
                 )
             else:
                 stack = expdb_batch.preprocess()
                 expdb_batch.generate_orimaps(stack)
-                expdb_batch.cell_detection_cnmf(stack)
+                expdb_batch.cell_detection(stack)
                 del stack
 
             stat_data = expdb_batch.generate_statdata()

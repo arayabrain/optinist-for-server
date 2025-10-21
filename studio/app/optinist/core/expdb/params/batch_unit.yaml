@@ -1,0 +1,7 @@
+# Batch Unit Configuration
+# Select which ROI detection method to use
+# roi_method_selector:
+#   1 = CaImAn CNMF (default)
+#   2 = Suite2p
+
+roi_method_selector: 2

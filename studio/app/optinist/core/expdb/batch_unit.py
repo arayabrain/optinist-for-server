@@ -154,6 +154,9 @@ class ExpDbBatch:
         self.nwbfile = {}
         self._configure_matplotlib()
 
+        # Load batch_unit config for ROI method selection
+        self.batch_config = self._load_batch_config()
+
     def __stopwatch_callback(watch, function=None):
         logging.getLogger(__class__.LOGGER_NAME).info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
@@ -166,6 +169,47 @@ class ExpDbBatch:
         circular_patterns = ["_ori", "_OF-PRC-", "_dot"]
         is_circular_data = any(pattern in data_name for pattern in circular_patterns)
         return is_circular_data
+
+    def _load_batch_config(self) -> dict:
+        """
+        Load batch_unit configuration file to determine ROI detection method.
+
+        Returns:
+            dict: Configuration containing roi_method_selector and method details
+        """
+        try:
+            config = get_default_params("batch_unit")
+            self.logger_.info(f"Loaded batch_unit config: {config}")
+            return config
+        except Exception as e:
+            self.logger_.warning(
+                f"Failed to load batch_unit.yaml config: {e}. "
+                f"Defaulting to CaImAn CNMF."
+            )
+            return {"roi_method_selector": 1}
+
+    def _get_roi_method(self) -> str:
+        """
+        Determine which ROI detection method to use based on config.
+
+        Returns:
+            str: Either 'caiman' or 'suite2p'
+        """
+        roi_method_selector = self.batch_config.get("roi_method_selector", 1)
+
+        if roi_method_selector == 1:
+            method = "caiman"
+        elif roi_method_selector == 2:
+            method = "suite2p"
+        else:
+            self.logger_.warning(
+                f"Unknown roi_method_selector: {roi_method_selector}. "
+                f"Defaulting to CaImAn."
+            )
+            method = "caiman"
+
+        self.logger_.info(f"Using ROI detection method: {method}")
+        return method
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
@@ -382,6 +426,32 @@ class ExpDbBatch:
             self.nwbfile = merge_nwbfile(self.nwbfile, result["nwbfile"])
 
         return result
+
+    @stopwatch(callback=__stopwatch_callback)
+    def cell_detection(self, stack: ImageData):
+        """
+        Run cell detection using method specified in batch_unit.yaml config.
+
+        Automatically selects between CaImAn CNMF or Suite2p based on
+        roi_method_selector in batch_unit.yaml:
+        - roi_method_selector == 1: Use CaImAn CNMF
+        - roi_method_selector == 2: Use Suite2p
+
+        Args:
+            stack: ImageData from preprocessing node (motion-corrected)
+
+        Returns:
+            Dictionary with processed_data (ExpDbData) and other outputs
+            from the selected cell detection method
+        """
+        roi_method = self._get_roi_method()
+
+        if roi_method == "suite2p":
+            self.logger_.info("Using Suite2p for cell detection")
+            return self.cell_detection_suite2p(stack)
+        else:  # Default to caiman
+            self.logger_.info("Using CaImAn CNMF for cell detection")
+            return self.cell_detection_cnmf(stack)
 
     @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:

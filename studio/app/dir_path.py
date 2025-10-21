@@ -66,3 +66,4 @@ class DIRPATH:
 class CORE_PARAM_PATH(Enum):
     nwb = f"{DIRPATH.APP_DIR}/optinist/core/nwb/nwb.yaml"
     snakemake = f"{DIRPATH.APP_DIR}/common/core/snakemake/snakemake.yaml"
+    batch_unit = f"{DIRPATH.APP_DIR}/optinist/core/expdb/params/batch_unit.yaml"

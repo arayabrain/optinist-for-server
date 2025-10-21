@@ -448,7 +448,7 @@ def suite2p_preprocessing(
 
     nwbfile_out = {}
 
-    # Add ROI metadata (match caiman_cnmf_preprocessing)
+    # Add ROI metadata (match caiman_preprocessing)
     # MEMORY OPTIMIZATION: Store sparse representation (pixel indices) to save memory
     roi_list = []
     for i, s in enumerate(stat):
