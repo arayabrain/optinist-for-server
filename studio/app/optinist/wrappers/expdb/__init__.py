@@ -7,6 +7,9 @@ from studio.app.optinist.wrappers.expdb.curvefit_tuning import curvefit_tuning
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 from studio.app.optinist.wrappers.expdb.stat_file_convert import stat_file_convert
 from studio.app.optinist.wrappers.expdb.vector_average import vector_average
+from studio.app.optinist.wrappers.suite2p.suite2p_preprocessing import (
+    suite2p_preprocessing,
+)
 
 expdb_wrapper_dict = {
     "expdb": {
@@ -18,6 +21,10 @@ expdb_wrapper_dict = {
             "caiman_cnmf_preprocessing": {
                 "function": caiman_cnmf_preprocessing,
                 "conda_name": "caiman",
+            },
+            "suite2p_preprocessing": {
+                "function": suite2p_preprocessing,
+                "conda_name": "suite2p",
             },
         },
         "analysis_preset": {
