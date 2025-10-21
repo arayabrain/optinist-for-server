@@ -7,6 +7,7 @@ import {
   pollRunResult,
   run,
   runByCurrentUid,
+  expdbBatchRun,
 } from "store/slice/Pipeline/PipelineActions"
 import {
   Pipeline,
@@ -119,13 +120,20 @@ export const pipelineSlice = createSlice({
           }
         },
       )
-      .addMatcher(isAnyOf(run.pending, runByCurrentUid.pending), (state) => {
-        state.run = {
-          status: RUN_STATUS.START_PENDING,
-        }
-      })
       .addMatcher(
-        isAnyOf(run.fulfilled, runByCurrentUid.fulfilled),
+        isAnyOf(run.pending, runByCurrentUid.pending, expdbBatchRun.pending),
+        (state) => {
+          state.run = {
+            status: RUN_STATUS.START_PENDING,
+          }
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          run.fulfilled,
+          runByCurrentUid.fulfilled,
+          expdbBatchRun.fulfilled,
+        ),
         (state, action) => {
           const runPostData = action.meta.arg.runPostData
           const uid = action.payload
@@ -140,11 +148,14 @@ export const pipelineSlice = createSlice({
           }
         },
       )
-      .addMatcher(isAnyOf(run.rejected, runByCurrentUid.rejected), (state) => {
-        state.run = {
-          status: RUN_STATUS.START_ERROR,
-        }
-      })
+      .addMatcher(
+        isAnyOf(run.rejected, runByCurrentUid.rejected, expdbBatchRun.rejected),
+        (state) => {
+          state.run = {
+            status: RUN_STATUS.START_ERROR,
+          }
+        },
+      )
       .addMatcher(
         isAnyOf(fetchWorkflow.rejected, clearFlowElements),
         () => initialState,
