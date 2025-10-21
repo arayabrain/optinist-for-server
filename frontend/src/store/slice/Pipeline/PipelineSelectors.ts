@@ -212,3 +212,7 @@ export const selectPipelineNodeResultOutputFileDataType =
       throw new Error(`key error. outputKey:${outputKey}`)
     }
   }
+
+export const selectPipelineIsExpdbBatchRun = (state: RootState) => {
+  return state.pipeline.isExpdbBatchRun
+}
