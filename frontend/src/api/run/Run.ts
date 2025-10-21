@@ -86,7 +86,7 @@ export async function expdbBatchRunApi(
   data: RunPostData,
 ): Promise<string> {
   const response = await axios.post(
-    `${BASE_URL}/run/util/expdb_batch_run/${workspaceId}`,
+    `${BASE_URL}/expdb/batch_run/${workspaceId}`,
     data,
   )
   return response.data
