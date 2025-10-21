@@ -23,7 +23,7 @@ describe("RunButtons component", () => {
     algorithmNodeNotExist: false,
     handleCancelPipeline: jest.fn(),
     handleRunPipeline: jest.fn(),
-    handleBatchRunPipeline: jest.fn(),
+    handleExpdbBatchRunPipeline: jest.fn(),
     handleRunPipelineByUid: jest.fn(),
   }
 
@@ -43,6 +43,14 @@ describe("RunButtons component", () => {
           type: 1, // WORKSPACE_TYPE.NORMAL
         },
       },
+      flowElement: {
+        flowNodes: [],
+        flowEdges: [],
+        flowPosition: { x: 0, y: 0, zoom: 1 },
+        elementCoord: {},
+        loading: false,
+      },
+      inputNode: {},
     })
   })
 

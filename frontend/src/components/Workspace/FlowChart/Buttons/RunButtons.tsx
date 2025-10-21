@@ -249,7 +249,7 @@ export const RunButtons = memo(function RunButtons(
         handleRun={onClickDialogRun}
         handleClose={() => setDialogOpen(false)}
       />
-      <RunDialog
+      <ExpdbBatchRunDialog
         open={expdbBatchDialogOpen}
         handleRun={onClickDialogExpdbBatchRun}
         handleClose={() => setExpdbBatchDialogOpen(false)}
@@ -262,14 +262,18 @@ interface RunDialogProps {
   open: boolean
   handleRun: (name: string) => void
   handleClose: () => void
+  title?: string
+  defaultName?: string
 }
 
 const RunDialog = memo(function RunDialog({
   open,
   handleClose,
   handleRun,
+  title = "Name and run workflow",
+  defaultName = "New flow",
 }: RunDialogProps) {
-  const [name, setName] = useState("New flow")
+  const [name, setName] = useState(defaultName)
   const [error, setError] = useState<string | null>(null)
   const onClickRun = () => {
     if (name !== "") {
@@ -286,7 +290,7 @@ const RunDialog = memo(function RunDialog({
   }
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Name and run workflow</DialogTitle>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <TextField
           label="name"
@@ -309,5 +313,27 @@ const RunDialog = memo(function RunDialog({
         </Button>
       </DialogActions>
     </Dialog>
+  )
+})
+
+interface ExpdbBatchRunDialogProps {
+  open: boolean
+  handleRun: (name: string) => void
+  handleClose: () => void
+}
+
+const ExpdbBatchRunDialog = memo(function ExpdbBatchRunDialog({
+  open,
+  handleClose,
+  handleRun,
+}: ExpdbBatchRunDialogProps) {
+  return (
+    <RunDialog
+      open={open}
+      handleRun={handleRun}
+      handleClose={handleClose}
+      title="Name and run analysis batch"
+      defaultName="New analysis batch"
+    />
   )
 })
