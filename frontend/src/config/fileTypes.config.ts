@@ -1,10 +1,28 @@
+import { WORKSPACE_TYPE } from "const/Workspace"
+
 // Define tree hierarchy constants for better maintainability
 export const TREE_HIERARCHY = {
   DATA: "Data",
+  BATCH_DATA: "Batch Data",
+  EXPDB_BATCH_DATA: "Analysis Batch Data",
 } as const
 
 export type TreeHierarchyType =
   (typeof TREE_HIERARCHY)[keyof typeof TREE_HIERARCHY]
+
+// Define mapping between workspace types and allowed tree hierarchies
+export const WORKSPACE_TYPE_HIERARCHY_MAPPING: Record<
+  WORKSPACE_TYPE,
+  TreeHierarchyType[]
+> = {
+  [WORKSPACE_TYPE.DEFAULT]: [TREE_HIERARCHY.DATA],
+  [WORKSPACE_TYPE.NORMAL]: [TREE_HIERARCHY.DATA],
+  [WORKSPACE_TYPE.BATCH]: [TREE_HIERARCHY.DATA, TREE_HIERARCHY.BATCH_DATA],
+  [WORKSPACE_TYPE.EXPDB_BATCH]: [
+    TREE_HIERARCHY.DATA,
+    TREE_HIERARCHY.EXPDB_BATCH_DATA,
+  ],
+}
 
 export interface FileTypeConfig {
   key: string
