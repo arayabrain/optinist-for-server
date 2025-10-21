@@ -44,7 +44,7 @@ const createInitialNodes = (workspaceType?: number): Node<NodeData>[] => [
   {
     id: INITIAL_IMAGE_ELEMENT_ID,
     type:
-      workspaceType === WORKSPACE_TYPE.BATCH
+      workspaceType === WORKSPACE_TYPE.EXPDB_BATCH
         ? REACT_FLOW_NODE_TYPE_KEY.MicroscopeExpdbFileNode
         : REACT_FLOW_NODE_TYPE_KEY.ExpDbNode,
     data: {
