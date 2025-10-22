@@ -178,3 +178,18 @@ export const selectExpDbInputNodeSelectedFilePath =
       throw new Error("invalid input node type")
     }
   }
+
+/**
+ * Integrated selector for ExpDb related node types
+ * This selector accepts *expdb file types (microscope_expdb, expdb),
+ * preventing errors during state transitions between these types
+ */
+export const selectExpDbRelatedInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const inputNode = selectInputNodeById(nodeId)(state)
+    if (isMicroscopeExpDbInputNode(inputNode) || isExpDbInputNode(inputNode)) {
+      return inputNode.selectedFilePath
+    } else {
+      throw new Error("invalid input node type")
+    }
+  }

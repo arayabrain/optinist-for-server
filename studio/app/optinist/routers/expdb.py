@@ -3,7 +3,7 @@ from glob import glob
 from typing import Dict, List, Optional, Sequence
 
 import sqlalchemy
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from fastapi_pagination.ext.sqlmodel import paginate
 from pydantic import parse_obj_as
 from sqlalchemy.sql import Select
@@ -17,11 +17,17 @@ from studio.app.common.core.auth.auth_dependencies import (
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import join_filepath
+from studio.app.common.core.workflow.workflow import RunItem
+from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
+from studio.app.common.core.workspace.workspace_dependencies import is_workspace_owner
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
+from studio.app.optinist.core.expdb.workflow_expdb_batch_runner import (
+    WorkflowExpdbBatchRunner,
+)
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
 from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.config import ExpDbExperimentFilterParams
@@ -932,3 +938,41 @@ def update_multiple_experiment_database_share_status(
     db.commit()
 
     return True
+
+
+@router.post(
+    "/expdb/batch_run/{workspace_id}",
+    response_model=str,
+    dependencies=[Depends(is_workspace_owner)],
+)
+async def expdb_batch_run(
+    workspace_id: str, runItem: RunItem, background_tasks: BackgroundTasks
+):
+    # TODO: Demo version of expdb_batch_run API
+    # TODO: Permission control required
+
+    try:
+        new_unique_id = WorkflowRunner.create_workflow_unique_id()
+        WorkflowExpdbBatchRunner(
+            workspace_id, new_unique_id, runItem
+        ).run_batch_workflow(background_tasks)
+
+        logger.info("Start processing expdb batch workflows.")
+
+        return new_unique_id
+
+    except KeyError as e:
+        logger.error(e, exc_info=True)
+        # Pass through the specific error message for KeyErrors
+        raise HTTPException(
+            # Changed to 422 since it's a client configuration issue
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e).strip('"'),  # Remove quotes from the KeyError message
+        )
+
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to run workflow.",
+        )
