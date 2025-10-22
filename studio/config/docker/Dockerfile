@@ -60,10 +60,12 @@ USER optinist
 RUN conda config --set channel_priority flexible && \
     conda init bash
 
-# conda env create
-COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman_with_expdb.yaml /app/studio/conda_expdb_batch.yaml
+# conda env create - create both caiman and suite2p environments
+COPY --chown=optinist studio/app/optinist/wrappers/caiman/conda/caiman_with_expdb.yaml /app/studio/conda_expdb_batch_caiman.yaml
+COPY --chown=optinist studio/app/optinist/wrappers/suite2p/conda/suite2p_with_expdb.yaml /app/studio/conda_expdb_batch_suite2p.yaml
 RUN . ~/.bashrc && \
-    conda env create -n expdb_batch -f /app/studio/conda_expdb_batch.yaml && \
+    conda env create -n expdb_batch_caiman -f /app/studio/conda_expdb_batch_caiman.yaml && \
+    conda env create -n expdb_batch_suite2p -f /app/studio/conda_expdb_batch_suite2p.yaml && \
     conda clean -y --all --force-pkgs-dirs
 
 # Return to root user
@@ -100,9 +102,14 @@ RUN chown -R optinist /usr/local/lib/python3.9/site-packages/pynwb
 # Change to application user
 USER optinist
 
-# pip install to conda environment for batch processing
+# pip install to conda environments for batch processing
 RUN . ~/.bashrc && \
-    conda activate expdb_batch && \
+    conda activate expdb_batch_caiman && \
+    pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install -r requirements.batch.txt
+
+RUN . ~/.bashrc && \
+    conda activate expdb_batch_suite2p && \
     pip3 install --no-cache-dir --upgrade pip && \
     pip3 install -r requirements.batch.txt
 

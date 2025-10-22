@@ -4,7 +4,9 @@ import argparse
 def main(args):
     from studio.app.optinist.core.expdb.batch_runner import ExpDbBatchRunner
 
-    runner = ExpDbBatchRunner(args.org_id, args.parallel_workers)
+    runner = ExpDbBatchRunner(
+        args.org_id, args.parallel_workers, filter_roi_method=args.filter_roi_method
+    )
     runner.process()
 
 
@@ -19,6 +21,13 @@ if __name__ == "__main__":
         type=int,
         default=1,
         help="Number of parallel processes (default: 1)",
+    )
+    parser.add_argument(
+        "--filter-roi-method",
+        type=str,
+        choices=["caiman", "suite2p"],
+        default=None,
+        help="Only process datasets with this roi_method (optional)",
     )
 
     from studio.app.optinist.microscopes.ND2Reader import ND2Reader

@@ -154,9 +154,6 @@ class ExpDbBatch:
         self.nwbfile = {}
         self._configure_matplotlib()
 
-        # Load batch_unit config for ROI method selection
-        self.batch_config = self._load_batch_config()
-
     def __stopwatch_callback(watch, function=None):
         logging.getLogger(__class__.LOGGER_NAME).info(
             "processing done. [%s()][elapsed_time: %.6f sec]",
@@ -170,46 +167,43 @@ class ExpDbBatch:
         is_circular_data = any(pattern in data_name for pattern in circular_patterns)
         return is_circular_data
 
-    def _load_batch_config(self) -> dict:
-        """
-        Load batch_unit configuration file to determine ROI detection method.
-
-        Returns:
-            dict: Configuration containing roi_method_selector and method details
-        """
-        try:
-            config = get_default_params("batch_unit")
-            self.logger_.info(f"Loaded batch_unit config: {config}")
-            return config
-        except Exception as e:
-            self.logger_.warning(
-                f"Failed to load batch_unit.yaml config: {e}. "
-                f"Defaulting to CaImAn CNMF."
-            )
-            return {"roi_method_selector": 1}
-
     def _get_roi_method(self) -> str:
         """
-        Determine which ROI detection method to use based on config.
+        Determine which ROI detection method to use by reading from .proc file.
+        Defaults to 'caiman' if roi_method is not specified or cannot be read.
 
         Returns:
             str: Either 'caiman' or 'suite2p'
         """
-        roi_method_selector = self.batch_config.get("roi_method_selector", 1)
+        import yaml
 
-        if roi_method_selector == 1:
-            method = "caiman"
-        elif roi_method_selector == 2:
-            method = "suite2p"
-        else:
-            self.logger_.warning(
-                f"Unknown roi_method_selector: {roi_method_selector}. "
-                f"Defaulting to CaImAn."
+        from studio.app.expdb_dir_path import EXPDB_DIRPATH
+
+        subject_id = self.exp_id.split("_")[0]
+        flag_file = join_filepath(
+            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, self.exp_id, f"{self.exp_id}.proc"]
+        )
+
+        try:
+            with open(flag_file) as f:
+                config = yaml.safe_load(f)
+                roi_method = config.get("roi_method", "caiman")
+
+                if roi_method in ["caiman", "suite2p"]:
+                    self.logger_.info(f"Using ROI method from .proc file: {roi_method}")
+                    return roi_method
+                else:
+                    self.logger_.warning(
+                        f"Invalid roi_method '{roi_method}' in .proc file, "
+                        f"defaulting to caiman"
+                    )
+                    return "caiman"
+        except Exception as e:
+            self.logger_.info(
+                f"Could not read roi_method from .proc file ({flag_file}): {e}, "
+                f"defaulting to caiman"
             )
-            method = "caiman"
-
-        self.logger_.info(f"Using ROI detection method: {method}")
-        return method
+            return "caiman"
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
@@ -449,6 +443,9 @@ class ExpDbBatch:
         if roi_method == "suite2p":
             self.logger_.info("Using Suite2p for cell detection")
             return self.cell_detection_suite2p(stack)
+        if roi_method == "caiman":
+            self.logger_.info("Using CaImAn CNMF for cell detection")
+            return self.cell_detection_cnmf(stack)
         else:  # Default to caiman
             self.logger_.info("Using CaImAn CNMF for cell detection")
             return self.cell_detection_cnmf(stack)

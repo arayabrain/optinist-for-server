@@ -65,11 +65,17 @@ class ExpDbBatchRunner:
     LOGGER_NAME = "batch_runner_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
-    def __init__(self, organization_id: int, parallel_workers: int = 1):
+    def __init__(
+        self,
+        organization_id: int,
+        parallel_workers: int = 1,
+        filter_roi_method: str = None,
+    ):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
         self.parallel_workers = parallel_workers
+        self.filter_roi_method = filter_roi_method
 
     def __init_logger(self):
         logging_config = yaml.safe_load(
@@ -249,6 +255,31 @@ class ExpDbBatchRunner:
         target_flag_files = sorted(
             glob.glob(EXPDB_DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
         )
+
+        # Filter by roi_method if specified
+        if self.filter_roi_method:
+            self.logger_.info(
+                f"Filtering datasets by roi_method: {self.filter_roi_method}"
+            )
+            filtered_files = []
+            for flag_file in target_flag_files:
+                try:
+                    with open(flag_file) as f:
+                        config = yaml.safe_load(f)
+                        roi_method = config.get("roi_method", "caiman")
+                        if roi_method == self.filter_roi_method:
+                            filtered_files.append(flag_file)
+                            self.logger_.info(
+                                f"Including: {flag_file} (roi_method={roi_method})"
+                            )
+                        else:
+                            self.logger_.info(
+                                f"Skipping: {flag_file} (roi_method={roi_method})"
+                            )
+                except Exception as e:
+                    # Skip corrupted files entirely - they'll be retried on next run
+                    self.logger_.error(f"Could not read {flag_file}: {e}, skipping")
+            target_flag_files = filtered_files
 
         return target_flag_files
 
