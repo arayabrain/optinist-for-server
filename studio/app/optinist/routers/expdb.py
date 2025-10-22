@@ -25,7 +25,7 @@ from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
-from studio.app.optinist.core.expdb.workflow_batch_runner import (
+from studio.app.optinist.core.expdb.workflow_expdb_batch_runner import (
     WorkflowExpdbBatchRunner,
 )
 from studio.app.optinist.schemas.base import SortDirection, SortOptions
