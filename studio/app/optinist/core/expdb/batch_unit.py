@@ -181,7 +181,7 @@ class ExpDbBatch:
 
         subject_id = self.exp_id.split("_")[0]
         flag_file = join_filepath(
-            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, self.exp_id, f"{self.exp_id}.proc"]
+            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, f"{self.exp_id}.proc"]
         )
 
         try:
