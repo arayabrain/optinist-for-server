@@ -42,6 +42,7 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     extract_experiment_view_attributes,
     get_experiment,
 )
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -87,9 +88,9 @@ def save_image_with_thumb(img_path: str, img):
     thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
-class ExpDbPath:
+class ExpDbBatchPath:
     def __init__(self, exp_id: str, is_raw=False):
-        subject_id = exp_id.split("_")[0]
+        subject_id = ExpDbPathIds(exp_id=exp_id).subject_id
 
         if is_raw:
             self.exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
@@ -148,8 +149,8 @@ class ExpDbBatch:
         self.exp_id = exp_id
         self.org_id = org_id
 
-        self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
-        self.pub_path = ExpDbPath(self.exp_id)
+        self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
+        self.pub_path = ExpDbBatchPath(self.exp_id)
         self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
         self.nwbfile = {}
         self._configure_matplotlib()
