@@ -12,11 +12,11 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.wrappers.caiman.cnmf import (
-    get_roi,
     util_cleanup_image_memmap,
     util_download_model_files,
     util_get_image_memmap,
 )
+from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
 from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 logger = AppLogger.get_logger()

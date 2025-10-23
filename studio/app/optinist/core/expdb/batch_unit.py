@@ -46,10 +46,6 @@ from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope_expdb import MicroscopeExpdbData
-from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
-    caiman_cnmf_preprocessing,
-    get_roi,
-)
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
 from studio.app.optinist.wrappers.expdb.kmeans_analysis import (
@@ -251,10 +247,12 @@ class ExpDbBatch:
     def process_roi_masks(self):
         """
         Process cellmask data  from .mat file to create ROI image.
-        Uses cnmf.get_roi function that is used in creating cnmf_info.
+        Uses get_roi function that works with both CaImAn and Suite2p.
         Returns roi_image : ndarray
             2D composite ROI mask
         """
+        # Import from common module - works with both CaImAn and Suite2p
+        from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
 
         cellmask_data = self.load_raw_cellmask_data(sparse=True)[0]
 
@@ -355,6 +353,11 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection_cnmf(self, stack: ImageData):
+        # Lazy import - only needed for CaImAn processing
+        from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
+            caiman_cnmf_preprocessing,
+        )
+
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
         cnmf_params = get_default_params("caiman_cnmf_preprocessing")

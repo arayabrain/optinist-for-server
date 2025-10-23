@@ -5,6 +5,7 @@ import logging
 import logging.config
 import os
 import pathlib
+import subprocess
 import traceback
 from contextlib import contextmanager
 from enum import Enum
@@ -305,6 +306,136 @@ class ExpDbBatchConcurrentProcess:
     LOGGER_NAME = "batch_process_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
+    @staticmethod
+    def __get_roi_method_from_flag_file(flag_file: str) -> str:
+        """
+        Read roi_method from .proc flag file.
+        Returns 'caiman', 'suite2p', or 'caiman' as default.
+        """
+        try:
+            with open(flag_file) as f:
+                config = yaml.safe_load(f)
+                return config.get("roi_method", "caiman") if config else "caiman"
+        except Exception:
+            return "caiman"  # Default fallback
+
+    @staticmethod
+    def __get_current_conda_env() -> str:
+        """Get the name of the currently active conda environment."""
+        conda_env = os.environ.get("CONDA_DEFAULT_ENV", "")
+        return conda_env
+
+    @staticmethod
+    def __get_required_conda_env(roi_method: str) -> str:
+        """
+        Map roi_method to the required conda environment name.
+        """
+        if roi_method == "suite2p":
+            return "expdb_batch_suite2p"
+        else:  # Default to caiman
+            return "expdb_batch_caiman"
+
+    @classmethod
+    def __should_switch_environment(cls, flag_file: str) -> tuple:
+        """
+        Check if we need to switch conda environments for this dataset.
+        """
+        # Check if we're already in a subprocess (to prevent infinite recursion)
+        if os.environ.get("EXPDB_BATCH_SUBPROCESS") == "1":
+            return (False, "", "", "")
+
+        roi_method = cls.__get_roi_method_from_flag_file(flag_file)
+        required_env = cls.__get_required_conda_env(roi_method)
+        current_env = cls.__get_current_conda_env()
+
+        needs_switch = current_env != required_env
+        return (needs_switch, current_env, required_env, roi_method)
+
+    @classmethod
+    def __execute_in_conda_env(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        logger_name: str,
+        required_env: str,
+    ) -> dict:
+        """
+        Execute dataset processing in a specific conda environment via subprocess.
+
+        Args:
+            flag_file: Path to the .proc file
+            org_id: Organization ID
+            start_time: Process start time
+            logger_name: Logger name for subprocess
+            required_env: Target conda environment name
+
+        Returns:
+            Result dictionary from processing
+        """
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = logging.getLogger(logger_name)
+
+        logger.info(f"Spawning subprocess for {exp_id} in environment: {required_env}")
+
+        # Create environment for subprocess
+        env = os.environ.copy()
+        env["EXPDB_BATCH_SUBPROCESS"] = "1"  # Flag to prevent infinite recursion
+
+        # Build command to run in specific conda environment
+        # We use conda run to execute Python in the target environment
+        cmd = [
+            "conda",
+            "run",
+            "-n",
+            required_env,
+            "--no-capture-output",
+            "python",
+            "-c",
+            f"""
+import sys
+import os
+sys.path.insert(0, '/app')
+os.chdir('/app')
+from studio.app.optinist.core.expdb.batch_runner import ExpDbBatchConcurrentProcess
+import datetime
+result = ExpDbBatchConcurrentProcess.process_single_dataset(
+    '{flag_file}',
+    {org_id},
+    datetime.datetime.now(),
+    '{logger_name}'
+)
+sys.exit(0 if result.get('success') else 1)
+""",
+        ]
+
+        try:
+            # Run the subprocess
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=False,  # Let output go to parent's stdout/stderr
+                check=False,
+            )
+
+            # Return result based on exit code
+            return {
+                "success": result.returncode == 0,
+                "exp_id": exp_id,
+                "subprocess": True,
+                "environment": required_env,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to spawn subprocess in {required_env}: {e}")
+            return {
+                "success": False,
+                "exp_id": exp_id,
+                "error": e,
+                "subprocess": True,
+                "environment": required_env,
+            }
+
     @classmethod
     def __init_process_logger(cls, exp_id: str):
         """
@@ -363,8 +494,39 @@ class ExpDbBatchConcurrentProcess:
         """
         ATTENTION: This method does not use decorator (stopwatch)
             because it is an entrypoint of ProcessPoolExecutor.
+
+        This method checks if the dataset requires a different conda environment
+        and spawns a subprocess if needed.
         """
-        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
+        # Check if we need to switch environments
+        (
+            needs_switch,
+            current_env,
+            required_env,
+            roi_method,
+        ) = cls.__should_switch_environment(flag_file)
+
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = logging.getLogger(logger_name)
+
+        if needs_switch:
+            logger.info(
+                f"Environment mismatch for {exp_id}: "
+                f"current={current_env}, required={required_env}, "
+                f"roi_method={roi_method}"
+            )
+            return cls.__execute_in_conda_env(
+                flag_file, org_id, start_time, logger_name, required_env
+            )
+        else:
+            # Already in correct environment or subprocess
+            logger.info(
+                f"Processing {exp_id} in current environment: "
+                f"{current_env or 'subprocess'}"
+            )
+            return cls.process_single_dataset(
+                flag_file, org_id, start_time, logger_name
+            )
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
@@ -380,6 +542,14 @@ class ExpDbBatchConcurrentProcess:
         logger.info(
             f"Process {os.getpid()} starting to \
                 process exp_id: {exp_id}, flag_file: {flag_file}"
+        )
+
+        # Log current conda environment and subprocess status
+        current_env = cls.__get_current_conda_env()
+        is_subprocess = os.environ.get("EXPDB_BATCH_SUBPROCESS") == "1"
+        logger.info(
+            f"Active conda environment: {current_env or 'none'}, "
+            f"subprocess: {is_subprocess}"
         )
 
         error = None

@@ -9,7 +9,6 @@ from studio.app.common.dataclass import ImageData
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.wrappers.caiman.cnmf import (
-    get_roi,
     util_cleanup_image_memmap,
     util_download_model_files,
     util_get_image_memmap,
@@ -27,6 +26,8 @@ def caiman_cnmf_multisession(
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
+
+    from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
 
     function_id = ExptOutputPathIds(output_dir).function_id
     logger.info(f"start caiman_cnmf_multisession: {function_id}")
