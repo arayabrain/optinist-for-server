@@ -35,14 +35,13 @@ from studio.app.const import (
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
     extract_experiment_view_attributes,
     get_experiment,
 )
-from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -90,10 +89,8 @@ def save_image_with_thumb(img_path: str, img):
 
 class ExpDbBatchPath:
     def __init__(self, exp_id: str, is_raw=False):
-        subject_id = ExpDbPathIds(exp_id=exp_id).subject_id
-
         if is_raw:
-            self.exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
+            self.exp_dir = ExpDbPathIdsUtil.create_expdb_file_path(exp_id, "")
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
 
@@ -127,9 +124,7 @@ class ExpDbBatchPath:
                 [self.preprocess_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
         else:
-            self.exp_dir = join_filepath(
-                [EXPDB_DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id]
-            )
+            self.exp_dir = ExpDbPathIdsUtil.create_public_expdb_file_path(exp_id, "")
             self.output_dir = self.exp_dir
 
         # outputs

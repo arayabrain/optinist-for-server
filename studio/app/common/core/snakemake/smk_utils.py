@@ -16,8 +16,7 @@ from studio.app.common.core.utils.filepath_finder import find_condaenv_filepath
 from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil
 from studio.app.const import ACCEPT_FILE_EXT, FILETYPE, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
-from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.wrappers import wrapper_dict
 
 logger = AppLogger.get_logger()
@@ -31,9 +30,7 @@ class SmkUtils:
                 return [join_filepath([DIRPATH.INPUT_DIR, x]) for x in details["input"]]
             elif details["type"] == FILETYPE.MICROSCOPE_EXPDB:
                 exp_id = details["input"]
-                subject_id = ExpDbPathIds(exp_id=exp_id).subject_id
-                exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
-
+                exp_dir = ExpDbPathIdsUtil.create_expdb_file_path(exp_id, "")
                 microscope_files = []
                 for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXPDB_EXT.value:
                     microscope_files.extend(glob(join_filepath([exp_dir, f"*{ext}"])))
@@ -47,24 +44,12 @@ class SmkUtils:
                 return microscope_files
             elif details["type"] == FILETYPE.EXPDB:
                 exp_id = details["input"]
-                subject_id = ExpDbPathIds(exp_id=exp_id).subject_id
                 return [
-                    join_filepath(
-                        [
-                            EXPDB_DIRPATH.EXPDB_DIR,
-                            subject_id,
-                            exp_id,
-                            f"{exp_id}_{TS_SUFFIX}.mat",
-                        ]
+                    ExpDbPathIdsUtil.create_expdb_file_path(
+                        exp_id, f"{exp_id}_{TS_SUFFIX}.mat"
                     ),
-                    join_filepath(
-                        [
-                            EXPDB_DIRPATH.EXPDB_DIR,
-                            subject_id,
-                            exp_id,
-                            "preprocess",
-                            f"{exp_id}_{TC_SUFFIX}.mat",
-                        ]
+                    ExpDbPathIdsUtil.create_expdb_file_path(
+                        exp_id, f"{exp_id}_{TC_SUFFIX}.mat", ["preprocess"]
                     ),
                 ]
             else:

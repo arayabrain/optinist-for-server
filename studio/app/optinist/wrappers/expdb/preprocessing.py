@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 
 from studio.app.common.core.logger import AppLogger

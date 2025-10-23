@@ -1,7 +1,8 @@
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
+from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 
 
@@ -53,6 +54,40 @@ class ExpDbPathIds:
 
 
 class ExpDbPathIdsUtil:
+    @classmethod
+    def __create_expdb_file_path(
+        cls, root_dir: str, exp_id: str, file_name: str, subdir: List[str] = []
+    ) -> str:
+        exp_ids = ExpDbPathIds(exp_id=exp_id)
+
+        path = join_filepath(
+            [
+                root_dir,
+                exp_ids.subject_id,
+                exp_id,
+                *subdir,
+                file_name,
+            ]
+        )
+
+        return path
+
+    @classmethod
+    def create_expdb_file_path(
+        cls, exp_id: str, file_name: str, subdir: List[str] = []
+    ) -> str:
+        return cls.__create_expdb_file_path(
+            EXPDB_DIRPATH.EXPDB_DIR, exp_id, file_name, subdir
+        )
+
+    @classmethod
+    def create_public_expdb_file_path(
+        cls, exp_id: str, file_name: str, subdir: List[str] = []
+    ) -> str:
+        return cls.__create_expdb_file_path(
+            EXPDB_DIRPATH.PUBLIC_EXPDB_DIR, exp_id, file_name, subdir
+        )
+
     @staticmethod
     def parse_ids_from_workflow_output_path(output_path: str) -> ExpDbPathIds:
         """
