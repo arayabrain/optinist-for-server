@@ -1,16 +1,24 @@
 # Packages in conda env for [suite2p_with_expdb]
+channels:
+  - conda-forge
 dependencies:
   - python=3.9
   - pip
   - pyqt=5.15.*
   - pyqt5-sip=12.11.*
+  - gcc=12
+  - scipy=1.10
 
   # for expdb
   - opencv=4.7.0
 
   - pip:
-    - numpy==1.23.*
+    - numpy>=1.26.2
     - pyqtgraph==0.12.*
     - pandas==1.5.*
     - suite2p==0.10.3
     - tifffile==2022.3.*
+    - hdmf==3.*
+    - isx==1.0.*
+    - pynwb==2.6.0
+    - matplotlib==3.7.*
