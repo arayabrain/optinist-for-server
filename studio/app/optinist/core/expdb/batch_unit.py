@@ -35,13 +35,13 @@ from studio.app.const import (
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
     extract_experiment_view_attributes,
     get_experiment,
 )
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -87,12 +87,10 @@ def save_image_with_thumb(img_path: str, img):
     thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
-class ExpDbPath:
+class ExpDbBatchPath:
     def __init__(self, exp_id: str, is_raw=False):
-        subject_id = exp_id.split("_")[0]
-
         if is_raw:
-            self.exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
+            self.exp_dir = ExpDbPathIdsUtil.create_expdb_file_path(exp_id, "")
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
 
@@ -126,9 +124,7 @@ class ExpDbPath:
                 [self.preprocess_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
         else:
-            self.exp_dir = join_filepath(
-                [EXPDB_DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id]
-            )
+            self.exp_dir = ExpDbPathIdsUtil.create_public_expdb_file_path(exp_id, "")
             self.output_dir = self.exp_dir
 
         # outputs
@@ -148,8 +144,8 @@ class ExpDbBatch:
         self.exp_id = exp_id
         self.org_id = org_id
 
-        self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
-        self.pub_path = ExpDbPath(self.exp_id)
+        self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
+        self.pub_path = ExpDbBatchPath(self.exp_id)
         self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
         self.nwbfile = {}
         self._configure_matplotlib()

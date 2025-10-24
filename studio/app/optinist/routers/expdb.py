@@ -25,6 +25,7 @@ from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
 from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
 from studio.app.optinist.core.expdb.workflow_expdb_batch_runner import (
     WorkflowExpdbBatchRunner,
 )
@@ -96,7 +97,7 @@ def expdbcell_transformer(items: Sequence) -> Sequence:
 
     for item in items:
         expdbcell = ExpDbCell.from_orm(item)
-        subject_id = expdbcell.experiment_id.split("_")[0]
+        subject_id = ExpDbPathIds(exp_id=expdbcell.experiment_id).subject_id
         exp_dir = f"{EXPDB_DIRPATH.GRAPH_HOST}/{subject_id}/{expdbcell.experiment_id}"
         try:
             expdbcell.fields = ExpDbExperimentFields(**item.view_attributes)
@@ -119,7 +120,7 @@ def experiment_transformer(items: Sequence) -> Sequence:
     for item in items:
         expdb: optinist_model.Experiment = item
         exp = ExpDbExperiment.from_orm(expdb)
-        subject_id = exp.experiment_id.split("_")[0]
+        subject_id = ExpDbPathIds(exp_id=exp.experiment_id).subject_id
         exp_dir = f"{EXPDB_DIRPATH.GRAPH_HOST}/{subject_id}/{exp.experiment_id}"
 
         try:
