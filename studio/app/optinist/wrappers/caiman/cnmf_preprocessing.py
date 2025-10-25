@@ -1,5 +1,4 @@
 import gc
-import os
 
 import numpy as np
 import scipy
@@ -8,6 +7,7 @@ from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
 from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
@@ -82,8 +82,6 @@ def caiman_cnmf_preprocessing(
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
 
-    from studio.app.expdb_dir_path import EXPDB_DIRPATH
-
     function_id = "caiman_cnmf"
     logger.info(f"start {function_id}")
 
@@ -104,7 +102,8 @@ def caiman_cnmf_preprocessing(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
-    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
+    exp_ids = ExpDbPathIdsUtil.parse_ids_from_workflow_output_path(file_path)
+    exp_id = exp_ids.exp_id
 
     images = images.data
     mmap_paths = []
@@ -177,14 +176,11 @@ def caiman_cnmf_preprocessing(
 
     AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
     timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
-    trialstructure_path = join_filepath(
-        [
-            EXPDB_DIRPATH.EXPDB_DIR,
-            exp_id.split("_")[0],
-            exp_id,
-            f"{exp_id}_{TS_SUFFIX}.mat",
-        ]
+    trialstructure_path = ExpDbPathIdsUtil.create_expdb_file_path(
+        exp_id,
+        f"{exp_id}_{TS_SUFFIX}.mat",
     )
+
     scipy.io.savemat(timecourse_path, {"timecourse": AY})
 
     scipy.io.savemat(

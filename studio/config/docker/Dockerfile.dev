@@ -92,7 +92,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
 RUN poetry export -f requirements.txt -o requirements.studio.txt && \
     sed -e '/^h5py/d' requirements.studio.txt > requirements.batch.txt
 
-RUN pip3 install -r requirements.studio.txt
+RUN pip3 install -r requirements.studio.txt --use-pep517
 
 # Setting permissions for operational user to some site-packages.
 RUN chown -R optinist /usr/local/lib/python3.9/site-packages/pynwb
@@ -111,7 +111,7 @@ USER optinist
 RUN . ~/.bashrc && \
     conda activate expdb_batch && \
     pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install -r requirements.batch.txt
+    pip3 install -r requirements.batch.txt --use-pep517
 
 RUN . ~/.bashrc && \
     conda activate expdb_batch_caiman && \

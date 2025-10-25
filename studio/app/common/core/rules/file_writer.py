@@ -1,13 +1,11 @@
 import json
-import os
 
 import h5py
 
 from studio.app.common.core.snakemake.smk import Rule
-from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import CsvData, ImageData, TimeSeriesData
 from studio.app.const import EXP_METADATA_SUFFIX, FILETYPE
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds, ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.dataclass.iscell import IscellData
@@ -80,7 +78,7 @@ class FileWriter:
         nwbfile = rule_config.nwbfile
         nwbfile["image_series"]["external_file"] = info[rule_config.return_arg]
 
-        exp_id = os.path.basename(os.path.dirname(rule_config.input))
+        exp_id = ExpDbPathIds(expdb_path=rule_config.input).exp_id
         metadata = cls.get_experiment_metadata(exp_id)
         nwbfile[NWBDATASET.LAB_METADATA] = metadata
 
@@ -125,7 +123,7 @@ class FileWriter:
         nwbfile = rule_config.nwbfile
         nwbfile["image_series"]["external_file"] = info[rule_config.return_arg]
 
-        exp_id = os.path.basename(os.path.dirname(rule_config.input[0]))
+        exp_id = ExpDbPathIds(expdb_path=rule_config.input[0]).exp_id
         metadata = cls.get_experiment_metadata(exp_id)
         nwbfile[NWBDATASET.LAB_METADATA] = metadata
 
@@ -134,14 +132,8 @@ class FileWriter:
 
     @classmethod
     def get_experiment_metadata(cls, exp_id) -> dict:
-        subject_id = exp_id.split("_")[0]
-        metadata_path = join_filepath(
-            [
-                EXPDB_DIRPATH.EXPDB_DIR,
-                subject_id,
-                exp_id,
-                f"{exp_id}_{EXP_METADATA_SUFFIX}.json",
-            ]
+        metadata_path = ExpDbPathIdsUtil.create_expdb_file_path(
+            exp_id, f"{exp_id}_{EXP_METADATA_SUFFIX}.json"
         )
 
         with open(metadata_path) as f:

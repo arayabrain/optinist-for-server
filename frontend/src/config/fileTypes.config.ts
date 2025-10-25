@@ -1,6 +1,14 @@
+// Define tree hierarchy constants for better maintainability
+export const TREE_HIERARCHY = {
+  DATA: "Data",
+} as const
+
+export type TreeHierarchyType =
+  (typeof TREE_HIERARCHY)[keyof typeof TREE_HIERARCHY]
+
 export interface FileTypeConfig {
   key: string
-  displayName: string
+  displayName?: string // Optional: If not provided, key will be used for display
   hasFilePath: boolean
   filePathType: "single" | "array"
   hasSpecialPath?: {
@@ -15,17 +23,21 @@ export interface FileTypeConfig {
   nodeType?: string // Unified: replaces nodeComponent and reactFlowNodeType
   componentPath?: string
   // Tree hierarchy configuration
-  treeHierarchy?: string // Parent node in tree hierarchy (e.g., "Data", "Sample Data")
+  treeHierarchy?: TreeHierarchyType // Parent node in tree hierarchy (e.g., "Data", "Sample Data")
 }
 
 // Enhanced config with computed properties
 export interface EnhancedFileTypeConfig
   extends Required<
-    Omit<FileTypeConfig, "hasSpecialPath" | "stateFileType" | "treeHierarchy">
+    Omit<
+      FileTypeConfig,
+      "hasSpecialPath" | "stateFileType" | "treeHierarchy" | "displayName"
+    >
   > {
+  displayName: string // Required in enhanced config (defaults to key if not provided)
   hasSpecialPath?: FileTypeConfig["hasSpecialPath"]
   stateFileType?: string
-  treeHierarchy: string // Required in enhanced config with default value
+  treeHierarchy: TreeHierarchyType // Required in enhanced config with default value
   // Backward compatibility properties
   nodeComponent: string // Same as nodeType for compatibility
   reactFlowNodeType: string // Same as nodeType for compatibility
@@ -63,7 +75,6 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
 export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   IMAGE: {
     key: "image",
-    displayName: "imageData",
     hasFilePath: true,
     filePathType: "array",
     defaultParam: {},
@@ -71,7 +82,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   CSV: {
     key: "csv",
-    displayName: "csvData",
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -83,7 +93,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   HDF5: {
     key: "hdf5",
-    displayName: "hdf5Data",
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -95,7 +104,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   FLUO: {
     key: "fluo",
-    displayName: "fluoData",
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -108,7 +116,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   BEHAVIOR: {
     key: "behavior",
-    displayName: "behaviorData",
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {
@@ -121,7 +128,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MATLAB: {
     key: "matlab",
-    displayName: "matlabData",
     hasFilePath: true,
     filePathType: "single",
     hasSpecialPath: {
@@ -133,7 +139,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
   MICROSCOPE: {
     key: "microscope",
-    displayName: "microscopeData",
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {},
@@ -178,10 +183,11 @@ const ENHANCED_FILE_TYPE_CONFIGS: Record<string, EnhancedFileTypeConfig> =
         {
           ...config,
           // Auto-generate missing properties
+          displayName: config.displayName || config.key, // Use key as fallback if displayName is not provided
           treeType: config.treeType || config.key,
           dataType: config.dataType || config.key,
           nodeType,
-          treeHierarchy: config.treeHierarchy || "Data", // Default to "Data" hierarchy
+          treeHierarchy: config.treeHierarchy || TREE_HIERARCHY.DATA, // Default to "Data" hierarchy
           // Backward compatibility - both point to the same nodeType
           nodeComponent: nodeType,
           reactFlowNodeType: nodeType,
@@ -231,19 +237,3 @@ export function getFileTypeConfigsByHierarchy(): Record<
 
   return hierarchyGroups
 }
-
-// Auto-generated component mapping from ENHANCED_FILE_TYPE_CONFIGS
-export const COMPONENT_MAPPING = Object.fromEntries(
-  Object.values(ENHANCED_FILE_TYPE_CONFIGS).map((config) => [
-    config.nodeType,
-    config.nodeType,
-  ]),
-) as Record<string, string>
-
-// Auto-generated data type mapping from ENHANCED_FILE_TYPE_CONFIGS
-export const DATA_TYPE_MAPPING = Object.fromEntries(
-  Object.values(ENHANCED_FILE_TYPE_CONFIGS).map((config) => [
-    config.dataType,
-    config.dataType,
-  ]),
-) as Record<string, string>
