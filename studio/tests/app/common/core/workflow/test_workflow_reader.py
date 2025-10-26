@@ -86,3 +86,12 @@ def test_read_edgeDict():
 
     assert isinstance(edgeDict, dict)
     assert isinstance(edgeDict["sample1"], Edge)
+
+def test_find_node():
+    workflow_config = WorkflowConfigReader.read(workspace_id, unique_id)
+
+    node = WorkflowConfigReader.find_node_in_workflow(
+        workflow_config, "suite2p_file_convert"
+    )
+
+    assert node
