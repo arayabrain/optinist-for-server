@@ -15,6 +15,14 @@ from studio.app.optinist.microscopes.MicroscopeDataReaderBase import (
     OMEDataModel,
 )
 
+# Import nd2 package for macOS support
+try:
+    import nd2
+
+    ND2_PACKAGE_AVAILABLE = True
+except ImportError:
+    ND2_PACKAGE_AVAILABLE = False
+
 
 class LimCode(IntEnum):
     LIM_OK = 0
@@ -49,7 +57,12 @@ class LIMPICTURE(ctypes.Structure):
 
 
 class ND2Reader(MicroscopeDataReaderBase):
-    """Nikon ND2 data reader"""
+    """Nikon ND2 data reader
+
+    Supports two backends:
+    - SDK-based: Uses Nikon SDK (Windows/Linux only)
+    - nd2 package: Uses nd2 Python package (all platforms, including macOS)
+    """
 
     SDK_LIBRARY_FILES = {
         "Windows": {
@@ -60,6 +73,24 @@ class ND2Reader(MicroscopeDataReaderBase):
             "dependencies": ("libjpeg.so.8", "libtiff.so.5"),
         },
     }
+
+    def __init__(self):
+        """Initialize ND2Reader with appropriate backend"""
+        # Determine which backend to use
+        is_darwin = platform.system() == "Darwin"
+        self._use_nd2_package = is_darwin or not self._has_sdk_support()
+
+        if self._use_nd2_package and not ND2_PACKAGE_AVAILABLE:
+            raise ImportError(
+                "nd2 package is required for macOS or when SDK is not "
+                "available. Install it with: pip install nd2"
+            )
+
+        super().__init__()
+
+    def _has_sdk_support(self):
+        """Check if current platform has SDK support"""
+        return platform.system() in self.SDK_LIBRARY_FILES
 
     @staticmethod
     def unpack_libs():
@@ -94,85 +125,192 @@ class ND2Reader(MicroscopeDataReaderBase):
     @staticmethod
     def is_available() -> bool:
         """Determine if library is available"""
+        # On macOS (or when SDK is not available), check for nd2 package
+        if platform.system() == "Darwin":
+            return ND2_PACKAGE_AVAILABLE
+
+        # On Windows/Linux, check for SDK library
         __class__.unpack_libs()
         library_path = __class__.get_library_path()
-        return os.path.isfile(library_path) if library_path else False
+        sdk_available = os.path.isfile(library_path) if library_path else False
+
+        # Return True if either SDK is available or nd2 package is available
+        return sdk_available or ND2_PACKAGE_AVAILABLE
 
     def _init_library(self):
-        # load sdk libraries (dependencies)
-        __class__.unpack_libs()
+        """Initialize the appropriate backend (SDK or nd2 package)"""
+        if self._use_nd2_package:
+            # nd2 package doesn't require initialization
+            self.__nd2_file = None
+        else:
+            # load sdk libraries (dependencies)
+            __class__.unpack_libs()
 
-        if "dependencies" in __class__.SDK_LIBRARY_FILES[platform.system()]:
-            platform_library_dir = os.path.dirname(__class__.get_library_path())
-            dependencies = __class__.SDK_LIBRARY_FILES[platform.system()][
-                "dependencies"
-            ]
+            if "dependencies" in __class__.SDK_LIBRARY_FILES[platform.system()]:
+                platform_library_dir = os.path.dirname(__class__.get_library_path())
+                dependencies = __class__.SDK_LIBRARY_FILES[platform.system()][
+                    "dependencies"
+                ]
 
-            for dependency in dependencies:
-                dependency_path = f"{platform_library_dir}/{dependency}"
-                ctypes.cdll.LoadLibrary(dependency_path)
+                for dependency in dependencies:
+                    dependency_path = f"{platform_library_dir}/{dependency}"
+                    ctypes.cdll.LoadLibrary(dependency_path)
 
-        # load sdk library
-        self.__dll = ctypes.cdll.LoadLibrary(__class__.get_library_path())
+            # load sdk library
+            self.__dll = ctypes.cdll.LoadLibrary(__class__.get_library_path())
 
-        # define ctypes interfaces
-        self.__dll.Lim_FileOpenForReadUtf8.argtypes = (ctypes.c_char_p,)
-        self.__dll.Lim_FileOpenForReadUtf8.restype = ctypes.c_void_p
-        self.__dll.Lim_FileGetMetadata.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetMetadata.restype = ctypes.c_char_p
-        self.__dll.Lim_FileGetAttributes.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetAttributes.restype = ctypes.c_char_p
-        self.__dll.Lim_FileGetTextinfo.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetTextinfo.restype = ctypes.c_char_p
-        self.__dll.Lim_FileGetExperiment.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetExperiment.restype = ctypes.c_char_p
-        self.__dll.Lim_FileGetFrameMetadata.argtypes = (ctypes.c_void_p, ctypes.c_uint)
-        self.__dll.Lim_FileGetFrameMetadata.restype = ctypes.c_char_p
-        self.__dll.Lim_FileGetSeqCount.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetSeqCount.restype = ctypes.c_uint
-        self.__dll.Lim_FileGetCoordSize.argtypes = (ctypes.c_void_p,)
-        self.__dll.Lim_FileGetCoordSize.restype = ctypes.c_size_t
-        self.__dll.Lim_FileGetCoordsFromSeqIndex.argtypes = (
-            ctypes.c_void_p,
-            ctypes.c_uint,
-        )
-        self.__dll.Lim_FileGetCoordsFromSeqIndex.restype = ctypes.c_size_t
-        self.__dll.Lim_FileGetImageData.argtypes = (
-            ctypes.c_void_p,
-            ctypes.c_uint,
-            ctypes.c_void_p,
-        )
-        self.__dll.Lim_FileGetImageData.restype = ctypes.c_int
+            # define ctypes interfaces
+            self.__dll.Lim_FileOpenForReadUtf8.argtypes = (ctypes.c_char_p,)
+            self.__dll.Lim_FileOpenForReadUtf8.restype = ctypes.c_void_p
+            self.__dll.Lim_FileGetMetadata.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetMetadata.restype = ctypes.c_char_p
+            self.__dll.Lim_FileGetAttributes.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetAttributes.restype = ctypes.c_char_p
+            self.__dll.Lim_FileGetTextinfo.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetTextinfo.restype = ctypes.c_char_p
+            self.__dll.Lim_FileGetExperiment.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetExperiment.restype = ctypes.c_char_p
+            self.__dll.Lim_FileGetFrameMetadata.argtypes = (
+                ctypes.c_void_p,
+                ctypes.c_uint,
+            )
+            self.__dll.Lim_FileGetFrameMetadata.restype = ctypes.c_char_p
+            self.__dll.Lim_FileGetSeqCount.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetSeqCount.restype = ctypes.c_uint
+            self.__dll.Lim_FileGetCoordSize.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileGetCoordSize.restype = ctypes.c_size_t
+            self.__dll.Lim_FileGetCoordsFromSeqIndex.argtypes = (
+                ctypes.c_void_p,
+                ctypes.c_uint,
+            )
+            self.__dll.Lim_FileGetCoordsFromSeqIndex.restype = ctypes.c_size_t
+            self.__dll.Lim_FileGetImageData.argtypes = (
+                ctypes.c_void_p,
+                ctypes.c_uint,
+                ctypes.c_void_p,
+            )
+            self.__dll.Lim_FileGetImageData.restype = ctypes.c_int
 
-        self.__dll.Lim_FileClose.argtypes = (ctypes.c_void_p,)
+            self.__dll.Lim_FileClose.argtypes = (ctypes.c_void_p,)
 
     def _load_file(self, data_file_path: str) -> object:
-        handle = self.__dll.Lim_FileOpenForReadUtf8(data_file_path.encode("utf-8"))
+        if self._use_nd2_package:
+            # Use nd2 package
+            self.__nd2_file = nd2.ND2File(data_file_path)
+            return (self.__nd2_file,)
+        else:
+            # Use SDK
+            handle = self.__dll.Lim_FileOpenForReadUtf8(data_file_path.encode("utf-8"))
 
-        if handle is None:
-            raise FileNotFoundError(f"Open Error: {data_file_path}")
+            if handle is None:
+                raise FileNotFoundError(f"Open Error: {data_file_path}")
 
-        return (handle,)
+            return (handle,)
 
-    def _build_original_metadata(self, data_name: str) -> dict:
-        (handle,) = self.resource_handles
+    def _build_original_metadata_from_nd2(self, data_name: str, nd2_file) -> dict:
+        """Build original metadata using nd2 package"""
+        # Extract metadata from nd2 file
+        meta = nd2_file.metadata
 
-        attributes = self.__dll.Lim_FileGetAttributes(handle)
-        metadata = self.__dll.Lim_FileGetMetadata(handle)
-        textinfo = self.__dll.Lim_FileGetTextinfo(handle)
-        experiments = self.__dll.Lim_FileGetExperiment(handle)
-        frame_metadata = self.__dll.Lim_FileGetFrameMetadata(
-            handle, 0
-        )  # get 1st frame info
+        # Build attributes dict compatible with SDK format
+        attributes = {
+            "widthPx": nd2_file.attributes.widthPx,
+            "heightPx": nd2_file.attributes.heightPx,
+            "widthBytes": nd2_file.attributes.widthBytes,
+            "componentCount": nd2_file.attributes.componentCount,
+            "bitsPerComponentInMemory": (nd2_file.attributes.bitsPerComponentInMemory),
+            "bitsPerComponentSignificant": (
+                nd2_file.attributes.bitsPerComponentSignificant
+            ),
+            "sequenceCount": nd2_file.attributes.sequenceCount,
+        }
 
-        attributes = json.loads(attributes)
-        metadata = json.loads(metadata)
-        textinfo = json.loads(textinfo) if textinfo is not None else {}
-        experiments = json.loads(experiments) if experiments is not None else None
-        frame_metadata = json.loads(frame_metadata)
+        # Build metadata dict compatible with SDK format
+        channels_metadata = []
+        for channel in meta.channels:
+            volume_axes_calibrated = list(channel.volume.axesCalibrated[:2])
+            volume_axes_calibration = list(channel.volume.axesCalibration[:2])
 
-        # frame_metadata は、必要な項目のみに絞る
-        frame_metadata_single = frame_metadata["channels"][0]
+            channel_meta = {
+                "volume": {
+                    "axesCalibrated": volume_axes_calibrated,
+                    "axesCalibration": volume_axes_calibration,
+                },
+                "microscope": {
+                    "objectiveName": channel.microscope.objectiveName,
+                    "objectiveMagnification": (
+                        channel.microscope.objectiveMagnification
+                    ),
+                    "objectiveNumericalAperture": (
+                        channel.microscope.objectiveNumericalAperture
+                    ),
+                    "zoomMagnification": (channel.microscope.zoomMagnification),
+                },
+            }
+            channels_metadata.append(channel_meta)
+
+        metadata = {"channels": channels_metadata}
+
+        # Text info from nd2 file
+        text_info = nd2_file.text_info if hasattr(nd2_file, "text_info") else {}
+        textinfo = {
+            "description": text_info.get("description", ""),
+            "capturing": text_info.get("capturing", ""),
+            "date": text_info.get("date", ""),
+        }
+
+        # Experiments (loop structure)
+        experiments = None
+        if nd2_file.experiment:
+            exp_list = []
+            for exp in nd2_file.experiment:
+                exp_dict = {"type": exp.type, "count": exp.count, "parameters": {}}
+                # Handle NETimeLoop parameters
+                has_params = hasattr(exp, "parameters")
+                has_periods = has_params and hasattr(exp.parameters, "periods")
+                if has_periods:
+                    periods = exp.parameters.periods
+                    if periods and len(periods) > 0:
+                        period = periods[0]
+                        period_diff_avg = (
+                            period.periodDiff.avg
+                            if hasattr(period, "periodDiff")
+                            else 0
+                        )
+                        exp_dict["parameters"]["periodDiff"] = {"avg": period_diff_avg}
+                        exp_dict["parameters"]["periods"] = [
+                            {
+                                "periodDiff": {
+                                    "avg": (
+                                        p.periodDiff.avg
+                                        if hasattr(p, "periodDiff")
+                                        else 0
+                                    )
+                                }
+                            }
+                            for p in exp.parameters.periods
+                        ]
+                elif exp.type == "ZStackLoop" and has_params:
+                    # Handle Z-stack parameters if needed
+                    if hasattr(exp.parameters, "stepUm"):
+                        exp_dict["parameters"]["stepUm"] = exp.parameters.stepUm
+
+                exp_list.append(exp_dict)
+            experiments = exp_list
+
+        # Frame metadata (use first frame)
+        frame_metadata_single = {"time": {"absoluteJulianDayNumber": 0}}
+        try:
+            frame_meta = nd2_file.frame_metadata(0)
+            has_channels = (
+                frame_meta and frame_meta.channels and len(frame_meta.channels) > 0
+            )
+            if has_channels:
+                frame_metadata_single["time"][
+                    "absoluteJulianDayNumber"
+                ] = frame_meta.channels[0].time.absoluteJulianDayNumber
+        except Exception:
+            pass  # Use default value if frame metadata unavailable
 
         original_metadata = {
             "data_name": data_name,
@@ -184,6 +322,41 @@ class ND2Reader(MicroscopeDataReaderBase):
         }
 
         return original_metadata
+
+    def _build_original_metadata(self, data_name: str) -> dict:
+        if self._use_nd2_package:
+            (nd2_file,) = self.resource_handles
+            return self._build_original_metadata_from_nd2(data_name, nd2_file)
+        else:
+            (handle,) = self.resource_handles
+
+            attributes = self.__dll.Lim_FileGetAttributes(handle)
+            metadata = self.__dll.Lim_FileGetMetadata(handle)
+            textinfo = self.__dll.Lim_FileGetTextinfo(handle)
+            experiments = self.__dll.Lim_FileGetExperiment(handle)
+            frame_metadata = self.__dll.Lim_FileGetFrameMetadata(
+                handle, 0
+            )  # get 1st frame info
+
+            attributes = json.loads(attributes)
+            metadata = json.loads(metadata)
+            textinfo = json.loads(textinfo) if textinfo is not None else {}
+            experiments = json.loads(experiments) if experiments is not None else None
+            frame_metadata = json.loads(frame_metadata)
+
+            # frame_metadata は、必要な項目のみに絞る
+            frame_metadata_single = frame_metadata["channels"][0]
+
+            original_metadata = {
+                "data_name": data_name,
+                "attributes": attributes,
+                "metadata": metadata,
+                "textinfo": textinfo,
+                "experiments": experiments,
+                "frame_metadata": frame_metadata_single,
+            }
+
+            return original_metadata
 
     def _build_ome_metadata(self, original_metadata: dict) -> OMEDataModel:
         """
@@ -346,12 +519,52 @@ class ND2Reader(MicroscopeDataReaderBase):
         return lab_specific_metadata
 
     def _release_resources(self) -> None:
-        (handle,) = self.resource_handles
+        if self._use_nd2_package:
+            if self.__nd2_file is not None:
+                self.__nd2_file.close()
+                self.__nd2_file = None
+        else:
+            (handle,) = self.resource_handles
+            self.__dll.Lim_FileClose(handle)
 
-        self.__dll.Lim_FileClose(handle)
+    def _get_image_stacks_from_nd2(self, nd2_file) -> np.ndarray:
+        """Return microscope image stacks using nd2 package
+
+        Returns array in same format as SDK: (C, T, Y, X) or (C, T, Z, Y, X)
+        """
+        # Read the full array from nd2 file
+        data = nd2_file.asarray()
+
+        # Expected: (T, Y, X) for single channel 2D time series
+        # Add channel dimension to match SDK format: (C, T, Y, X)
+        if data.ndim == 3:
+            result = data[np.newaxis, :, :, :]
+        else:
+            raise NotImplementedError(
+                f"nd2 package backend only supports single-channel 2D time series. "
+                f"Got data shape: {data.shape}. For multi-channel or Z-stack data, "
+                f"use Windows/Linux with SDK backend."
+            )
+
+        # Apply same reshape logic as SDK for 4D data
+        # If both Z and T dimensions exist, reshape to (C, T, Z, Y, X)
+        if self.ome_metadata.size_z > 1 and self.ome_metadata.size_t > 1:
+            result = result.reshape(
+                self.ome_metadata.size_c,
+                self.ome_metadata.size_t,
+                self.ome_metadata.size_z,
+                self.ome_metadata.size_y,
+                self.ome_metadata.size_x,
+            )
+
+        return result
 
     def _get_image_stacks(self) -> list:
         """Return microscope image stacks"""
+
+        if self._use_nd2_package:
+            (nd2_file,) = self.resource_handles
+            return self._get_image_stacks_from_nd2(nd2_file)
 
         (handle,) = self.resource_handles
 
