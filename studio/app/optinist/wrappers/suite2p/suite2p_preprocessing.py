@@ -16,7 +16,6 @@ from studio.app.optinist.dataclass import (  # EditRoiData,
 def suite2p_preprocessing(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
-
     # TODO: Mock version
     info = {}
 

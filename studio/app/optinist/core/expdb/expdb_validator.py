@@ -1,5 +1,6 @@
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.schemas.workflow import WorkflowConfig
+from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 
 
 class ExpDbValidator:
@@ -42,3 +43,20 @@ class ExpDbValidator:
         acceptable_nodes_matched = sorted(check_nodes) == sorted(list(acceptable_nodes))
 
         return acceptable_nodes_matched
+
+    @staticmethod
+    def validate_batch_roi_method(config: WorkflowConfig) -> SupportedRoiMethod:
+        check_nodes = WorkflowConfigReader.extract_node_names_in_workflow(config)
+
+        # Note: Only one of the optional nodes is accepted.
+        roi_node_name = None
+        for accept_optional_node in __class__._BATCH_ACCEPTABLE_OPTIONAL_NODES:
+            if accept_optional_node in check_nodes:
+                roi_node_name = accept_optional_node
+                break  # Break when one item is added.
+
+        return (
+            SupportedRoiMethod.get_roi_method_from_node(roi_node_name)
+            if roi_node_name
+            else None
+        )

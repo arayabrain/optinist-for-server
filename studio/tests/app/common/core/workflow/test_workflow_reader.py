@@ -87,6 +87,7 @@ def test_read_edgeDict():
     assert isinstance(edgeDict, dict)
     assert isinstance(edgeDict["sample1"], Edge)
 
+
 def test_find_node():
     workflow_config = WorkflowConfigReader.read(workspace_id, unique_id)
 
