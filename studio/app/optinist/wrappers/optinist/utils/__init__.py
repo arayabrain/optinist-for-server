@@ -1,3 +1,24 @@
+"""
+Shared utility functions for Optinist wrappers.
+"""
+
+# Import mat_file_io functions for shared access
+from studio.app.optinist.wrappers.optinist.utils.mat_file_io import (
+    save_auxiliary_mats,
+    save_cellmask_mat,
+    save_timecourse_mat,
+)
+
+__all__ = [
+    "standard_norm",
+    "recursive_flatten_params",
+    "param_check",
+    "save_timecourse_mat",
+    "save_cellmask_mat",
+    "save_auxiliary_mats",
+]
+
+
 def standard_norm(X, mean, std):
     from sklearn.preprocessing import StandardScaler
 

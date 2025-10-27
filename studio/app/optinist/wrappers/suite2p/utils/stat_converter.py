@@ -11,7 +11,7 @@ from typing import Optional
 import numpy as np
 import scipy.sparse
 
-from studio.app.optinist.wrappers.suite2p.utils.mat_file_io import (
+from studio.app.optinist.wrappers.optinist.utils import (
     save_cellmask_mat,
     save_timecourse_mat,
 )

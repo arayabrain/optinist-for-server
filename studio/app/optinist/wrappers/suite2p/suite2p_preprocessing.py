@@ -54,9 +54,9 @@ def suite2p_preprocessing(
             - neuropil_extract: Extract neuropil traces (default: True)
             - inner_neuropil_radius: Pixels between ROI and neuropil (default: 2)
             - min_neuropil_pixels: Minimum neuropil pixels (default: 350)
+            - neucoeff: Neuropil contamination coefficient (default: 0.7)
 
             ExpDB-Specific:
-            - neucoeff: Neuropil contamination coefficient (default: 0.7)
             - normalize_by_energy: Apply energy normalization (default: True)
 
             Visualization:

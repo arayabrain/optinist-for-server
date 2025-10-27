@@ -744,6 +744,16 @@ sys.exit(0 if result.get('success') else 1)
         # - フラグファイル処理（ログ出力、リネーム）
         # ----------------------------------------
 
+        # Read existing flag file to preserve roi_method and other metadata
+        existing_data = {}
+        if os.path.exists(flag_file):
+            try:
+                with open(flag_file, "r") as f:
+                    existing_data = yaml.safe_load(f) or {}
+            except Exception:
+                # If we can't read the file, just use empty dict
+                existing_data = {}
+
         # フラグファイル書き込みデータ作成
         if not error:
             result_log = {
@@ -761,6 +771,10 @@ sys.exit(0 if result.get('success') else 1)
                 "result": "error",
                 "log": "{}: {}".format(type(error), str(error)),
             }
+
+        # Preserve roi_method from existing data (don't overwrite)
+        if "roi_method" in existing_data:
+            result_log["roi_method"] = existing_data["roi_method"]
 
         # フラグファイル内容アップデート
         with open(flag_file, "w") as yf:
