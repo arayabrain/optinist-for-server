@@ -16,7 +16,7 @@ from studio.app.common.core.utils.filepath_creater import (
 )
 from studio.app.common.dataclass import ImageData
 from studio.app.const import TS_SUFFIX
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import (  # EditRoiData,
     ExpDbData,
@@ -114,8 +114,8 @@ def suite2p_preprocessing(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
-    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
-    subject_id = exp_id.split("_")[0]
+    exp_ids = ExpDbPathIdsUtil.parse_ids_from_workflow_output_path(file_path)
+    exp_id = exp_ids.exp_id
 
     logger.info(f"Processing experiment: {exp_id}")
 
@@ -133,8 +133,9 @@ def suite2p_preprocessing(
 
     # Verify trial structure file exists (optional for testing)
     ts_filename = f"{exp_id}_{TS_SUFFIX}.mat"
-    trialstructure_path = join_filepath(
-        [EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id, ts_filename]
+    trialstructure_path = ExpDbPathIdsUtil.create_expdb_file_path(
+        exp_id,
+        ts_filename,
     )
 
     if not os.path.exists(trialstructure_path):
