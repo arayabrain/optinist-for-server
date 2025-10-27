@@ -27,7 +27,10 @@ import {
   selectPipelineIsExpdbBatchRun,
 } from "store/slice/Pipeline/PipelineSelectors"
 import { RUN_STATUS } from "store/slice/Pipeline/PipelineType"
-import { handleWorkflowYamlError } from "store/slice/Pipeline/PipelineUtils"
+import {
+  handleExpDbBatchWorkflowError,
+  handleWorkflowYamlError,
+} from "store/slice/Pipeline/PipelineUtils"
 import { selectRunPostData } from "store/slice/Run/RunSelectors"
 import { selectModeStandalone } from "store/slice/Standalone/StandaloneSeclector"
 import {
@@ -142,7 +145,7 @@ export function useRunPipeline() {
       )
         .unwrap()
         .catch((error) => {
-          handleWorkflowYamlError(error, enqueueSnackbar)
+          handleExpDbBatchWorkflowError(error, enqueueSnackbar)
         })
     },
     [dispatch, enqueueSnackbar, prepareRunPostData],

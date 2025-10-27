@@ -971,6 +971,10 @@ async def expdb_batch_run(
             detail=str(e).strip('"'),  # Remove quotes from the KeyError message
         )
 
+    except HTTPException as e:
+        logger.error(e, exc_info=True)
+        raise e
+
     except Exception as e:
         logger.error(e, exc_info=True)
         raise HTTPException(
