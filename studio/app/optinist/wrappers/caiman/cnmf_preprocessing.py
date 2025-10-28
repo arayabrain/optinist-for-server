@@ -4,9 +4,8 @@ import numpy as np
 import scipy
 
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
-from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
+from studio.app.const import TS_SUFFIX
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
@@ -17,7 +16,12 @@ from studio.app.optinist.wrappers.caiman.cnmf import (
     util_get_image_memmap,
 )
 from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
-from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
+from studio.app.optinist.wrappers.optinist.utils import (
+    recursive_flatten_params,
+    save_auxiliary_mats,
+    save_cellmask_mat,
+    save_timecourse_mat,
+)
 
 logger = AppLogger.get_logger()
 
@@ -76,7 +80,6 @@ def calculate_AY(
 def caiman_cnmf_preprocessing(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
-    import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
@@ -169,27 +172,38 @@ def caiman_cnmf_preprocessing(
     stop_server(dview=dview)
 
     Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
-        {"Yr": Yr},
-    )
 
     AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
-    timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
     trialstructure_path = ExpDbPathIdsUtil.create_expdb_file_path(
         exp_id,
         f"{exp_id}_{TS_SUFFIX}.mat",
     )
 
-    scipy.io.savemat(timecourse_path, {"timecourse": AY})
-
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
-        {"cellmask": cnm.estimates.A},
+    # Save timecourse.mat with validation
+    timecourse_path = save_timecourse_mat(
+        timecourse_data=AY,
+        output_dir=output_dir,
+        exp_id=exp_id,
+        field_name="timecourse",
+        validate=True,
     )
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
-        {"C_or": cnm.estimates.C},
+
+    # Save cellmask.mat with validation
+    save_cellmask_mat(
+        cellmask_data=cnm.estimates.A,
+        output_dir=output_dir,
+        exp_id=exp_id,
+        field_name="cellmask",
+        validate=True,
+    )
+
+    # Save auxiliary .mat files (Yr.mat and C_or.mat) with validation
+    save_auxiliary_mats(
+        output_dir=output_dir,
+        exp_id=exp_id,
+        Yr=Yr,
+        C_or=cnm.estimates.C,
+        validate=True,
     )
 
     # Compute summary images
