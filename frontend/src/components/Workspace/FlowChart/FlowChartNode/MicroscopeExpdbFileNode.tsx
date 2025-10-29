@@ -4,7 +4,7 @@ import { Handle, NodeProps, Position } from "reactflow"
 
 import { Button, Typography } from "@mui/material"
 
-import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbNode"
+import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbSelectDialog"
 import {
   isValidConnection,
   toHandleId,

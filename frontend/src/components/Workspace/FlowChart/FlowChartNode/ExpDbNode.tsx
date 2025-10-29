@@ -1,21 +1,10 @@
-import { memo, useContext, useState } from "react"
+import { memo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Handle, NodeProps, Position } from "reactflow"
 
-import { useSnackbar } from "notistack"
+import { Button, Typography } from "@mui/material"
 
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from "@mui/material"
-import { GridEventListener, GridRowParams } from "@mui/x-data-grid"
-
-import DatabaseExperiments from "components/Database/DatabaseExperiments"
-import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbSelectDialog"
 import {
   isValidConnection,
   toHandleId,
@@ -24,17 +13,12 @@ import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/Han
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
 import { getFileTypeConfig } from "config/fileTypes.config"
 import { HANDLE_STYLE } from "const/flowchart"
-import { DatabaseType } from "store/slice/Database/DatabaseType"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
-import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
 import {
   selectExpDbRelatedInputNodeSelectedFilePath,
   selectInputNodeDefined,
   selectInputNodeFileType,
 } from "store/slice/InputNode/InputNodeSelectors"
-import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
-import { selectCurrentUser } from "store/slice/User/UserSelector"
-import { RootState } from "store/store"
 
 export const ExpDbNode = memo(function ExpDbNode(element: NodeProps) {
   const defined = useSelector(selectInputNodeDefined(element.id))
@@ -54,12 +38,18 @@ const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
   const returnType = "ExpDbData"
   const expdbColor = useHandleColor(returnType)
 
+  // Get displayName dynamically from nodeId
+  const fileType = useSelector(selectInputNodeFileType(nodeId))
+  const config = getFileTypeConfig(fileType)
+  const displayLabel = config?.displayName || fileType
+
   const onClickDeleteIcon = () => {
     dispatch(deleteFlowNodeById(nodeId))
   }
 
   return (
     <NodeContainer nodeId={nodeId} selected={elementSelected}>
+      <Typography>{displayLabel}</Typography>
       <button
         className="flowbutton"
         onClick={onClickDeleteIcon}
@@ -85,14 +75,8 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
     selectExpDbRelatedInputNodeSelectedFilePath(nodeId),
   )
 
-  // Get displayName dynamically from nodeId
-  const fileType = useSelector(selectInputNodeFileType(nodeId))
-  const config = getFileTypeConfig(fileType)
-  const displayLabel = config?.displayName || fileType
-
   return (
     <div>
-      <Typography>{displayLabel}</Typography>
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
         Select
       </Button>
@@ -108,97 +92,5 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
           : "No experiment selected"}
       </Typography>
     </div>
-  )
-})
-
-interface ExpDbSelectDialogProps {
-  nodeId: string
-  open: boolean
-  experimentIdSelector: (
-    nodeId: string,
-  ) => (state: RootState) => string | undefined
-  setOpen: (open: boolean) => void
-}
-
-export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
-  nodeId,
-  open,
-  experimentIdSelector,
-  setOpen,
-}: ExpDbSelectDialogProps) {
-  const { onOpenClearWorkflowIdDialog } = useContext(DialogContext)
-  const currentPipelineUid = useSelector(selectPipelineLatestUid)
-  const currentExperimentId = useSelector(experimentIdSelector(nodeId))
-  const user = useSelector(selectCurrentUser)
-  const [experimentId, setExperimentId] = useState<string | undefined>(
-    undefined,
-  )
-  const dispatch = useDispatch()
-  const { enqueueSnackbar } = useSnackbar()
-
-  const handleRowClick: GridEventListener<"rowClick"> = (
-    params: GridRowParams<DatabaseType>,
-  ) => {
-    setExperimentId(params.row.experiment_id)
-  }
-
-  const onClickCancel = () => {
-    setOpen(false)
-    setExperimentId(undefined)
-  }
-
-  const onClickOk = () => {
-    try {
-      if (currentPipelineUid && currentExperimentId !== experimentId) {
-        onOpenClearWorkflowIdDialog({
-          open: true,
-          handleOk: () => {
-            dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
-            setOpen(false)
-          },
-          handleCancel: () => {},
-        })
-      } else {
-        dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
-        setOpen(false)
-      }
-    } catch (e) {
-      enqueueSnackbar("Select experiment failed", { variant: "error" })
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      fullWidth
-      maxWidth="lg"
-      onClose={(event, reason) => {
-        if (reason === "escapeKeyDown") {
-          onClickCancel()
-        }
-      }}
-    >
-      <DialogTitle>Experiments</DialogTitle>
-      <DialogContent dividers>
-        <DatabaseExperiments
-          user={user}
-          cellPath="/console/cells"
-          handleRowClick={handleRowClick}
-          readonly
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClickCancel} variant="outlined">
-          Cancel
-        </Button>
-        <Button
-          onClick={onClickOk}
-          variant="contained"
-          disabled={!experimentId}
-        >
-          OK
-        </Button>
-      </DialogActions>
-    </Dialog>
   )
 })
