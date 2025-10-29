@@ -8,6 +8,7 @@ import {
   MatlabInputNode,
   MicroscopeInputNode,
   MicroscopeExpdbInputNode,
+  ExpdbBatchMicroscopeExpdbInputNode,
 } from "store/slice/InputNode/InputNodeType"
 
 export function isImageInputNode(
@@ -50,4 +51,10 @@ export function isExpDbInputNode(
   inputNode: InputNodeType,
 ): inputNode is ExpDbInputNode {
   return inputNode.fileType === FILE_TYPE_SET.EXPDB
+}
+
+export function isExpdbBatchMicroscopeExpDbInputNode(
+  inputNode: InputNodeType,
+): inputNode is ExpdbBatchMicroscopeExpdbInputNode {
+  return inputNode.fileType === FILE_TYPE_SET.EXPDB_BATCH_MICROSCOPE_EXPDB
 }

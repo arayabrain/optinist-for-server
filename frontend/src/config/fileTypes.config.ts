@@ -18,10 +18,7 @@ export const WORKSPACE_TYPE_HIERARCHY_MAPPING: Record<
   [WORKSPACE_TYPE.DEFAULT]: [TREE_HIERARCHY.DATA],
   [WORKSPACE_TYPE.NORMAL]: [TREE_HIERARCHY.DATA],
   [WORKSPACE_TYPE.BATCH]: [TREE_HIERARCHY.DATA, TREE_HIERARCHY.BATCH_DATA],
-  [WORKSPACE_TYPE.EXPDB_BATCH]: [
-    TREE_HIERARCHY.DATA,
-    TREE_HIERARCHY.EXPDB_BATCH_DATA,
-  ],
+  [WORKSPACE_TYPE.EXPDB_BATCH]: [TREE_HIERARCHY.EXPDB_BATCH_DATA],
 }
 
 export interface FileTypeConfig {
@@ -87,6 +84,7 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
   MicroscopeFileNode: "MicroscopeFileNode",
   MicroscopeExpdbFileNode: "MicroscopeExpdbFileNode",
   ExpDbNode: "ExpDbNode",
+  ExpdbBatchMicroscopeExpdbFileNode: "ExpdbBatchMicroscopeExpdbFileNode",
 } as const
 
 // Streamlined config - nodeType references REACT_FLOW_NODE_TYPE_KEY
@@ -177,6 +175,15 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
     filePathType: "single",
     defaultParam: {},
     nodeType: REACT_FLOW_NODE_TYPE_KEY.ExpDbNode,
+  },
+  EXPDB_BATCH_MICROSCOPE_EXPDB: {
+    key: "expdb_batch_microscope_expdb",
+    displayName: "batch_database",
+    hasFilePath: true,
+    filePathType: "array",
+    defaultParam: {},
+    nodeType: REACT_FLOW_NODE_TYPE_KEY.ExpdbBatchMicroscopeExpdbFileNode,
+    treeHierarchy: TREE_HIERARCHY.EXPDB_BATCH_DATA,
   },
 } as const
 

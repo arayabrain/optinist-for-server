@@ -18,6 +18,7 @@ export type InputNodeType =
   | MicroscopeInputNode
   | MicroscopeExpdbInputNode
   | ExpDbInputNode
+  | ExpdbBatchMicroscopeExpdbInputNode
 
 interface InputNodeBaseType<
   T extends FILE_TYPE,
@@ -69,4 +70,12 @@ export interface MicroscopeExpdbInputNode
 export interface ExpDbInputNode
   extends InputNodeBaseType<"expdb", Record<never, never>> {
   selectedFilePath?: string
+}
+
+export interface ExpdbBatchMicroscopeExpdbInputNode
+  extends InputNodeBaseType<
+    "expdb_batch_microscope_expdb",
+    Record<never, never>
+  > {
+  selectedFilePath?: string[]
 }

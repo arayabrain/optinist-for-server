@@ -7,7 +7,7 @@ class ExpDbValidator:
     # List of Layout-Capable Nodes
     _BATCH_ACCEPTABLE_REQUIRED_NODES = frozenset(
         {
-            "microscope_expdb",
+            "expdb_batch_microscope_expdb",
             "preprocessing",
             "analyze_stats",
         }

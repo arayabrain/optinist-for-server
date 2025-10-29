@@ -9,6 +9,7 @@ import {
   isMicroscopeInputNode,
   isMicroscopeExpDbInputNode,
   isExpDbInputNode,
+  isExpdbBatchMicroscopeExpDbInputNode,
 } from "store/slice/InputNode/InputNodeUtils"
 import { RootState } from "store/store"
 
@@ -65,6 +66,7 @@ const generateTypedSelectors = () => {
       microscope: isMicroscopeInputNode,
       microscope_expdb: isMicroscopeExpDbInputNode,
       expdb: isExpDbInputNode,
+      expdb_batch_microscope_expdb: isExpdbBatchMicroscopeExpDbInputNode,
     }
 
   getAllFileTypeConfigs().forEach((config) => {
@@ -103,6 +105,8 @@ export const selectMicroscopeExpdbInputNodeSelectedFilePath =
   typedSelectors.selectMicroscopeExpdbInputNodeSelectedFilePath
 export const selectExpDbInputNodeSelectedFilePath =
   typedSelectors.selectExpdbInputNodeSelectedFilePath
+export const selectExpdbBatchMicroscopeExpdbInputNodeSelectedFilePath =
+  typedSelectors.selectExpdbBatchMicroscopeExpdbInputNodeSelectedFilePath
 
 // Dynamic selectors generation capability is available for future extensions via getAllFileTypeConfigs()
 
@@ -114,7 +118,11 @@ export const selectExpDbInputNodeSelectedFilePath =
 export const selectExpDbRelatedInputNodeSelectedFilePath =
   (nodeId: string) => (state: RootState) => {
     const inputNode = selectInputNodeById(nodeId)(state)
-    if (isMicroscopeExpDbInputNode(inputNode) || isExpDbInputNode(inputNode)) {
+    if (
+      isMicroscopeExpDbInputNode(inputNode) ||
+      isExpDbInputNode(inputNode) ||
+      isExpdbBatchMicroscopeExpDbInputNode(inputNode)
+    ) {
       return inputNode.selectedFilePath
     } else {
       throw new Error("invalid input node type")

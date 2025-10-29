@@ -35,6 +35,7 @@ import {
   GridSortDirection,
   GridSortItem,
   GridSortModel,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid"
 
 import { SHARE, WAITING_TIME } from "@types"
@@ -98,8 +99,13 @@ type DatabaseProps = {
   user?: UserDTO
   cellPath: string
   handleRowClick?: GridEventListener<"rowClick">
+  handleRowSelectionModelChange?: (
+    selectionModel: GridRowSelectionModel,
+  ) => void
   readonly?: boolean
   metadataEditable?: boolean
+  multiSelect?: boolean
+  hideImageColumns?: boolean
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -481,8 +487,11 @@ const DatabaseExperiments = ({
   user,
   cellPath,
   handleRowClick,
+  handleRowSelectionModelChange,
   readonly,
   metadataEditable,
+  multiSelect = false,
+  hideImageColumns = false,
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -1072,7 +1081,7 @@ const DatabaseExperiments = ({
     ]
   }
 
-  const columnsTable = [
+  let columnsTable = [
     ...columns(
       dataExperiments.items.map((item) => item.id),
       setListCheck,
@@ -1092,6 +1101,16 @@ const DatabaseExperiments = ({
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]
+
+  // Filter columns if hidePixcelColumns is true
+  if (hideImageColumns) {
+    const firstImageColumnIndex = columnsTable.findIndex(
+      (col) => col.field === "cell_image_urls",
+    )
+    if (firstImageColumnIndex !== -1) {
+      columnsTable = columnsTable.slice(0, firstImageColumnIndex)
+    }
+  }
 
   return (
     <DatabaseExperimentsWrapper>
@@ -1189,6 +1208,8 @@ const DatabaseExperiments = ({
         filterModel={model.filter}
         onFilterModelChange={handleFilter}
         onRowClick={handleRowClick}
+        checkboxSelection={multiSelect}
+        onRowSelectionModelChange={handleRowSelectionModelChange}
         sx={{ flex: 1, minHeight: 0 }}
       />
       {dataExperiments?.items.length > 0 ? (

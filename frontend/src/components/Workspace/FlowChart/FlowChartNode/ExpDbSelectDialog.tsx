@@ -32,8 +32,10 @@ interface ExpDbSelectDialogProps {
   open: boolean
   experimentIdSelector: (
     nodeId: string,
-  ) => (state: RootState) => string | undefined
+  ) => (state: RootState) => string | string[] | undefined
   setOpen: (open: boolean) => void
+  multiSelect?: boolean
+  hideImageColumns?: boolean
 }
 
 export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
@@ -41,47 +43,93 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   open,
   experimentIdSelector,
   setOpen,
+  multiSelect = false,
+  hideImageColumns = false,
 }: ExpDbSelectDialogProps) {
   const { onOpenClearWorkflowIdDialog } = useContext(DialogContext)
   const currentPipelineUid = useSelector(selectPipelineLatestUid)
   const currentExperimentId = useSelector(experimentIdSelector(nodeId))
   const user = useSelector(selectCurrentUser)
+  const dataExperiments = useSelector((state: RootState) => {
+    const type = user ? "private" : "public"
+    return state[DATABASE_SLICE_NAME].data[type]
+  })
+
+  // Single select state
   const [experimentId, setExperimentId] = useState<string | undefined>(
     undefined,
   )
+
+  // Multi select state
+  const [selectedRowIds, setSelectedRowIds] = useState<GridRowSelectionModel>(
+    [],
+  )
+
   const dispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
 
   const handleRowClick: GridEventListener<"rowClick"> = (
     params: GridRowParams<DatabaseType>,
   ) => {
-    setExperimentId(params.row.experiment_id)
+    if (!multiSelect) {
+      setExperimentId(params.row.experiment_id)
+    }
+  }
+
+  const handleRowSelectionModelChange = (
+    selectionModel: GridRowSelectionModel,
+  ) => {
+    if (multiSelect) {
+      setSelectedRowIds(selectionModel)
+    }
   }
 
   const onClickCancel = () => {
     setOpen(false)
     setExperimentId(undefined)
+    setSelectedRowIds([])
   }
 
   const onClickOk = () => {
     try {
-      if (currentPipelineUid && currentExperimentId !== experimentId) {
+      let newFilePath: string | string[] | undefined
+
+      if (multiSelect) {
+        // Map selected row IDs to experiment_ids
+        const selectedExperimentIds = dataExperiments.items
+          .filter((item) => selectedRowIds.includes(item.id))
+          .map((item) => item.experiment_id)
+          .filter((id): id is string => id !== undefined)
+        newFilePath = selectedExperimentIds
+      } else {
+        newFilePath = experimentId
+      }
+
+      const hasChanged = multiSelect
+        ? JSON.stringify(currentExperimentId) !== JSON.stringify(newFilePath)
+        : currentExperimentId !== newFilePath
+
+      if (currentPipelineUid && hasChanged) {
         onOpenClearWorkflowIdDialog({
           open: true,
           handleOk: () => {
-            dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
+            dispatch(setInputNodeFilePath({ nodeId, filePath: newFilePath! }))
             setOpen(false)
+            setSelectedRowIds([])
           },
           handleCancel: () => {},
         })
       } else {
-        dispatch(setInputNodeFilePath({ nodeId, filePath: experimentId! }))
+        dispatch(setInputNodeFilePath({ nodeId, filePath: newFilePath! }))
         setOpen(false)
+        setSelectedRowIds([])
       }
     } catch (e) {
       enqueueSnackbar("Select experiment failed", { variant: "error" })
     }
   }
+
+  const isOkDisabled = multiSelect ? selectedRowIds.length === 0 : !experimentId
 
   return (
     <Dialog
@@ -100,18 +148,17 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           user={user}
           cellPath="/console/cells"
           handleRowClick={handleRowClick}
+          handleRowSelectionModelChange={handleRowSelectionModelChange}
           readonly
+          multiSelect={multiSelect}
+          hideImageColumns={hideImageColumns}
         />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClickCancel} variant="outlined">
           Cancel
         </Button>
-        <Button
-          onClick={onClickOk}
-          variant="contained"
-          disabled={!experimentId}
-        >
+        <Button onClick={onClickOk} variant="contained" disabled={isOkDisabled}>
           OK
         </Button>
       </DialogActions>
