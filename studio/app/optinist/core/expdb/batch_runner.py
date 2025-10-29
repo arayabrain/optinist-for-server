@@ -8,7 +8,6 @@ import pathlib
 import subprocess
 import traceback
 from contextlib import contextmanager
-from enum import Enum
 
 import yaml
 from lauda import stopwatch, stopwatchcm
@@ -18,6 +17,11 @@ from studio.app.common.core.users.crud_organizations import get_organization
 from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import (
+    FLAG_FILE_EXT,
+    LOCKFILE_NAME,
+    ProcessCommand,
+)
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
 from studio.app.optinist.core.expdb.crud_configs import summarize_experiment_metadata
@@ -30,15 +34,6 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
 )
-
-LOCKFILE_NAME = "process.lock"
-FLAG_FILE_EXT = ".proc"
-
-
-class ProcessCommand(Enum):
-    REGIST = "regist"
-    REGIST_METADATA = "regist_metadata"
-    DELETE = "delete"
 
 
 class ProcessResult:

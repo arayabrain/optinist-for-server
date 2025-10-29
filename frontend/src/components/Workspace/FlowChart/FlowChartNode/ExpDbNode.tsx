@@ -28,7 +28,7 @@ import { DatabaseType } from "store/slice/Database/DatabaseType"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
 import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
 import {
-  selectExpDbInputNodeSelectedFilePath,
+  selectExpDbRelatedInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
 import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
@@ -80,7 +80,9 @@ const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
 
 const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
   const [open, setOpen] = useState(false)
-  const experimentId = useSelector(selectExpDbInputNodeSelectedFilePath(nodeId))
+  const experimentId = useSelector(
+    selectExpDbRelatedInputNodeSelectedFilePath(nodeId),
+  )
 
   return (
     <div>
@@ -92,7 +94,7 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
         nodeId={nodeId}
         open={open}
         setOpen={setOpen}
-        experimentIdSelector={selectExpDbInputNodeSelectedFilePath}
+        experimentIdSelector={selectExpDbRelatedInputNodeSelectedFilePath}
       />
       <Typography>
         {experimentId
