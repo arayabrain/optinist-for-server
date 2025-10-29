@@ -106,6 +106,7 @@ type DatabaseProps = {
   metadataEditable?: boolean
   multiSelect?: boolean
   hideImageColumns?: boolean
+  initialRowSelection?: GridRowSelectionModel
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -492,6 +493,7 @@ const DatabaseExperiments = ({
   metadataEditable,
   multiSelect = false,
   hideImageColumns = false,
+  initialRowSelection = [],
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -504,6 +506,15 @@ const DatabaseExperiments = ({
     loading: state[DATABASE_SLICE_NAME].loading,
     filterParams: state[DATABASE_SLICE_NAME].filterParams,
   }))
+
+  // Manage row selection state internally
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>(initialRowSelection)
+
+  // Update internal state when initialRowSelection changes (e.g., when dialog reopens)
+  useEffect(() => {
+    setRowSelectionModel(initialRowSelection)
+  }, [initialRowSelection])
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -1209,7 +1220,11 @@ const DatabaseExperiments = ({
         onFilterModelChange={handleFilter}
         onRowClick={handleRowClick}
         checkboxSelection={multiSelect}
-        onRowSelectionModelChange={handleRowSelectionModelChange}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={(newSelection) => {
+          setRowSelectionModel(newSelection)
+          handleRowSelectionModelChange?.(newSelection)
+        }}
         sx={{ flex: 1, minHeight: 0 }}
       />
       {dataExperiments?.items.length > 0 ? (

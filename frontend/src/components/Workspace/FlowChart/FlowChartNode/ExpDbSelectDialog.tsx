@@ -1,10 +1,12 @@
-import { memo, useContext, useState } from "react"
+import { memo, useContext, useEffect, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
 import { useSnackbar } from "notistack"
 
 import {
+  Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -60,13 +62,37 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     undefined,
   )
 
-  // Multi select state
+  // Multi select state - initialize from currentExperimentId when dialog opens
   const [selectedRowIds, setSelectedRowIds] = useState<GridRowSelectionModel>(
     [],
   )
 
   const dispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
+
+  // Track previous open state to detect when dialog opens
+  const prevOpenRef = useRef(false)
+
+  // Update selectedRowIds ONLY when dialog opens (not when filter changes)
+  useEffect(() => {
+    // Only initialize when dialog transitions from closed to open
+    if (open && !prevOpenRef.current) {
+      if (multiSelect && Array.isArray(currentExperimentId)) {
+        // Map experiment IDs to row IDs
+        const rowIds = dataExperiments.items
+          .filter((item) =>
+            currentExperimentId.includes(item.experiment_id || ""),
+          )
+          .map((item) => item.id)
+        setSelectedRowIds(rowIds)
+      } else if (multiSelect) {
+        // Reset to empty if currentExperimentId is not an array
+        setSelectedRowIds([])
+      }
+    }
+    // Update the previous open state
+    prevOpenRef.current = open
+  }, [open, multiSelect, currentExperimentId, dataExperiments.items])
 
   const handleRowClick: GridEventListener<"rowClick"> = (
     params: GridRowParams<DatabaseType>,
@@ -129,7 +155,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     }
   }
 
-  const isOkDisabled = multiSelect ? selectedRowIds.length === 0 : !experimentId
+  const isOkDisabled = !multiSelect && !experimentId
 
   return (
     <Dialog
@@ -144,6 +170,24 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     >
       <DialogTitle>Experiments</DialogTitle>
       <DialogContent dividers>
+        {multiSelect && (
+          <Box sx={{ display: "flex", alignItems: "center", mb: -4 }}>
+            Selected{" "}
+            <Chip
+              label={selectedRowIds.length}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{
+                fontSize: "0.75rem",
+                height: "20px",
+                fontWeight: "bold",
+                mx: 0.5,
+              }}
+            />{" "}
+            experiments
+          </Box>
+        )}
         <DatabaseExperiments
           user={user}
           cellPath="/console/cells"
@@ -152,6 +196,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           readonly
           multiSelect={multiSelect}
           hideImageColumns={hideImageColumns}
+          initialRowSelection={selectedRowIds}
         />
       </DialogContent>
       <DialogActions>
