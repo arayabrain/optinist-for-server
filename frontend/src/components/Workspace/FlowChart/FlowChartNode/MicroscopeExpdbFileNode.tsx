@@ -1,22 +1,23 @@
 import { memo, useState } from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { Handle, Position, NodeProps } from "reactflow"
+import { useDispatch, useSelector } from "react-redux"
+import { Handle, NodeProps, Position } from "reactflow"
 
 import { Button, Typography } from "@mui/material"
 
 import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbNode"
 import {
-  toHandleId,
   isValidConnection,
+  toHandleId,
 } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
 import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
-import { FILE_TYPE_NODE_NAME_ALIAS } from "config/fileTypes.config"
+import { getFileTypeConfig } from "config/fileTypes.config"
 import { HANDLE_STYLE } from "const/flowchart"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
 import {
   selectExpDbRelatedInputNodeSelectedFilePath,
   selectInputNodeDefined,
+  selectInputNodeFileType,
 } from "store/slice/InputNode/InputNodeSelectors"
 
 export const MicroscopeExpdbFileNode = memo(function MicroscopeExpdbFileNode(
@@ -40,13 +41,18 @@ const MicroscopeExpdbFileNodeImple = memo(
     const returnType = "MicroscopeExpdbData"
     const microscopeColor = useHandleColor(returnType)
 
+    // Get displayName dynamically from nodeId
+    const fileType = useSelector(selectInputNodeFileType(nodeId))
+    const config = getFileTypeConfig(fileType)
+    const displayLabel = config?.displayName || fileType
+
     const onClickDeleteIcon = () => {
       dispatch(deleteFlowNodeById(nodeId))
     }
 
     return (
       <NodeContainer nodeId={nodeId} selected={elementSelected}>
-        <Typography>{FILE_TYPE_NODE_NAME_ALIAS.MICROSCOPE_EXPDB}</Typography>
+        <Typography>{displayLabel}</Typography>
         <button
           className="flowbutton"
           onClick={onClickDeleteIcon}

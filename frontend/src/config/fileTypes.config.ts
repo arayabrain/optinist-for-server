@@ -180,13 +180,6 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
   },
 } as const
 
-// TODO: It is recommended to delete this alias and prepare
-//   an interface that references FILE_TYPE_CONFIGS.*.displayName.
-export const FILE_TYPE_NODE_NAME_ALIAS = {
-  MICROSCOPE_EXPDB: FILE_TYPE_CONFIGS.MICROSCOPE_EXPDB.displayName,
-  EXPDB: FILE_TYPE_CONFIGS.EXPDB.displayName,
-} as const
-
 // Enhanced configs with computed properties
 const ENHANCED_FILE_TYPE_CONFIGS: Record<string, EnhancedFileTypeConfig> =
   Object.fromEntries(

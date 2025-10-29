@@ -22,7 +22,7 @@ import {
 } from "components/Workspace/FlowChart/FlowChartNode/FlowChartUtils"
 import { useHandleColor } from "components/Workspace/FlowChart/FlowChartNode/HandleColorHook"
 import { NodeContainer } from "components/Workspace/FlowChart/FlowChartNode/NodeContainer"
-import { FILE_TYPE_NODE_NAME_ALIAS } from "config/fileTypes.config"
+import { getFileTypeConfig } from "config/fileTypes.config"
 import { HANDLE_STYLE } from "const/flowchart"
 import { DatabaseType } from "store/slice/Database/DatabaseType"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
@@ -30,6 +30,7 @@ import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
 import {
   selectExpDbRelatedInputNodeSelectedFilePath,
   selectInputNodeDefined,
+  selectInputNodeFileType,
 } from "store/slice/InputNode/InputNodeSelectors"
 import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
 import { selectCurrentUser } from "store/slice/User/UserSelector"
@@ -46,7 +47,7 @@ export const ExpDbNode = memo(function ExpDbNode(element: NodeProps) {
 
 const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
   id: nodeId,
-  selected,
+  selected: elementSelected,
 }: NodeProps) {
   const dispatch = useDispatch()
 
@@ -58,7 +59,7 @@ const ExpDbFileNodeImple = memo(function ExpDbFileNodeImple({
   }
 
   return (
-    <NodeContainer nodeId={nodeId} selected={selected}>
+    <NodeContainer nodeId={nodeId} selected={elementSelected}>
       <button
         className="flowbutton"
         onClick={onClickDeleteIcon}
@@ -84,9 +85,14 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
     selectExpDbRelatedInputNodeSelectedFilePath(nodeId),
   )
 
+  // Get displayName dynamically from nodeId
+  const fileType = useSelector(selectInputNodeFileType(nodeId))
+  const config = getFileTypeConfig(fileType)
+  const displayLabel = config?.displayName || fileType
+
   return (
     <div>
-      <Typography>{FILE_TYPE_NODE_NAME_ALIAS.EXPDB}</Typography>
+      <Typography>{displayLabel}</Typography>
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
         Select
       </Button>
