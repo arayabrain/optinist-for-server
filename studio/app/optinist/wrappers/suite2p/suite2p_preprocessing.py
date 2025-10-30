@@ -24,8 +24,16 @@ from studio.app.optinist.dataclass import (  # EditRoiData,
     IscellData,
     RoiData,
 )
-from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
-from studio.app.optinist.wrappers.suite2p.utils import convert_suite2p_to_expdb_mats
+from studio.app.optinist.wrappers.optinist.utils import (
+    recursive_flatten_params,
+    save_auxiliary_mats,
+    save_cellmask_mat,
+    save_timecourse_mat,
+)
+from studio.app.optinist.wrappers.suite2p.utils import (
+    create_normalized_timecourse,
+    stat_to_cellmask,
+)
 
 logger = AppLogger.get_logger()
 
@@ -380,59 +388,67 @@ def suite2p_preprocessing(
     logger.info("Converting Suite2p outputs to ExpDB format...")
 
     if len(stat) > 0:
-        # Create optional Yr.mat
-        if create_Yr:
-            import scipy.io
-
-            # Process Yr.mat creation in chunks to reduce memory
-            logger.info("Creating Yr.mat in chunks to reduce memory usage...")
-            chunk_size = 100  # Process 100 frames at a time
-            yr_path = join_filepath([output_dir, f"{exp_id}_Yr.mat"])
-
-            # Pre-allocate Yr array using memory-mapped file for large datasets
-            n_pixels = Ly * Lx
-            Yr = np.zeros((n_pixels, T), dtype=np.float32)
-
-            for start_idx in range(0, T, chunk_size):
-                end_idx = min(start_idx + chunk_size, T)
-                chunk = image_stack[start_idx:end_idx].astype(np.float32)
-                # Reshape chunk: (chunk_frames, Ly, Lx) ->
-                # (chunk_frames, n_pixels) -> (n_pixels, chunk_frames)
-                chunk_reshaped = chunk.reshape(
-                    end_idx - start_idx, n_pixels, order="F"
-                ).T
-                Yr[:, start_idx:end_idx] = chunk_reshaped
-                del chunk, chunk_reshaped
-
-            scipy.io.savemat(yr_path, {"Yr": Yr})
-            del Yr  # Free memory immediately
-            logger.info("Created Yr.mat")
-
-        conversion_params = {
-            "neucoeff": neucoeff,
-            "normalize_by_energy": normalize_by_energy,
-            "create_C_or": create_C_or,
-            "validate_outputs": validate_outputs,
-        }
-
-        # Use filtered arrays (only accepted cells) for ExpDB .mat files
-        mat_paths = convert_suite2p_to_expdb_mats(
+        # Create normalized timecourse (Suite2p-specific transformation)
+        timecourse = create_normalized_timecourse(
             F=F_cells,
             Fneu=Fneu_cells,
             stat=stat_cells,
-            Ly=Ly,
-            Lx=Lx,
-            output_dir=output_dir,
-            exp_id=exp_id,
-            params=conversion_params,
-            validate=validate_outputs,
+            neucoeff=neucoeff,
+            normalize=normalize_by_energy,
         )
 
-        timecourse_path = mat_paths["timecourse"]
-        cellmask_path = mat_paths["cellmask"]
+        # Create sparse cellmask (Suite2p-specific transformation)
+        cellmask = stat_to_cellmask(stat_cells, Ly, Lx)
 
+        # Save timecourse.mat with validation
+        timecourse_path = save_timecourse_mat(
+            timecourse_data=timecourse,
+            output_dir=output_dir,
+            exp_id=exp_id,
+            field_name="timecourse",
+            validate=validate_outputs,
+        )
         logger.info(f"Created timecourse: {timecourse_path}")
+
+        # Save cellmask.mat with validation
+        cellmask_path = save_cellmask_mat(
+            cellmask_data=cellmask,
+            output_dir=output_dir,
+            exp_id=exp_id,
+            field_name="cellmask",
+            validate=validate_outputs,
+        )
         logger.info(f"Created cellmask: {cellmask_path}")
+
+        # Prepare auxiliary data (Yr and C_or)
+        Yr = None
+        C_or = None
+
+        if create_Yr:
+            # Create Yr.mat - reshape image stack to (pixels, T)
+            logger.info("Creating Yr array...")
+            n_pixels = Ly * Lx
+            Yr = image_stack.astype(np.float32).reshape(T, n_pixels, order="F").T
+
+        if create_C_or:
+            # C_or is the neuropil-corrected but not energy-normalized traces
+            # Keep in (n_cells, T) format for consistency with CaImAn
+            Fneu_mean = np.mean(Fneu_cells, axis=1, keepdims=True)
+            C_or = (F_cells - neucoeff * Fneu_cells) + Fneu_mean
+
+        # Save auxiliary .mat files (Yr.mat and C_or.mat) with validation
+        if Yr is not None or C_or is not None:
+            save_auxiliary_mats(
+                output_dir=output_dir,
+                exp_id=exp_id,
+                Yr=Yr,
+                C_or=C_or,
+                validate=validate_outputs,
+            )
+            if Yr is not None:
+                logger.info("Created Yr.mat")
+            if C_or is not None:
+                logger.info("Created C_or.mat")
 
     else:
         # No ROIs detected - create empty files

@@ -21,6 +21,7 @@ from studio.app.optinist.core.expdb.batch_const import (
     FLAG_FILE_EXT,
     LOCKFILE_NAME,
     ProcessCommand,
+    SupportedRoiMethod,
 )
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
@@ -262,7 +263,9 @@ class ExpDbBatchRunner:
                 try:
                     with open(flag_file) as f:
                         config = yaml.safe_load(f)
-                        roi_method = config.get("roi_method", "caiman")
+                        roi_method = config.get(
+                            "roi_method", SupportedRoiMethod.CAIMAN.value
+                        )
                         if roi_method == self.filter_roi_method:
                             filtered_files.append(flag_file)
                             self.logger_.info(
@@ -310,9 +313,13 @@ class ExpDbBatchConcurrentProcess:
         try:
             with open(flag_file) as f:
                 config = yaml.safe_load(f)
-                return config.get("roi_method", "caiman") if config else "caiman"
+                return (
+                    config.get("roi_method", SupportedRoiMethod.CAIMAN.value)
+                    if config
+                    else SupportedRoiMethod.CAIMAN.value
+                )
         except Exception:
-            return "caiman"  # Default fallback
+            return SupportedRoiMethod.CAIMAN.value  # Default fallback
 
     @staticmethod
     def __get_current_conda_env() -> str:
@@ -325,7 +332,7 @@ class ExpDbBatchConcurrentProcess:
         """
         Map roi_method to the required conda environment name.
         """
-        if roi_method == "suite2p":
+        if roi_method == SupportedRoiMethod.SUITE2P.value:
             return "expdb_batch_suite2p"
         else:  # Default to caiman
             return "expdb_batch_caiman"

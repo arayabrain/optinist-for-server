@@ -22,6 +22,7 @@ from studio.app.common.core.utils.filepath_creater import (
     join_filepath,
 )
 from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
     ACCEPT_FILE_EXT,
@@ -35,6 +36,7 @@ from studio.app.const import (
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
+from studio.app.optinist.core.expdb.batch_const import FLAG_FILE_EXT, SupportedRoiMethod
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
@@ -144,6 +146,13 @@ class ExpDbBatch:
         self.pub_path = ExpDbBatchPath(self.exp_id)
         self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
         self.nwbfile = {}
+
+        # Load workflow config if it exists (for GUI-configured parameters)
+        self.workflow_config = self._load_workflow_config()
+
+        # Cache for workflow node lookups (performance optimization)
+        self._workflow_node_cache = {}
+
         self._configure_matplotlib()
 
     def __stopwatch_callback(watch, function=None):
@@ -159,6 +168,190 @@ class ExpDbBatch:
         is_circular_data = any(pattern in data_name for pattern in circular_patterns)
         return is_circular_data
 
+    def _load_workflow_config(self):
+        """
+        Load and validate workflow.yaml if it exists for this experiment.
+
+        Returns:
+            WorkflowConfig object if workflow.yaml exists and is valid, None otherwise
+        """
+        import yaml
+
+        workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
+            self.exp_id, f"{self.exp_id}_workflow.yaml"
+        )
+
+        if not os.path.exists(workflow_yaml_path):
+            self.logger_.info(
+                f"No workflow config found at {workflow_yaml_path}, "
+                f"will use default parameters"
+            )
+            return None
+
+        self.logger_.info(f"Loading workflow config from {workflow_yaml_path}")
+
+        try:
+            # Read YAML file directly - don't use read_from_path() since
+            # experiments_datasets path structure differs from OUTPUT_DIR structure
+            config_dict = ConfigReader.read(workflow_yaml_path)
+            if not config_dict:
+                self.logger_.warning(
+                    f"Failed to read workflow config at {workflow_yaml_path}, "
+                    f"will use default parameters"
+                )
+                return None
+
+            # Create WorkflowConfig object from dict
+            config = WorkflowConfigReader._create_workflow_config(config_dict)
+
+            # Validate structure
+            if config is None:
+                self.logger_.warning(
+                    "Workflow config is None, will use default parameters"
+                )
+                return None
+
+            if not hasattr(config, "nodeDict"):
+                self.logger_.warning(
+                    "Workflow config missing nodeDict, will use default parameters"
+                )
+                return None
+
+            # Log available nodes for debugging
+            node_count = len(config.nodeDict) if config.nodeDict else 0
+            self.logger_.info(
+                f"Workflow config loaded successfully with {node_count} nodes"
+            )
+
+            return config
+
+        except yaml.YAMLError as e:
+            self.logger_.error(
+                f"Invalid YAML syntax in {workflow_yaml_path}: {e}. "
+                f"Please check the workflow file for syntax errors. "
+                f"Falling back to default parameters."
+            )
+            return None
+        except (KeyError, AttributeError) as e:
+            self.logger_.error(
+                f"Invalid workflow structure in {workflow_yaml_path}: {e}. "
+                f"Required fields may be missing. "
+                f"Falling back to default parameters."
+            )
+            return None
+        except PermissionError as e:
+            self.logger_.error(
+                f"Permission denied reading {workflow_yaml_path}: {e}. "
+                f"Falling back to default parameters."
+            )
+            return None
+        except Exception as e:
+            self.logger_.warning(
+                f"Unexpected error loading workflow config from "
+                f"{workflow_yaml_path}: {e}, "
+                f"will use default parameters"
+            )
+            return None
+
+    def _extract_workflow_param_values(self, workflow_params: dict) -> dict:
+        """
+        Extract actual parameter values from workflow.yaml nested structure.
+
+        Workflow params have structure: {param_name: {path, type, value}}
+        or nested parent/children structure:
+        {param_name: {type: "parent", children: {...}}}
+
+        We need to extract: {param_name: value}
+
+        Args:
+            workflow_params: Dictionary with workflow parameter structure
+
+        Returns:
+            Dictionary with extracted values
+        """
+        extracted = {}
+        for key, param_obj in workflow_params.items():
+            if isinstance(param_obj, dict):
+                # Check if this is a parent node with children
+                if param_obj.get("type") == "parent" and "children" in param_obj:
+                    # Recursively extract values from children
+                    extracted[key] = self._extract_workflow_param_values(
+                        param_obj["children"]
+                    )
+                elif "value" in param_obj:
+                    # Workflow structure with explicit value field
+                    extracted[key] = param_obj["value"]
+                else:
+                    # Already in simple format or unknown structure
+                    extracted[key] = param_obj
+            else:
+                # Primitive value
+                extracted[key] = param_obj
+
+        self.logger_.debug(
+            f"Extracted {len(extracted)} parameter values from workflow structure"
+        )
+        return extracted
+
+    def _get_params_from_workflow_or_default(self, node_name: str) -> dict:
+        """
+        Get parameters for a node, preferring workflow.yaml over defaults.
+
+        This method first attempts to retrieve parameters from the workflow.yaml
+        file (if it exists and contains the specified node). If workflow params
+        are not available, it falls back to the default parameter files.
+
+        Args:
+            node_name: Name of the algorithm node
+                      (e.g., "suite2p_preprocessing", "caiman_cnmf_preprocessing")
+
+        Returns:
+            Dictionary of parameters for the node. Never returns None.
+
+        Raises:
+            ValueError: If neither workflow nor default params can be loaded
+        """
+        # Try to get from workflow first
+        if self.workflow_config:
+            # Check cache first (Fix M2: Performance optimization)
+            if node_name in self._workflow_node_cache:
+                node = self._workflow_node_cache[node_name]
+            else:
+                node = WorkflowConfigReader.find_node_in_workflow(
+                    self.workflow_config, node_name
+                )
+                # Cache the result (even if None) to avoid repeated lookups
+                self._workflow_node_cache[node_name] = node
+
+            # Fix C2: Check for non-empty params (empty dict {}
+            # should fall back to defaults)
+            if node and node.data.param and len(node.data.param) > 0:
+                # Fix C1: Extract actual values from nested workflow structure
+                extracted_params = self._extract_workflow_param_values(node.data.param)
+                self.logger_.info(
+                    f"Using parameters from workflow.yaml for {node_name}: "
+                    f"loaded {len(extracted_params)} parameters"
+                )
+                return extracted_params
+            else:
+                self.logger_.info(
+                    f"Node {node_name} not found in workflow or has no/empty params, "
+                    f"using default parameters"
+                )
+
+        # Fallback to default params
+        self.logger_.info(f"Using default parameters for {node_name}")
+        default_params = get_default_params(node_name)
+
+        # Fix H4: Validate that default params were loaded successfully
+        if default_params is None:
+            raise ValueError(
+                f"Failed to load default parameters for {node_name}. "
+                f"Parameter file may be missing or corrupted."
+            )
+
+        return default_params
+
     def _get_roi_method(self) -> str:
         """
         Determine which ROI detection method to use by reading from .proc file.
@@ -173,29 +366,30 @@ class ExpDbBatch:
 
         subject_id = self.exp_id.split("_")[0]
         flag_file = join_filepath(
-            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, f"{self.exp_id}.proc"]
+            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, f"{self.exp_id}{FLAG_FILE_EXT}"]
         )
 
         try:
             with open(flag_file) as f:
                 config = yaml.safe_load(f)
-                roi_method = config.get("roi_method", "caiman")
+                roi_method = config.get("roi_method", SupportedRoiMethod.CAIMAN.value)
 
-                if roi_method in ["caiman", "suite2p"]:
+                supported_methods = [m.value for m in SupportedRoiMethod]
+                if roi_method in supported_methods:
                     self.logger_.info(f"Using ROI method from .proc file: {roi_method}")
                     return roi_method
                 else:
                     self.logger_.warning(
                         f"Invalid roi_method '{roi_method}' in .proc file, "
-                        f"defaulting to caiman"
+                        f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
                     )
-                    return "caiman"
+                    return SupportedRoiMethod.CAIMAN.value
         except Exception as e:
             self.logger_.info(
                 f"Could not read roi_method from .proc file ({flag_file}): {e}, "
-                f"defaulting to caiman"
+                f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
             )
-            return "caiman"
+            return SupportedRoiMethod.CAIMAN.value
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
@@ -270,8 +464,11 @@ class ExpDbBatch:
             f"Matrix has {cellmask_data.nnz} non-zero elements out of {d*nr} total"
         )
 
-        # Get parameters for ROI processing
-        params = get_default_params("caiman_cnmf_preprocessing")
+        # Get parameters for ROI processing based on detected ROI method
+        roi_method = self._get_roi_method()
+        node_name = SupportedRoiMethod.get_node_name_from_roi_method(roi_method)
+        self.logger_.info(f"Using ROI parameters from node: {node_name}")
+        params = self._get_params_from_workflow_or_default(node_name)
         flat_params = {}
         recursive_flatten_params(params, flat_params)
         roi_thr = flat_params.get("roi_thr", 0.9)
@@ -356,7 +553,9 @@ class ExpDbBatch:
 
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        cnmf_params = get_default_params("caiman_cnmf_preprocessing")
+        cnmf_params = self._get_params_from_workflow_or_default(
+            "caiman_cnmf_preprocessing"
+        )
         function_id = "caiman_cnmf"
         result = caiman_cnmf_preprocessing(
             images=stack,
@@ -400,7 +599,9 @@ class ExpDbBatch:
         )
 
         self.logger_.info("process 'cell_detection_suite2p' start.")
-        suite2p_params = get_default_params("suite2p_preprocessing")
+        suite2p_params = self._get_params_from_workflow_or_default(
+            "suite2p_preprocessing"
+        )
         function_id = "suite2p_preprocessing"
         result = suite2p_preprocessing(
             images=stack,
@@ -439,14 +640,16 @@ class ExpDbBatch:
         """
         roi_method = self._get_roi_method()
 
-        if roi_method == "suite2p":
+        if roi_method == SupportedRoiMethod.SUITE2P.value:
             self.logger_.info("Using Suite2p for cell detection")
             return self.cell_detection_suite2p(stack)
-        if roi_method == "caiman":
+        elif roi_method == SupportedRoiMethod.CAIMAN.value:
             self.logger_.info("Using CaImAn CNMF for cell detection")
             return self.cell_detection_cnmf(stack)
         else:  # Default to caiman
-            self.logger_.info("Using CaImAn CNMF for cell detection")
+            self.logger_.info(
+                f"Unknown roi_method '{roi_method}', " f"defaulting to CaImAn CNMF"
+            )
             return self.cell_detection_cnmf(stack)
 
     @stopwatch(callback=__stopwatch_callback)
