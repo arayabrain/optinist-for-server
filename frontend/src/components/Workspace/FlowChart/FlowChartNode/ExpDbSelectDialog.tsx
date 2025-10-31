@@ -199,7 +199,8 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
       let newFilePath: string | string[] | undefined
 
       if (multiSelect) {
-        newFilePath = selectedExperimentIds
+        // Sort experiment IDs alphabetically for consistent ordering
+        newFilePath = [...selectedExperimentIds].sort()
       } else {
         newFilePath = experimentId
       }
