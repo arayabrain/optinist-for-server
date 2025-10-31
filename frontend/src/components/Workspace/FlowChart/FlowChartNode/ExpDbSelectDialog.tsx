@@ -1,8 +1,10 @@
 import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import { useSearchParams } from "react-router-dom"
 
 import { useSnackbar } from "notistack"
 
+import { Cancel } from "@mui/icons-material"
 import {
   Box,
   Button,
@@ -11,6 +13,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  Tooltip,
 } from "@mui/material"
 import {
   GridEventListener,
@@ -77,22 +81,63 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
 
   const dispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Track previous open state to detect when dialog opens
   const prevOpenRef = useRef(false)
+  // Key to force DataGrid remount when dialog opens (resets all state)
+  const [dataGridKey, setDataGridKey] = useState(0)
+  // Store original URL params to restore on close
+  const originalParamsRef = useRef<string>("")
+
+  /**
+   * Reset DatabaseExperiments component to initial state
+   * This clears all DataGrid filters, sorting, and pagination (depends on useSearchParams)
+   */
+  const resetDataGridState = () => {
+    // Save current URL params to restore later
+    originalParamsRef.current = searchParams.toString()
+
+    // Clear URL params - this resets DatabaseExperiments to initial state
+    setSearchParams({})
+
+    // Force component remount to ensure all internal state is cleared
+    setDataGridKey((prev) => prev + 1)
+  }
+
+  /**
+   * Restore original URL params when dialog closes
+   * This preserves the user's navigation state outside the dialog
+   */
+  const restoreOriginalUrlParams = () => {
+    if (originalParamsRef.current) {
+      setSearchParams(originalParamsRef.current)
+    }
+  }
 
   // Initialize selectedExperimentIds ONLY when dialog opens
   useEffect(() => {
     // Only initialize when dialog transitions from closed to open
     if (open && !prevOpenRef.current) {
+      // Reset DataGrid to initial state
+      resetDataGridState()
+
+      // Initialize experiment selection
       if (multiSelect && Array.isArray(currentExperimentId)) {
         updateSelectedExperimentIds(currentExperimentId)
       } else if (multiSelect) {
         updateSelectedExperimentIds([])
       }
     }
+
+    // Restore original URL params when dialog closes
+    if (!open && prevOpenRef.current) {
+      restoreOriginalUrlParams()
+    }
+
     // Update the previous open state
     prevOpenRef.current = open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, multiSelect, currentExperimentId])
 
   // Convert selectedExperimentIds to row IDs for current page
@@ -142,6 +187,10 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   const onClickCancel = () => {
     setOpen(false)
     setExperimentId(undefined)
+    updateSelectedExperimentIds([])
+  }
+
+  const onClickClearAll = () => {
     updateSelectedExperimentIds([])
   }
 
@@ -195,7 +244,13 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
       <DialogTitle>Experiments</DialogTitle>
       <DialogContent dividers>
         {multiSelect && (
-          <Box sx={{ display: "flex", alignItems: "center", mb: -4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              mb: -4,
+            }}
+          >
             Selected{" "}
             <Chip
               label={selectedExperimentIds.length}
@@ -210,9 +265,21 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
               }}
             />{" "}
             experiments
+            <Tooltip title="Clear all selections" placement="top">
+              <span>
+                <IconButton
+                  onClick={onClickClearAll}
+                  color="secondary"
+                  disabled={selectedExperimentIds.length === 0}
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
         )}
         <DatabaseExperiments
+          key={dataGridKey}
           user={user}
           cellPath="/console/cells"
           handleRowClick={handleRowClick}
