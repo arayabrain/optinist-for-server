@@ -507,14 +507,7 @@ const DatabaseExperiments = ({
     filterParams: state[DATABASE_SLICE_NAME].filterParams,
   }))
 
-  // Manage row selection state internally
-  const [rowSelectionModel, setRowSelectionModel] =
-    useState<GridRowSelectionModel>(initialRowSelection)
-
-  // Update internal state when initialRowSelection changes (e.g., when dialog reopens)
-  useEffect(() => {
-    setRowSelectionModel(initialRowSelection)
-  }, [initialRowSelection])
+  // Use initialRowSelection directly without internal state management
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -1220,11 +1213,8 @@ const DatabaseExperiments = ({
         onFilterModelChange={handleFilter}
         onRowClick={handleRowClick}
         checkboxSelection={multiSelect}
-        rowSelectionModel={rowSelectionModel}
-        onRowSelectionModelChange={(newSelection) => {
-          setRowSelectionModel(newSelection)
-          handleRowSelectionModelChange?.(newSelection)
-        }}
+        rowSelectionModel={initialRowSelection}
+        onRowSelectionModelChange={handleRowSelectionModelChange}
         sx={{ flex: 1, minHeight: 0 }}
       />
       {dataExperiments?.items.length > 0 ? (

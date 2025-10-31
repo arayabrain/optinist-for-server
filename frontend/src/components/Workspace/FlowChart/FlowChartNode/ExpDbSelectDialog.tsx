@@ -1,4 +1,4 @@
-import { memo, useContext, useEffect, useRef, useState } from "react"
+import { memo, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
 import { useSnackbar } from "notistack"
@@ -62,10 +62,18 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     undefined,
   )
 
-  // Multi select state - initialize from currentExperimentId when dialog opens
-  const [selectedRowIds, setSelectedRowIds] = useState<GridRowSelectionModel>(
+  // Multi select state - manage by experiment_id (not row id) to persist across pagination
+  // Use ref to keep stable reference across pagination
+  const selectedExperimentIdsRef = useRef<string[]>([])
+  const [selectedExperimentIds, setSelectedExperimentIds] = useState<string[]>(
     [],
   )
+
+  // Custom setter that updates both state and ref synchronously
+  const updateSelectedExperimentIds = (newIds: string[]) => {
+    selectedExperimentIdsRef.current = newIds
+    setSelectedExperimentIds(newIds)
+  }
 
   const dispatch = useDispatch()
   const { enqueueSnackbar } = useSnackbar()
@@ -73,26 +81,29 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   // Track previous open state to detect when dialog opens
   const prevOpenRef = useRef(false)
 
-  // Update selectedRowIds ONLY when dialog opens (not when filter changes)
+  // Initialize selectedExperimentIds ONLY when dialog opens
   useEffect(() => {
     // Only initialize when dialog transitions from closed to open
     if (open && !prevOpenRef.current) {
       if (multiSelect && Array.isArray(currentExperimentId)) {
-        // Map experiment IDs to row IDs
-        const rowIds = dataExperiments.items
-          .filter((item) =>
-            currentExperimentId.includes(item.experiment_id || ""),
-          )
-          .map((item) => item.id)
-        setSelectedRowIds(rowIds)
+        updateSelectedExperimentIds(currentExperimentId)
       } else if (multiSelect) {
-        // Reset to empty if currentExperimentId is not an array
-        setSelectedRowIds([])
+        updateSelectedExperimentIds([])
       }
     }
     // Update the previous open state
     prevOpenRef.current = open
-  }, [open, multiSelect, currentExperimentId, dataExperiments.items])
+  }, [open, multiSelect, currentExperimentId])
+
+  // Convert selectedExperimentIds to row IDs for current page
+  // This ensures selectedRowIds is always in sync with selectedExperimentIds
+  const selectedRowIds = useMemo(() => {
+    return dataExperiments.items
+      .filter((item) =>
+        selectedExperimentIds.includes(item.experiment_id || ""),
+      )
+      .map((item) => item.id)
+  }, [dataExperiments.items, selectedExperimentIds])
 
   const handleRowClick: GridEventListener<"rowClick"> = (
     params: GridRowParams<DatabaseType>,
@@ -106,14 +117,32 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     selectionModel: GridRowSelectionModel,
   ) => {
     if (multiSelect) {
-      setSelectedRowIds(selectionModel)
+      // Convert current page selection to experiment IDs
+      const currentPageExpIds = dataExperiments.items
+        .filter((item) => selectionModel.includes(item.id))
+        .map((item) => item.experiment_id)
+        .filter((id): id is string => id !== undefined)
+
+      // Get experiment IDs that are NOT on the current page
+      const currentPageAllExpIds = dataExperiments.items
+        .map((item) => item.experiment_id)
+        .filter((id): id is string => id !== undefined)
+
+      const otherPagesExpIds = selectedExperimentIdsRef.current.filter(
+        (id) => !currentPageAllExpIds.includes(id),
+      )
+
+      // Merge: keep selections from other pages + current page selection
+      const mergedExpIds = [...otherPagesExpIds, ...currentPageExpIds]
+
+      updateSelectedExperimentIds(mergedExpIds)
     }
   }
 
   const onClickCancel = () => {
     setOpen(false)
     setExperimentId(undefined)
-    setSelectedRowIds([])
+    updateSelectedExperimentIds([])
   }
 
   const onClickOk = () => {
@@ -121,11 +150,6 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
       let newFilePath: string | string[] | undefined
 
       if (multiSelect) {
-        // Map selected row IDs to experiment_ids
-        const selectedExperimentIds = dataExperiments.items
-          .filter((item) => selectedRowIds.includes(item.id))
-          .map((item) => item.experiment_id)
-          .filter((id): id is string => id !== undefined)
         newFilePath = selectedExperimentIds
       } else {
         newFilePath = experimentId
@@ -141,21 +165,21 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           handleOk: () => {
             dispatch(setInputNodeFilePath({ nodeId, filePath: newFilePath! }))
             setOpen(false)
-            setSelectedRowIds([])
+            updateSelectedExperimentIds([])
           },
           handleCancel: () => {},
         })
       } else {
         dispatch(setInputNodeFilePath({ nodeId, filePath: newFilePath! }))
         setOpen(false)
-        setSelectedRowIds([])
+        updateSelectedExperimentIds([])
       }
     } catch (e) {
       enqueueSnackbar("Select experiment failed", { variant: "error" })
     }
   }
 
-  const isOkDisabled = !multiSelect && !experimentId
+  const isOkDisabled = multiSelect ? false : !experimentId
 
   return (
     <Dialog
@@ -174,7 +198,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           <Box sx={{ display: "flex", alignItems: "center", mb: -4 }}>
             Selected{" "}
             <Chip
-              label={selectedRowIds.length}
+              label={selectedExperimentIds.length}
               size="small"
               color="primary"
               variant="outlined"
