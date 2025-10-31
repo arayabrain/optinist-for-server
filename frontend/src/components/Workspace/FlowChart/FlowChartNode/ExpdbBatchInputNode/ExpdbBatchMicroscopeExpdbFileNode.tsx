@@ -2,7 +2,8 @@ import { memo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Handle, NodeProps, Position } from "reactflow"
 
-import { Button, Chip, Typography } from "@mui/material"
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
+import { Box, Button, Chip, Tooltip, Typography } from "@mui/material"
 
 import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbSelectDialog"
 import {
@@ -79,6 +80,41 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
     selectExpDbRelatedInputNodeSelectedFilePath(nodeId),
   )
 
+  // Create tooltip content with experiment IDs list for preveiew
+  const tooltipContent = () => {
+    if (
+      !experimentIds ||
+      !Array.isArray(experimentIds) ||
+      experimentIds.length === 0
+    ) {
+      return "No experiments selected"
+    }
+
+    const displayIds = experimentIds.slice(0, 100)
+    const hasMore = experimentIds.length > 100
+
+    return (
+      <Box sx={{ maxHeight: "400px", overflowY: "auto" }}>
+        <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
+          Selected Experiment IDs:
+        </Typography>
+        {displayIds.map((id: string, index: number) => (
+          <Typography key={index} variant="body2" sx={{ fontSize: "0.75rem" }}>
+            {id}
+          </Typography>
+        ))}
+        {hasMore && (
+          <Typography
+            variant="body2"
+            sx={{ mt: 1, fontStyle: "italic", fontSize: "0.75rem" }}
+          >
+            ... and {experimentIds.length - 100} more
+          </Typography>
+        )}
+      </Box>
+    )
+  }
+
   return (
     <div>
       <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
@@ -92,9 +128,15 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
         multiSelect={true}
         hideImageColumns={true}
       />
-      <Typography>
+      <Typography sx={{ mt: 0.5 }}>
         {experimentIds && experimentIds.length > 0 ? (
-          <>
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
             Selected{" "}
             <Chip
               label={experimentIds.length}
@@ -104,7 +146,17 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
               sx={{ fontSize: "0.75rem", height: "20px", fontWeight: "bold" }}
             />{" "}
             experiments
-          </>
+            <Tooltip title={tooltipContent()} arrow placement="right">
+              <InfoOutlinedIcon
+                sx={{
+                  fontSize: "1.25rem",
+                  color: "primary.main",
+                  cursor: "pointer",
+                  ml: 0.5,
+                }}
+              />
+            </Tooltip>
+          </Box>
         ) : (
           "No experiments selected"
         )}

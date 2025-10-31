@@ -2,7 +2,7 @@ import { memo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Handle, NodeProps, Position } from "reactflow"
 
-import { Button, Typography } from "@mui/material"
+import { Box, Button, Chip, Typography } from "@mui/material"
 
 import { ExpDbSelectDialog } from "components/Workspace/FlowChart/FlowChartNode/ExpDbSelectDialog"
 import {
@@ -86,11 +86,19 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
         setOpen={setOpen}
         experimentIdSelector={selectExpDbRelatedInputNodeSelectedFilePath}
       />
-      <Typography>
-        {experimentId
-          ? `Selected experiment id: ${experimentId}`
-          : "No experiment selected"}
-      </Typography>
+      <Box sx={{ mt: 0.2 }}>
+        <Typography variant="caption" sx={{ display: "block" }}>
+          {experimentId ? "Selected experiment ID:" : "No experiment selected"}
+        </Typography>
+        {experimentId && (
+          <Chip
+            label={experimentId}
+            variant="outlined"
+            color="primary"
+            size="small"
+          />
+        )}
+      </Box>
     </div>
   )
 })
