@@ -1,4 +1,11 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
@@ -506,8 +513,6 @@ const DatabaseExperiments = ({
     loading: state[DATABASE_SLICE_NAME].loading,
     filterParams: state[DATABASE_SLICE_NAME].filterParams,
   }))
-
-  // Use initialRowSelection directly without internal state management
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -1116,6 +1121,61 @@ const DatabaseExperiments = ({
     }
   }
 
+  /**
+   * Preserve scroll position when row selection changes in multi-select mode
+   * DataGrid automatically scrolls to selected rows, which causes unwanted flickering
+   * This logic captures the scroll position before selection and restores it after rendering
+   */
+  const dataGridContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollPositionRef = useRef({ top: 0, left: 0 })
+
+  const getVirtualScroller = useCallback(() => {
+    return dataGridContainerRef.current?.querySelector(
+      ".MuiDataGrid-virtualScroller",
+    ) as HTMLElement | null
+  }, [])
+
+  const saveScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scrollPositionRef.current = {
+        top: scroller.scrollTop,
+        left: scroller.scrollLeft,
+      }
+    }
+  }, [getVirtualScroller])
+
+  const restoreScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scroller.scrollTop = scrollPositionRef.current.top
+      scroller.scrollLeft = scrollPositionRef.current.left
+    }
+  }, [getVirtualScroller])
+
+  const handleRowSelectionChange = useCallback(
+    (newSelection: GridRowSelectionModel) => {
+      if (!multiSelect) {
+        handleRowSelectionModelChange?.(newSelection)
+        return
+      }
+
+      saveScrollPosition()
+      handleRowSelectionModelChange?.(newSelection)
+
+      // Restore after React renders the updated selection state
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 0)
+    },
+    [
+      multiSelect,
+      handleRowSelectionModelChange,
+      saveScrollPosition,
+      restoreScrollPosition,
+    ],
+  )
+
   return (
     <DatabaseExperimentsWrapper>
       {user ? (
@@ -1196,27 +1256,32 @@ const DatabaseExperiments = ({
           ) : null}
         </Box>
       ) : null}
-      <DataGrid
-        columns={
-          adminOrManager && user && !readonly
-            ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
-            : (columnsTable as GridColDef[])
-        }
-        sortModel={model.sort as GridSortItem[]}
-        rows={dataExperiments?.items || []}
-        rowHeight={128}
-        hideFooter={true}
-        filterMode={"server"}
-        sortingMode={"server"}
-        onSortModelChange={handleSort}
-        filterModel={model.filter}
-        onFilterModelChange={handleFilter}
-        onRowClick={handleRowClick}
-        checkboxSelection={multiSelect}
-        rowSelectionModel={initialRowSelection}
-        onRowSelectionModelChange={handleRowSelectionModelChange}
-        sx={{ flex: 1, minHeight: 0 }}
-      />
+      <Box
+        ref={dataGridContainerRef}
+        sx={{ flex: 1, minHeight: 0, display: "flex" }}
+      >
+        <DataGrid
+          columns={
+            adminOrManager && user && !readonly
+              ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
+              : (columnsTable as GridColDef[])
+          }
+          sortModel={model.sort as GridSortItem[]}
+          rows={dataExperiments?.items || []}
+          rowHeight={128}
+          hideFooter={true}
+          filterMode={"server"}
+          sortingMode={"server"}
+          onSortModelChange={handleSort}
+          filterModel={model.filter}
+          onFilterModelChange={handleFilter}
+          onRowClick={handleRowClick}
+          checkboxSelection={multiSelect}
+          rowSelectionModel={initialRowSelection}
+          onRowSelectionModelChange={handleRowSelectionChange}
+          sx={{ flex: 1 }}
+        />
+      </Box>
       {dataExperiments?.items.length > 0 ? (
         <Box sx={{ mt: 2 }}>
           <PaginationCustom
