@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { shallowEqual, useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { enqueueSnackbar, VariantType } from "notistack"
@@ -508,11 +508,14 @@ const DatabaseExperiments = ({
     data: dataExperiments,
     loading,
     filterParams,
-  } = useSelector((state: RootState) => ({
-    data: state[DATABASE_SLICE_NAME].data[type],
-    loading: state[DATABASE_SLICE_NAME].loading,
-    filterParams: state[DATABASE_SLICE_NAME].filterParams,
-  }))
+  } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+      filterParams: state[DATABASE_SLICE_NAME].filterParams,
+    }),
+    shallowEqual,
+  )
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -556,9 +559,12 @@ const DatabaseExperiments = ({
   const limit = searchParams.get("limit") || 50
   const sort = searchParams.getAll("sort")
 
-  const { dataShare } = useSelector((state: RootState) => ({
-    dataShare: state[DATABASE_SLICE_NAME].listShare,
-  }))
+  const { dataShare } = useSelector(
+    (state: RootState) => ({
+      dataShare: state[DATABASE_SLICE_NAME].listShare,
+    }),
+    shallowEqual,
+  )
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })

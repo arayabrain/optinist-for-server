@@ -111,7 +111,7 @@ export const ExpDbSelectMulti = memo(function ExpDbSelectMulti({
         multiSelect={true}
         hideImageColumns={true}
       />
-      <Typography sx={{ mt: 0.5 }}>
+      <Typography component="div" sx={{ mt: 0.5 }}>
         {experimentIds && experimentIds.length > 0 ? (
           <Box
             sx={{
