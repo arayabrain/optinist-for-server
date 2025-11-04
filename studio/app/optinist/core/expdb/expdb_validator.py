@@ -4,10 +4,12 @@ from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 
 
 class ExpDbValidator:
+    _BATCH_INPUT_NODE_NAME = "expdb_batch_microscope_expdb"
+
     # List of Layout-Capable Nodes
     _BATCH_ACCEPTABLE_REQUIRED_NODES = frozenset(
         {
-            "expdb_batch_microscope_expdb",
+            _BATCH_INPUT_NODE_NAME,
             "preprocessing",
             "analyze_stats",
         }

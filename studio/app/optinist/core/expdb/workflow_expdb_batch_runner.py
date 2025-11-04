@@ -5,16 +5,22 @@ import yaml
 from fastapi import BackgroundTasks, HTTPException, status
 from zc import lockfile
 
+from studio.app.common.core.experiment.experiment_writer import ExptConfigWriter
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.workflow.workflow import RunItem
+from studio.app.common.core.workflow.workflow import RunItem, WorkflowRunStatus
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
 from studio.app.common.core.workflow.workflow_writer import WorkflowConfigWriter
-from studio.app.optinist.core.expdb.batch_const import LOCKFILE_NAME, ProcessCommand
+from studio.app.optinist.core.expdb.batch_const import (
+    LOCKFILE_NAME,
+    ProcessCommand,
+    SupportedRoiMethod,
+)
 from studio.app.optinist.core.expdb.expdb_data import (
     BatchProcFile,
     BatchProcFileExt,
     ExpDbPathIdsUtil,
+    ProcessResult,
 )
 from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
 
@@ -22,7 +28,7 @@ logger = AppLogger.get_logger()
 
 
 class WorkflowExpdbBatchRunner:
-    BATCH_INPUT_NODE_NAME = "microscope_expdb"
+    BATCH_INPUT_NODE_NAME = ExpDbValidator._BATCH_INPUT_NODE_NAME
 
     def __init__(self, workspace_id: str, unique_id: str, runItem: RunItem) -> None:
         self.workspace_id = workspace_id
@@ -48,7 +54,8 @@ class WorkflowExpdbBatchRunner:
         if not is_valid_nodes:
             err_message = (
                 "Invalid batch workflow nodes: "
-                f"acceptable nodes={ExpDbValidator.BATCH_ACCEPTABLE_NODES}"
+                f" [uid: {self.workspace_id}/{self.unique_id}]"
+                f" acceptable nodes={ExpDbValidator.BATCH_ACCEPTABLE_NODES}"
             )
             logger.error(err_message)
 
@@ -65,7 +72,7 @@ class WorkflowExpdbBatchRunner:
         ).finish_workflow_without_run()
 
         # ------------------------------------------------------------
-        # Write workflow yaml
+        # Preparing for batch run reservation processing
         # ------------------------------------------------------------
 
         batch_input_node = WorkflowConfigReader.find_node_in_workflow(
@@ -73,13 +80,80 @@ class WorkflowExpdbBatchRunner:
         )
         assert batch_input_node, f"Input not found: [{__class__.BATCH_INPUT_NODE_NAME}]"
 
+        # Note: The path of the batch input node corresponds to the experiment_ids.
+        experiment_ids = batch_input_node.data.path
+        experiment_ids = sorted(experiment_ids)
+
+        # Get the roi_method specified in the workflow
+        roi_method = ExpDbValidator.validate_batch_roi_method(workflow_config)
+        assert roi_method, f"Invalid roi_method [{roi_method}]"
+
+        # ------------------------------------------------------------
+        # Batch run reservation processing
+        # ------------------------------------------------------------
+
+        logger.info(
+            "Start analysis batch run reservation."
+            f" [uid: {self.workspace_id}/{self.unique_id}]"
+            f" [experiment_ids: {experiment_ids}]"
+            f" [roi_method: {roi_method.value}]"
+            f" [workflow config: {workflow_config}]"
+        )
+
+        processResult = ProcessResult()
+
+        # Execute batch reservation process (for the number of exp_ids)
+        for exp_id in experiment_ids:
+            try:
+                self.__reserve_expdb_batch_run(roi_method, exp_id)
+                processResult.success_ids.append(exp_id)
+            except Exception as e:
+                err_message = (
+                    "An error occurred while reserving the analysis batch run."
+                    f" [uid: {self.workspace_id}/{self.unique_id}]"
+                    f" [exp_id: {exp_id}] - {e}"
+                )
+                logger.error(err_message, exc_info=True)
+                processResult.failure_ids.append(exp_id)
+
+        # Checking the processing results
+        if processResult.has_error():
+            log_message = (
+                "Complete analysis batch run reservation. [status: warning]"
+                f" [uid: {self.workspace_id}/{self.unique_id}]"
+                f" [success count: {len(processResult.success_ids)}]"
+                f" [failure count: {len(processResult.failure_ids)}]"
+                f" [failure_ids: {processResult.failure_ids}]"
+            )
+            logger.warning(log_message)
+
+            # Write error status to experiment.yaml
+            update_params = {"success": WorkflowRunStatus.ERROR.value}
+            ExptConfigWriter(self.workspace_id, self.unique_id).overwrite(update_params)
+
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=log_message
+            )
+        else:
+            log_message = (
+                "Complete analysis batch run reservation. [status: success]"
+                f" [uid: {self.workspace_id}/{self.unique_id}]"
+                f" [success count: {len(processResult.success_ids)}]"
+                f" [success_ids: {processResult.success_ids}]"
+            )
+            logger.info(log_message)
+
+    def __reserve_expdb_batch_run(self, roi_method: SupportedRoiMethod, exp_id: str):
+        # ------------------------------------------------------------
+        # Write workflow yaml
+        # ------------------------------------------------------------
+
+        # Get the path from copy workflow yaml
         src_workflow_yaml_path = WorkflowConfigReader.get_config_yaml_path(
             self.workspace_id, self.unique_id
         )
 
         # Get the path to copy workflow yaml
-        # Note: The path of the batch input node corresponds to the exp_id.
-        exp_id = batch_input_node.data.path
         dest_workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
             exp_id,
             f"{exp_id}_workflow.yaml",
@@ -94,9 +168,6 @@ class WorkflowExpdbBatchRunner:
         # Write .proc file
         # ------------------------------------------------------------
 
-        roi_method = ExpDbValidator.validate_batch_roi_method(workflow_config)
-        assert roi_method, f"Invalid roi_method [{roi_method}]"
-
         # Generate .proc file contents
         proc_file = BatchProcFileExt(
             exp_id=exp_id,
@@ -108,7 +179,7 @@ class WorkflowExpdbBatchRunner:
 
         # Write .proc file
         # Check the status to see if batch processing is running (check the lock file).
-        # @see studio/app/optinist/core/expdb/batch_runner.py
+        # @see studio.app.optinist.core.expdb.batch_runner.__process_preprocess
         proc_lock_file = None
         try:
             proc_lock_file = lockfile.LockFile(LOCKFILE_NAME)
@@ -122,12 +193,10 @@ class WorkflowExpdbBatchRunner:
 
         except lockfile.LockError as e:
             err_message = (
-                f"Proc file lock error. already running. [expid: {exp_id}] - {e}"
+                f"Proc file lock error. already running. [exp_id: {exp_id}] - {e}"
             )
             logger.error(err_message)
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=err_message
-            )
+            raise e
         finally:
             if proc_lock_file:
                 proc_lock_file.close()
