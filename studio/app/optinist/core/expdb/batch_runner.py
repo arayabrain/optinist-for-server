@@ -5,9 +5,9 @@ import logging
 import logging.config
 import os
 import pathlib
+import subprocess
 import traceback
 from contextlib import contextmanager
-from enum import Enum
 
 import yaml
 from lauda import stopwatch, stopwatchcm
@@ -17,6 +17,12 @@ from studio.app.common.core.users.crud_organizations import get_organization
 from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import (
+    FLAG_FILE_EXT,
+    LOCKFILE_NAME,
+    ProcessCommand,
+    SupportedRoiMethod,
+)
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
 from studio.app.optinist.core.expdb.crud_configs import summarize_experiment_metadata
@@ -29,15 +35,6 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
 )
-
-LOCKFILE_NAME = "process.lock"
-FLAG_FILE_EXT = ".proc"
-
-
-class ProcessCommand(Enum):
-    REGIST = "regist"
-    REGIST_METADATA = "regist_metadata"
-    DELETE = "delete"
 
 
 class ProcessResult:
@@ -65,11 +62,17 @@ class ExpDbBatchRunner:
     LOGGER_NAME = "batch_runner_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
-    def __init__(self, organization_id: int, parallel_workers: int = 1):
+    def __init__(
+        self,
+        organization_id: int,
+        parallel_workers: int = 1,
+        filter_roi_method: str = None,
+    ):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
         self.parallel_workers = parallel_workers
+        self.filter_roi_method = filter_roi_method
 
     def __init_logger(self):
         logging_config = yaml.safe_load(
@@ -250,6 +253,33 @@ class ExpDbBatchRunner:
             glob.glob(EXPDB_DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
         )
 
+        # Filter by roi_method if specified
+        if self.filter_roi_method:
+            self.logger_.info(
+                f"Filtering datasets by roi_method: {self.filter_roi_method}"
+            )
+            filtered_files = []
+            for flag_file in target_flag_files:
+                try:
+                    with open(flag_file) as f:
+                        config = yaml.safe_load(f)
+                        roi_method = config.get(
+                            "roi_method", SupportedRoiMethod.CAIMAN.value
+                        )
+                        if roi_method == self.filter_roi_method:
+                            filtered_files.append(flag_file)
+                            self.logger_.info(
+                                f"Including: {flag_file} (roi_method={roi_method})"
+                            )
+                        else:
+                            self.logger_.info(
+                                f"Skipping: {flag_file} (roi_method={roi_method})"
+                            )
+                except Exception as e:
+                    # Skip corrupted files entirely - they'll be retried on next run
+                    self.logger_.error(f"Could not read {flag_file}: {e}, skipping")
+            target_flag_files = filtered_files
+
         return target_flag_files
 
 
@@ -273,6 +303,140 @@ def concurrent_db_session_scope():
 class ExpDbBatchConcurrentProcess:
     LOGGER_NAME = "batch_process_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
+
+    @staticmethod
+    def __get_roi_method_from_flag_file(flag_file: str) -> str:
+        """
+        Read roi_method from .proc flag file.
+        Returns 'caiman', 'suite2p', or 'caiman' as default.
+        """
+        try:
+            with open(flag_file) as f:
+                config = yaml.safe_load(f)
+                return (
+                    config.get("roi_method", SupportedRoiMethod.CAIMAN.value)
+                    if config
+                    else SupportedRoiMethod.CAIMAN.value
+                )
+        except Exception:
+            return SupportedRoiMethod.CAIMAN.value  # Default fallback
+
+    @staticmethod
+    def __get_current_conda_env() -> str:
+        """Get the name of the currently active conda environment."""
+        conda_env = os.environ.get("CONDA_DEFAULT_ENV", "")
+        return conda_env
+
+    @staticmethod
+    def __get_required_conda_env(roi_method: str) -> str:
+        """
+        Map roi_method to the required conda environment name.
+        """
+        if roi_method == SupportedRoiMethod.SUITE2P.value:
+            return "expdb_batch_suite2p"
+        else:  # Default to caiman
+            return "expdb_batch_caiman"
+
+    @classmethod
+    def __should_switch_environment(cls, flag_file: str) -> tuple:
+        """
+        Check if we need to switch conda environments for this dataset.
+        """
+        # Check if we're already in a subprocess (to prevent infinite recursion)
+        if os.environ.get("EXPDB_BATCH_SUBPROCESS") == "1":
+            return (False, "", "", "")
+
+        roi_method = cls.__get_roi_method_from_flag_file(flag_file)
+        required_env = cls.__get_required_conda_env(roi_method)
+        current_env = cls.__get_current_conda_env()
+
+        needs_switch = current_env != required_env
+        return (needs_switch, current_env, required_env, roi_method)
+
+    @classmethod
+    def __execute_in_conda_env(
+        cls,
+        flag_file: str,
+        org_id: int,
+        start_time: datetime.datetime,
+        logger_name: str,
+        required_env: str,
+    ) -> dict:
+        """
+        Execute dataset processing in a specific conda environment via subprocess.
+
+        Args:
+            flag_file: Path to the .proc file
+            org_id: Organization ID
+            start_time: Process start time
+            logger_name: Logger name for subprocess
+            required_env: Target conda environment name
+
+        Returns:
+            Result dictionary from processing
+        """
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = logging.getLogger(logger_name)
+
+        logger.info(f"Spawning subprocess for {exp_id} in environment: {required_env}")
+
+        # Create environment for subprocess
+        env = os.environ.copy()
+        env["EXPDB_BATCH_SUBPROCESS"] = "1"  # Flag to prevent infinite recursion
+
+        # Build command to run in specific conda environment
+        # We use conda run to execute Python in the target environment
+        cmd = [
+            "conda",
+            "run",
+            "-n",
+            required_env,
+            "--no-capture-output",
+            "python",
+            "-c",
+            f"""
+import sys
+import os
+sys.path.insert(0, '/app')
+os.chdir('/app')
+from studio.app.optinist.core.expdb.batch_runner import ExpDbBatchConcurrentProcess
+import datetime
+result = ExpDbBatchConcurrentProcess.process_single_dataset(
+    '{flag_file}',
+    {org_id},
+    datetime.datetime.now(),
+    '{logger_name}'
+)
+sys.exit(0 if result.get('success') else 1)
+""",
+        ]
+
+        try:
+            # Run the subprocess
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=False,  # Let output go to parent's stdout/stderr
+                check=False,
+            )
+
+            # Return result based on exit code
+            return {
+                "success": result.returncode == 0,
+                "exp_id": exp_id,
+                "subprocess": True,
+                "environment": required_env,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to spawn subprocess in {required_env}: {e}")
+            return {
+                "success": False,
+                "exp_id": exp_id,
+                "error": e,
+                "subprocess": True,
+                "environment": required_env,
+            }
 
     @classmethod
     def __init_process_logger(cls, exp_id: str):
@@ -332,8 +496,39 @@ class ExpDbBatchConcurrentProcess:
         """
         ATTENTION: This method does not use decorator (stopwatch)
             because it is an entrypoint of ProcessPoolExecutor.
+
+        This method checks if the dataset requires a different conda environment
+        and spawns a subprocess if needed.
         """
-        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
+        # Check if we need to switch environments
+        (
+            needs_switch,
+            current_env,
+            required_env,
+            roi_method,
+        ) = cls.__should_switch_environment(flag_file)
+
+        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        logger = logging.getLogger(logger_name)
+
+        if needs_switch:
+            logger.info(
+                f"Environment mismatch for {exp_id}: "
+                f"current={current_env}, required={required_env}, "
+                f"roi_method={roi_method}"
+            )
+            return cls.__execute_in_conda_env(
+                flag_file, org_id, start_time, logger_name, required_env
+            )
+        else:
+            # Already in correct environment or subprocess
+            logger.info(
+                f"Processing {exp_id} in current environment: "
+                f"{current_env or 'subprocess'}"
+            )
+            return cls.process_single_dataset(
+                flag_file, org_id, start_time, logger_name
+            )
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
@@ -349,6 +544,14 @@ class ExpDbBatchConcurrentProcess:
         logger.info(
             f"Process {os.getpid()} starting to \
                 process exp_id: {exp_id}, flag_file: {flag_file}"
+        )
+
+        # Log current conda environment and subprocess status
+        current_env = cls.__get_current_conda_env()
+        is_subprocess = os.environ.get("EXPDB_BATCH_SUBPROCESS") == "1"
+        logger.info(
+            f"Active conda environment: {current_env or 'none'}, "
+            f"subprocess: {is_subprocess}"
         )
 
         error = None
@@ -419,14 +622,14 @@ class ExpDbBatchConcurrentProcess:
             logger.info("Run Analysis process")
 
             if expdb_batch.raw_path.microscope_file is None:
-                # If no microscope data, create cnmf_info from existing mat files
+                # If no microscope data, use existing processed mat files
                 logger.warning(
                     "No microscope data found. Will use existing processed data."
                 )
             else:
                 stack = expdb_batch.preprocess()
                 expdb_batch.generate_orimaps(stack)
-                expdb_batch.cell_detection_cnmf(stack)
+                expdb_batch.cell_detection(stack)
                 del stack
 
             stat_data = expdb_batch.generate_statdata()
@@ -543,6 +746,16 @@ class ExpDbBatchConcurrentProcess:
         # - フラグファイル処理（ログ出力、リネーム）
         # ----------------------------------------
 
+        # Read existing flag file to preserve roi_method and other metadata
+        existing_data = {}
+        if os.path.exists(flag_file):
+            try:
+                with open(flag_file, "r") as f:
+                    existing_data = yaml.safe_load(f) or {}
+            except Exception:
+                # If we can't read the file, just use empty dict
+                existing_data = {}
+
         # フラグファイル書き込みデータ作成
         if not error:
             result_log = {
@@ -560,6 +773,10 @@ class ExpDbBatchConcurrentProcess:
                 "result": "error",
                 "log": "{}: {}".format(type(error), str(error)),
             }
+
+        # Preserve roi_method from existing data (don't overwrite)
+        if "roi_method" in existing_data:
+            result_log["roi_method"] = existing_data["roi_method"]
 
         # フラグファイル内容アップデート
         with open(flag_file, "w") as yf:
