@@ -15,7 +15,7 @@ import { FILE_TYPE_NODE_NAME_ALIAS } from "config/fileTypes.config"
 import { HANDLE_STYLE } from "const/flowchart"
 import { deleteFlowNodeById } from "store/slice/FlowElement/FlowElementSlice"
 import {
-  selectMicroscopeExpdbInputNodeSelectedFilePath,
+  selectExpDbRelatedInputNodeSelectedFilePath,
   selectInputNodeDefined,
 } from "store/slice/InputNode/InputNodeSelectors"
 
@@ -70,7 +70,7 @@ const MicroscopeExpdbFileNodeImple = memo(
 const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
   const [open, setOpen] = useState(false)
   const experimentId = useSelector(
-    selectMicroscopeExpdbInputNodeSelectedFilePath(nodeId),
+    selectExpDbRelatedInputNodeSelectedFilePath(nodeId),
   )
 
   return (
@@ -82,7 +82,7 @@ const ExpDbSelect = memo(function ExpDbSelect({ nodeId }: { nodeId: string }) {
         nodeId={nodeId}
         open={open}
         setOpen={setOpen}
-        experimentIdSelector={selectMicroscopeExpdbInputNodeSelectedFilePath}
+        experimentIdSelector={selectExpDbRelatedInputNodeSelectedFilePath}
       />
       <Typography>
         {experimentId

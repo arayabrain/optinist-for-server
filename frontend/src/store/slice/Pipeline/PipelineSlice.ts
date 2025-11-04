@@ -7,6 +7,7 @@ import {
   pollRunResult,
   run,
   runByCurrentUid,
+  expdbBatchRun,
 } from "store/slice/Pipeline/PipelineActions"
 import {
   Pipeline,
@@ -31,6 +32,7 @@ export const initialState: Pipeline = {
     status: RUN_STATUS.START_UNINITIALIZED,
   },
   runBtn: RUN_BTN_OPTIONS.RUN_NEW,
+  isExpdbBatchRun: false,
 }
 
 export const pipelineSlice = createSlice({
@@ -123,6 +125,13 @@ export const pipelineSlice = createSlice({
         state.run = {
           status: RUN_STATUS.START_PENDING,
         }
+        state.isExpdbBatchRun = false
+      })
+      .addMatcher(isAnyOf(expdbBatchRun.pending), (state) => {
+        state.run = {
+          status: RUN_STATUS.START_PENDING,
+        }
+        state.isExpdbBatchRun = true
       })
       .addMatcher(
         isAnyOf(run.fulfilled, runByCurrentUid.fulfilled),
@@ -136,15 +145,32 @@ export const pipelineSlice = createSlice({
             runPostData: { name: "", ...runPostData },
           }
           state.currentPipeline = {
-            uid: action.payload,
+            uid: uid,
+          }
+          state.isExpdbBatchRun = false
+        },
+      )
+      .addMatcher(isAnyOf(expdbBatchRun.fulfilled), (state, action) => {
+        const runPostData = action.meta.arg.runPostData
+        const uid = action.payload
+        state.run = {
+          uid,
+          status: RUN_STATUS.FINISHED,
+          runResult: getInitialRunResult({ ...runPostData }),
+          runPostData: { ...runPostData },
+        }
+        state.currentPipeline = {
+          uid: uid,
+        }
+      })
+      .addMatcher(
+        isAnyOf(run.rejected, runByCurrentUid.rejected, expdbBatchRun.rejected),
+        (state) => {
+          state.run = {
+            status: RUN_STATUS.START_ERROR,
           }
         },
       )
-      .addMatcher(isAnyOf(run.rejected, runByCurrentUid.rejected), (state) => {
-        state.run = {
-          status: RUN_STATUS.START_ERROR,
-        }
-      })
       .addMatcher(
         isAnyOf(fetchWorkflow.rejected, clearFlowElements),
         () => initialState,
