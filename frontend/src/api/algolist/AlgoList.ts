@@ -1,4 +1,5 @@
 import { BASE_URL } from "const/API"
+import { WORKSPACE_TYPE } from "const/Workspace"
 import axios from "utils/axios"
 
 export type AlgoListDTO = {
@@ -19,7 +20,13 @@ export type AlgorithmInfo = {
   isNone?: boolean
 }
 
-export async function getAlgoListApi(): Promise<AlgoListDTO> {
-  const response = await axios.get(`${BASE_URL}/algolist`)
+export async function getAlgoListApi(
+  workspace_type?: number,
+): Promise<AlgoListDTO> {
+  const endpoint =
+    workspace_type === WORKSPACE_TYPE.EXPDB_BATCH
+      ? `${BASE_URL}/algolist/expdb`
+      : `${BASE_URL}/algolist`
+  const response = await axios.get(endpoint)
   return response.data
 }
