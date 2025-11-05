@@ -166,7 +166,7 @@ const columns = (
     filterable: false,
     sortable: false,
     flex: 1,
-    minWidth: 80,
+    minWidth: 120,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>
         {WORKSPACE_TYPE_LABEL[params.value as WORKSPACE_TYPE] ||
