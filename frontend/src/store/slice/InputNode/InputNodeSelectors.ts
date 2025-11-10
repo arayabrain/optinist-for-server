@@ -9,6 +9,7 @@ import {
   isMicroscopeInputNode,
   isMicroscopeExpDbInputNode,
   isExpDbInputNode,
+  isExpdbBatchMicroscopeExpDbInputNode,
 } from "store/slice/InputNode/InputNodeUtils"
 import { RootState } from "store/store"
 
@@ -63,6 +64,9 @@ const generateTypedSelectors = () => {
       hdf5: isHDF5InputNode,
       matlab: isMatlabInputNode,
       microscope: isMicroscopeInputNode,
+      microscope_expdb: isMicroscopeExpDbInputNode,
+      expdb: isExpDbInputNode,
+      expdb_batch_microscope_expdb: isExpdbBatchMicroscopeExpDbInputNode,
     }
 
   getAllFileTypeConfigs().forEach((config) => {
@@ -97,8 +101,33 @@ export const selectMatlabInputNodeSelectedFilePath =
   typedSelectors.selectMatlabInputNodeSelectedFilePath
 export const selectMicroscopeInputNodeSelectedFilePath =
   typedSelectors.selectMicroscopeInputNodeSelectedFilePath
+export const selectMicroscopeExpdbInputNodeSelectedFilePath =
+  typedSelectors.selectMicroscopeExpdbInputNodeSelectedFilePath
+export const selectExpDbInputNodeSelectedFilePath =
+  typedSelectors.selectExpdbInputNodeSelectedFilePath
+export const selectExpdbBatchMicroscopeExpdbInputNodeSelectedFilePath =
+  typedSelectors.selectExpdbBatchMicroscopeExpdbInputNodeSelectedFilePath
 
 // Dynamic selectors generation capability is available for future extensions via getAllFileTypeConfigs()
+
+/**
+ * Integrated selector for ExpDb related node types
+ * This selector accepts *expdb file types (microscope_expdb, expdb),
+ * preventing errors during state transitions between these types
+ */
+export const selectExpDbRelatedInputNodeSelectedFilePath =
+  (nodeId: string) => (state: RootState) => {
+    const inputNode = selectInputNodeById(nodeId)(state)
+    if (
+      isMicroscopeExpDbInputNode(inputNode) ||
+      isExpDbInputNode(inputNode) ||
+      isExpdbBatchMicroscopeExpDbInputNode(inputNode)
+    ) {
+      return inputNode.selectedFilePath
+    } else {
+      throw new Error("invalid input node type")
+    }
+  }
 
 export const selectFilePathIsUndefined = (state: RootState) =>
   Object.keys(state.inputNode).length === 0 ||
@@ -156,40 +185,5 @@ export const selectInputNodeMatlabPath =
       return item.matPath
     } else {
       return undefined
-    }
-  }
-
-export const selectMicroscopeExpdbInputNodeSelectedFilePath =
-  (nodeId: string) => (state: RootState) => {
-    const node = selectInputNodeById(nodeId)(state)
-    if (isMicroscopeExpDbInputNode(node)) {
-      return node.selectedFilePath
-    } else {
-      throw new Error("invalid input node type")
-    }
-  }
-
-export const selectExpDbInputNodeSelectedFilePath =
-  (nodeId: string) => (state: RootState) => {
-    const inputNode = selectInputNodeById(nodeId)(state)
-    if (isExpDbInputNode(inputNode)) {
-      return inputNode.selectedFilePath
-    } else {
-      throw new Error("invalid input node type")
-    }
-  }
-
-/**
- * Integrated selector for ExpDb related node types
- * This selector accepts *expdb file types (microscope_expdb, expdb),
- * preventing errors during state transitions between these types
- */
-export const selectExpDbRelatedInputNodeSelectedFilePath =
-  (nodeId: string) => (state: RootState) => {
-    const inputNode = selectInputNodeById(nodeId)(state)
-    if (isMicroscopeExpDbInputNode(inputNode) || isExpDbInputNode(inputNode)) {
-      return inputNode.selectedFilePath
-    } else {
-      throw new Error("invalid input node type")
     }
   }

@@ -9,13 +9,13 @@ unique_id = "expdb_test"
 nodeDict_ = {
     "input_0": Node(
         id="input_0",
-        type="MicroscopeExpdbFileNode",
+        type="ExpdbBatchMicroscopeExpdbFileNode",
         data=NodeData(
             label="M000000_ori001",
             param={},
             path="M000000_ori001",
             type="input",
-            fileType="microscope_expdb",
+            fileType="expdb_batch_microscope_expdb",
         ),
         position={},
         style={},

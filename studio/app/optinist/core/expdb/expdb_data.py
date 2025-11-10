@@ -125,3 +125,24 @@ class BatchProcFileExt(BatchProcFile):
                     f"{self.exp_id}.proc",
                 ]
             )
+
+
+class ProcessResult:
+    def __init__(self):
+        self.success_ids_ = []
+        self.failure_ids_ = []
+
+    @property
+    def success_ids(self):
+        return self.success_ids_
+
+    @property
+    def failure_ids(self):
+        return self.failure_ids_
+
+    @property
+    def total_ids(self):
+        return self.success_ids_ + self.failure_ids_
+
+    def has_error(self) -> bool:
+        return len(self.failure_ids_) > 0
