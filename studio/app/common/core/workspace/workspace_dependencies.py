@@ -5,8 +5,12 @@ from sqlmodel import Session, or_
 
 from studio.app.common import models as common_model
 from studio.app.common.core.auth.auth_dependencies import get_current_user
+from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.workspace.workspace import WorkspaceType
 from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
+
+logger = AppLogger.get_logger()
 
 
 async def is_workspace_owner(
@@ -25,9 +29,13 @@ async def is_workspace_owner(
     )
 
     if workspace is None:
+        logger.error("Workspace is not found")
         raise HTTPException(status_code=403, detail="Operation is not available")
-    else:
-        return True
+
+    if not check_expdb_batch_type_workspace_permission(current_user, workspace):
+        raise HTTPException(status_code=403, detail="Workspace is not available")
+
+    return True
 
 
 async def is_workspace_available(
@@ -55,6 +63,30 @@ async def is_workspace_available(
     )
 
     if workspace is None:
+        logger.error("Workspace is not found")
         raise HTTPException(status_code=403, detail="Workspace is not available")
-    else:
-        return True
+
+    if not check_expdb_batch_type_workspace_permission(current_user, workspace):
+        raise HTTPException(status_code=403, detail="Workspace is not available")
+
+    return True
+
+
+def check_expdb_batch_type_workspace_permission(
+    current_user: User, workspace: common_model.Workspace
+) -> bool:
+    """
+    Check EXPDB_BATCH type workspace's permission
+    """
+    if (
+        workspace.type == WorkspaceType.EXPDB_BATCH
+        and not current_user.is_expdb_batch_runnable_admin
+    ):
+        logger.error(
+            "Invalid access to an EXPDB_BATCH type workspace"
+            f" [type: {workspace.type}]"
+            f" [has_permission: {current_user.is_expdb_batch_runnable_admin}]"
+        )
+        return False
+
+    return True

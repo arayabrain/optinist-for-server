@@ -23,3 +23,9 @@ export const isAdminOrManager = (state: RootState) => {
     state.user.currentUser?.role_id as number,
   )
 }
+
+export const isExpDbBatchRunnableAdmin = (state: RootState) => {
+  return [ROLE.ADMIN, ROLE.DATA_MANAGER].includes(
+    state.user.currentUser?.role_id as number,
+  )
+}

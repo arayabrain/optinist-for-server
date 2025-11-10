@@ -949,9 +949,6 @@ def update_multiple_experiment_database_share_status(
 async def expdb_batch_run(
     workspace_id: str, runItem: RunItem, background_tasks: BackgroundTasks
 ):
-    # TODO: Demo version of expdb_batch_run API
-    # TODO: Permission control required
-
     try:
         new_unique_id = WorkflowRunner.create_workflow_unique_id()
         WorkflowExpdbBatchRunner(

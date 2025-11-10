@@ -46,7 +46,10 @@ import {
   WORKSPACE_TYPE_LABEL,
   WORKSPACE_TYPE_OPTIONS,
 } from "const/Workspace"
-import { selectCurrentUser } from "store/slice/User/UserSelector"
+import {
+  selectCurrentUser,
+  isExpDbBatchRunnableAdmin,
+} from "store/slice/User/UserSelector"
 import { resetVisualizeLayout } from "store/slice/VisualizeItem/VisualizeItemSlice"
 import {
   delWorkspace,
@@ -163,7 +166,7 @@ const columns = (
     filterable: false,
     sortable: false,
     flex: 1,
-    minWidth: 80,
+    minWidth: 120,
     renderCell: (params: GridRenderCellParams<GridValidRowModel>) => (
       <span>
         {WORKSPACE_TYPE_LABEL[params.value as WORKSPACE_TYPE] ||
@@ -242,15 +245,18 @@ const columns = (
     minWidth: 70,
     filterable: false, // todo enable when api complete
     sortable: false, // todo enable when api complete
-    renderCell: (params: GridRenderCellParams<GridValidRowModel>) =>
-      isMine(user, params.row?.user?.id) ? (
+    renderCell: (params: GridRenderCellParams<GridValidRowModel>) => {
+      const shouldHideShareButton =
+        params.row?.type === WORKSPACE_TYPE.EXPDB_BATCH
+      return isMine(user, params.row?.user?.id) && !shouldHideShareButton ? (
         <IconButton
           onClick={() => handleOpenPopupShare(params.row.id)}
           color={params.row.shared_count ? "primary" : "default"}
         >
           <GroupsIcon />
         </IconButton>
-      ) : null,
+      ) : null
+    },
   },
   {
     field: "delete",
@@ -298,6 +304,7 @@ const PopupNew = ({
   handleOkNew,
   error,
 }: PopupType) => {
+  const isExpDbAdmin = useSelector(isExpDbBatchRunnableAdmin)
   if (!setNewWorkSpace) return null
   const handleName = (event: ChangeEvent<HTMLInputElement>) => {
     setNewWorkSpace({
@@ -329,23 +336,25 @@ const PopupNew = ({
             helperText={error && !value?.name ? error : ""}
             variant="standard"
           />
-          <FormControl component="fieldset" sx={{ width: "100%" }}>
-            <FormLabel component="legend">Type</FormLabel>
-            <RadioGroup
-              row
-              value={value?.type ?? WORKSPACE_TYPE.NORMAL}
-              onChange={handleType}
-            >
-              {WORKSPACE_TYPE_OPTIONS.map((option) => (
-                <FormControlLabel
-                  key={option.value}
-                  value={option.value}
-                  control={<Radio />}
-                  label={option.label}
-                />
-              ))}
-            </RadioGroup>
-          </FormControl>
+          {isExpDbAdmin && (
+            <FormControl component="fieldset" sx={{ width: "100%" }}>
+              <FormLabel component="legend">Type</FormLabel>
+              <RadioGroup
+                row
+                value={value?.type ?? WORKSPACE_TYPE.NORMAL}
+                onChange={handleType}
+              >
+                {WORKSPACE_TYPE_OPTIONS.map((option) => (
+                  <FormControlLabel
+                    key={option.value}
+                    value={option.value}
+                    control={<Radio />}
+                    label={option.label}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>
+          )}
         </DialogContent>
         <DialogActions>
           <Button variant={"outlined"} onClick={handleClose}>
