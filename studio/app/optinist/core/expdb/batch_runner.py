@@ -3,7 +3,6 @@ import datetime
 import logging
 import logging.config
 import os
-import pathlib
 import traceback
 from contextlib import contextmanager
 
@@ -25,7 +24,9 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     update_experiment,
 )
 from studio.app.optinist.core.expdb.expdb_data import ProcessResult
+from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
 from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
+from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
@@ -301,7 +302,7 @@ class ExpDbBatchConcurrentProcess:
         start_time: datetime.datetime,
         logger_name: str,
     ) -> dict:
-        exp_id = ProcFileReader.parse_exp_id_from_path(proc_file_path)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
         logger = cls.__init_process_logger(exp_id)
         logger.info(
             f"Process {os.getpid()} starting to \
@@ -496,44 +497,30 @@ class ExpDbBatchConcurrentProcess:
 
         # ----------------------------------------
         # 後処理
-        # - フラグファイル処理（ログ出力、リネーム）
+        # - proc file 処理（ログ出力、リネーム）
         # ----------------------------------------
 
-        # フラグファイル書き込みデータ作成
-        if not error:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "success",
-                "log": "completed successfully.",
-            }
-        else:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "error",
-                "log": "{}: {}".format(type(error), str(error)),
-            }
+        is_success = not error
 
-        # フラグファイル内容アップデート
-        with open(proc_file_path, "w") as yf:
-            yaml.dump(result_log, yf)
-
-        # フラグファイル名作成
-        if not error:
-            renamed_proc_file = proc_file_path + ".done"
-        else:
-            renamed_proc_file = proc_file_path + ".error"
-
-        # 過去のフラグファイルが存在する場合はリネーム
-        if os.path.isfile(renamed_proc_file):
-            ps = pathlib.Path(renamed_proc_file).stat()
-            st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
-                "%Y%m%d%H%M%S"
+        # Create write data for proc file
+        if is_success:
+            result_proc = ProcFile(
+                command=command,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="success",
+                log="completed successfully.",
             )
-            os.rename(renamed_proc_file, renamed_proc_file + "." + st_mtime)
+        else:
+            result_proc = ProcFile(
+                command=command,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="error",
+                log="{}: {}".format(type(error), str(error)),
+            )
 
-        # フラグファイルリネーム
-        os.rename(proc_file_path, renamed_proc_file)
+        # Write and rename/backup proc file
+        ProcFileWriter.write_and_backup_proc_file(
+            proc_file_path, result_proc, is_success
+        )

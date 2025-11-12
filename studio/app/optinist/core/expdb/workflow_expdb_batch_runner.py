@@ -1,7 +1,5 @@
 import shutil
-from dataclasses import asdict
 
-import yaml
 from fastapi import BackgroundTasks, HTTPException, status
 from zc import lockfile
 
@@ -18,7 +16,8 @@ from studio.app.optinist.core.expdb.batch_const import (
 )
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil, ProcessResult
 from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
-from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileExt
+from studio.app.optinist.core.expdb.proc_file_data import ProcFile
+from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 
 logger = AppLogger.get_logger()
 
@@ -164,9 +163,8 @@ class WorkflowExpdbBatchRunner:
         # Write batch proc file
         # ------------------------------------------------------------
 
-        # Generate .proc file contents
-        proc_file = ProcFileExt(
-            exp_id=exp_id,
+        # Generate proc file contents
+        proc_file = ProcFile(
             command=ProcessCommand.REGIST.value,
             roi_method=roi_method.value,
         )
@@ -181,11 +179,7 @@ class WorkflowExpdbBatchRunner:
             proc_lock_file = lockfile.LockFile(LOCKFILE_NAME)
 
             # Write proc file
-            with open(proc_file.file_path, "w") as f:
-                store_proc_file = ProcFile(
-                    command=proc_file.command, roi_method=proc_file.roi_method
-                )
-                yaml.dump(asdict(store_proc_file), f)
+            ProcFileWriter.write(exp_id, proc_file)
 
         except lockfile.LockError as e:
             err_message = (
