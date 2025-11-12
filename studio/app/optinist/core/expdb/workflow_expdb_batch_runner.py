@@ -16,13 +16,9 @@ from studio.app.optinist.core.expdb.batch_const import (
     ProcessCommand,
     SupportedRoiMethod,
 )
-from studio.app.optinist.core.expdb.expdb_data import (
-    BatchProcFile,
-    BatchProcFileExt,
-    ExpDbPathIdsUtil,
-    ProcessResult,
-)
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil, ProcessResult
 from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
+from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileExt
 
 logger = AppLogger.get_logger()
 
@@ -165,28 +161,28 @@ class WorkflowExpdbBatchRunner:
         shutil.copy(src_workflow_yaml_path, dest_workflow_yaml_path)
 
         # ------------------------------------------------------------
-        # Write .proc file
+        # Write batch proc file
         # ------------------------------------------------------------
 
         # Generate .proc file contents
-        proc_file = BatchProcFileExt(
+        proc_file = ProcFileExt(
             exp_id=exp_id,
             command=ProcessCommand.REGIST.value,
             roi_method=roi_method.value,
         )
 
-        logger.info(f"Generate .proc for batch [{proc_file}]")
+        logger.info(f"Generate batch proc file [{proc_file}]")
 
-        # Write .proc file
+        # Write proc file
         # Check the status to see if batch processing is running (check the lock file).
         # @see studio.app.optinist.core.expdb.batch_runner.__process_preprocess
         proc_lock_file = None
         try:
             proc_lock_file = lockfile.LockFile(LOCKFILE_NAME)
 
-            # Write .proc file
+            # Write proc file
             with open(proc_file.file_path, "w") as f:
-                store_proc_file = BatchProcFile(
+                store_proc_file = ProcFile(
                     command=proc_file.command, roi_method=proc_file.roi_method
                 )
                 yaml.dump(asdict(store_proc_file), f)
