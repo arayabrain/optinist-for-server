@@ -1,10 +1,8 @@
 import concurrent.futures
 import datetime
-import glob
 import logging
 import logging.config
 import os
-import pathlib
 import subprocess
 import traceback
 from contextlib import contextmanager
@@ -18,7 +16,6 @@ from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.expdb.batch_const import (
-    FLAG_FILE_EXT,
     LOCKFILE_NAME,
     ProcessCommand,
     SupportedRoiMethod,
@@ -31,31 +28,14 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     get_experiment,
     update_experiment,
 )
+from studio.app.optinist.core.expdb.expdb_data import ProcessResult
+from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
+from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
+from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
 )
-
-
-class ProcessResult:
-    def __init__(self):
-        self.success_ids_ = []
-        self.failure_ids_ = []
-
-    @property
-    def success_ids(self):
-        return self.success_ids_
-
-    @property
-    def failure_ids(self):
-        return self.failure_ids_
-
-    @property
-    def total_ids(self):
-        return self.success_ids_ + self.failure_ids_
-
-    def has_error(self) -> bool:
-        return len(self.failure_ids_) > 0
 
 
 class ExpDbBatchRunner:
@@ -191,18 +171,46 @@ class ExpDbBatchRunner:
 
         processResult = ProcessResult()
 
-        target_flag_files = self.__search_target_datasets()
+        # 処理対象datasets検索
+        self.logger_.info("proc files search path: %s", EXPDB_DIRPATH.EXPDB_DIR)
+        target_proc_files = ProcFileReader.find_proc_files()
+
+        # Filter by roi_method if specified
+        if self.filter_roi_method:
+            self.logger_.info(
+                f"Filtering datasets by roi_method: {self.filter_roi_method}"
+            )
+            filtered_files = []
+            for proc_file_path in target_proc_files:
+                try:
+                    proc_file = ProcFileReader.read_from_path(proc_file_path)
+                    roi_method = proc_file.roi_method or SupportedRoiMethod.CAIMAN.value
+                    if roi_method == self.filter_roi_method:
+                        filtered_files.append(proc_file_path)
+                        self.logger_.info(
+                            f"Including: {proc_file_path} (roi_method={roi_method})"
+                        )
+                    else:
+                        self.logger_.info(
+                            f"Skipping: {proc_file_path} (roi_method={roi_method})"
+                        )
+                except Exception as e:
+                    # Skip corrupted files entirely - they'll be retried on next run
+                    self.logger_.error(
+                        f"Could not read {proc_file_path}: {e}, skipping"
+                    )
+            target_proc_files = filtered_files
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
-        if len(target_flag_files) == 0:
+        if len(target_proc_files) == 0:
             self.logger_.info("No datasets found.")
             return processResult
 
         # 最大並列処理Process数を規定
-        max_workers = min(len(target_flag_files), self.parallel_workers)
+        max_workers = min(len(target_proc_files), self.parallel_workers)
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
-            len(target_flag_files),
+            len(target_proc_files),
             max_workers,
         )
 
@@ -214,13 +222,13 @@ class ExpDbBatchRunner:
             futures = [
                 executor.submit(
                     ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
-                    flag_file=flag_file,
+                    proc_file_path=proc_file_path,
                     org_id=self.org_id,
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,
                 )
-                # 処理対象datasets検索：フラグファイル走査
-                for flag_file in target_flag_files
+                # 処理対象datasets検索：proc file走査
+                for proc_file_path in target_proc_files
             ]
 
             process_results = []
@@ -240,47 +248,6 @@ class ExpDbBatchRunner:
             summarize_experiment_metadata(db)
 
         return processResult
-
-    @stopwatch(callback=__stopwatch_callback)
-    def __search_target_datasets(self) -> list:
-        """
-        処理対象datasets検索
-        """
-        self.logger_.info("path: %s", EXPDB_DIRPATH.EXPDB_DIR)
-
-        # フラグファイル検索
-        target_flag_files = sorted(
-            glob.glob(EXPDB_DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
-        )
-
-        # Filter by roi_method if specified
-        if self.filter_roi_method:
-            self.logger_.info(
-                f"Filtering datasets by roi_method: {self.filter_roi_method}"
-            )
-            filtered_files = []
-            for flag_file in target_flag_files:
-                try:
-                    with open(flag_file) as f:
-                        config = yaml.safe_load(f)
-                        roi_method = config.get(
-                            "roi_method", SupportedRoiMethod.CAIMAN.value
-                        )
-                        if roi_method == self.filter_roi_method:
-                            filtered_files.append(flag_file)
-                            self.logger_.info(
-                                f"Including: {flag_file} (roi_method={roi_method})"
-                            )
-                        else:
-                            self.logger_.info(
-                                f"Skipping: {flag_file} (roi_method={roi_method})"
-                            )
-                except Exception as e:
-                    # Skip corrupted files entirely - they'll be retried on next run
-                    self.logger_.error(f"Could not read {flag_file}: {e}, skipping")
-            target_flag_files = filtered_files
-
-        return target_flag_files
 
 
 def dataset_process_stopwatch_callback(watch, function=None):
@@ -305,19 +272,14 @@ class ExpDbBatchConcurrentProcess:
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
     @staticmethod
-    def __get_roi_method_from_flag_file(flag_file: str) -> str:
+    def __get_roi_method_from_proc_file(proc_file_path: str) -> str:
         """
-        Read roi_method from .proc flag file.
+        Read roi_method from .proc file.
         Returns 'caiman', 'suite2p', or 'caiman' as default.
         """
         try:
-            with open(flag_file) as f:
-                config = yaml.safe_load(f)
-                return (
-                    config.get("roi_method", SupportedRoiMethod.CAIMAN.value)
-                    if config
-                    else SupportedRoiMethod.CAIMAN.value
-                )
+            proc_file = ProcFileReader.read_from_path(proc_file_path)
+            return proc_file.roi_method or SupportedRoiMethod.CAIMAN.value
         except Exception:
             return SupportedRoiMethod.CAIMAN.value  # Default fallback
 
@@ -338,7 +300,7 @@ class ExpDbBatchConcurrentProcess:
             return "expdb_batch_caiman"
 
     @classmethod
-    def __should_switch_environment(cls, flag_file: str) -> tuple:
+    def __should_switch_environment(cls, proc_file_path: str) -> tuple:
         """
         Check if we need to switch conda environments for this dataset.
         """
@@ -346,7 +308,7 @@ class ExpDbBatchConcurrentProcess:
         if os.environ.get("EXPDB_BATCH_SUBPROCESS") == "1":
             return (False, "", "", "")
 
-        roi_method = cls.__get_roi_method_from_flag_file(flag_file)
+        roi_method = cls.__get_roi_method_from_proc_file(proc_file_path)
         required_env = cls.__get_required_conda_env(roi_method)
         current_env = cls.__get_current_conda_env()
 
@@ -356,7 +318,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     def __execute_in_conda_env(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
@@ -366,7 +328,7 @@ class ExpDbBatchConcurrentProcess:
         Execute dataset processing in a specific conda environment via subprocess.
 
         Args:
-            flag_file: Path to the .proc file
+            proc_file_path: Path to the .proc file
             org_id: Organization ID
             start_time: Process start time
             logger_name: Logger name for subprocess
@@ -375,7 +337,7 @@ class ExpDbBatchConcurrentProcess:
         Returns:
             Result dictionary from processing
         """
-        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
         logger = logging.getLogger(logger_name)
 
         logger.info(f"Spawning subprocess for {exp_id} in environment: {required_env}")
@@ -402,7 +364,7 @@ os.chdir('/app')
 from studio.app.optinist.core.expdb.batch_runner import ExpDbBatchConcurrentProcess
 import datetime
 result = ExpDbBatchConcurrentProcess.process_single_dataset(
-    '{flag_file}',
+    '{proc_file_path}',
     {org_id},
     datetime.datetime.now(),
     '{logger_name}'
@@ -481,14 +443,10 @@ sys.exit(0 if result.get('success') else 1)
 
         return logging.getLogger(cls.LOGGER_NAME)
 
-    @staticmethod
-    def __get_exp_id_from_flag_file(flag_file: str) -> str:
-        return os.path.basename(flag_file).split(".", 1)[0]
-
     @classmethod
     def process_single_dataset_entrypoint(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
@@ -506,9 +464,9 @@ sys.exit(0 if result.get('success') else 1)
             current_env,
             required_env,
             roi_method,
-        ) = cls.__should_switch_environment(flag_file)
+        ) = cls.__should_switch_environment(proc_file_path)
 
-        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
         logger = logging.getLogger(logger_name)
 
         if needs_switch:
@@ -518,7 +476,7 @@ sys.exit(0 if result.get('success') else 1)
                 f"roi_method={roi_method}"
             )
             return cls.__execute_in_conda_env(
-                flag_file, org_id, start_time, logger_name, required_env
+                proc_file_path, org_id, start_time, logger_name, required_env
             )
         else:
             # Already in correct environment or subprocess
@@ -527,23 +485,23 @@ sys.exit(0 if result.get('success') else 1)
                 f"{current_env or 'subprocess'}"
             )
             return cls.process_single_dataset(
-                flag_file, org_id, start_time, logger_name
+                proc_file_path, org_id, start_time, logger_name
             )
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_single_dataset(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
     ) -> dict:
-        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
         logger = cls.__init_process_logger(exp_id)
         logger.info(
             f"Process {os.getpid()} starting to \
-                process exp_id: {exp_id}, flag_file: {flag_file}"
+                process exp_id: {exp_id}, proc_file_path: {proc_file_path}"
         )
 
         # Log current conda environment and subprocess status
@@ -559,12 +517,11 @@ sys.exit(0 if result.get('success') else 1)
         result = {"success": False, "exp_id": exp_id}
 
         try:
-            # フラグファイル read
-            with open(flag_file) as cfile:
-                config = yaml.safe_load(cfile)
+            # Read proc file
+            proc_file = ProcFileReader.read_from_path(proc_file_path)
 
             # コマンド判定
-            command = config.get("command") if config is not None else None
+            command = proc_file.command
 
             if command == ProcessCommand.REGIST.value:
                 cls.process_dataset_registration(
@@ -591,7 +548,7 @@ sys.exit(0 if result.get('success') else 1)
             result["error"] = e
 
         finally:
-            cls.process_dataset_postprocess(flag_file, command, start_time, error)
+            cls.process_dataset_postprocess(proc_file_path, command, start_time, error)
 
             if error:
                 logger.error("finish process dataset: [exp_id: %s]", exp_id)
@@ -732,7 +689,7 @@ sys.exit(0 if result.get('success') else 1)
     @classmethod
     def process_dataset_postprocess(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         command: str,
         start_time: datetime.datetime,
         error: Exception = None,
@@ -743,58 +700,42 @@ sys.exit(0 if result.get('success') else 1)
 
         # ----------------------------------------
         # 後処理
-        # - フラグファイル処理（ログ出力、リネーム）
+        # - proc file 処理（ログ出力、リネーム）
         # ----------------------------------------
 
-        # Read existing flag file to preserve roi_method and other metadata
-        existing_data = {}
-        if os.path.exists(flag_file):
-            try:
-                with open(flag_file, "r") as f:
-                    existing_data = yaml.safe_load(f) or {}
-            except Exception:
-                # If we can't read the file, just use empty dict
-                existing_data = {}
+        # Read existing proc file to preserve roi_method
+        existing_roi_method = None
+        try:
+            existing_proc_file = ProcFileReader.read_from_path(proc_file_path)
+            existing_roi_method = existing_proc_file.roi_method
+        except Exception:
+            # If we can't read the file, roi_method will be None
+            pass
 
-        # フラグファイル書き込みデータ作成
-        if not error:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "success",
-                "log": "completed successfully.",
-            }
-        else:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "error",
-                "log": "{}: {}".format(type(error), str(error)),
-            }
+        # Determine success status
+        is_success = not error
 
-        # Preserve roi_method from existing data (don't overwrite)
-        if "roi_method" in existing_data:
-            result_log["roi_method"] = existing_data["roi_method"]
-
-        # フラグファイル内容アップデート
-        with open(flag_file, "w") as yf:
-            yaml.dump(result_log, yf)
-
-        # フラグファイル名作成
-        if not error:
-            renamed_flag_file = flag_file + ".done"
-        else:
-            renamed_flag_file = flag_file + ".error"
-
-        # 過去のフラグファイルが存在する場合はリネーム
-        if os.path.isfile(renamed_flag_file):
-            ps = pathlib.Path(renamed_flag_file).stat()
-            st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
-                "%Y%m%d%H%M%S"
+        # Create ProcFile with result
+        if is_success:
+            result_proc = ProcFile(
+                command=command,
+                roi_method=existing_roi_method,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="success",
+                log="completed successfully.",
             )
-            os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
+        else:
+            result_proc = ProcFile(
+                command=command,
+                roi_method=existing_roi_method,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="error",
+                log="{}: {}".format(type(error), str(error)),
+            )
 
-        # フラグファイルリネーム
-        os.rename(flag_file, renamed_flag_file)
+        # Write and rename/backup proc file
+        ProcFileWriter.write_and_backup_proc_file(
+            proc_file_path, result_proc, is_success
+        )

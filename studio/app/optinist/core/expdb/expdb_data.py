@@ -104,24 +104,22 @@ class ExpDbPathIdsUtil:
         return ExpDbPathIds(exp_id=exp_id)
 
 
-@dataclass
-class BatchProcFile:
-    command: str
-    roi_method: Optional[str] = None
+class ProcessResult:
+    def __init__(self):
+        self.success_ids_ = []
+        self.failure_ids_ = []
 
+    @property
+    def success_ids(self):
+        return self.success_ids_
 
-@dataclass
-class BatchProcFileExt(BatchProcFile):
-    exp_id: Optional[str] = None
-    file_path: Optional[str] = None
+    @property
+    def failure_ids(self):
+        return self.failure_ids_
 
-    def __post_init__(self):
-        if self.exp_id:
-            exp_ids = ExpDbPathIds(exp_id=self.exp_id)
-            self.file_path = join_filepath(
-                [
-                    EXPDB_DIRPATH.EXPDB_DIR,
-                    exp_ids.subject_id,
-                    f"{self.exp_id}.proc",
-                ]
-            )
+    @property
+    def total_ids(self):
+        return self.success_ids_ + self.failure_ids_
+
+    def has_error(self) -> bool:
+        return len(self.failure_ids_) > 0

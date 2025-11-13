@@ -1,5 +1,12 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import { shallowEqual, useDispatch, useSelector } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { enqueueSnackbar, VariantType } from "notistack"
@@ -35,6 +42,7 @@ import {
   GridSortDirection,
   GridSortItem,
   GridSortModel,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid"
 
 import { SHARE, WAITING_TIME } from "@types"
@@ -98,8 +106,14 @@ type DatabaseProps = {
   user?: UserDTO
   cellPath: string
   handleRowClick?: GridEventListener<"rowClick">
+  handleRowSelectionModelChange?: (
+    selectionModel: GridRowSelectionModel,
+  ) => void
   readonly?: boolean
   metadataEditable?: boolean
+  multiSelect?: boolean
+  hideImageColumns?: boolean
+  initialRowSelection?: GridRowSelectionModel
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -481,8 +495,12 @@ const DatabaseExperiments = ({
   user,
   cellPath,
   handleRowClick,
+  handleRowSelectionModelChange,
   readonly,
   metadataEditable,
+  multiSelect = false,
+  hideImageColumns = false,
+  initialRowSelection = [],
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -490,11 +508,14 @@ const DatabaseExperiments = ({
     data: dataExperiments,
     loading,
     filterParams,
-  } = useSelector((state: RootState) => ({
-    data: state[DATABASE_SLICE_NAME].data[type],
-    loading: state[DATABASE_SLICE_NAME].loading,
-    filterParams: state[DATABASE_SLICE_NAME].filterParams,
-  }))
+  } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+      filterParams: state[DATABASE_SLICE_NAME].filterParams,
+    }),
+    shallowEqual,
+  )
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -538,9 +559,12 @@ const DatabaseExperiments = ({
   const limit = searchParams.get("limit") || 50
   const sort = searchParams.getAll("sort")
 
-  const { dataShare } = useSelector((state: RootState) => ({
-    dataShare: state[DATABASE_SLICE_NAME].listShare,
-  }))
+  const { dataShare } = useSelector(
+    (state: RootState) => ({
+      dataShare: state[DATABASE_SLICE_NAME].listShare,
+    }),
+    shallowEqual,
+  )
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })
@@ -1072,7 +1096,7 @@ const DatabaseExperiments = ({
     ]
   }
 
-  const columnsTable = [
+  let columnsTable = [
     ...columns(
       dataExperiments.items.map((item) => item.id),
       setListCheck,
@@ -1092,6 +1116,71 @@ const DatabaseExperiments = ({
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]
+
+  // Filter columns if hidePixcelColumns is true
+  if (hideImageColumns) {
+    const firstImageColumnIndex = columnsTable.findIndex(
+      (col) => col.field === "cell_image_urls",
+    )
+    if (firstImageColumnIndex !== -1) {
+      columnsTable = columnsTable.slice(0, firstImageColumnIndex)
+    }
+  }
+
+  /**
+   * Preserve scroll position when row selection changes in multi-select mode
+   * DataGrid automatically scrolls to selected rows, which causes unwanted flickering
+   * This logic captures the scroll position before selection and restores it after rendering
+   */
+  const dataGridContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollPositionRef = useRef({ top: 0, left: 0 })
+
+  const getVirtualScroller = useCallback(() => {
+    return dataGridContainerRef.current?.querySelector(
+      ".MuiDataGrid-virtualScroller",
+    ) as HTMLElement | null
+  }, [])
+
+  const saveScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scrollPositionRef.current = {
+        top: scroller.scrollTop,
+        left: scroller.scrollLeft,
+      }
+    }
+  }, [getVirtualScroller])
+
+  const restoreScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scroller.scrollTop = scrollPositionRef.current.top
+      scroller.scrollLeft = scrollPositionRef.current.left
+    }
+  }, [getVirtualScroller])
+
+  const handleRowSelectionChange = useCallback(
+    (newSelection: GridRowSelectionModel) => {
+      if (!multiSelect) {
+        handleRowSelectionModelChange?.(newSelection)
+        return
+      }
+
+      saveScrollPosition()
+      handleRowSelectionModelChange?.(newSelection)
+
+      // Restore after React renders the updated selection state
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 0)
+    },
+    [
+      multiSelect,
+      handleRowSelectionModelChange,
+      saveScrollPosition,
+      restoreScrollPosition,
+    ],
+  )
 
   return (
     <DatabaseExperimentsWrapper>
@@ -1173,24 +1262,32 @@ const DatabaseExperiments = ({
           ) : null}
         </Box>
       ) : null}
-      <DataGrid
-        columns={
-          adminOrManager && user && !readonly
-            ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
-            : (columnsTable as GridColDef[])
-        }
-        sortModel={model.sort as GridSortItem[]}
-        rows={dataExperiments?.items || []}
-        rowHeight={128}
-        hideFooter={true}
-        filterMode={"server"}
-        sortingMode={"server"}
-        onSortModelChange={handleSort}
-        filterModel={model.filter}
-        onFilterModelChange={handleFilter}
-        onRowClick={handleRowClick}
-        sx={{ flex: 1, minHeight: 0 }}
-      />
+      <Box
+        ref={dataGridContainerRef}
+        sx={{ flex: 1, minHeight: 0, display: "flex" }}
+      >
+        <DataGrid
+          columns={
+            adminOrManager && user && !readonly
+              ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
+              : (columnsTable as GridColDef[])
+          }
+          sortModel={model.sort as GridSortItem[]}
+          rows={dataExperiments?.items || []}
+          rowHeight={128}
+          hideFooter={true}
+          filterMode={"server"}
+          sortingMode={"server"}
+          onSortModelChange={handleSort}
+          filterModel={model.filter}
+          onFilterModelChange={handleFilter}
+          onRowClick={handleRowClick}
+          checkboxSelection={multiSelect}
+          rowSelectionModel={initialRowSelection}
+          onRowSelectionModelChange={handleRowSelectionChange}
+          sx={{ flex: 1 }}
+        />
+      </Box>
       {dataExperiments?.items.length > 0 ? (
         <Box sx={{ mt: 2 }}>
           <PaginationCustom
