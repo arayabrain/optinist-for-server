@@ -1,10 +1,8 @@
 import concurrent.futures
 import datetime
-import glob
 import logging
 import logging.config
 import os
-import pathlib
 import traceback
 from contextlib import contextmanager
 
@@ -16,11 +14,7 @@ from studio.app.common.core.users.crud_organizations import get_organization
 from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
-from studio.app.optinist.core.expdb.batch_const import (
-    FLAG_FILE_EXT,
-    LOCKFILE_NAME,
-    ProcessCommand,
-)
+from studio.app.optinist.core.expdb.batch_const import LOCKFILE_NAME, ProcessCommand
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
 from studio.app.optinist.core.expdb.crud_configs import summarize_experiment_metadata
@@ -30,6 +24,9 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     update_experiment,
 )
 from studio.app.optinist.core.expdb.expdb_data import ProcessResult
+from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
+from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
+from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
@@ -163,18 +160,20 @@ class ExpDbBatchRunner:
 
         processResult = ProcessResult()
 
-        target_flag_files = self.__search_target_datasets()
+        # 処理対象datasets検索
+        self.logger_.info("proc files search path: %s", EXPDB_DIRPATH.EXPDB_DIR)
+        target_proc_files = ProcFileReader.find_proc_files()
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
-        if len(target_flag_files) == 0:
+        if len(target_proc_files) == 0:
             self.logger_.info("No datasets found.")
             return processResult
 
         # 最大並列処理Process数を規定
-        max_workers = min(len(target_flag_files), self.parallel_workers)
+        max_workers = min(len(target_proc_files), self.parallel_workers)
         self.logger_.info(
             "Start processing datasets. [total: %d][max_workers: %d]",
-            len(target_flag_files),
+            len(target_proc_files),
             max_workers,
         )
 
@@ -186,13 +185,13 @@ class ExpDbBatchRunner:
             futures = [
                 executor.submit(
                     ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
-                    flag_file=flag_file,
+                    proc_file_path=proc_file_path,
                     org_id=self.org_id,
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,
                 )
-                # 処理対象datasets検索：フラグファイル走査
-                for flag_file in target_flag_files
+                # 処理対象datasets検索：proc file走査
+                for proc_file_path in target_proc_files
             ]
 
             process_results = []
@@ -212,20 +211,6 @@ class ExpDbBatchRunner:
             summarize_experiment_metadata(db)
 
         return processResult
-
-    @stopwatch(callback=__stopwatch_callback)
-    def __search_target_datasets(self) -> list:
-        """
-        処理対象datasets検索
-        """
-        self.logger_.info("path: %s", EXPDB_DIRPATH.EXPDB_DIR)
-
-        # フラグファイル検索
-        target_flag_files = sorted(
-            glob.glob(EXPDB_DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
-        )
-
-        return target_flag_files
 
 
 def dataset_process_stopwatch_callback(watch, function=None):
@@ -292,14 +277,10 @@ class ExpDbBatchConcurrentProcess:
 
         return logging.getLogger(cls.LOGGER_NAME)
 
-    @staticmethod
-    def __get_exp_id_from_flag_file(flag_file: str) -> str:
-        return os.path.basename(flag_file).split(".", 1)[0]
-
     @classmethod
     def process_single_dataset_entrypoint(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
@@ -308,22 +289,24 @@ class ExpDbBatchConcurrentProcess:
         ATTENTION: This method does not use decorator (stopwatch)
             because it is an entrypoint of ProcessPoolExecutor.
         """
-        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
+        return cls.process_single_dataset(
+            proc_file_path, org_id, start_time, logger_name
+        )
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_single_dataset(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
     ) -> dict:
-        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
         logger = cls.__init_process_logger(exp_id)
         logger.info(
             f"Process {os.getpid()} starting to \
-                process exp_id: {exp_id}, flag_file: {flag_file}"
+                process exp_id: {exp_id}, proc_file_path: {proc_file_path}"
         )
 
         error = None
@@ -331,12 +314,11 @@ class ExpDbBatchConcurrentProcess:
         result = {"success": False, "exp_id": exp_id}
 
         try:
-            # フラグファイル read
-            with open(flag_file) as cfile:
-                config = yaml.safe_load(cfile)
+            # Read proc file
+            proc_file = ProcFileReader.read_from_path(proc_file_path)
 
             # コマンド判定
-            command = config.get("command") if config is not None else None
+            command = proc_file.command
 
             if command == ProcessCommand.REGIST.value:
                 cls.process_dataset_registration(
@@ -363,7 +345,7 @@ class ExpDbBatchConcurrentProcess:
             result["error"] = e
 
         finally:
-            cls.process_dataset_postprocess(flag_file, command, start_time, error)
+            cls.process_dataset_postprocess(proc_file_path, command, start_time, error)
 
             if error:
                 logger.error("finish process dataset: [exp_id: %s]", exp_id)
@@ -504,7 +486,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     def process_dataset_postprocess(
         cls,
-        flag_file: str,
+        proc_file_path: str,
         command: str,
         start_time: datetime.datetime,
         error: Exception = None,
@@ -515,44 +497,30 @@ class ExpDbBatchConcurrentProcess:
 
         # ----------------------------------------
         # 後処理
-        # - フラグファイル処理（ログ出力、リネーム）
+        # - proc file 処理（ログ出力、リネーム）
         # ----------------------------------------
 
-        # フラグファイル書き込みデータ作成
-        if not error:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "success",
-                "log": "completed successfully.",
-            }
-        else:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "error",
-                "log": "{}: {}".format(type(error), str(error)),
-            }
+        is_success = not error
 
-        # フラグファイル内容アップデート
-        with open(flag_file, "w") as yf:
-            yaml.dump(result_log, yf)
-
-        # フラグファイル名作成
-        if not error:
-            renamed_flag_file = flag_file + ".done"
-        else:
-            renamed_flag_file = flag_file + ".error"
-
-        # 過去のフラグファイルが存在する場合はリネーム
-        if os.path.isfile(renamed_flag_file):
-            ps = pathlib.Path(renamed_flag_file).stat()
-            st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
-                "%Y%m%d%H%M%S"
+        # Create write data for proc file
+        if is_success:
+            result_proc = ProcFile(
+                command=command,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="success",
+                log="completed successfully.",
             )
-            os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
+        else:
+            result_proc = ProcFile(
+                command=command,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="error",
+                log="{}: {}".format(type(error), str(error)),
+            )
 
-        # フラグファイルリネーム
-        os.rename(flag_file, renamed_flag_file)
+        # Write and rename/backup proc file
+        ProcFileWriter.write_and_backup_proc_file(
+            proc_file_path, result_proc, is_success
+        )
