@@ -86,6 +86,19 @@ class ExpDbExperimentUpdate(BaseModel):
     updated_at: Optional[datetime]
 
 
+class ExpDbExperimentCatalog(BaseModel):
+    id: int
+    experiment_id: str
+    fields: ExpDbExperimentFields = None
+    attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
+
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")

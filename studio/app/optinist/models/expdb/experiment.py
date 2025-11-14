@@ -134,3 +134,27 @@ class Experiment(Base, TimestampMixin, table=True):
     group_share: List["Group"] = Relationship(  # noqa: F821
         back_populates="experiment_share", link_model=ExperimentShareGroup
     )
+
+
+class ExperimentCatalog(Base, TimestampMixin, table=True):
+    __tablename__ = "experiments_catalogs"
+    __table_args__ = (UniqueConstraint("experiment_id", name="idx_experiment_id"),)
+
+    organization_id: int = Field(
+        sa_column=Column(
+            BIGINT(unsigned=True), ForeignKey("organization.id"), nullable=False
+        ),
+    )
+    experiment_id: str = Field(sa_column=Column(String(100), nullable=False))
+    attributes: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
+    view_attributes: Optional[Dict] = Field(
+        default={},
+        sa_column=Column(
+            JSON,
+            comment='format: { "brain_area": "<value>", "imaging_depth": "<value>", "promoter": "<value>", "indicator": "<value>" }',  # noqa: E501
+        ),
+    )
+
+    organization: "Organization" = Relationship(  # noqa: F821
+        sa_relationship_kwargs=dict(backref="experiments_catalogs")
+    )
