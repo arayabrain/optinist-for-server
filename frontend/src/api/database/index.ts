@@ -33,6 +33,14 @@ export const getExperimentsApi = async (
   return response.data
 }
 
+export const getExperimentsCatalogsApi = async (
+  params: DatabaseParams,
+): Promise<DatabaseDTO> => {
+  const paramsNew = stringify(params, { indices: false })
+  const response = await axios.get(`/expdb/experiments_catalogs?${paramsNew}`)
+  return response.data
+}
+
 export const getCellsApi = async (
   params: DatabaseParams,
 ): Promise<DatabaseDTO> => {

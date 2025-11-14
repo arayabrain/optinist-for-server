@@ -289,6 +289,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           multiSelect={multiSelect}
           hideImageColumns={hideImageColumns}
           initialRowSelection={selectedRowIds}
+          useExperimentsCatalogsApi={multiSelect}
         />
       </DialogContent>
       <DialogActions>

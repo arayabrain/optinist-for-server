@@ -56,6 +56,7 @@ import SwitchCustom from "components/common/SwitchCustom"
 import PopupShareGroup from "components/Database/PopupShareGroup"
 import {
   getExperimentsDatabase,
+  getExperimentsCatalogsDatabase,
   getExperimentsPublicDatabase,
   getListShare,
   getOptionsFilter,
@@ -114,6 +115,7 @@ type DatabaseProps = {
   multiSelect?: boolean
   hideImageColumns?: boolean
   initialRowSelection?: GridRowSelectionModel
+  useExperimentsCatalogsApi?: boolean
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -501,6 +503,7 @@ const DatabaseExperiments = ({
   multiSelect = false,
   hideImageColumns = false,
   initialRowSelection = [],
+  useExperimentsCatalogsApi = false,
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -637,7 +640,11 @@ const DatabaseExperiments = ({
   })
 
   const fetchApi = () => {
-    const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
+    const api = !user
+      ? getExperimentsPublicDatabase
+      : useExperimentsCatalogsApi
+        ? getExperimentsCatalogsDatabase
+        : getExperimentsDatabase
     let newPublish: number | undefined
     if (!dataParamsFilter.publish_status) newPublish = undefined
     else {
