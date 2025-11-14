@@ -36,7 +36,7 @@ from studio.app.const import (
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
-from studio.app.optinist.core.expdb.batch_const import FLAG_FILE_EXT, SupportedRoiMethod
+from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import (
     delete_experiment,
@@ -59,7 +59,6 @@ from studio.app.optinist.wrappers.expdb.pca_analysis import (
     pca_analysis,
 )
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
-from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 
 @dataclass
@@ -217,6 +216,35 @@ class ExpDbBatch:
                 )
                 return None
 
+            # Validate nodes are acceptable for batch processing
+            from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
+
+            if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
+                # Extract actual nodes for error message
+                actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
+                    config
+                )
+                self.logger_.error(
+                    f"Workflow config contains invalid nodes for batch processing."
+                    f"Found nodes: {sorted(actual_nodes)}. "
+                    f"Required nodes: "
+                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_REQUIRED_NODES)}. "
+                    f"Plus exactly ONE of: "
+                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
+                    f"Falling back to default parameters."
+                )
+                return None
+
+            # Extract and validate ROI method from workflow
+            roi_method = ExpDbValidator.validate_batch_roi_method(config)
+            if roi_method:
+                self.logger_.info(f"Workflow specifies ROI method: {roi_method.value}")
+            else:
+                self.logger_.warning(
+                    "Could not determine ROI method from workflow, "
+                    "will use roi_method from .proc file"
+                )
+
             # Log available nodes for debugging
             node_count = len(config.nodeDict) if config.nodeDict else 0
             self.logger_.info(
@@ -253,46 +281,6 @@ class ExpDbBatch:
             )
             return None
 
-    def _extract_workflow_param_values(self, workflow_params: dict) -> dict:
-        """
-        Extract actual parameter values from workflow.yaml nested structure.
-
-        Workflow params have structure: {param_name: {path, type, value}}
-        or nested parent/children structure:
-        {param_name: {type: "parent", children: {...}}}
-
-        We need to extract: {param_name: value}
-
-        Args:
-            workflow_params: Dictionary with workflow parameter structure
-
-        Returns:
-            Dictionary with extracted values
-        """
-        extracted = {}
-        for key, param_obj in workflow_params.items():
-            if isinstance(param_obj, dict):
-                # Check if this is a parent node with children
-                if param_obj.get("type") == "parent" and "children" in param_obj:
-                    # Recursively extract values from children
-                    extracted[key] = self._extract_workflow_param_values(
-                        param_obj["children"]
-                    )
-                elif "value" in param_obj:
-                    # Workflow structure with explicit value field
-                    extracted[key] = param_obj["value"]
-                else:
-                    # Already in simple format or unknown structure
-                    extracted[key] = param_obj
-            else:
-                # Primitive value
-                extracted[key] = param_obj
-
-        self.logger_.debug(
-            f"Extracted {len(extracted)} parameter values from workflow structure"
-        )
-        return extracted
-
     def _get_params_from_workflow_or_default(self, node_name: str) -> dict:
         """
         Get parameters for a node, preferring workflow.yaml over defaults.
@@ -327,7 +315,9 @@ class ExpDbBatch:
             # should fall back to defaults)
             if node and node.data.param and len(node.data.param) > 0:
                 # Fix C1: Extract actual values from nested workflow structure
-                extracted_params = self._extract_workflow_param_values(node.data.param)
+                extracted_params = WorkflowConfigReader.extract_workflow_param_values(
+                    node.data.param, flatten=True
+                )
                 self.logger_.info(
                     f"Using parameters from workflow.yaml for {node_name}: "
                     f"loaded {len(extracted_params)} parameters"
@@ -360,33 +350,28 @@ class ExpDbBatch:
         Returns:
             str: Either 'caiman' or 'suite2p'
         """
-        import yaml
+        from studio.app.optinist.core.expdb.proc_file_data import ProcFileUtils
+        from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
 
-        from studio.app.expdb_dir_path import EXPDB_DIRPATH
-
-        subject_id = self.exp_id.split("_")[0]
-        flag_file = join_filepath(
-            [EXPDB_DIRPATH.EXPDB_DIR, subject_id, f"{self.exp_id}{FLAG_FILE_EXT}"]
-        )
+        proc_file_path = ProcFileUtils.get_proc_file_path(self.exp_id)
 
         try:
-            with open(flag_file) as f:
-                config = yaml.safe_load(f)
-                roi_method = config.get("roi_method", SupportedRoiMethod.CAIMAN.value)
+            proc_file = ProcFileReader.read_from_path(proc_file_path)
+            roi_method = proc_file.roi_method or SupportedRoiMethod.CAIMAN.value
 
-                supported_methods = [m.value for m in SupportedRoiMethod]
-                if roi_method in supported_methods:
-                    self.logger_.info(f"Using ROI method from .proc file: {roi_method}")
-                    return roi_method
-                else:
-                    self.logger_.warning(
-                        f"Invalid roi_method '{roi_method}' in .proc file, "
-                        f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
-                    )
-                    return SupportedRoiMethod.CAIMAN.value
+            supported_methods = [m.value for m in SupportedRoiMethod]
+            if roi_method in supported_methods:
+                self.logger_.info(f"Using ROI method from .proc file: {roi_method}")
+                return roi_method
+            else:
+                self.logger_.warning(
+                    f"Invalid roi_method '{roi_method}' in .proc file, "
+                    f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
+                )
+                return SupportedRoiMethod.CAIMAN.value
         except Exception as e:
             self.logger_.info(
-                f"Could not read roi_method from .proc file ({flag_file}): {e}, "
+                f"Could not read roi_method from .proc file ({proc_file_path}): {e}, "
                 f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
             )
             return SupportedRoiMethod.CAIMAN.value
@@ -469,9 +454,7 @@ class ExpDbBatch:
         node_name = SupportedRoiMethod.get_node_name_from_roi_method(roi_method)
         self.logger_.info(f"Using ROI parameters from node: {node_name}")
         params = self._get_params_from_workflow_or_default(node_name)
-        flat_params = {}
-        recursive_flatten_params(params, flat_params)
-        roi_thr = flat_params.get("roi_thr", 0.9)
+        roi_thr = params.get("roi_thr", 0.9)
         thr_method = "nrg"
         swap_dim = False  # Use F-order reshaping
 
