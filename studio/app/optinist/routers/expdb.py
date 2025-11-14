@@ -140,11 +140,10 @@ def experiment_catalog_transformer(items: Sequence) -> Sequence:
     experiments_catalogs = []
 
     for item in items:
-        expdb: optinist_model.ExperimentCatalog = item
-        exp = ExpDbExperimentCatalog.from_orm(expdb)
+        exp = ExpDbExperimentCatalog.from_orm(item)
 
         try:
-            exp.fields = ExpDbExperimentFields(**expdb.view_attributes)
+            exp.fields = ExpDbExperimentFields(**item.view_attributes)
         except Exception:
             exp.fields = ExpDbExperimentFields()
 
@@ -692,32 +691,60 @@ async def search_db_cells(
 )
 async def search_db_experiments_catalogs(
     db: Session = Depends(get_db),
+    publish_status: Optional[bool] = None,
     options: ExpDbExperimentsSearchOptions = Depends(),
     sortOptions: SortOptions = Depends(),
     current_user: User = Depends(get_current_user),
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.ExperimentCatalog,
-        mapping=get_exp_attribute_sort_mapping(
-            table_model=optinist_model.ExperimentCatalog
-        ),
+        mapping={
+            "publish_status": optinist_model.Experiment.publish_status,
+            **get_exp_attribute_sort_mapping(
+                table_model=optinist_model.ExperimentCatalog
+            ),
+        },
         default=["experiment_id", SortDirection.asc],
     )
-    query = select(optinist_model.ExperimentCatalog).filter(
-        optinist_model.ExperimentCatalog.organization_id == current_user.organization.id
+
+    # Select individual columns (like search_db_cells pattern)
+    # This allows Pydantic's from_orm to work directly with Row objects
+    query = (
+        select(
+            optinist_model.ExperimentCatalog.id,
+            optinist_model.ExperimentCatalog.experiment_id,
+            optinist_model.ExperimentCatalog.attributes,
+            optinist_model.ExperimentCatalog.view_attributes,
+            optinist_model.ExperimentCatalog.created_at,
+            optinist_model.ExperimentCatalog.updated_at,
+            optinist_model.Experiment.publish_status,
+        )
+        .outerjoin(
+            optinist_model.Experiment,
+            optinist_model.ExperimentCatalog.experiment_id
+            == optinist_model.Experiment.experiment_id,
+        )
+        .filter(
+            optinist_model.ExperimentCatalog.organization_id
+            == current_user.organization.id
+        )
     )
 
     query = get_search_db_experiment_query(
         query, options, table_model=optinist_model.ExperimentCatalog
     )
 
-    query = query.group_by(optinist_model.ExperimentCatalog.id).order_by(*sa_sort_list)
+    if publish_status is not None:
+        query = query.filter(optinist_model.Experiment.publish_status == publish_status)
+
+    query = query.order_by(*sa_sort_list)
 
     data = paginate(
         session=db,
         query=query,
         transformer=experiment_catalog_transformer,
         additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        unique=False,  # Disable uniqueness check due to non-hashable JSON columns
     )
 
     return data

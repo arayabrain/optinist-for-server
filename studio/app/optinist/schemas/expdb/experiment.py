@@ -92,6 +92,9 @@ class ExpDbExperimentCatalog(BaseModel):
     fields: ExpDbExperimentFields = None
     attributes: Optional[dict] = {}
     view_attributes: Optional[dict] = {}
+    publish_status: Optional[int] = Field(
+        default=None, description="0: private, 1: public (from experiments table)"
+    )
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
