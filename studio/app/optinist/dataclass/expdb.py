@@ -17,6 +17,46 @@ class TcData(MatlabData):
 
 
 class TsData(MatlabData):
+    """
+    Temporal Stimulus (TS) data class containing stimulus timing parameters.
+
+    This class stores timing information used for calculating response statistics
+    and orientation maps. The parameters define how timecourse and image data are
+    segmented and analyzed:
+
+    Data Size Calculations:
+        - nframes_epoch: Total frames per stimulus epoch
+            (nframes_base + nframes_stim + nframes_post)
+          Used to reshape timecourse data into trials and stimuli.
+
+        - nframes_per_trial: Total frames in one trial (nframes_epoch * nstim_per_run)
+          Used to segment timecourse data by trial in sort_tc() and stack_average().
+
+        - base_index: Frame indices for baseline calculation
+            (4 frames from nframes_base-3 to nframes_base, inclusive)
+          Used in get_orimap() to calculate baseline fluorescence (F0) via calc_F().
+
+        - stim_index: Frame indices during stimulus presentation
+            (nframes_base frames starting at nframes_base+1)
+          Used in get_orimap() to calculate stimulus-evoked response (F) via calc_F().
+
+        - data_table shape: (ncells, ntrials, nstimplus)
+          Created in get_data_tables() where nstimplus = nstim + 1 (stimuli + baseline).
+          Each cell contains averaged responses during base_index and stim_index periods
+
+    Calculation Flow:
+        1. Timecourse data (tc_length × n_cells) is reshaped using
+            nframes_epoch (nframes_base + nframes_stim + nframes_post)
+        2. Baseline calculated from frames in base_index range
+        3. Stimulus response calculated from frames in stim_index range
+        4. dF/F ratio calculated: (F_stim - F_base) / F_base
+            where F_stim = mean fluorescence during stim_index frames
+            and F_base = mean fluorescence during base_index frames
+        5. Statistics computed in StatData using dir_ratio_change, ori_ratio_change
+            dir_ratio_change = (stim_response / baseline) - 1 for each direction
+            ori_ratio_change = averaging opposite directions from dir_ratio_change
+    """
+
     def __init__(self, data, params={}, file_name="ts"):
         params = {"fieldName": TS_FIELDNAME, **params}
 
