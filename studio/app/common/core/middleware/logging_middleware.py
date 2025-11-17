@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from studio.app.common.core.auth.auth_helper import extract_uid_from_request
+from studio.app.common.core.auth.auth_helper import extract_uid_from_request_async
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.mode import MODE
 
@@ -43,7 +43,8 @@ class ClientIdLoggingMiddleware:
         # Skip uid extraction for standalone mode
         if not MODE.IS_STANDALONE:
             request = Request(scope, receive)
-            uid = extract_uid_from_request(request)
+            # Use async version with caching and thread pool for better performance
+            uid = await extract_uid_from_request_async(request)
             client_id = AppLogger.generate_client_id(uid)
 
         # Set client_id in logging context
