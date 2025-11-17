@@ -18,7 +18,7 @@ class TcData(MatlabData):
 
 class TsData(MatlabData):
     """
-    Temporal Stimulus (TS) data class containing stimulus timing parameters.
+    Trial Structure (TS) data class containing trial structure  parameters.
 
     This class stores timing information used for calculating response statistics
     and orientation maps. The parameters define how timecourse and image data are
