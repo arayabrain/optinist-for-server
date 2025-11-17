@@ -41,8 +41,8 @@ _thread_pool = ThreadPoolExecutor(max_workers=10, thread_name_prefix="firebase_a
 # - Rely on Firebase Admin SDK's built-in caching (may already provide some caching)
 # - Use sticky sessions at the load balancer to improve cache hit rates
 #
-# Current decision: Acceptable for current deployment as Firebase API has sufficient quota
-# and the performance impact is manageable.
+# Current decision: Acceptable for current deployment as Firebase API has
+#  sufficient quota and the performance impact is manageable.
 _token_cache: Dict[str, Dict[str, any]] = {}
 
 # Cache TTL in seconds (5 minutes)
@@ -275,7 +275,8 @@ def extract_uid_from_request(request: Request) -> Optional[str]:
 
 async def extract_uid_from_request_async(request: Request) -> Optional[str]:
     """
-    ASYNC version: Extract user_id (uid) from HTTP request based on configured auth method
+    ASYNC version: Extract user_id (uid) from HTTP request
+      based on configured auth method
 
     This is an ASYNCHRONOUS convenience function that should be used in async contexts
     like middleware. It runs Firebase token verification in a thread pool to avoid
@@ -286,7 +287,8 @@ async def extract_uid_from_request_async(request: Request) -> Optional[str]:
     - Automatic caching with TTL
     - Better performance for high-concurrency scenarios
 
-    Recommended usage: Use this in all async contexts (middleware, async route handlers, etc.)
+    Recommended usage: Use this in all async contexts
+      (middleware, async route handlers, etc.)
 
     Args:
         request: FastAPI Request object
@@ -307,7 +309,8 @@ async def extract_uid_from_request_async(request: Request) -> Optional[str]:
 
         else:
             # JWT authentication
-            # JWT validation is typically fast, run in thread pool anyway to avoid blocking
+            # JWT validation is typically fast,
+            #   run in thread pool anyway to avoid blocking
             try:
                 loop = asyncio.get_event_loop()
                 payload, err = await loop.run_in_executor(
