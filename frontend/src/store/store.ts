@@ -25,6 +25,7 @@ import {
   workspaceReducer,
   userReducer,
   modeStandalone,
+  logsModalReducer,
   databaseReducer,
   groupManagerReducer,
 } from "store/slice"
@@ -50,6 +51,7 @@ export const rootReducer = combineReducers({
   workspace: workspaceReducer,
   user: userReducer,
   mode: modeStandalone,
+  logsModal: logsModalReducer,
   groupManager: groupManagerReducer,
   [DATABASE_SLICE_NAME]: databaseReducer,
 })
