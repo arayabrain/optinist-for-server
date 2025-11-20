@@ -104,3 +104,8 @@ export const getOptionsFilterApi = async (): Promise<FilterParams> => {
   const response = await axios.get("public/config/filter_params")
   return response.data
 }
+
+export const postRefreshExperimentsCatalogsApi = async (): Promise<boolean> => {
+  const response = await axios.post("/expdb/experiments_catalogs/refresh")
+  return response.data
+}
