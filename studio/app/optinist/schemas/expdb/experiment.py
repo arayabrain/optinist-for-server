@@ -107,6 +107,7 @@ class ExpDbExperimentCatalogCreate(BaseModel):
     organization_id: int
     attributes: Optional[dict] = {}
     view_attributes: Optional[dict] = {}
+    processing_log: Optional[dict] = {}
 
 
 class ExpDbExperimentsSearchOptions(BaseModel):

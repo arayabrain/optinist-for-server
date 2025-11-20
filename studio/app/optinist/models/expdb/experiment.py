@@ -154,6 +154,7 @@ class ExperimentCatalog(Base, TimestampMixin, table=True):
             comment='format: { "brain_area": "<value>", "imaging_depth": "<value>", "promoter": "<value>", "indicator": "<value>" }',  # noqa: E501
         ),
     )
+    processing_log: Optional[Dict] = Field(default={}, sa_column=Column(JSON))
 
     organization: "Organization" = Relationship(  # noqa: F821
         sa_relationship_kwargs=dict(backref="experiments_catalogs")

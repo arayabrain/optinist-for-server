@@ -4,7 +4,12 @@ import pathlib
 from dataclasses import asdict
 
 from studio.app.common.core.utils.config_handler import ConfigWriter
-from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
+from studio.app.optinist.core.expdb.proc_file_data import (
+    ProcFile,
+    ProcFileType,
+    ProcFileUtils,
+)
 
 
 class ProcFileWriter:
@@ -27,11 +32,17 @@ class ProcFileWriter:
 
     @classmethod
     def backup_proc_file(cls, src_proc_path: str, is_success: bool):
+        exp_ids = ExpDbPathIdsUtil.parse_ids_from_proc_file_path(src_proc_path)
+
         # Create backup file path
         if is_success:
-            renamed_proc_path = src_proc_path + ".done"
+            renamed_proc_path = ProcFileUtils.get_proc_file_path(
+                exp_ids.exp_id, ProcFileType.DONE
+            )
         else:
-            renamed_proc_path = src_proc_path + ".error"
+            renamed_proc_path = ProcFileUtils.get_proc_file_path(
+                exp_ids.exp_id, ProcFileType.ERROR
+            )
 
         # Rename the old proc file if it exists
         if os.path.isfile(renamed_proc_path):

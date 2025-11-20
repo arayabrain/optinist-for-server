@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column("organization_id", mysql.BIGINT(unsigned=True), nullable=False),
         sa.Column("attributes", sa.JSON(), nullable=True),
         sa.Column("view_attributes", sa.JSON(), nullable=True),
+        sa.Column("processing_log", sa.JSON(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(),

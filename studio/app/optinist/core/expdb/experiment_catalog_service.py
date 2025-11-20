@@ -10,6 +10,7 @@ from studio.app.const import EXP_METADATA_SUFFIX
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
 from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
 from studio.app.optinist.models.expdb.experiment import ExperimentCatalog
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCatalog,
@@ -53,22 +54,23 @@ class ExperimentCatalogService:
         # Process metadata files
         for path in metadata_paths:
             try:
-                # Parse metadata file
+                # Read metadata file
                 exp_ids = ExpDbPathIds(expdb_path=path)
                 (attributes, view_attributes) = ExppDbMetadataReader.load_exp_metadata(
                     path
                 )
+
+                # Read proc file
+                processing_log = ProcFileReader.read_last_processing_log(exp_ids.exp_id)
+
+                # Create experiment_catalog record
                 experiment_catalog = ExpDbExperimentCatalogCreate(
                     experiment_id=exp_ids.exp_id,
                     organization_id=organization_id,
                     attributes=attributes,
                     view_attributes=view_attributes,
+                    processing_log=processing_log,
                 )
-
-                # TODO:
-                # The following columns will also be added:
-                # - proc file information (reserve/done/error)
-                #   (process_logs column, etc.)
 
                 experiment_catalogs_data.append(experiment_catalog)
 
@@ -117,6 +119,7 @@ class ExperimentCatalogService:
             organization_id=data.organization_id,
             attributes=data.attributes,
             view_attributes=data.view_attributes,
+            processing_log=data.processing_log,
         )
 
         db.add(experiment_catalog)
@@ -142,6 +145,7 @@ class ExperimentCatalogService:
                 organization_id=data.organization_id,
                 attributes=data.attributes,
                 view_attributes=data.view_attributes,
+                processing_log=data.processing_log,
             )
             experiment_catalogs.append(experiment_catalog)
 
