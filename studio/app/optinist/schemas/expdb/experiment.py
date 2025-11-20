@@ -102,6 +102,13 @@ class ExpDbExperimentCatalog(BaseModel):
         orm_mode = True
 
 
+class ExpDbExperimentCatalogCreate(BaseModel):
+    experiment_id: str
+    organization_id: int
+    attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
+
+
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")

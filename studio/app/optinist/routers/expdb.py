@@ -24,8 +24,11 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
+from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.experiment_catalog_service import (
+    ExperimentCatalogService,
+)
 from studio.app.optinist.core.expdb.workflow_expdb_batch_runner import (
     WorkflowExpdbBatchRunner,
 )
@@ -830,7 +833,7 @@ def update_db_experiment_metadata(
     db: Session = Depends(get_db),
     current_admin_user: User = Depends(get_admin_data_user),
 ):
-    view_attributes = extract_experiment_view_attributes(metadata)
+    view_attributes = ExppDbMetadataReader.extract_experiment_view_attributes(metadata)
     if not view_attributes:
         raise HTTPException(status_code=422)
 
@@ -1019,6 +1022,24 @@ def update_multiple_experiment_database_share_status(
                 )
 
     db.commit()
+
+    return True
+
+
+@router.post(
+    "/expdb/experiments_catalogs/refresh",
+    response_model=bool,
+    description="""
+- Experiments Catalogs を Refresh する
+""",
+)
+async def refresh_experiments_catalogs(
+    db: Session = Depends(get_db),
+    current_admin_user: User = Depends(get_admin_data_user),
+):
+    ExperimentCatalogService.refresh_experiment_catalogs_dataset(
+        current_admin_user.organization.id
+    )
 
     return True
 
