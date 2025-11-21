@@ -18,6 +18,7 @@ export type DatabaseType = {
   }
   experiment_id?: string
   attributes?: object
+  processing_log?: object
   cell_image_urls: ImageUrls[]
   cell_image_url?: ImageUrls
   statistics?: {

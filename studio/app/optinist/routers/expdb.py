@@ -718,6 +718,7 @@ async def search_db_experiments_catalogs(
             optinist_model.ExperimentCatalog.experiment_id,
             optinist_model.ExperimentCatalog.attributes,
             optinist_model.ExperimentCatalog.view_attributes,
+            optinist_model.ExperimentCatalog.processing_log,
             optinist_model.ExperimentCatalog.created_at,
             optinist_model.ExperimentCatalog.updated_at,
             optinist_model.Experiment.publish_status,

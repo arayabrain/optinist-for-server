@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { enqueueSnackbar, VariantType } from "notistack"
 
+import { Article } from "@mui/icons-material"
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
@@ -22,6 +23,7 @@ import PublicOffIcon from "@mui/icons-material/PublicOff"
 import {
   Box,
   Checkbox,
+  Chip,
   IconButton,
   Input,
   styled,
@@ -92,15 +94,34 @@ export type Data = {
   updated_time: string
 }
 
+type PopupBaseProps = {
+  data?: string | string[]
+  open: boolean
+  handleClose: () => void
+  title: string
+  expId?: string
+  readOnly?: boolean
+  onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void
+  onSubmit?: () => void
+  showSaveButton?: boolean
+}
+
 type PopupAttributesProps = {
   data?: string | string[]
   open: boolean
   handleClose: () => void
   role?: boolean
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
-  exp_id?: string
+  expId?: string
   onSubmit: () => void
   readonly?: boolean
+}
+
+type PopupLogsProps = {
+  data?: string | string[]
+  open: boolean
+  handleClose: () => void
+  expId?: string
 }
 
 type DatabaseProps = {
@@ -135,7 +156,8 @@ const columns = (
   dataExperiments: DatabaseType[],
   checkBoxAll: boolean,
   setCheckBoxAll: (value: boolean) => void,
-  handleOpenAttributes: (value: string, id: number) => void,
+  handleOpenAttributes: (value: string, id: number, expId?: string) => void,
+  handleOpenLogs: (value: string, expId?: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
@@ -144,6 +166,7 @@ const columns = (
   readonly?: boolean,
   loading: boolean = false,
   options?: FilterParams,
+  useExperimentsCatalogsApi: boolean = false,
 ) => [
   adminOrManager &&
     user &&
@@ -363,9 +386,42 @@ const columns = (
       return (
         <Box
           sx={{ cursor: "pointer" }}
-          onClick={() => handleOpenAttributes(value, params?.row?.id)}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenAttributes(
+              value,
+              params?.row?.id,
+              params?.row?.experiment_id,
+            )
+          }}
         >
           <AssignmentOutlinedIcon color={"primary"} />
+        </Box>
+      )
+    },
+  },
+  useExperimentsCatalogsApi && {
+    field: "processing_log",
+    headerName: "Processing Log",
+    width: 140,
+    filterable: false,
+    sortable: false,
+    renderCell: (params: { row: DatabaseType }) => {
+      const inputValue = JSON.stringify(
+        params?.row?.processing_log || {},
+      ).trim()
+      const parsedJSON = JSON.parse(inputValue)
+      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
+      const value = formattedJSON
+      return (
+        <Box
+          sx={{ cursor: "pointer" }}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenLogs(value, params?.row?.experiment_id)
+          }}
+        >
+          <Article color={"primary"} />
         </Box>
       )
     },
@@ -416,15 +472,17 @@ const columns = (
   },
 ]
 
-const PopupAttributes = ({
+const PopupBase = ({
   data,
   open,
   handleClose,
-  role = false,
-  handleChangeAttributes,
+  title,
+  expId,
+  readOnly = true,
+  onChange,
   onSubmit,
-  readonly,
-}: PopupAttributesProps) => {
+  showSaveButton = false,
+}: PopupBaseProps) => {
   const [error, setError] = useState("")
   const isValidJSON = (str: string) => {
     try {
@@ -437,7 +495,7 @@ const PopupAttributes = ({
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     isValidJSON(e.target.value)
-    handleChangeAttributes(e)
+    onChange?.(e)
   }
 
   useEffect(() => {
@@ -462,13 +520,28 @@ const PopupAttributes = ({
         onClose={handleClose}
         aria-labelledby="draggable-dialog-title"
       >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            padding: "16px 24px 0",
+          }}
+        >
+          <Box sx={{ fontWeight: 600, fontSize: "1.1rem" }}>{title}</Box>
+          {expId && (
+            <Chip
+              label={expId}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{ fontSize: "0.8rem" }}
+            />
+          )}
+        </Box>
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content
-              readOnly={!role || readonly}
-              value={data}
-              onChange={handleChange}
-            />
+            <Content readOnly={readOnly} value={data} onChange={handleChange} />
             <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
@@ -483,7 +556,7 @@ const PopupAttributes = ({
           >
             Close
           </Button>
-          {role && !readonly && (
+          {showSaveButton && (
             <Button variant={"contained"} disabled={!!error} onClick={onSubmit}>
               Save
             </Button>
@@ -491,6 +564,44 @@ const PopupAttributes = ({
         </DialogActions>
       </Dialog>
     </Box>
+  )
+}
+
+const PopupAttributes = ({
+  data,
+  open,
+  handleClose,
+  role = false,
+  handleChangeAttributes,
+  onSubmit,
+  readonly,
+  expId,
+}: PopupAttributesProps) => {
+  return (
+    <PopupBase
+      data={data}
+      open={open}
+      handleClose={handleClose}
+      title="Attributes"
+      expId={expId}
+      readOnly={!role || readonly}
+      onChange={handleChangeAttributes}
+      onSubmit={onSubmit}
+      showSaveButton={role && !readonly}
+    />
+  )
+}
+
+const PopupLogs = ({ data, open, handleClose, expId }: PopupLogsProps) => {
+  return (
+    <PopupBase
+      data={data}
+      open={open}
+      handleClose={handleClose}
+      title="Logs"
+      expId={expId}
+      readOnly={true}
+    />
   )
 }
 const DatabaseExperiments = ({
@@ -772,8 +883,12 @@ const DatabaseExperiments = ({
     setDataDialog({ type: "", data: undefined })
   }
 
-  const handleOpenAttributes = (data: string, id: number) => {
-    setDataDialog({ id: id, type: "attribute", data })
+  const handleOpenAttributes = (data: string, id: number, expId?: string) => {
+    setDataDialog({ id: id, type: "attribute", data, expId })
+  }
+
+  const handleOpenLogs = (data: string, expId?: string) => {
+    setDataDialog({ type: "logs", data, expId })
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -1112,6 +1227,7 @@ const DatabaseExperiments = ({
       checkBoxAll,
       setCheckBoxAll,
       handleOpenAttributes,
+      handleOpenLogs,
       handleOpenDialog,
       cellPath,
       navigate,
@@ -1120,6 +1236,7 @@ const DatabaseExperiments = ({
       readonly,
       loading,
       filterParams,
+      useExperimentsCatalogsApi,
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]
@@ -1320,6 +1437,13 @@ const DatabaseExperiments = ({
         onSubmit={onSubmitAttributes}
         role={!!adminOrManager && !!user}
         readonly={!metadataEditable}
+        expId={dataDialog.expId}
+      />
+      <PopupLogs
+        data={dataDialog.data}
+        open={dataDialog.type === "logs"}
+        handleClose={handleCloseDialog}
+        expId={dataDialog.expId}
       />
       <Loading loading={loading} />
       {openShare.open && openShare.id ? (
