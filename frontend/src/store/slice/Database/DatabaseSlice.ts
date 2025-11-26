@@ -2,6 +2,7 @@ import { createSlice, isAnyOf } from "@reduxjs/toolkit"
 
 import {
   getExperimentsDatabase,
+  getExperimentsCatalogsDatabase,
   getCellsDatabase,
   getExperimentsPublicDatabase,
   getCellsPublicDatabase,
@@ -97,6 +98,9 @@ export const databaseSlice = createSlice({
         }
         state.loading = true
       })
+      .addCase(getExperimentsCatalogsDatabase.pending, (state) => {
+        state.loading = true
+      })
       .addCase(getListShare.pending, (state) => {
         state.listShare = undefined
         state.loading = true
@@ -122,7 +126,11 @@ export const databaseSlice = createSlice({
         },
       )
       .addMatcher(
-        isAnyOf(getCellsDatabase.fulfilled, getExperimentsDatabase.fulfilled),
+        isAnyOf(
+          getCellsDatabase.fulfilled,
+          getExperimentsDatabase.fulfilled,
+          getExperimentsCatalogsDatabase.fulfilled,
+        ),
         (state, action) => {
           state.data.private = action.payload
           state.loading = false
@@ -145,6 +153,7 @@ export const databaseSlice = createSlice({
       .addMatcher(
         isAnyOf(
           getExperimentsDatabase.rejected,
+          getExperimentsCatalogsDatabase.rejected,
           getCellsDatabase.rejected,
           getExperimentsPublicDatabase.rejected,
           getCellsPublicDatabase.rejected,

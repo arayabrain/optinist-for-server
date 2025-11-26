@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom"
 
 import { useSnackbar } from "notistack"
 
-import { Cancel } from "@mui/icons-material"
+import { Cached, Cancel } from "@mui/icons-material"
 import {
   Box,
   Button,
@@ -22,8 +22,12 @@ import {
   GridRowSelectionModel,
 } from "@mui/x-data-grid"
 
+import { postRefreshExperimentsCatalogsApi } from "api/database"
+import { ConfirmDialog } from "components/common/ConfirmDialog"
+import Loading from "components/common/Loading"
 import DatabaseExperiments from "components/Database/DatabaseExperiments"
 import { DialogContext } from "components/Workspace/FlowChart/Dialog/DialogContext"
+import { getExperimentsCatalogsDatabase } from "store/slice/Database/DatabaseActions"
 import {
   DATABASE_SLICE_NAME,
   DatabaseType,
@@ -31,7 +35,7 @@ import {
 import { setInputNodeFilePath } from "store/slice/InputNode/InputNodeActions"
 import { selectPipelineLatestUid } from "store/slice/Pipeline/PipelineSelectors"
 import { selectCurrentUser } from "store/slice/User/UserSelector"
-import { RootState } from "store/store"
+import { AppDispatch, RootState } from "store/store"
 
 interface ExpDbSelectDialogProps {
   nodeId: string
@@ -79,7 +83,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     setSelectedExperimentIds(newIds)
   }
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const { enqueueSnackbar } = useSnackbar()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -89,6 +93,15 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
   const [dataGridKey, setDataGridKey] = useState(0)
   // Store original URL params to restore on close
   const originalParamsRef = useRef<string>("")
+
+  // Loading state for refresh operation
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Confirmation dialog state for refresh
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false)
+
+  // Determine if we should use experiments catalogs API (same condition as passed to DatabaseExperiments)
+  const useExperimentsCatalogsApi = multiSelect
 
   /**
    * Reset DatabaseExperiments component to initial state
@@ -194,6 +207,37 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
     updateSelectedExperimentIds([])
   }
 
+  const onClickRefreshIcon = () => {
+    setShowRefreshConfirm(true)
+  }
+
+  const onConfirmRefresh = async () => {
+    if (!useExperimentsCatalogsApi) return
+
+    try {
+      setIsRefreshing(true)
+
+      // Call refresh API
+      await postRefreshExperimentsCatalogsApi()
+
+      // Reset DataGrid to initial state (clear filters, pagination, etc.)
+      resetDataGridState()
+
+      // Fetch latest data
+      dispatch(getExperimentsCatalogsDatabase({}))
+
+      enqueueSnackbar("Experiments catalogs refreshed successfully", {
+        variant: "success",
+      })
+    } catch (e) {
+      enqueueSnackbar("Failed to refresh experiments catalogs", {
+        variant: "error",
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   const onClickOk = () => {
     try {
       let newFilePath: string | string[] | undefined
@@ -249,34 +293,59 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
             sx={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "space-between",
               mb: -4,
             }}
           >
-            Selected{" "}
-            <Chip
-              label={selectedExperimentIds.length}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{
-                fontSize: "0.75rem",
-                height: "20px",
-                fontWeight: "bold",
-                mx: 0.5,
-              }}
-            />{" "}
-            experiments
-            <Tooltip title="Clear all selections" placement="top">
-              <span>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              Selected{" "}
+              <Chip
+                label={selectedExperimentIds.length}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{
+                  fontSize: "0.75rem",
+                  height: "20px",
+                  fontWeight: "bold",
+                  mx: 0.5,
+                }}
+              />{" "}
+              experiments
+              <Tooltip title="Clear all selections" placement="top">
+                <span>
+                  <IconButton
+                    onClick={onClickClearAll}
+                    color="secondary"
+                    disabled={selectedExperimentIds.length === 0}
+                  >
+                    <Cancel fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+            {useExperimentsCatalogsApi && (
+              <Tooltip title="Refresh experiments catalogs" placement="top">
                 <IconButton
-                  onClick={onClickClearAll}
-                  color="secondary"
-                  disabled={selectedExperimentIds.length === 0}
+                  onClick={onClickRefreshIcon}
+                  color="primary"
+                  disabled={isRefreshing}
+                  sx={{
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                    "&:hover": {
+                      backgroundColor: "primary.dark",
+                    },
+                    "&.Mui-disabled": {
+                      backgroundColor: "action.disabledBackground",
+                      color: "action.disabled",
+                    },
+                  }}
                 >
-                  <Cancel fontSize="small" />
+                  <Cached fontSize="small" />
                 </IconButton>
-              </span>
-            </Tooltip>
+              </Tooltip>
+            )}
           </Box>
         )}
         <DatabaseExperiments
@@ -289,6 +358,7 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           multiSelect={multiSelect}
           hideImageColumns={hideImageColumns}
           initialRowSelection={selectedRowIds}
+          useExperimentsCatalogsApi={multiSelect}
         />
       </DialogContent>
       <DialogActions>
@@ -299,6 +369,21 @@ export const ExpDbSelectDialog = memo(function ExpDbSelectDialog({
           OK
         </Button>
       </DialogActions>
+      <Loading loading={isRefreshing} position="absolute" />
+      <ConfirmDialog
+        open={showRefreshConfirm}
+        setOpen={setShowRefreshConfirm}
+        onConfirm={onConfirmRefresh}
+        content={
+          <>
+            This data refresh process may take some time. <br />
+            Do you want to proceed?
+          </>
+        }
+        confirmLabel="OK"
+        cancelTitle="Cancel"
+        iconType="info"
+      />
     </Dialog>
   )
 })

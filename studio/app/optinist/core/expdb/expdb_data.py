@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import PROC_FILE_EXT
 
 
 @dataclass
@@ -87,6 +88,15 @@ class ExpDbPathIdsUtil:
         return cls.__create_expdb_file_path(
             EXPDB_DIRPATH.PUBLIC_EXPDB_DIR, exp_id, file_name, subdir
         )
+
+    @staticmethod
+    def parse_ids_from_proc_file_path(proc_file_path: str) -> ExpDbPathIds:
+        if proc_file_path.endswith(PROC_FILE_EXT):
+            basename = os.path.basename(proc_file_path)
+            name, ext = os.path.splitext(basename)
+            return ExpDbPathIds(exp_id=name)
+        else:
+            return None
 
     @staticmethod
     def parse_ids_from_workflow_output_path(output_path: str) -> ExpDbPathIds:

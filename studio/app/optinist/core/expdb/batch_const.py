@@ -2,6 +2,8 @@ from enum import Enum
 
 LOCKFILE_NAME = "process.lock"
 PROC_FILE_EXT = ".proc"
+PROC_FILE_DONE_EXT = ".proc.done"
+PROC_FILE_ERROR_EXT = ".proc.error"
 
 
 class ProcessCommand(Enum):

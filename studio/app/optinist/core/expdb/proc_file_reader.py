@@ -1,7 +1,14 @@
+import datetime
 import glob
+from dataclasses import asdict
+from typing import Dict
 
 from studio.app.common.core.utils.config_handler import ConfigReader
-from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
+from studio.app.optinist.core.expdb.proc_file_data import (
+    ProcFile,
+    ProcFileType,
+    ProcFileUtils,
+)
 
 
 class ProcFileReader:
@@ -11,16 +18,44 @@ class ProcFileReader:
     """
 
     @classmethod
-    def read(cls, exp_id: str) -> ProcFile:
-        return cls.read_from_path(ProcFileUtils.get_proc_file_path(exp_id))
+    def read(cls, exp_id: str, type: ProcFileType = ProcFileType.RESERVE) -> ProcFile:
+        return cls.read_from_path(ProcFileUtils.get_proc_file_path(exp_id, type))
 
     @classmethod
     def read_from_path(cls, filepath: str) -> ProcFile:
         config = ConfigReader.read(filepath)
         assert config, f"Invalid config yaml file: [{filepath}] [{config}]"
-        return ProcFileUtils.create_proc_file(config)
+        return ProcFileUtils.create_proc_file_data(config)
 
     @classmethod
-    def find_proc_files(cls):
-        target_proc_files = sorted(glob.glob(ProcFileUtils.get_proc_file_wild_path()))
+    def find_proc_files(cls, type: ProcFileType = ProcFileType.RESERVE):
+        target_proc_files = sorted(
+            glob.glob(ProcFileUtils.get_proc_file_wild_path(type))
+        )
         return target_proc_files
+
+    @classmethod
+    def read_last_processing_log(
+        cls,
+        exp_id: str,
+    ) -> Dict[str, Dict]:
+        PROC_FILE_TYPES = {
+            "last_success": ProcFileType.DONE,
+            "last_error": ProcFileType.ERROR,
+        }
+        processing_log = {}
+
+        for proc_label, proc_type in PROC_FILE_TYPES.items():
+            log_exists = ProcFileUtils.is_proc_file_exists(exp_id, proc_type)
+            if log_exists:
+                proc_data = ProcFileReader.read(exp_id, proc_type)
+                # Apply datetime->str conversion assuming json conversion
+                proc_data_formated = {
+                    k: v.isoformat() if isinstance(v, datetime.datetime) else v
+                    for k, v in asdict(proc_data).items()
+                }
+                processing_log[proc_label] = proc_data_formated
+            else:
+                processing_log[proc_label] = None
+
+        return processing_log
