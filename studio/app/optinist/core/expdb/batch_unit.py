@@ -38,12 +38,9 @@ from studio.app.const import (
 )
 from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
-from studio.app.optinist.core.expdb.crud_expdb import (
-    delete_experiment,
-    extract_experiment_view_attributes,
-    get_experiment,
-)
+from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
+from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -852,17 +849,7 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def load_exp_metadata(self) -> Tuple[dict, dict]:
-        if not os.path.exists(self.raw_path.exp_metadata_file):
-            return (None, None)
-        else:
-            with open(self.raw_path.exp_metadata_file) as f:
-                attributes = json.load(f)
-                view_attributes = extract_experiment_view_attributes(attributes)
-
-                if not view_attributes:
-                    raise KeyError("Invalid metadata format")
-
-        return (attributes, view_attributes)
+        return ExppDbMetadataReader.load_exp_metadata(self.raw_path.exp_metadata_file)
 
     @stopwatch(callback=__stopwatch_callback)
     def save_nwb(self, metadata: dict):

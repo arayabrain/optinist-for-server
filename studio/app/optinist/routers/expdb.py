@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Type
 
 import sqlalchemy
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
@@ -24,8 +24,11 @@ from studio.app.common.db.database import get_db
 from studio.app.common.schemas.users import User
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist import models as optinist_model
-from studio.app.optinist.core.expdb.crud_expdb import extract_experiment_view_attributes
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIds
+from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.experiment_catalog_service import (
+    ExperimentCatalogService,
+)
 from studio.app.optinist.core.expdb.workflow_expdb_batch_runner import (
     WorkflowExpdbBatchRunner,
 )
@@ -34,6 +37,7 @@ from studio.app.optinist.schemas.expdb.cell import ExpDbCell
 from studio.app.optinist.schemas.expdb.config import ExpDbExperimentFilterParams
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperiment,
+    ExpDbExperimentCatalog,
     ExpDbExperimentFields,
     ExpDbExperimentHeader,
     ExpDbExperimentSharePostStatus,
@@ -135,6 +139,22 @@ def experiment_transformer(items: Sequence) -> Sequence:
     return experiments
 
 
+def experiment_catalog_transformer(items: Sequence) -> Sequence:
+    experiments_catalogs = []
+
+    for item in items:
+        exp = ExpDbExperimentCatalog.from_orm(item)
+
+        try:
+            exp.fields = ExpDbExperimentFields(**item.view_attributes)
+        except Exception:
+            exp.fields = ExpDbExperimentFields()
+
+        experiments_catalogs.append(exp)
+
+    return experiments_catalogs
+
+
 def get_experiment_urls(source, exp_dir, params=None):
     """Optimized function for standardized filename patterns."""
     result = []
@@ -200,20 +220,17 @@ def get_pixelmap_urls(exp_dir, params=None):
     ]
 
 
-EXP_ATTRIBUTE_SORT_MAPPING = {
-    "brain_area": func.json_value(
-        optinist_model.Experiment.view_attributes, "$.brain_area"
-    ),
-    "imaging_depth": func.json_value(
-        optinist_model.Experiment.view_attributes, "$.imaging_depth"
-    ),
-    "promoter": func.json_value(
-        optinist_model.Experiment.view_attributes, "$.promoter"
-    ),
-    "indicator": func.json_value(
-        optinist_model.Experiment.view_attributes, "$.indicator"
-    ),
-}
+def get_exp_attribute_sort_mapping(
+    table_model: Type = optinist_model.Experiment,
+) -> dict:
+    return {
+        "brain_area": func.json_value(table_model.view_attributes, "$.brain_area"),
+        "imaging_depth": func.json_value(
+            table_model.view_attributes, "$.imaging_depth"
+        ),
+        "promoter": func.json_value(table_model.view_attributes, "$.promoter"),
+        "indicator": func.json_value(table_model.view_attributes, "$.indicator"),
+    }
 
 
 def get_cell_urls(source, exp_dir, index: int, params=None):
@@ -224,41 +241,41 @@ def get_cell_urls(source, exp_dir, index: int, params=None):
 
 
 def get_search_db_experiment_query(
-    query: Select, options: ExpDbExperimentsSearchOptions
+    query: Select,
+    options: ExpDbExperimentsSearchOptions,
+    table_model: Type = optinist_model.Experiment,
 ) -> Select:
     if options.experiment_id is not None:
         query = query.filter(
-            optinist_model.Experiment.experiment_id.like(
-                "%{0}%".format(options.experiment_id)
-            )
+            table_model.experiment_id.like("%{0}%".format(options.experiment_id))
         )
 
     if options.brain_area is not None:
         query = query.filter(
-            func.json_value(
-                optinist_model.Experiment.view_attributes, "$.brain_area"
-            ).in_(options.brain_area)
+            func.json_value(table_model.view_attributes, "$.brain_area").in_(
+                options.brain_area
+            )
         )
 
     if options.imaging_depth is not None:
         query = query.filter(
-            func.json_value(
-                optinist_model.Experiment.view_attributes, "$.imaging_depth"
-            ).in_(options.imaging_depth)
+            func.json_value(table_model.view_attributes, "$.imaging_depth").in_(
+                options.imaging_depth
+            )
         )
 
     if options.indicator is not None:
         query = query.filter(
-            func.json_value(
-                optinist_model.Experiment.view_attributes, "$.indicator"
-            ).in_(options.indicator)
+            func.json_value(table_model.view_attributes, "$.indicator").in_(
+                options.indicator
+            )
         )
 
     if options.promoter is not None:
         query = query.filter(
-            func.json_value(
-                optinist_model.Experiment.view_attributes, "$.promoter"
-            ).in_(options.promoter)
+            func.json_value(table_model.view_attributes, "$.promoter").in_(
+                options.promoter
+            )
         )
 
     return query
@@ -278,7 +295,7 @@ async def search_public_experiments(
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Experiment,
-        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        mapping=get_exp_attribute_sort_mapping(),
         default=["experiment_id", SortDirection.asc],
     )
 
@@ -323,7 +340,7 @@ async def search_public_cells(
         sa_table=optinist_model.Cell,
         mapping={
             "experiment_id": optinist_model.Experiment.experiment_id,
-            **EXP_ATTRIBUTE_SORT_MAPPING,
+            **get_exp_attribute_sort_mapping(),
         },
         default=["experiment_id", SortDirection.asc],
     )
@@ -419,7 +436,7 @@ async def search_db_experiments(
 ):
     sa_sort_list = sortOptions.get_sa_sort_list(
         sa_table=optinist_model.Experiment,
-        mapping=EXP_ATTRIBUTE_SORT_MAPPING,
+        mapping=get_exp_attribute_sort_mapping(),
         default=["experiment_id", SortDirection.asc],
     )
     query = select(optinist_model.Experiment)
@@ -512,7 +529,7 @@ async def search_db_cells(
         mapping={
             "experiment_id": optinist_model.Experiment.experiment_id,
             "publish_status": optinist_model.Experiment.publish_status,
-            **EXP_ATTRIBUTE_SORT_MAPPING,
+            **get_exp_attribute_sort_mapping(),
         },
         default=["experiment_id", SortDirection.asc],
     )
@@ -668,6 +685,75 @@ async def search_db_cells(
     )
 
 
+@router.get(
+    "/expdb/experiments_catalogs",
+    response_model=PageWithHeader[ExpDbExperimentCatalog],
+    description="""
+- Experiments Catalogs を検索し、結果を応答
+""",
+)
+async def search_db_experiments_catalogs(
+    db: Session = Depends(get_db),
+    publish_status: Optional[bool] = None,
+    options: ExpDbExperimentsSearchOptions = Depends(),
+    sortOptions: SortOptions = Depends(),
+    current_user: User = Depends(get_current_user),
+):
+    sa_sort_list = sortOptions.get_sa_sort_list(
+        sa_table=optinist_model.ExperimentCatalog,
+        mapping={
+            "publish_status": optinist_model.Experiment.publish_status,
+            **get_exp_attribute_sort_mapping(
+                table_model=optinist_model.ExperimentCatalog
+            ),
+        },
+        default=["experiment_id", SortDirection.asc],
+    )
+
+    # Select individual columns (like search_db_cells pattern)
+    # This allows Pydantic's from_orm to work directly with Row objects
+    query = (
+        select(
+            optinist_model.ExperimentCatalog.id,
+            optinist_model.ExperimentCatalog.experiment_id,
+            optinist_model.ExperimentCatalog.attributes,
+            optinist_model.ExperimentCatalog.view_attributes,
+            optinist_model.ExperimentCatalog.processing_log,
+            optinist_model.ExperimentCatalog.created_at,
+            optinist_model.ExperimentCatalog.updated_at,
+            optinist_model.Experiment.publish_status,
+        )
+        .outerjoin(
+            optinist_model.Experiment,
+            optinist_model.ExperimentCatalog.experiment_id
+            == optinist_model.Experiment.experiment_id,
+        )
+        .filter(
+            optinist_model.ExperimentCatalog.organization_id
+            == current_user.organization.id
+        )
+    )
+
+    query = get_search_db_experiment_query(
+        query, options, table_model=optinist_model.ExperimentCatalog
+    )
+
+    if publish_status is not None:
+        query = query.filter(optinist_model.Experiment.publish_status == publish_status)
+
+    query = query.order_by(*sa_sort_list)
+
+    data = paginate(
+        session=db,
+        query=query,
+        transformer=experiment_catalog_transformer,
+        additional_data={"header": ExpDbExperimentHeader(graph_titles=[])},
+        unique=False,  # Disable uniqueness check due to non-hashable JSON columns
+    )
+
+    return data
+
+
 @router.post(
     "/expdb/experiment/publish/{id}/{flag}",
     response_model=bool,
@@ -748,7 +834,7 @@ def update_db_experiment_metadata(
     db: Session = Depends(get_db),
     current_admin_user: User = Depends(get_admin_data_user),
 ):
-    view_attributes = extract_experiment_view_attributes(metadata)
+    view_attributes = ExppDbMetadataReader.extract_experiment_view_attributes(metadata)
     if not view_attributes:
         raise HTTPException(status_code=422)
 
@@ -937,6 +1023,24 @@ def update_multiple_experiment_database_share_status(
                 )
 
     db.commit()
+
+    return True
+
+
+@router.post(
+    "/expdb/experiments_catalogs/refresh",
+    response_model=bool,
+    description="""
+- Experiments Catalogs を Refresh する
+""",
+)
+async def refresh_experiments_catalogs(
+    db: Session = Depends(get_db),
+    current_admin_user: User = Depends(get_admin_data_user),
+):
+    ExperimentCatalogService.refresh_experiment_catalogs_dataset(
+        current_admin_user.organization.id
+    )
 
     return True
 
