@@ -301,7 +301,7 @@ class ExpDbBatch:
         """
         # Try to get from workflow first
         if self.workflow_config:
-            # Check cache first (Fix M2: Performance optimization)
+            # Check cache first
             if node_name in self._workflow_node_cache:
                 node = self._workflow_node_cache[node_name]
             else:
@@ -311,12 +311,12 @@ class ExpDbBatch:
                 # Cache the result (even if None) to avoid repeated lookups
                 self._workflow_node_cache[node_name] = node
 
-            # Fix C2: Check for non-empty params (empty dict {}
+            # Check for non-empty params (empty dict {}
             # should fall back to defaults)
             if node and node.data.param and len(node.data.param) > 0:
-                # Fix C1: Extract actual values from nested workflow structure
+                # Extract actual values from nested workflow structure
                 extracted_params = WorkflowConfigReader.extract_workflow_param_values(
-                    node.data.param, flatten=True
+                    node.data.param
                 )
                 self.logger_.info(
                     f"Using parameters from workflow.yaml for {node_name}: "
@@ -333,7 +333,7 @@ class ExpDbBatch:
         self.logger_.info(f"Using default parameters for {node_name}")
         default_params = get_default_params(node_name)
 
-        # Fix H4: Validate that default params were loaded successfully
+        # Validate that default params were loaded successfully
         if default_params is None:
             raise ValueError(
                 f"Failed to load default parameters for {node_name}. "
@@ -498,7 +498,7 @@ class ExpDbBatch:
         preprocess_results = preprocessing(
             microscope=MicroscopeExpdbData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
-            params=get_default_params("preprocessing"),
+            params=self._get_params_from_workflow_or_default("preprocessing"),
             nwbfile=self.nwb_input_config,
         )
 
@@ -524,7 +524,10 @@ class ExpDbBatch:
             stack=stack,
             expdb=expdb,
             output_dir=self.raw_path.orimaps_dir,
-            params={**get_default_params("get_orimap"), "exp_id": self.exp_id},
+            params={
+                **self._get_params_from_workflow_or_default("get_orimap"),
+                "exp_id": self.exp_id,
+            },
         )
 
     @stopwatch(callback=__stopwatch_callback)
@@ -641,7 +644,9 @@ class ExpDbBatch:
 
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
         result = analyze_stats(
-            expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
+            expdb,
+            self.raw_path.output_dir,
+            self._get_params_from_workflow_or_default("analyze_stats"),
         )
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
@@ -787,7 +792,7 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=get_default_params("pca_analysis"),
+            params=self._get_params_from_workflow_or_default("pca_analysis"),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
@@ -818,7 +823,7 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=get_default_params("kmeans_analysis"),
+            params=self._get_params_from_workflow_or_default("kmeans_analysis"),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
