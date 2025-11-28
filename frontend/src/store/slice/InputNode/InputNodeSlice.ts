@@ -2,6 +2,7 @@ import { createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit"
 
 import { isInputNodePostData } from "api/run/RunUtils"
 import { INITIAL_IMAGE_ELEMENT_ID } from "const/flowchart"
+import { WORKSPACE_TYPE } from "const/Workspace"
 import { FileNodeFactory } from "factories/FileNodeFactory"
 import { uploadFile } from "store/slice/FileUploader/FileUploaderActions"
 import { addInputNode } from "store/slice/FlowElement/FlowElementActions"
@@ -33,7 +34,15 @@ import {
   fetchWorkflow,
 } from "store/slice/Workflow/WorkflowActions"
 import { getWorkspace } from "store/slice/Workspace/WorkspaceActions"
-import { getInitialNodeFileType } from "utils/workspaceTypeUtils"
+
+/**
+ * Get the appropriate file type for the initial node
+ */
+const getInitialNodeFileType = (workspaceType?: number) => {
+  return workspaceType === WORKSPACE_TYPE.EXPDB_BATCH
+    ? FILE_TYPE_SET.EXPDB_BATCH_MICROSCOPE_EXPDB
+    : FILE_TYPE_SET.EXPDB
+}
 
 /**
  * Create initial state with workspace type

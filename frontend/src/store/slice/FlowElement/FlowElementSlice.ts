@@ -12,12 +12,14 @@ import {
 import { createSlice, PayloadAction, isAnyOf } from "@reduxjs/toolkit"
 
 import { isInputNodePostData } from "api/run/RunUtils"
+import { REACT_FLOW_NODE_TYPE_KEY } from "config/fileTypes.config"
 import {
   ALGO_NODE_STYLE,
   DATA_NODE_STYLE,
   INITIAL_IMAGE_ELEMENT_ID,
   INITIAL_IMAGE_ELEMENT_NAME,
 } from "const/flowchart"
+import { WORKSPACE_TYPE } from "const/Workspace"
 import { uploadFile } from "store/slice/FileUploader/FileUploaderActions"
 import {
   addAlgorithmNode,
@@ -38,7 +40,15 @@ import {
   fetchWorkflow,
 } from "store/slice/Workflow/WorkflowActions"
 import { getWorkspace } from "store/slice/Workspace/WorkspaceActions"
-import { getInitialNodeType } from "utils/workspaceTypeUtils"
+
+/**
+ * Get the appropriate React Flow node type for the initial node
+ */
+const getInitialNodeType = (workspaceType?: number): string => {
+  return workspaceType === WORKSPACE_TYPE.EXPDB_BATCH
+    ? REACT_FLOW_NODE_TYPE_KEY.ExpdbBatchMicroscopeExpdbFileNode
+    : REACT_FLOW_NODE_TYPE_KEY.ExpDbNode
+}
 
 const createInitialNodes = (workspaceType?: number): Node<NodeData>[] => [
   {
