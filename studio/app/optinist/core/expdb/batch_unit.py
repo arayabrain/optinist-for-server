@@ -171,47 +171,12 @@ class ExpDbBatch:
         Returns:
             WorkflowConfig object if workflow.yaml exists and is valid, None otherwise
         """
-        import yaml
-
-        workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
-            self.exp_id, f"{self.exp_id}_workflow.yaml"
-        )
-
-        if not os.path.exists(workflow_yaml_path):
-            self.logger_.info(
-                f"No workflow config found at {workflow_yaml_path}, "
-                f"will use default parameters"
-            )
-            return None
-
-        self.logger_.info(f"Loading workflow config from {workflow_yaml_path}")
-
         try:
-            # Read YAML file directly - don't use read_from_path() since
-            # experiments_datasets path structure differs from OUTPUT_DIR structure
-            config_dict = ConfigReader.read(workflow_yaml_path)
-            if not config_dict:
-                self.logger_.warning(
-                    f"Failed to read workflow config at {workflow_yaml_path}, "
-                    f"will use default parameters"
-                )
-                return None
-
-            # Create WorkflowConfig object from dict
-            config = WorkflowConfigReader._create_workflow_config(config_dict)
-
-            # Validate structure
-            if config is None:
-                self.logger_.warning(
-                    "Workflow config is None, will use default parameters"
-                )
-                return None
-
-            if not hasattr(config, "nodeDict"):
-                self.logger_.warning(
-                    "Workflow config missing nodeDict, will use default parameters"
-                )
-                return None
+            # Read workflow.yaml corresponding to data (exp_id)
+            workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
+                self.exp_id, f"{self.exp_id}_workflow.yaml"
+            )
+            config = WorkflowConfigReader._read_from_any_path(workflow_yaml_path)
 
             # Validate nodes are acceptable for batch processing
             from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
@@ -250,26 +215,6 @@ class ExpDbBatch:
 
             return config
 
-        except yaml.YAMLError as e:
-            self.logger_.error(
-                f"Invalid YAML syntax in {workflow_yaml_path}: {e}. "
-                f"Please check the workflow file for syntax errors. "
-                f"Falling back to default parameters."
-            )
-            return None
-        except (KeyError, AttributeError) as e:
-            self.logger_.error(
-                f"Invalid workflow structure in {workflow_yaml_path}: {e}. "
-                f"Required fields may be missing. "
-                f"Falling back to default parameters."
-            )
-            return None
-        except PermissionError as e:
-            self.logger_.error(
-                f"Permission denied reading {workflow_yaml_path}: {e}. "
-                f"Falling back to default parameters."
-            )
-            return None
         except Exception as e:
             self.logger_.warning(
                 f"Unexpected error loading workflow config from "
