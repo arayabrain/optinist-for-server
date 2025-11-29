@@ -16,12 +16,14 @@ from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
-from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
 )
-from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.core.workflow.workflow_params import (
+    get_typecheck_params,
+    read_default_params,
+)
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
@@ -62,11 +64,6 @@ from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 class Result:
     success: bool
     message: Optional[str] = None
-
-
-def get_default_params(name: str):
-    filepath = find_param_filepath(name)
-    return ConfigReader.read(filepath)
 
 
 def save_image_with_thumb(img_path: str, img):
@@ -140,7 +137,7 @@ class ExpDbBatch:
 
         self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbBatchPath(self.exp_id)
-        self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
+        self.nwb_input_config = read_default_params("nwb")
         self.nwbfile = {}
 
         self.workflow_config_reader = ExpDbWorkflowConfigReader(
@@ -737,9 +734,6 @@ class ExpDbWorkflowConfigReader:
         # Load workflow config if it exists (for GUI-configured parameters)
         self.workflow_config = self._load_workflow_config()
 
-        # Cache for workflow node lookups (performance optimization)
-        self._workflow_node_cache = {}
-
     def _load_workflow_config(self):
         """
         Load and validate workflow.yaml if it exists for this experiment.
@@ -817,30 +811,22 @@ class ExpDbWorkflowConfigReader:
         Raises:
             ValueError: If neither workflow nor default params can be loaded
         """
+        extracted_params = None
+
         # Try to get from workflow first
         if self.workflow_config:
-            # Check cache first
-            if node_name in self._workflow_node_cache:
-                node = self._workflow_node_cache[node_name]
-            else:
-                node = WorkflowConfigReader.find_node_in_workflow(
-                    self.workflow_config, node_name
-                )
-                # Cache the result (even if None) to avoid repeated lookups
-                self._workflow_node_cache[node_name] = node
+            node = WorkflowConfigReader.find_node_in_workflow(
+                self.workflow_config, node_name
+            )
 
-            # Check for non-empty params (empty dict {}
-            # should fall back to defaults)
+            # Check for non-empty params (empty dict {} should fall back to defaults)
             if node and node.data.param and len(node.data.param) > 0:
                 # Extract actual values from nested workflow structure
-                extracted_params = WorkflowConfigReader.extract_workflow_param_values(
-                    node.data.param
-                )
+                extracted_params = get_typecheck_params(node.data.param, node_name)
                 self.logger_.info(
                     f"Using parameters from workflow.yaml for {node_name}: "
                     f"loaded {len(extracted_params)} parameters"
                 )
-                return extracted_params
             else:
                 self.logger_.info(
                     f"Node {node_name} not found in workflow or has no/empty params, "
@@ -848,14 +834,8 @@ class ExpDbWorkflowConfigReader:
                 )
 
         # Fallback to default params
-        self.logger_.info(f"Using default parameters for {node_name}")
-        default_params = get_default_params(node_name)
+        if extracted_params is None:
+            self.logger_.info(f"Using default parameters for {node_name}")
+            extracted_params = read_default_params(node_name)
 
-        # Validate that default params were loaded successfully
-        if default_params is None:
-            raise ValueError(
-                f"Failed to load default parameters for {node_name}. "
-                f"Parameter file may be missing or corrupted."
-            )
-
-        return default_params
+        return extracted_params
