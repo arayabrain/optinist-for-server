@@ -37,7 +37,7 @@ cell_detection:
   max_overlap: 0.75      # cells with more overlap than this get removed during triage before refinement
   nbinned: 5000          # max number of binned frames for cell detection
   spatial_scale: 0       # 0: multi-scale; 1: 6 pixels 2: 12 pixels 3: 24 pixels 4: 48 pixels
-  threshold_scaling: 6.0 # adjust the automatically determined threshold by this scalar multiplier
+  threshold_scaling: 1.0 # adjust the automatically determined threshold by this scalar multiplier
   max_iterations: 20     # maximum number of iterations to do cell detection
 
 # ----------------------------------------
