@@ -38,15 +38,23 @@ class ProcFileReader:
 
     @classmethod
     def find_proc_files(
-        cls, type: ProcFileType = ProcFileType.RESERVE
+        cls,
+        type: ProcFileType = ProcFileType.RESERVE,
+        filter_roi_methods: List[SupportedRoiMethod] = None,
     ) -> List[ProcFilePath]:
         found_proc_files = cls.find_proc_files_simple(type)
         result_proc_files = []
 
         for proc_file_path in found_proc_files:
             proc_data = ProcFileReader.read_from_path(proc_file_path)
+            # Set default roi_method value
             if proc_data.roi_method is None:
                 proc_data.roi_method = SupportedRoiMethod.CAIMAN.value
+
+            # Filter whether roi_method is the target of processing
+            currnet_roi_method = SupportedRoiMethod(proc_data.roi_method)
+            if filter_roi_methods and currnet_roi_method not in filter_roi_methods:
+                continue
 
             result_proc_files.append(
                 ProcFilePath(path=proc_file_path, proc_data=proc_data)

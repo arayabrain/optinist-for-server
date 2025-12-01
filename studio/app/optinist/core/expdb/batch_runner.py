@@ -28,6 +28,7 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     update_experiment,
 )
 from studio.app.optinist.core.expdb.expdb_data import ProcessResult
+from studio.app.optinist.core.expdb.expdb_validator import ExpDbEnviromentValidator
 from studio.app.optinist.core.expdb.proc_file_data import (
     ProcFile,
     ProcFilePath,
@@ -49,13 +50,14 @@ class ExpDbBatchRunner:
         self,
         organization_id: int,
         parallel_workers: int = 1,
-        filter_roi_method: str = None,
     ):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
         self.parallel_workers = parallel_workers
-        self.filter_roi_method = filter_roi_method
+        self.available_roi_methods = (
+            ExpDbEnviromentValidator.check_available_roi_methods()
+        )
 
     def __init_logger(self):
         logging_config = yaml.safe_load(
@@ -176,23 +178,9 @@ class ExpDbBatchRunner:
 
         # 処理対象datasets検索
         self.logger_.info("proc files search path: %s", EXPDB_DIRPATH.EXPDB_DIR)
-        found_proc_files = ProcFileReader.find_proc_files()
-
-        # Filter by roi_method if specified
-        if self.filter_roi_method:
-            self.logger_.info(
-                f"Filtering datasets by roi_method: {self.filter_roi_method}"
-            )
-            filtered_files = []
-            for proc_file_path in found_proc_files:
-                if proc_file_path.proc_data.roi_method == self.filter_roi_method:
-                    filtered_files.append(proc_file_path)
-                    self.logger_.info(f"Including proc file: {proc_file_path}")
-                else:
-                    self.logger_.info(f"Skipping proc file: {proc_file_path}")
-            target_proc_files = filtered_files
-        else:
-            target_proc_files = found_proc_files
+        target_proc_files = ProcFileReader.find_proc_files(
+            filter_roi_methods=self.available_roi_methods
+        )
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
         if len(target_proc_files) == 0:

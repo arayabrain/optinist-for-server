@@ -1,3 +1,6 @@
+import importlib.util
+from typing import List
+
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.schemas.workflow import WorkflowConfig
 from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
@@ -62,3 +65,19 @@ class ExpDbValidator:
             if roi_node_name
             else None
         )
+
+
+class ExpDbEnviromentValidator:
+    @staticmethod
+    def check_available_roi_methods() -> List[SupportedRoiMethod]:
+        result: List[SupportedRoiMethod] = []
+
+        # Check caiman availability
+        if importlib.util.find_spec("caiman") is not None:
+            result.append(SupportedRoiMethod.CAIMAN)
+
+        # Check suite2p availability
+        if importlib.util.find_spec("suite2p") is not None:
+            result.append(SupportedRoiMethod.SUITE2P)
+
+        return result
