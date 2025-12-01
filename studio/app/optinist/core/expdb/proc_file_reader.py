@@ -4,6 +4,7 @@ from dataclasses import asdict
 from typing import Dict, List
 
 from studio.app.common.core.utils.config_handler import ConfigReader
+from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 from studio.app.optinist.core.expdb.proc_file_data import (
     ProcFile,
     ProcFilePath,
@@ -44,6 +45,9 @@ class ProcFileReader:
 
         for proc_file_path in found_proc_files:
             proc_data = ProcFileReader.read_from_path(proc_file_path)
+            if proc_data.roi_method is None:
+                proc_data.roi_method = SupportedRoiMethod.CAIMAN.value
+
             result_proc_files.append(
                 ProcFilePath(path=proc_file_path, proc_data=proc_data)
             )

@@ -28,7 +28,11 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     update_experiment,
 )
 from studio.app.optinist.core.expdb.expdb_data import ProcessResult
-from studio.app.optinist.core.expdb.proc_file_data import ProcFile, ProcFileUtils
+from studio.app.optinist.core.expdb.proc_file_data import (
+    ProcFile,
+    ProcFilePath,
+    ProcFileUtils,
+)
 from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
 from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 from studio.app.optinist.schemas.expdb.experiment import (
@@ -181,12 +185,6 @@ class ExpDbBatchRunner:
             )
             filtered_files = []
             for proc_file_path in found_proc_files:
-                # Set default roi_method value
-                if proc_file_path.proc_data.roi_method is None:
-                    proc_file_path.proc_data.roi_method = (
-                        SupportedRoiMethod.CAIMAN.value
-                    )
-
                 if proc_file_path.proc_data.roi_method == self.filter_roi_method:
                     filtered_files.append(proc_file_path)
                     self.logger_.info(f"Including proc file: {proc_file_path}")
@@ -217,7 +215,7 @@ class ExpDbBatchRunner:
             futures = [
                 executor.submit(
                     ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
-                    proc_file_path=proc_file_path.path,
+                    proc_file_path=proc_file_path,
                     org_id=self.org_id,
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,
@@ -312,7 +310,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     def process_single_dataset_entrypoint(
         cls,
-        proc_file_path: str,
+        proc_file_path: ProcFilePath,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
@@ -329,16 +327,16 @@ class ExpDbBatchConcurrentProcess:
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_single_dataset(
         cls,
-        proc_file_path: str,
+        proc_file_path: ProcFilePath,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
     ) -> dict:
-        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path.path)
         logger = cls.__init_process_logger(exp_id)
         logger.info(
             f"Process {os.getpid()} starting to "
-            f"process exp_id: {exp_id}, proc_file_path: {proc_file_path}"
+            f"process exp_id: {exp_id}, proc_file_path: {proc_file_path.path}"
         )
 
         error = None
@@ -346,23 +344,29 @@ class ExpDbBatchConcurrentProcess:
         result = {"success": False, "exp_id": exp_id}
 
         try:
-            # Read proc file
-            proc_file = ProcFileReader.read_from_path(proc_file_path)
-
             # コマンド判定
-            command = proc_file.command
+            command = proc_file_path.proc_data.command
 
             if command == ProcessCommand.REGIST.value:
                 cls.process_dataset_registration(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             elif command == ProcessCommand.REGIST_METADATA.value:
                 cls.process_dataset_metadata_registration(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             elif command == ProcessCommand.DELETE.value:
                 cls.process_dataset_deletion(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             else:
                 raise ValueError(
@@ -389,7 +393,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_registration(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Dataset登録処理
@@ -397,7 +401,7 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
         # CleanUp database records
         with concurrent_db_session_scope() as db:
@@ -462,7 +466,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_metadata_registration(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Metadata 登録処理
@@ -470,7 +474,7 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset metadata registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
         with concurrent_db_session_scope() as db:
             try:
@@ -500,7 +504,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_deletion(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Dataset削除処理
@@ -508,7 +512,7 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
         with concurrent_db_session_scope() as db:
             expdb_batch.cleanup_exp_record(db)
@@ -518,7 +522,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     def process_dataset_postprocess(
         cls,
-        proc_file_path: str,
+        proc_file_path: ProcFilePath,
         command: str,
         start_time: datetime.datetime,
         error: Exception = None,
@@ -535,8 +539,7 @@ class ExpDbBatchConcurrentProcess:
         # Read existing proc file to preserve roi_method
         existing_roi_method = None
         try:
-            existing_proc_file = ProcFileReader.read_from_path(proc_file_path)
-            existing_roi_method = existing_proc_file.roi_method
+            existing_roi_method = proc_file_path.proc_data.roi_method
         except Exception:
             # If we can't read the file, roi_method will be None
             pass
@@ -566,5 +569,5 @@ class ExpDbBatchConcurrentProcess:
 
         # Write and rename/backup proc file
         ProcFileWriter.write_and_backup_proc_file(
-            proc_file_path, result_proc, is_success
+            proc_file_path.path, result_proc, is_success
         )
