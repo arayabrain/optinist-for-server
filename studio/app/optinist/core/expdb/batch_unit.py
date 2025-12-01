@@ -16,12 +16,14 @@ from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
-from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
 )
-from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.core.workflow.workflow_params import (
+    get_typecheck_params,
+    read_default_params,
+)
 from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
@@ -62,11 +64,6 @@ from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
 class Result:
     success: bool
     message: Optional[str] = None
-
-
-def get_default_params(name: str):
-    filepath = find_param_filepath(name)
-    return ConfigReader.read(filepath)
 
 
 def save_image_with_thumb(img_path: str, img):
@@ -140,14 +137,12 @@ class ExpDbBatch:
 
         self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbBatchPath(self.exp_id)
-        self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
+        self.nwb_input_config = read_default_params("nwb")
         self.nwbfile = {}
 
-        # Load workflow config if it exists (for GUI-configured parameters)
-        self.workflow_config = self._load_workflow_config()
-
-        # Cache for workflow node lookups (performance optimization)
-        self._workflow_node_cache = {}
+        self.workflow_config_reader = ExpDbWorkflowConfigReader(
+            self.logger_, self.exp_id
+        )
 
         self._configure_matplotlib()
 
@@ -163,181 +158,6 @@ class ExpDbBatch:
         circular_patterns = ["_ori", "_OF-PRC-", "_dot"]
         is_circular_data = any(pattern in data_name for pattern in circular_patterns)
         return is_circular_data
-
-    def _load_workflow_config(self):
-        """
-        Load and validate workflow.yaml if it exists for this experiment.
-
-        Returns:
-            WorkflowConfig object if workflow.yaml exists and is valid, None otherwise
-        """
-        import yaml
-
-        workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
-            self.exp_id, f"{self.exp_id}_workflow.yaml"
-        )
-
-        if not os.path.exists(workflow_yaml_path):
-            self.logger_.info(
-                f"No workflow config found at {workflow_yaml_path}, "
-                f"will use default parameters"
-            )
-            return None
-
-        self.logger_.info(f"Loading workflow config from {workflow_yaml_path}")
-
-        try:
-            # Read YAML file directly - don't use read_from_path() since
-            # experiments_datasets path structure differs from OUTPUT_DIR structure
-            config_dict = ConfigReader.read(workflow_yaml_path)
-            if not config_dict:
-                self.logger_.warning(
-                    f"Failed to read workflow config at {workflow_yaml_path}, "
-                    f"will use default parameters"
-                )
-                return None
-
-            # Create WorkflowConfig object from dict
-            config = WorkflowConfigReader._create_workflow_config(config_dict)
-
-            # Validate structure
-            if config is None:
-                self.logger_.warning(
-                    "Workflow config is None, will use default parameters"
-                )
-                return None
-
-            if not hasattr(config, "nodeDict"):
-                self.logger_.warning(
-                    "Workflow config missing nodeDict, will use default parameters"
-                )
-                return None
-
-            # Validate nodes are acceptable for batch processing
-            from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
-
-            if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
-                # Extract actual nodes for error message
-                actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
-                    config
-                )
-                self.logger_.error(
-                    f"Workflow config contains invalid nodes for batch processing."
-                    f"Found nodes: {sorted(actual_nodes)}. "
-                    f"Required nodes: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_REQUIRED_NODES)}. "
-                    f"Plus exactly ONE of: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
-                    f"Falling back to default parameters."
-                )
-                return None
-
-            # Extract and validate ROI method from workflow
-            roi_method = ExpDbValidator.validate_batch_roi_method(config)
-            if roi_method:
-                self.logger_.info(f"Workflow specifies ROI method: {roi_method.value}")
-            else:
-                self.logger_.warning(
-                    "Could not determine ROI method from workflow, "
-                    "will use roi_method from .proc file"
-                )
-
-            # Log available nodes for debugging
-            node_count = len(config.nodeDict) if config.nodeDict else 0
-            self.logger_.info(
-                f"Workflow config loaded successfully with {node_count} nodes"
-            )
-
-            return config
-
-        except yaml.YAMLError as e:
-            self.logger_.error(
-                f"Invalid YAML syntax in {workflow_yaml_path}: {e}. "
-                f"Please check the workflow file for syntax errors. "
-                f"Falling back to default parameters."
-            )
-            return None
-        except (KeyError, AttributeError) as e:
-            self.logger_.error(
-                f"Invalid workflow structure in {workflow_yaml_path}: {e}. "
-                f"Required fields may be missing. "
-                f"Falling back to default parameters."
-            )
-            return None
-        except PermissionError as e:
-            self.logger_.error(
-                f"Permission denied reading {workflow_yaml_path}: {e}. "
-                f"Falling back to default parameters."
-            )
-            return None
-        except Exception as e:
-            self.logger_.warning(
-                f"Unexpected error loading workflow config from "
-                f"{workflow_yaml_path}: {e}, "
-                f"will use default parameters"
-            )
-            return None
-
-    def _get_params_from_workflow_or_default(self, node_name: str) -> dict:
-        """
-        Get parameters for a node, preferring workflow.yaml over defaults.
-
-        This method first attempts to retrieve parameters from the workflow.yaml
-        file (if it exists and contains the specified node). If workflow params
-        are not available, it falls back to the default parameter files.
-
-        Args:
-            node_name: Name of the algorithm node
-                      (e.g., "suite2p_preprocessing", "caiman_cnmf_preprocessing")
-
-        Returns:
-            Dictionary of parameters for the node. Never returns None.
-
-        Raises:
-            ValueError: If neither workflow nor default params can be loaded
-        """
-        # Try to get from workflow first
-        if self.workflow_config:
-            # Check cache first
-            if node_name in self._workflow_node_cache:
-                node = self._workflow_node_cache[node_name]
-            else:
-                node = WorkflowConfigReader.find_node_in_workflow(
-                    self.workflow_config, node_name
-                )
-                # Cache the result (even if None) to avoid repeated lookups
-                self._workflow_node_cache[node_name] = node
-
-            # Check for non-empty params (empty dict {}
-            # should fall back to defaults)
-            if node and node.data.param and len(node.data.param) > 0:
-                # Extract actual values from nested workflow structure
-                extracted_params = WorkflowConfigReader.extract_workflow_param_values(
-                    node.data.param
-                )
-                self.logger_.info(
-                    f"Using parameters from workflow.yaml for {node_name}: "
-                    f"loaded {len(extracted_params)} parameters"
-                )
-                return extracted_params
-            else:
-                self.logger_.info(
-                    f"Node {node_name} not found in workflow or has no/empty params, "
-                    f"using default parameters"
-                )
-
-        # Fallback to default params
-        self.logger_.info(f"Using default parameters for {node_name}")
-        default_params = get_default_params(node_name)
-
-        # Validate that default params were loaded successfully
-        if default_params is None:
-            raise ValueError(
-                f"Failed to load default parameters for {node_name}. "
-                f"Parameter file may be missing or corrupted."
-            )
-
-        return default_params
 
     def _get_roi_method(self) -> str:
         """
@@ -450,7 +270,7 @@ class ExpDbBatch:
         roi_method = self._get_roi_method()
         node_name = SupportedRoiMethod.get_node_name_from_roi_method(roi_method)
         self.logger_.info(f"Using ROI parameters from node: {node_name}")
-        params = self._get_params_from_workflow_or_default(node_name)
+        params = self.workflow_config_reader.get_node_params_or_default(node_name)
         roi_thr = params.get("roi_thr", 0.9)
         thr_method = "nrg"
         swap_dim = False  # Use F-order reshaping
@@ -495,7 +315,9 @@ class ExpDbBatch:
         preprocess_results = preprocessing(
             microscope=MicroscopeExpdbData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
-            params=self._get_params_from_workflow_or_default("preprocessing"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "preprocessing"
+            ),
             nwbfile=self.nwb_input_config,
         )
 
@@ -522,7 +344,7 @@ class ExpDbBatch:
             expdb=expdb,
             output_dir=self.raw_path.orimaps_dir,
             params={
-                **self._get_params_from_workflow_or_default("get_orimap"),
+                **self.workflow_config_reader.get_node_params_or_default("get_orimap"),
                 "exp_id": self.exp_id,
             },
         )
@@ -536,7 +358,7 @@ class ExpDbBatch:
 
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        cnmf_params = self._get_params_from_workflow_or_default(
+        cnmf_params = self.workflow_config_reader.get_node_params_or_default(
             "caiman_cnmf_preprocessing"
         )
         function_id = "caiman_cnmf"
@@ -582,7 +404,7 @@ class ExpDbBatch:
         )
 
         self.logger_.info("process 'cell_detection_suite2p' start.")
-        suite2p_params = self._get_params_from_workflow_or_default(
+        suite2p_params = self.workflow_config_reader.get_node_params_or_default(
             "suite2p_preprocessing"
         )
         function_id = "suite2p_preprocessing"
@@ -643,7 +465,7 @@ class ExpDbBatch:
         result = analyze_stats(
             expdb,
             self.raw_path.output_dir,
-            self._get_params_from_workflow_or_default("analyze_stats"),
+            self.workflow_config_reader.get_node_params_or_default("analyze_stats"),
         )
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
@@ -789,7 +611,9 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=self._get_params_from_workflow_or_default("pca_analysis"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "pca_analysis"
+            ),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
@@ -820,7 +644,9 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=self._get_params_from_workflow_or_default("kmeans_analysis"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "kmeans_analysis"
+            ),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
@@ -893,3 +719,123 @@ class ExpDbBatch:
         # Disable interactive mode
         plt.ioff()
         plt.style.use("fast")
+
+
+class ExpDbWorkflowConfigReader:
+    """
+    This is a reader class for the workflow.yaml created for each Dataset.
+      (workflow.yaml contains parameters for the node that executes the batch, etc.)
+    """
+
+    def __init__(self, logger: logging.Logger, exp_id: str) -> None:
+        self.logger_ = logger
+        self.exp_id = exp_id
+
+        # Load workflow config if it exists (for GUI-configured parameters)
+        self.workflow_config = self._load_workflow_config()
+
+    def _load_workflow_config(self):
+        """
+        Load and validate workflow.yaml if it exists for this experiment.
+
+        Returns:
+            WorkflowConfig object if workflow.yaml exists and is valid, None otherwise
+        """
+        try:
+            # Read workflow.yaml corresponding to data (exp_id)
+            workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
+                self.exp_id, f"{self.exp_id}_workflow.yaml"
+            )
+            config = WorkflowConfigReader._read_from_any_path(workflow_yaml_path)
+
+            # Validate nodes are acceptable for batch processing
+            from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
+
+            if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
+                # Extract actual nodes for error message
+                actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
+                    config
+                )
+                self.logger_.error(
+                    f"Workflow config contains invalid nodes for batch processing."
+                    f"Found nodes: {sorted(actual_nodes)}. "
+                    f"Required nodes: "
+                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_REQUIRED_NODES)}. "
+                    f"Plus exactly ONE of: "
+                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
+                    f"Falling back to default parameters."
+                )
+                return None
+
+            # Extract and validate ROI method from workflow
+            roi_method = ExpDbValidator.validate_batch_roi_method(config)
+            if roi_method:
+                self.logger_.info(f"Workflow specifies ROI method: {roi_method.value}")
+            else:
+                self.logger_.warning(
+                    "Could not determine ROI method from workflow, "
+                    "will use roi_method from .proc file"
+                )
+
+            # Log available nodes for debugging
+            node_count = len(config.nodeDict) if config.nodeDict else 0
+            self.logger_.info(
+                f"Workflow config loaded successfully with {node_count} nodes"
+            )
+
+            return config
+
+        except Exception as e:
+            self.logger_.warning(
+                f"Unexpected error loading workflow config from "
+                f"{workflow_yaml_path}: {e}, "
+                f"will use default parameters"
+            )
+            return None
+
+    def get_node_params_or_default(self, node_name: str) -> dict:
+        """
+        Get parameters for a node, preferring workflow.yaml over defaults.
+
+        This method first attempts to retrieve parameters from the workflow.yaml
+        file (if it exists and contains the specified node). If workflow params
+        are not available, it falls back to the default parameter files.
+
+        Args:
+            node_name: Name of the algorithm node
+                      (e.g., "suite2p_preprocessing", "caiman_cnmf_preprocessing")
+
+        Returns:
+            Dictionary of parameters for the node. Never returns None.
+
+        Raises:
+            ValueError: If neither workflow nor default params can be loaded
+        """
+        extracted_params = None
+
+        # Try to get from workflow first
+        if self.workflow_config:
+            node = WorkflowConfigReader.find_node_in_workflow(
+                self.workflow_config, node_name
+            )
+
+            # Check for non-empty params (empty dict {} should fall back to defaults)
+            if node and node.data.param and len(node.data.param) > 0:
+                # Extract actual values from nested workflow structure
+                extracted_params = get_typecheck_params(node.data.param, node_name)
+                self.logger_.info(
+                    f"Using parameters from workflow.yaml for {node_name}: "
+                    f"loaded {len(extracted_params)} parameters"
+                )
+            else:
+                self.logger_.info(
+                    f"Node {node_name} not found in workflow or has no/empty params, "
+                    f"using default parameters"
+                )
+
+        # Fallback to default params
+        if extracted_params is None:
+            self.logger_.info(f"Using default parameters for {node_name}")
+            extracted_params = read_default_params(node_name)
+
+        return extracted_params
