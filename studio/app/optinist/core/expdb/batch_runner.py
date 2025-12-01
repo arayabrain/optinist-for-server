@@ -172,7 +172,7 @@ class ExpDbBatchRunner:
 
         # 処理対象datasets検索
         self.logger_.info("proc files search path: %s", EXPDB_DIRPATH.EXPDB_DIR)
-        target_proc_files = ProcFileReader.find_proc_files()
+        found_proc_files = ProcFileReader.find_proc_files()
 
         # Filter by roi_method if specified
         if self.filter_roi_method:
@@ -180,25 +180,21 @@ class ExpDbBatchRunner:
                 f"Filtering datasets by roi_method: {self.filter_roi_method}"
             )
             filtered_files = []
-            for proc_file_path in target_proc_files:
-                try:
-                    proc_file = ProcFileReader.read_from_path(proc_file_path)
-                    roi_method = proc_file.roi_method or SupportedRoiMethod.CAIMAN.value
-                    if roi_method == self.filter_roi_method:
-                        filtered_files.append(proc_file_path)
-                        self.logger_.info(
-                            f"Including: {proc_file_path} (roi_method={roi_method})"
-                        )
-                    else:
-                        self.logger_.info(
-                            f"Skipping: {proc_file_path} (roi_method={roi_method})"
-                        )
-                except Exception as e:
-                    # Skip corrupted files entirely - they'll be retried on next run
-                    self.logger_.error(
-                        f"Could not read {proc_file_path}: {e}, skipping"
+            for proc_file_path in found_proc_files:
+                # Set default roi_method value
+                if proc_file_path.proc_data.roi_method is None:
+                    proc_file_path.proc_data.roi_method = (
+                        SupportedRoiMethod.CAIMAN.value
                     )
+
+                if proc_file_path.proc_data.roi_method == self.filter_roi_method:
+                    filtered_files.append(proc_file_path)
+                    self.logger_.info(f"Including proc file: {proc_file_path}")
+                else:
+                    self.logger_.info(f"Skipping proc file: {proc_file_path}")
             target_proc_files = filtered_files
+        else:
+            target_proc_files = found_proc_files
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
         if len(target_proc_files) == 0:
@@ -221,7 +217,7 @@ class ExpDbBatchRunner:
             futures = [
                 executor.submit(
                     ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
-                    proc_file_path=proc_file_path,
+                    proc_file_path=proc_file_path.path,
                     org_id=self.org_id,
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,

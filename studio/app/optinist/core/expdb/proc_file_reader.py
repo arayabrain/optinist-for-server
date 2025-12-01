@@ -1,11 +1,12 @@
 import datetime
 import glob
 from dataclasses import asdict
-from typing import Dict
+from typing import Dict, List
 
 from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.optinist.core.expdb.proc_file_data import (
     ProcFile,
+    ProcFilePath,
     ProcFileType,
     ProcFileUtils,
 )
@@ -28,11 +29,26 @@ class ProcFileReader:
         return ProcFileUtils.create_proc_file_data(config)
 
     @classmethod
-    def find_proc_files(cls, type: ProcFileType = ProcFileType.RESERVE):
-        target_proc_files = sorted(
+    def find_proc_files_simple(cls, type: ProcFileType = ProcFileType.RESERVE) -> List:
+        found_proc_files = sorted(
             glob.glob(ProcFileUtils.get_proc_file_wild_path(type))
         )
-        return target_proc_files
+        return found_proc_files
+
+    @classmethod
+    def find_proc_files(
+        cls, type: ProcFileType = ProcFileType.RESERVE
+    ) -> List[ProcFilePath]:
+        found_proc_files = cls.find_proc_files_simple(type)
+        result_proc_files = []
+
+        for proc_file_path in found_proc_files:
+            proc_data = ProcFileReader.read_from_path(proc_file_path)
+            result_proc_files.append(
+                ProcFilePath(path=proc_file_path, proc_data=proc_data)
+            )
+
+        return result_proc_files
 
     @classmethod
     def read_last_processing_log(
