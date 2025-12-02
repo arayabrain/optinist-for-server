@@ -130,10 +130,13 @@ class ExpDbBatch:
     #   ExpDbBatchConcurrentProcess.LOGGER_NAME.
     LOGGER_NAME = "batch_process_logger"
 
-    def __init__(self, exp_id: str, org_id: int) -> None:
+    def __init__(
+        self, exp_id: str, org_id: int, roi_method: SupportedRoiMethod
+    ) -> None:
         self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
         self.exp_id = exp_id
         self.org_id = org_id
+        self.roi_method = roi_method
 
         self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
         self.pub_path = ExpDbBatchPath(self.exp_id)
@@ -141,7 +144,7 @@ class ExpDbBatch:
         self.nwbfile = {}
 
         self.workflow_config_reader = ExpDbWorkflowConfigReader(
-            self.logger_, self.exp_id
+            self.logger_, self.exp_id, self.roi_method
         )
 
         self._configure_matplotlib()
@@ -158,40 +161,6 @@ class ExpDbBatch:
         circular_patterns = ["_ori", "_OF-PRC-", "_dot"]
         is_circular_data = any(pattern in data_name for pattern in circular_patterns)
         return is_circular_data
-
-    def _get_roi_method(self) -> str:
-        """
-        Determine which ROI detection method to use by reading from .proc file.
-        Defaults to 'caiman' if roi_method is not specified or cannot be read.
-
-        Returns:
-            str: Either 'caiman' or 'suite2p'
-        """
-        from studio.app.optinist.core.expdb.proc_file_data import ProcFileUtils
-        from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
-
-        proc_file_path = ProcFileUtils.get_proc_file_path(self.exp_id)
-
-        try:
-            proc_file = ProcFileReader.read_from_path(proc_file_path)
-            roi_method = proc_file.roi_method or SupportedRoiMethod.CAIMAN.value
-
-            supported_methods = [m.value for m in SupportedRoiMethod]
-            if roi_method in supported_methods:
-                self.logger_.info(f"Using ROI method from .proc file: {roi_method}")
-                return roi_method
-            else:
-                self.logger_.warning(
-                    f"Invalid roi_method '{roi_method}' in .proc file, "
-                    f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
-                )
-                return SupportedRoiMethod.CAIMAN.value
-        except Exception as e:
-            self.logger_.info(
-                f"Could not read roi_method from .proc file ({proc_file_path}): {e}, "
-                f"defaulting to {SupportedRoiMethod.CAIMAN.value}"
-            )
-            return SupportedRoiMethod.CAIMAN.value
 
     @stopwatch(callback=__stopwatch_callback)
     def cleanup_exp_record(self, db: Session):
@@ -267,8 +236,7 @@ class ExpDbBatch:
         )
 
         # Get parameters for ROI processing based on detected ROI method
-        roi_method = self._get_roi_method()
-        node_name = SupportedRoiMethod.get_node_name_from_roi_method(roi_method)
+        node_name = SupportedRoiMethod.get_node_name_from_roi_method(self.roi_method)
         self.logger_.info(f"Using ROI parameters from node: {node_name}")
         params = self.workflow_config_reader.get_node_params_or_default(node_name)
         roi_thr = params.get("roi_thr", 0.9)
@@ -443,17 +411,16 @@ class ExpDbBatch:
             Dictionary with processed_data (ExpDbData) and other outputs
             from the selected cell detection method
         """
-        roi_method = self._get_roi_method()
-
-        if roi_method == SupportedRoiMethod.SUITE2P.value:
+        if self.roi_method == SupportedRoiMethod.SUITE2P:
             self.logger_.info("Using Suite2p for cell detection")
             return self.cell_detection_suite2p(stack)
-        elif roi_method == SupportedRoiMethod.CAIMAN.value:
+        elif self.roi_method == SupportedRoiMethod.CAIMAN:
             self.logger_.info("Using CaImAn CNMF for cell detection")
             return self.cell_detection_cnmf(stack)
         else:  # Default to caiman
             self.logger_.info(
-                f"Unknown roi_method '{roi_method}', " f"defaulting to CaImAn CNMF"
+                f"Unknown roi_method '{self.roi_method.value}', "
+                f"defaulting to CaImAn CNMF"
             )
             return self.cell_detection_cnmf(stack)
 
@@ -727,9 +694,12 @@ class ExpDbWorkflowConfigReader:
       (workflow.yaml contains parameters for the node that executes the batch, etc.)
     """
 
-    def __init__(self, logger: logging.Logger, exp_id: str) -> None:
+    def __init__(
+        self, logger: logging.Logger, exp_id: str, roi_method: SupportedRoiMethod
+    ) -> None:
         self.logger_ = logger
         self.exp_id = exp_id
+        self.roi_method = roi_method
 
         # Load workflow config if it exists (for GUI-configured parameters)
         self.workflow_config = self._load_workflow_config()
@@ -768,9 +738,18 @@ class ExpDbWorkflowConfigReader:
                 return None
 
             # Extract and validate ROI method from workflow
-            roi_method = ExpDbValidator.validate_batch_roi_method(config)
-            if roi_method:
-                self.logger_.info(f"Workflow specifies ROI method: {roi_method.value}")
+            workflow_roi_method = ExpDbValidator.validate_batch_roi_method(config)
+            if workflow_roi_method:
+                if workflow_roi_method == self.roi_method:
+                    self.logger_.info(
+                        f"Workflow specifies ROI method: {workflow_roi_method.value}"
+                    )
+                else:
+                    self.logger_.warning(
+                        "ROI method in the workflow and proc file does not match.: "
+                        f"[workflow roi_method: {workflow_roi_method.value}] "
+                        f"[proc file roi_method: {self.roi_method.value}]"
+                    )
             else:
                 self.logger_.warning(
                     "Could not determine ROI method from workflow, "
