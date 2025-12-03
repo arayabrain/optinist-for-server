@@ -30,6 +30,12 @@ class ProcFile:
     log: Optional[str] = None
 
 
+@dataclass
+class ProcFilePath:
+    path: str
+    proc_data: ProcFile
+
+
 class ProcFileUtils:
     @classmethod
     def parse_exp_id_from_path(cls, file_path: str) -> str:
