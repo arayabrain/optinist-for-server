@@ -397,12 +397,10 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection(self, stack: ImageData):
         """
-        Run cell detection using method specified in batch_unit.yaml config.
+        Run cell detection using the specified ROI method.
 
         Automatically selects between CaImAn CNMF or Suite2p based on
-        roi_method_selector in batch_unit.yaml:
-        - roi_method_selector == 1: Use CaImAn CNMF
-        - roi_method_selector == 2: Use Suite2p
+        the roi_method parameter passed to the ExpDbBatch constructor.
 
         Args:
             stack: ImageData from preprocessing node (motion-corrected)
