@@ -5,11 +5,30 @@ import {
   ExpDbInputNode,
   InputNodeType,
   FILE_TYPE_SET,
+  FILE_TYPE,
   MatlabInputNode,
   MicroscopeInputNode,
   MicroscopeExpdbInputNode,
   ExpdbBatchMicroscopeExpdbInputNode,
 } from "store/slice/InputNode/InputNodeType"
+
+/**
+ * File type migration mapping for backward compatibility
+ * Maps deprecated file type keys to their current equivalents
+ */
+const FILE_TYPE_MIGRATION_MAP: Record<string, FILE_TYPE> = {
+  expdb: FILE_TYPE_SET.EXPDB, // "expdb" -> "standard_expdb"
+}
+
+/**
+ * Normalize file type for backward compatibility
+ * Converts deprecated file type keys to their current equivalents
+ * @param fileType - The file type (possibly deprecated)
+ * @returns The normalized file type
+ */
+export function normalizeFileType(fileType: string): string {
+  return FILE_TYPE_MIGRATION_MAP[fileType] || fileType
+}
 
 export function isImageInputNode(
   inputNode: InputNodeType,
