@@ -70,8 +70,8 @@ def save_timecourse_mat(
     if n_cells < 1:
         raise ValueError(f"No cells detected: n_cells={n_cells}")
 
-    # Convert to float64 for MATLAB compatibility
-    timecourse_data = timecourse_data.astype(np.float64)
+    # Convert to float32 for MATLAB compatibility
+    timecourse_data = timecourse_data.astype(np.float32)
 
     # Validation checks
     if validate:
