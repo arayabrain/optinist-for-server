@@ -9,7 +9,7 @@ export const ExpDbNode = createExpDbNode(
   "ExpDbNode",
   {
     returnType: "ExpDbData",
-    handleName: "expdb",
+    handleName: "standard_expdb",
   },
   ExpDbSelectSingle,
 )

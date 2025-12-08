@@ -72,7 +72,7 @@ export interface MicroscopeExpdbInputNode
 }
 
 export interface ExpDbInputNode
-  extends InputNodeBaseType<"expdb", Record<never, never>> {
+  extends InputNodeBaseType<"standard_expdb", Record<never, never>> {
   selectedFilePath?: string
 }
 

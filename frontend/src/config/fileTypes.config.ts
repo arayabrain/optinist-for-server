@@ -169,7 +169,7 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
     nodeType: REACT_FLOW_NODE_TYPE_KEY.MicroscopeExpdbFileNode,
   },
   EXPDB: {
-    key: "expdb",
+    key: "standard_expdb",
     displayName: "preprocessed_data",
     hasFilePath: true,
     filePathType: "single",
