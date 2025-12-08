@@ -70,8 +70,8 @@ def save_timecourse_mat(
     if n_cells < 1:
         raise ValueError(f"No cells detected: n_cells={n_cells}")
 
-    # Convert to float64 for MATLAB compatibility
-    timecourse_data = timecourse_data.astype(np.float64)
+    # Convert to float32 for MATLAB compatibility
+    timecourse_data = timecourse_data.astype(np.float32)
 
     # Validation checks
     if validate:
@@ -244,13 +244,13 @@ def save_auxiliary_mats(
         filename = f"{exp_id}_Yr.mat"
         output_path = join_filepath([output_dir, filename])
 
-        # Convert to float64
-        Yr = Yr.astype(np.float64)
+        # Convert to float32
+        if Yr.dtype != np.float32:
+            Yr = Yr.astype(np.float32)
 
         scipy.io.savemat(
             output_path,
             {"Yr": Yr},
-            do_compression=True,
         )
 
         output_paths["Yr"] = output_path
@@ -271,13 +271,13 @@ def save_auxiliary_mats(
         filename = f"{exp_id}_C_or.mat"
         output_path = join_filepath([output_dir, filename])
 
-        # Convert to float64
-        C_or = C_or.astype(np.float64)
+        # Convert to float32
+        if C_or.dtype != np.float32:
+            C_or = C_or.astype(np.float32)
 
         scipy.io.savemat(
             output_path,
             {"C_or": C_or},
-            do_compression=True,
         )
 
         output_paths["C_or"] = output_path
