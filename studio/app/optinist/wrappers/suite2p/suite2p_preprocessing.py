@@ -466,20 +466,17 @@ def suite2p_preprocessing(
     nwbfile_out = {}
 
     # Add ROI metadata (match caiman_preprocessing)
-    # MEMORY OPTIMIZATION: Store sparse representation (pixel indices) to save memory
     roi_list = []
     for i, s in enumerate(stat):
-        #     roi_mask = ROI(
-        #     ypix=s["ypix"],
-        #     xpix=s["xpix"],
-        #     lam=s["lam"],
-        #     med=s["med"],
-        #     do_crop=False,
-        # ).to_array(Ly=Ly, Lx=Lx)
+        roi_mask = ROI(
+            ypix=s["ypix"],
+            xpix=s["xpix"],
+            lam=s["lam"],
+            med=s["med"],
+            do_crop=False,
+        ).to_array(Ly=Ly, Lx=Lx)
         kargs = {
-            # Store sparse pixel representation instead of full mask
-            "pixel_mask": np.array([s["ypix"], s["xpix"], s["lam"]]).T,
-            # "image_mask": roi_mask,
+            "image_mask": roi_mask,
             "accepted": bool(iscell[i] == 1),
             "rejected": bool(iscell[i] == 0),
         }
@@ -488,8 +485,8 @@ def suite2p_preprocessing(
     nwbfile_out[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile_out[NWBDATASET.POSTPROCESS] = {
         function_id: {
-            # MEMORY OPTIMIZATION: Skip storing all_roi_img
             # "all_roi_img": im,
+            "cell_roi": cell_roi,
             "mean_img": mean_img,
             "max_proj": max_proj,
         }
