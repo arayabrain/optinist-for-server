@@ -338,4 +338,7 @@ def caiman_cnmf_preprocessing(
         logger.error("Failed to cleanup memmap files.")
         logger.error(e)
 
+    logger.info("Caiman cnmf preprocessing completed successfully")
+    logger.info(f"Detected {n_rois} cells, {n_noncell_rois} non-cells")
+
     return info
