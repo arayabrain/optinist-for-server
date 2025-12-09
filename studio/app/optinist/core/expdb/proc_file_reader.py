@@ -69,22 +69,38 @@ class ProcFileReader:
         exp_id: str,
     ) -> Dict[str, Dict]:
         PROC_FILE_TYPES = {
-            "last_success": ProcFileType.DONE,
-            "last_error": ProcFileType.ERROR,
+            "success": ProcFileType.DONE,
+            "error": ProcFileType.ERROR,
         }
-        processing_log = {}
 
-        for proc_label, proc_type in PROC_FILE_TYPES.items():
+        processing_log = {"id": exp_id, "last_status": None}
+        last_status: str = None
+        last_log_time = datetime.datetime(1999, 1, 1, 0, 0, 0)
+
+        for proc_status_type, proc_type in PROC_FILE_TYPES.items():
+            proc_label = f"last_{proc_status_type}_log"
             log_exists = ProcFileUtils.is_proc_file_exists(exp_id, proc_type)
+
             if log_exists:
                 proc_data = ProcFileReader.read(exp_id, proc_type)
+
+                if (
+                    proc_data.complete_time is not None
+                    and proc_data.complete_time > last_log_time
+                ):
+                    last_log_time = proc_data.complete_time
+                    last_status = proc_status_type
+
                 # Apply datetime->str conversion assuming json conversion
                 proc_data_formated = {
                     k: v.isoformat() if isinstance(v, datetime.datetime) else v
                     for k, v in asdict(proc_data).items()
                 }
+
                 processing_log[proc_label] = proc_data_formated
             else:
                 processing_log[proc_label] = None
+
+        processing_log["last_status"] = last_status
 
         return processing_log
