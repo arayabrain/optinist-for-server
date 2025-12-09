@@ -3,9 +3,11 @@ import datetime
 import logging
 import logging.config
 import os
+import threading
 import traceback
 from contextlib import contextmanager
 
+import psutil
 import yaml
 from lauda import stopwatch, stopwatchcm
 from zc import lockfile
@@ -42,9 +44,148 @@ from studio.app.optinist.schemas.expdb.experiment import (
 )
 
 
+class BatchProgressMonitor:
+    """
+    Monitor the progress of parallel processing and periodically log the status
+    """
+
+    # Maximum number of remaining data to display in logs
+    MAX_DISPLAY_REMAINING_COUNT = 10
+
+    def __init__(
+        self,
+        logger_: logging.Logger,
+        futures: list,
+        target_proc_files: list[ProcFilePath],
+        completed_futures: set,
+        interval: int = 60,
+    ):
+        """
+        Args:
+            logger: Logger for output
+            futures: List of all futures
+            target_proc_files: List of target proc files (in same order as futures)
+            completed_futures: Set of completed futures (held as reference)
+            interval: Log output interval (seconds)
+        """
+        self.logger = logger_
+        self.futures = futures
+        self.target_proc_files = target_proc_files
+        self.completed_futures = completed_futures
+        self.total_count = len(target_proc_files)
+        self.interval = interval
+        self._timer = None
+
+        # Create internal mapping
+        self._future_to_proc_file = {
+            future: proc_file for future, proc_file in zip(futures, target_proc_files)
+        }
+
+    def start(self):
+        """Start progress monitoring"""
+        self._schedule_next_log()
+
+    def stop(self):
+        """Stop progress monitoring"""
+        if self._timer:
+            self._timer.cancel()
+            self._timer = None
+
+    def _schedule_next_log(self):
+        """Schedule next log output"""
+
+        def log_and_reschedule():
+            # Log only if not all completed
+            if len(self.completed_futures) < self.total_count:
+                self._log_progress()
+
+                # Schedule next timer
+                self._schedule_next_log()
+
+        self._timer = threading.Timer(self.interval, log_and_reschedule)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def _log_progress(self):
+        """Log progress status"""
+        # Get remaining proc files
+        remaining_proc_files = [
+            self._future_to_proc_file[f]
+            for f in self.futures
+            if f not in self.completed_futures
+        ]
+
+        completed_count = len(self.completed_futures)
+        remaining_count = len(remaining_proc_files)
+
+        # Output progress log (remaining data IDs list)
+        if remaining_count > 0:
+            display_exp_ids = [
+                pf.exp_id
+                for pf in remaining_proc_files[: self.MAX_DISPLAY_REMAINING_COUNT]
+            ]
+            suffix = (
+                f" (showing {self.MAX_DISPLAY_REMAINING_COUNT} of {remaining_count})"
+                if remaining_count > self.MAX_DISPLAY_REMAINING_COUNT
+                else ""
+            )
+            self.logger.info(
+                (
+                    "Processing progress: [completed: %d/%d] - "
+                    "Remaining data%s: [count: %d]%s"
+                ),
+                completed_count,
+                self.total_count,
+                suffix,
+                remaining_count,
+                display_exp_ids,
+            )
+
+        # Get system load info
+        system_load = self._get_system_load_info()
+
+        # Output system load log
+        self.logger.info(
+            "System load: %s",
+            system_load,
+        )
+
+    @staticmethod
+    def _get_system_load_info() -> str:
+        """
+        Get server load status
+
+        Returns:
+            System load information string
+        """
+        try:
+            # CPU usage (average of all cores)
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+
+            # Memory usage
+            memory = psutil.virtual_memory()
+            memory_used_gb = memory.used / (1024**3)
+            memory_total_gb = memory.total / (1024**3)
+            memory_percent = memory.percent
+
+            # Load average (1min, 5min, 15min)
+            load_avg = psutil.getloadavg()
+
+            return (
+                f"CPU: {cpu_percent:.1f}%, "
+                f"Memory: {memory_used_gb:.1f}/{memory_total_gb:.1f}GB "
+                f"({memory_percent:.1f}%), "
+                f"LoadAvg: {load_avg[0]:.2f}/{load_avg[1]:.2f}/{load_avg[2]:.2f}"
+            )
+        except Exception as e:
+            return f"Failed to get system load info: {e}"
+
+
 class ExpDbBatchRunner:
     LOGGER_NAME = "batch_runner_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
+
+    PROGRESS_MONITORING_INTERVAL = 60  # sec
 
     def __init__(
         self,
@@ -84,14 +225,14 @@ class ExpDbBatchRunner:
 
     def __stopwatch_callback(watch, function=None):
         logging.getLogger(__class__.LOGGER_NAME).info(
-            "processing done. [%s()][elapsed_time: %.6f sec]",
+            "Processing done. [%s()][elapsed_time: %.6f sec]",
             (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
     @stopwatch(callback=__stopwatch_callback)
     def process(self):
-        self.logger_.info("process start.")
+        self.logger_.info("Processing start.")
 
         processResult = ProcessResult()
         error: Exception = None
@@ -119,7 +260,7 @@ class ExpDbBatchRunner:
                 if processResult.has_error():
                     self.logger_.warning(
                         (
-                            "process finish. [status: warning]"
+                            "Processing finish. [status: warning]"
                             "[success: %d][failure: %d][failure_ids: %s]"
                         ),
                         len(processResult.success_ids),
@@ -128,11 +269,11 @@ class ExpDbBatchRunner:
                     )
                 else:
                     self.logger_.info(
-                        "process finish. [status: success][total: %d]",
+                        "Processing finish. [status: success][total: %d]",
                         len(processResult.total_ids),
                     )
             else:
-                self.logger_.info("process finish. [status: error (suspended)]")
+                self.logger_.info("Processing finish. [status: error (suspended)]")
 
     def __process_preprocess(self):
         """
@@ -177,10 +318,15 @@ class ExpDbBatchRunner:
         processResult = ProcessResult()
 
         # 処理対象datasets検索
-        self.logger_.info("proc files search path: %s", EXPDB_DIRPATH.EXPDB_DIR)
+        self.logger_.info(
+            "Search proc files [path: %s][roi_methods:%s]",
+            EXPDB_DIRPATH.EXPDB_DIR,
+            self.available_roi_methods,
+        )
         target_proc_files = ProcFileReader.find_proc_files(
             filter_roi_methods=self.available_roi_methods
         )
+        target_exp_ids = [proc.exp_id for proc in target_proc_files]
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
         if len(target_proc_files) == 0:
@@ -190,9 +336,12 @@ class ExpDbBatchRunner:
         # 最大並列処理Process数を規定
         max_workers = min(len(target_proc_files), self.parallel_workers)
         self.logger_.info(
-            "Start processing datasets. [total: %d][max_workers: %d]",
+            "Start processing datasets. [total: %d][max_workers: %d][roi_methods:%s]"
+            "[IDs: %s]",
             len(target_proc_files),
             max_workers,
+            self.available_roi_methods,
+            target_exp_ids,
         )
 
         # datasets処理開始（並列処理）
@@ -208,13 +357,34 @@ class ExpDbBatchRunner:
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,
                 )
-                # 処理対象datasets検索：proc file走査
                 for proc_file_path in target_proc_files
             ]
 
-            process_results = []
-            for future in concurrent.futures.as_completed(futures):
-                process_results.append(future.result())
+            # Track completion and start monitoring
+            completed_futures = set()
+            progress_monitor = BatchProgressMonitor(
+                logger_=self.logger_,
+                futures=futures,
+                target_proc_files=target_proc_files,
+                completed_futures=completed_futures,
+                interval=__class__.PROGRESS_MONITORING_INTERVAL,
+            )
+            progress_monitor.start()
+
+            try:
+                # Wait for each task to complete
+                process_results = []
+                for future in concurrent.futures.as_completed(futures):
+                    completed_futures.add(future)
+                    process_results.append(future.result())
+            finally:
+                progress_monitor.stop()
+
+            self.logger_.info(
+                "All processing completed. [total: %d][IDs: %s]",
+                len(target_proc_files),
+                target_exp_ids,
+            )
 
         # datasets処理結果の集計
         for result in process_results:
@@ -233,7 +403,7 @@ class ExpDbBatchRunner:
 
 def dataset_process_stopwatch_callback(watch, function=None):
     logging.getLogger(ExpDbBatchConcurrentProcess.LOGGER_NAME).info(
-        "processing done. [%s()][elapsed_time: %.6f sec]",
+        "Processing done. [%s()][elapsed_time: %.6f sec]",
         (function.__name__ if function is not None else "(N/A)"),
         watch.elapsed_time,
     )

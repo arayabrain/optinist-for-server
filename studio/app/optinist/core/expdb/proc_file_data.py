@@ -32,6 +32,7 @@ class ProcFile:
 
 @dataclass
 class ProcFilePath:
+    exp_id: str
     path: str
     proc_data: ProcFile
 
