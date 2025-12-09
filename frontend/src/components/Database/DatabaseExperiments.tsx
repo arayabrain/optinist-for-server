@@ -380,7 +380,7 @@ const columns = (
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => {
-      const inputValue = JSON.stringify(params?.row?.attributes).trim()
+      const inputValue = JSON.stringify(params?.row?.attributes ?? {}).trim()
       const parsedJSON = JSON.parse(inputValue)
       const formattedJSON = JSON.stringify(parsedJSON, null, 2)
       const value = formattedJSON

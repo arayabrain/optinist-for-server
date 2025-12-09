@@ -65,7 +65,7 @@ const generateTypedSelectors = () => {
       matlab: isMatlabInputNode,
       microscope: isMicroscopeInputNode,
       microscope_expdb: isMicroscopeExpDbInputNode,
-      expdb: isExpDbInputNode,
+      standard_expdb: isExpDbInputNode,
       expdb_batch_microscope_expdb: isExpdbBatchMicroscopeExpDbInputNode,
     }
 

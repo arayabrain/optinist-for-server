@@ -27,6 +27,7 @@ import {
   isCsvInputNode,
   isHDF5InputNode,
   isMatlabInputNode,
+  normalizeFileType,
 } from "store/slice/InputNode/InputNodeUtils"
 import {
   reproduceWorkflow,
@@ -208,12 +209,13 @@ export const inputNodeSlice = createSlice({
           .forEach((node) => {
             if (node.data?.fileType != null) {
               try {
-                const baseNode = FileNodeFactory.createInputNode(
-                  node.data.fileType,
-                )
+                // Backward compatibility: normalize deprecated file types
+                const fileType = normalizeFileType(node.data.fileType)
+
+                const baseNode = FileNodeFactory.createInputNode(fileType)
                 // Use specific param for CSV nodes
                 const param =
-                  node.data.fileType === FILE_TYPE_SET.CSV
+                  fileType === FILE_TYPE_SET.CSV
                     ? (node.data.param as CsvInputParamType)
                     : baseNode.param
                 newState[node.id] = {
@@ -241,19 +243,17 @@ export const inputNodeSlice = createSlice({
             .forEach((node) => {
               if (node.data?.fileType != null) {
                 try {
-                  const baseNode = FileNodeFactory.createInputNode(
-                    node.data.fileType,
-                  )
-                  const filePathType = FileNodeFactory.getFilePathType(
-                    node.data.fileType,
-                  )
-                  const specialPath = FileNodeFactory.getSpecialPathConfig(
-                    node.data.fileType,
-                  )
+                  // Backward compatibility: normalize deprecated file types
+                  const fileType = normalizeFileType(node.data.fileType)
+
+                  const baseNode = FileNodeFactory.createInputNode(fileType)
+                  const filePathType = FileNodeFactory.getFilePathType(fileType)
+                  const specialPath =
+                    FileNodeFactory.getSpecialPathConfig(fileType)
 
                   // Use specific param for CSV nodes
                   const param =
-                    node.data.fileType === FILE_TYPE_SET.CSV
+                    fileType === FILE_TYPE_SET.CSV
                       ? (node.data.param as CsvInputParamType)
                       : baseNode.param
 
