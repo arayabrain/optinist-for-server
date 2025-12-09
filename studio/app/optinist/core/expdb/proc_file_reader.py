@@ -56,8 +56,9 @@ class ProcFileReader:
             if filter_roi_methods and currnet_roi_method not in filter_roi_methods:
                 continue
 
+            exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path)
             result_proc_files.append(
-                ProcFilePath(path=proc_file_path, proc_data=proc_data)
+                ProcFilePath(exp_id=exp_id, path=proc_file_path, proc_data=proc_data)
             )
 
         return result_proc_files
