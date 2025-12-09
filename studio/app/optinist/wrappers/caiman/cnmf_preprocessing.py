@@ -271,7 +271,12 @@ def caiman_cnmf_preprocessing(
         roi_list.append(kargs)
 
     nwbfile[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
-    nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"all_roi_img": im}}
+    nwbfile[NWBDATASET.POSTPROCESS] = {
+        function_id: {
+            # "all_roi_img": im,
+            "cell_roi": np.nanmax(im[iscell != 0], axis=0),
+        }
+    }
 
     # Add iscell to NWB
     nwbfile[NWBDATASET.COLUMN] = {
@@ -332,5 +337,8 @@ def caiman_cnmf_preprocessing(
     except Exception as e:
         logger.error("Failed to cleanup memmap files.")
         logger.error(e)
+
+    logger.info("Caiman cnmf preprocessing completed successfully")
+    logger.info(f"Detected {n_rois} cells, {n_noncell_rois} non-cells")
 
     return info
