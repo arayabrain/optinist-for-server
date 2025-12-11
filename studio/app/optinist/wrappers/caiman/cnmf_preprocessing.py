@@ -319,7 +319,9 @@ def caiman_cnmf_preprocessing(
             np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
         ),
         "cell_roi": RoiData(
-            np.nanmax(im[iscell != 0], axis=0),
+            np.nanmax(im[iscell != 0], axis=0)
+            if len(im) > 0 and np.any(iscell != 0)
+            else np.full(dims, np.nan),
             output_dir=output_dir,
             file_name="cell_roi",
         ),

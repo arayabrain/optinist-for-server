@@ -366,8 +366,16 @@ def suite2p_preprocessing(
 
     logger.info(f"Accepted cells: {n_rois}, Rejected: {n_noncell_rois}")
 
-    cell_roi = np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi
-    non_cell_roi = np.nanmax(im[iscell == 0], axis=0) if len(im) > 0 else empty_roi
+    cell_roi = (
+        np.nanmax(im[iscell != 0], axis=0)
+        if len(im) > 0 and np.any(iscell != 0)
+        else empty_roi
+    )
+    non_cell_roi = (
+        np.nanmax(im[iscell == 0], axis=0)
+        if len(im) > 0 and np.any(iscell == 0)
+        else empty_roi
+    )
 
     # Step 5: Convert Suite2p outputs to ExpDB .mat files
     # Creates timecourse.mat and cellmask.mat for analyze_stats pipeline
