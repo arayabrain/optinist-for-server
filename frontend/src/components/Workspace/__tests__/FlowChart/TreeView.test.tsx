@@ -26,8 +26,7 @@ jest.mock("react-dnd", () => ({
 
 const mockStore = configureStore([thunk])
 
-// TODO: temporary comment out for optinist-for-server
-describe.skip("AlgorithmTreeView", () => {
+describe("AlgorithmTreeView", () => {
   let store: ReturnType<typeof mockStore>
 
   beforeEach(() => {
@@ -65,6 +64,7 @@ describe.skip("AlgorithmTreeView", () => {
     expect(screen.getByText("matlab")).toBeInTheDocument()
     expect(screen.getByText("microscope")).toBeInTheDocument()
     expect(screen.getByText("microscope_database")).toBeInTheDocument()
+    expect(screen.getByText("preprocessed_data")).toBeInTheDocument()
   })
 
   it("renders the AlgorithmTree Algorithm TreeItems", async () => {
