@@ -413,9 +413,17 @@ async def get_config_filter_params(
 ):
     try:
         config = db.query(optinist_model.Config).one_or_none()
-        return parse_obj_as(
-            ExpDbExperimentFilterParams, config.experiment_config["filter_params"]
+        filter_params = (
+            parse_obj_as(
+                ExpDbExperimentFilterParams, config.experiment_config["filter_params"]
+            )
+            if config.experiment_config
+            else ExpDbExperimentFilterParams(
+                brain_areas=[], promoters=[], indicators=[], imaging_depths=[]
+            )
         )
+
+        return filter_params
     except sqlalchemy.exc.MultipleResultsFound as e:
         raise HTTPException(status_code=500, detail=str(e))
 
