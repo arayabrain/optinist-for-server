@@ -301,6 +301,7 @@ def caiman_cnmf_preprocessing(
         }
     }
 
+    empty_roi = np.full(dims, np.nan)
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
         "mean_image": ImageData(
@@ -316,17 +317,19 @@ def caiman_cnmf_preprocessing(
         "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),
         "all_roi": RoiData(
-            np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
+            np.nanmax(im, axis=0) if len(im) > 0 else empty_roi.copy(),
+            output_dir=output_dir,
+            file_name="all_roi",
         ),
         "cell_roi": RoiData(
-            np.nanmax(im[iscell != 0], axis=0)
-            if len(im) > 0 and np.any(iscell != 0)
-            else np.full(dims, np.nan),
+            np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi.copy(),
             output_dir=output_dir,
             file_name="cell_roi",
         ),
         "non_cell_roi": RoiData(
-            non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
+            non_cell_roi if len(im) > 0 else empty_roi.copy(),
+            output_dir=output_dir,
+            file_name="non_cell_roi",
         ),
         "edit_roi_data": EditRoiData(mmap_images, im),
         "nwbfile": nwbfile,
