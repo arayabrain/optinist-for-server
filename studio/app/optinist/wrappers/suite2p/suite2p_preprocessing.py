@@ -343,10 +343,9 @@ def suite2p_preprocessing(
                     array *= i + 1
                     arrays.append(array)
 
-            # MEMORY OPTIMIZATION: Comment out stacking all ROIs
-            # im = np.stack(arrays)
-            # im[im == 0] = np.nan
-            # im -= 1
+            im = np.stack(arrays)
+            im[im == 0] = np.nan
+            im -= 1
 
         else:
             logger.warning("No ROIs detected in the data")
@@ -367,17 +366,16 @@ def suite2p_preprocessing(
 
     logger.info(f"Accepted cells: {n_rois}, Rejected: {n_noncell_rois}")
 
-    # MEMORY OPTIMIZATION: Only create cell_roi, skip non_cell_roi and all_roi
-    # cell_roi = np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi
-    # non_cell_roi = np.nanmax(im[iscell == 0], axis=0) if len(im) > 0 else empty_roi
-
-    # Create cell_roi from arrays (which now only contains accepted cells)
-    # Use above commented out logic for production
-    if len(arrays) > 0:
-        cell_roi = np.nanmax(np.stack(arrays), axis=0)
-        del arrays  # Free memory
-    else:
-        cell_roi = empty_roi
+    cell_roi = (
+        np.nanmax(im[iscell != 0], axis=0)
+        if len(im) > 0 and np.any(iscell != 0)
+        else empty_roi
+    )
+    non_cell_roi = (
+        np.nanmax(im[iscell == 0], axis=0)
+        if len(im) > 0 and np.any(iscell == 0)
+        else empty_roi
+    )
 
     # Step 5: Convert Suite2p outputs to ExpDB .mat files
     # Creates timecourse.mat and cellmask.mat for analyze_stats pipeline
@@ -485,8 +483,7 @@ def suite2p_preprocessing(
     nwbfile_out[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
     nwbfile_out[NWBDATASET.POSTPROCESS] = {
         function_id: {
-            # "all_roi_img": im,
-            "cell_roi": cell_roi,
+            "all_roi_img": im,
             "mean_img": mean_img,
             "max_proj": max_proj,
         }
@@ -539,16 +536,15 @@ def suite2p_preprocessing(
         ),
         "fluorescence": FluoData(F, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),
-        # MEMORY OPTIMIZATION: Comment out all_roi and non_cell_roi outputs
-        # "all_roi": RoiData(
-        #     np.nanmax(im, axis=0) if len(im) > 0 else empty_roi,
-        #     output_dir=output_dir,
-        #     file_name="all_roi",
-        # ),
+        "all_roi": RoiData(
+            np.nanmax(im, axis=0) if len(im) > 0 else empty_roi,
+            output_dir=output_dir,
+            file_name="all_roi",
+        ),
         "cell_roi": RoiData(cell_roi, output_dir=output_dir, file_name="cell_roi"),
-        # "non_cell_roi": RoiData(
-        #     non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
-        # ),
+        "non_cell_roi": RoiData(
+            non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
+        ),
         # "edit_roi_data": EditRoiData(images=image_stack, im=im),
         "nwbfile": nwbfile_out,
     }
