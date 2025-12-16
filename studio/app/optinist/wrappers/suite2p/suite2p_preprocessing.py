@@ -299,9 +299,6 @@ def suite2p_preprocessing(
             # Step 4: Create visualization ROIs
             arrays = []
             for i, s in enumerate(stat):
-                if not iscell[i]:  # Skip rejected ROIs
-                    continue
-
                 if roi_thr_bool:
                     # Apply energy threshold to ROI pixels (like CaImAn's get_roi)
                     lam = np.array(s["lam"])
