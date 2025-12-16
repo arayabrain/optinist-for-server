@@ -7,7 +7,7 @@ import {
   useState,
 } from "react"
 import { shallowEqual, useDispatch, useSelector } from "react-redux"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 import moment from "moment"
 import { enqueueSnackbar, VariantType } from "notistack"
@@ -76,6 +76,7 @@ import {
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
 import { AppDispatch, RootState } from "store/store"
+import { useUrlParamsSync } from "utils/useUrlParamsSync"
 
 export type Data = {
   id: number
@@ -643,9 +644,10 @@ const DatabaseExperiments = ({
     open: false,
     type: "on",
   })
-  const [newParams, setNewParams] = useState(
-    window.location.search.replace("?", ""),
-  )
+  const { searchParams, setNewParams } = useUrlParamsSync()
+  const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
+
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
@@ -665,10 +667,6 @@ const DatabaseExperiments = ({
   })
   const [fieldFilter, setFieldFilter] = useState("")
   const [valueFilter, setValueFilter] = useState<string | string[]>("")
-
-  const [searchParams, setParams] = useSearchParams()
-  const dispatch = useDispatch<AppDispatch>()
-  const navigate = useNavigate()
 
   const offset = searchParams.get("offset") || 0
   const limit = searchParams.get("limit") || 50
@@ -829,21 +827,6 @@ const DatabaseExperiments = ({
     const isCheck = newListId.every((id) => listCheck.includes(id))
     setCheckBoxAll(isCheck)
   }, [dataExperiments, listCheck])
-
-  useEffect(() => {
-    if (newParams && newParams !== window.location.search.replace("?", "")) {
-      setNewParams(window.location.search.replace("?", ""))
-    }
-    //eslint-disable-next-line
-  }, [searchParams])
-
-  useEffect(() => {
-    let param = newParams
-    if (newParams[0] === "&") param = newParams.slice(1, param.length)
-    if (param === window.location.search.replace("?", "")) return
-    setParams(param.replaceAll("+", "%2B"))
-    //eslint-disable-next-line
-  }, [newParams])
 
   useEffect(() => {
     fetchApi()
@@ -1173,6 +1156,22 @@ const DatabaseExperiments = ({
   const ColumnPrivate = () => {
     return [
       {
+        field: "updated_time",
+        headerName: "Timestamp",
+        width: 160,
+        filterable: false,
+        sortable: false,
+        renderCell: (params: { row: DatabaseType }) => {
+          return (
+            <Tooltip title={params.row?.updated_at}>
+              <SpanCustom>
+                {moment(params.row?.updated_at).format("YYYY/MM/DD HH:mm")}
+              </SpanCustom>
+            </Tooltip>
+          )
+        },
+      },
+      {
         field: "share_type",
         headerName: "Share",
         width: 120,
@@ -1251,24 +1250,6 @@ const DatabaseExperiments = ({
       columnsTable = columnsTable.slice(0, firstImageColumnIndex)
     }
   }
-
-  // Add timestamp column at the end (before ColumnPrivate)
-  columnsTable.push({
-    field: "updated_time",
-    headerName: "Timestamp",
-    width: 160,
-    filterable: false,
-    sortable: false,
-    renderCell: (params: { row: DatabaseType }) => {
-      return (
-        <Tooltip title={params.row?.updated_at}>
-          <SpanCustom>
-            {moment(params.row?.updated_at).format("YYYY/MM/DD HH:mm")}
-          </SpanCustom>
-        </Tooltip>
-      )
-    },
-  })
 
   /**
    * Preserve scroll position when row selection changes in multi-select mode
