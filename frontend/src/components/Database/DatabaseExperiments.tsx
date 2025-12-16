@@ -1173,6 +1173,22 @@ const DatabaseExperiments = ({
   const ColumnPrivate = () => {
     return [
       {
+        field: "updated_time",
+        headerName: "Timestamp",
+        width: 160,
+        filterable: false,
+        sortable: false,
+        renderCell: (params: { row: DatabaseType }) => {
+          return (
+            <Tooltip title={params.row?.updated_at}>
+              <SpanCustom>
+                {moment(params.row?.updated_at).format("YYYY/MM/DD HH:mm")}
+              </SpanCustom>
+            </Tooltip>
+          )
+        },
+      },
+      {
         field: "share_type",
         headerName: "Share",
         width: 120,
@@ -1251,24 +1267,6 @@ const DatabaseExperiments = ({
       columnsTable = columnsTable.slice(0, firstImageColumnIndex)
     }
   }
-
-  // Add timestamp column at the end (before ColumnPrivate)
-  columnsTable.push({
-    field: "updated_time",
-    headerName: "Timestamp",
-    width: 160,
-    filterable: false,
-    sortable: false,
-    renderCell: (params: { row: DatabaseType }) => {
-      return (
-        <Tooltip title={params.row?.updated_at}>
-          <SpanCustom>
-            {moment(params.row?.updated_at).format("YYYY/MM/DD HH:mm")}
-          </SpanCustom>
-        </Tooltip>
-      )
-    },
-  })
 
   /**
    * Preserve scroll position when row selection changes in multi-select mode
