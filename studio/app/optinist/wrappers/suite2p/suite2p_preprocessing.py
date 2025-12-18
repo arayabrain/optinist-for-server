@@ -460,18 +460,11 @@ def suite2p_preprocessing(
 
     nwbfile_out = {}
 
-    # Add ROI metadata (match caiman_preprocessing)
+    # Add ROI metadata (use pixel_mask in 512x512 space)
     roi_list = []
     for i, s in enumerate(stat):
-        roi_mask = ROI(
-            ypix=s["ypix"],
-            xpix=s["xpix"],
-            lam=s["lam"],
-            med=s["med"],
-            do_crop=False,
-        ).to_array(Ly=Ly, Lx=Lx)
         kargs = {
-            "image_mask": roi_mask,
+            "pixel_mask": np.array([s["ypix"], s["xpix"], s["lam"]]).T,
             "accepted": bool(iscell[i] == 1),
             "rejected": bool(iscell[i] == 0),
         }
