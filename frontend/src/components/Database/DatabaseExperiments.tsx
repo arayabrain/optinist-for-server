@@ -152,67 +152,17 @@ const LIST_FILTER_IS = [
 ]
 
 const columns = (
-  listIdData: number[],
-  setListCheck: (value: number[]) => void,
-  listCheck: number[],
-  dataExperiments: DatabaseType[],
-  checkBoxAll: boolean,
-  setCheckBoxAll: (value: boolean) => void,
   handleOpenAttributes: (value: string, id: number, expId?: string) => void,
   handleOpenLogs: (value: string, expId?: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
   user: boolean,
-  adminOrManager: boolean,
   readonly?: boolean,
   loading: boolean = false,
   options?: FilterParams,
   useExperimentsCatalogsApi: boolean = false,
 ) => [
-  adminOrManager &&
-    user &&
-    !readonly && {
-      field: "checkbox",
-      renderHeader: () => (
-        <Checkbox
-          checked={checkBoxAll}
-          onChange={(e: ChangeEvent) => {
-            const target = e.target as HTMLInputElement
-            setCheckBoxAll(target.checked)
-            if (!target.checked) {
-              const newListId: number[] = listCheck.filter(
-                (item) => !listIdData.includes(item),
-              )
-              setListCheck([...newListId])
-            } else {
-              const newList = dataExperiments.map((item) => item.id)
-              setListCheck([
-                ...listCheck,
-                ...newList.filter((item) => !listCheck.includes(item)),
-              ])
-            }
-          }}
-        />
-      ),
-      sortable: false,
-      filterable: false,
-      width: 70,
-      type: "string",
-      renderCell: (params: { row: DatabaseType }) => (
-        <Checkbox
-          checked={listCheck.includes(params.row.id)}
-          onChange={(e: ChangeEvent) => {
-            const newData = listCheck.filter((id) => id !== params.row.id)
-            const target = e.target as HTMLInputElement
-            if (!target.checked) {
-              setCheckBoxAll(false)
-              setListCheck(newData)
-            } else setListCheck([...listCheck, params.row.id])
-          }}
-        />
-      ),
-    },
   {
     field: "experiment_id",
     headerName: "Experiment ID",
@@ -1171,6 +1121,58 @@ const DatabaseExperiments = ({
           )
         },
       },
+    ]
+  }
+
+  const ColumnCheckbox = () => {
+    return [
+      {
+        field: "checkbox",
+        renderHeader: () => (
+          <Checkbox
+            checked={checkBoxAll}
+            onChange={(e: ChangeEvent) => {
+              const target = e.target as HTMLInputElement
+              setCheckBoxAll(target.checked)
+              if (!target.checked) {
+                const listIdData = dataExperiments.items.map((item) => item.id)
+                const newListId: number[] = listCheck.filter(
+                  (item) => !listIdData.includes(item),
+                )
+                setListCheck([...newListId])
+              } else {
+                const newList = dataExperiments.items.map((item) => item.id)
+                setListCheck([
+                  ...listCheck,
+                  ...newList.filter((item) => !listCheck.includes(item)),
+                ])
+              }
+            }}
+          />
+        ),
+        sortable: false,
+        filterable: false,
+        width: 70,
+        type: "string",
+        renderCell: (params: { row: DatabaseType }) => (
+          <Checkbox
+            checked={listCheck.includes(params.row.id)}
+            onChange={(e: ChangeEvent) => {
+              const newData = listCheck.filter((id) => id !== params.row.id)
+              const target = e.target as HTMLInputElement
+              if (!target.checked) {
+                setCheckBoxAll(false)
+                setListCheck(newData)
+              } else setListCheck([...listCheck, params.row.id])
+            }}
+          />
+        ),
+      },
+    ]
+  }
+
+  const ColumnManage = () => {
+    return [
       {
         field: "share_type",
         headerName: "Share",
@@ -1220,19 +1222,12 @@ const DatabaseExperiments = ({
 
   let columnsTable = [
     ...columns(
-      dataExperiments.items.map((item) => item.id),
-      setListCheck,
-      listCheck,
-      dataExperiments?.items,
-      checkBoxAll,
-      setCheckBoxAll,
       handleOpenAttributes,
       handleOpenLogs,
       handleOpenDialog,
       cellPath,
       navigate,
       !!user,
-      !!adminOrManager,
       readonly,
       loading,
       filterParams,
@@ -1392,9 +1387,12 @@ const DatabaseExperiments = ({
       >
         <DataGrid
           columns={
-            adminOrManager && user && !readonly
-              ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
-              : (columnsTable as GridColDef[])
+            [
+              ...(user && adminOrManager && !readonly ? ColumnCheckbox() : []),
+              ...columnsTable,
+              ...(user ? ColumnPrivate() : []),
+              ...(user && adminOrManager && !readonly ? ColumnManage() : []),
+            ] as GridColDef[]
           }
           sortModel={model.sort as GridSortItem[]}
           rows={dataExperiments?.items || []}
