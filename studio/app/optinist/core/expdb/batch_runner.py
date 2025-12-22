@@ -8,10 +8,10 @@ import traceback
 from contextlib import contextmanager
 
 import psutil
-import yaml
 from lauda import stopwatch, stopwatchcm
 from zc import lockfile
 
+from studio.app.common.core.logger import LoggingConfigHelper
 from studio.app.common.core.users.crud_organizations import get_organization
 from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
@@ -201,23 +201,12 @@ class ExpDbBatchRunner:
         )
 
     def __init_logger(self):
-        logging_config = yaml.safe_load(
-            open(__class__.LOGGING_CONFIG_FILE, encoding="utf-8").read()
+        # Load and configure logging config (using unified utility method)
+        logging_config = LoggingConfigHelper.load_and_configure_logging_config(
+            config_file=__class__.LOGGING_CONFIG_FILE,
+            base_dir=DIRPATH.DATA_DIR,
+            apply_concurrent=True,
         )
-
-        # Adjust log file path
-        log_file = (
-            logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
-        )
-        if log_file:
-            log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
-            logging_config["handlers"]["rotating_file"]["filename"] = log_file
-
-        # Create log output directory (if none exists)
-        # ※ logging.config.dictConfig() の前に実施必要
-        log_dir = os.path.dirname(log_file) if log_file else None
-        if log_dir and (not os.path.isdir(log_dir)):
-            os.mkdir(log_dir)
 
         logging.config.dictConfig(logging_config)
 
@@ -434,30 +423,19 @@ class ExpDbBatchConcurrentProcess:
             初期化されたロガーインスタンス
         """
 
-        logging_config = yaml.safe_load(
-            open(cls.LOGGING_CONFIG_FILE, encoding="utf-8").read()
+        # Define filename modifier to add exp_id to log filename
+        def add_exp_id_to_filename(filename: str) -> str:
+            basepath, ext = os.path.splitext(filename)
+            return f"{basepath}.{exp_id}{ext}"
+
+        # Load and configure logging config (using unified utility method)
+        # Note: apply_concurrent=False because each process has unique log file
+        logging_config = LoggingConfigHelper.load_and_configure_logging_config(
+            config_file=cls.LOGGING_CONFIG_FILE,
+            base_dir=DIRPATH.DATA_DIR,
+            apply_concurrent=False,
+            filename_modifier=add_exp_id_to_filename,
         )
-
-        # プロセス固有のログファイル名に変更（競合を避けるため）
-        if (
-            "handlers" in logging_config
-            and "rotating_file" in logging_config["handlers"]
-        ):
-            # Adjust log file path
-            log_file = (
-                logging_config.get("handlers", {})
-                .get("rotating_file", {})
-                .get("filename")
-            )
-            if log_file:
-                # Add process ID to file name
-                basepath, ext = os.path.splitext(log_file)
-                new_log_file = f"{basepath}.{exp_id}{ext}"
-
-                # Convert to absolute path
-                new_log_file = f"{DIRPATH.DATA_DIR}/{new_log_file}"
-
-                logging_config["handlers"]["rotating_file"]["filename"] = new_log_file
 
         # ロギング設定の適用
         # *Copy the changes to avoid affecting other processes
