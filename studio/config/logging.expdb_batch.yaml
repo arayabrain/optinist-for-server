@@ -16,6 +16,15 @@ handlers:
     when: midnight
     interval: 1
     backupCount: 365
+  rotating_file_concurrency:
+    class: concurrent_log_handler.ConcurrentTimedRotatingFileHandler
+    level: DEBUG
+    formatter: default
+    filename: logs/expdb/batch.log
+    encoding: utf-8
+    maxBytes: 5242880
+    # backupCount ... Number of backups on the same date
+    backupCount: 100
 loggers:
   sqlalchemy.engine:
     level: WARNING
