@@ -73,11 +73,10 @@ class LoggingConfigHelper:
                     "filename"
                 ] = modified_filename
 
-        # Apply concurrent handler if requested
-        if apply_concurrent:
-            logging_config = LoggingConfigHelper._apply_concurrent_handler_if_supported(
-                logging_config
-            )
+        # Apply concurrent handler configuration and cleanup
+        logging_config = LoggingConfigHelper._apply_concurrent_handler_if_supported(
+            logging_config, apply_concurrent
+        )
 
         # Adjust log file path and create directory
         logging_config = LoggingConfigHelper._adjust_log_file_path(
@@ -104,12 +103,16 @@ class LoggingConfigHelper:
         return True
 
     @staticmethod
-    def _apply_concurrent_handler_if_supported(logging_config: dict) -> dict:
+    def _apply_concurrent_handler_if_supported(
+        logging_config: dict, apply_concurrent: bool = True
+    ) -> dict:
         """
         Apply concurrent rotating file handler if supported by the platform
+        and cleanup temporary handler configuration
 
         Args:
             logging_config: Logging configuration dictionary
+            apply_concurrent: Whether to apply concurrent handler (default: True)
 
         Returns:
             Modified logging configuration dictionary
@@ -117,21 +120,22 @@ class LoggingConfigHelper:
         logging_handlers = logging_config.get("handlers", {})
 
         # Switch rotating_file to concurrent handler for multi-process support
-        if LoggingConfigHelper._is_native_windows():
-            # ATTENTION:
-            # On the Windows Native Platform, "rotating_file_concurrency"
-            # is currently not supported because pywin32 is required to use
-            # concurrent_log_handler. (which is not installed in the conda env).
-            pass
-        else:
-            if ("rotating_file" in logging_handlers) and (
-                "rotating_file_concurrency" in logging_handlers
-            ):
-                logging_config["handlers"]["rotating_file"] = logging_config[
-                    "handlers"
-                ]["rotating_file_concurrency"]
+        if apply_concurrent:
+            if LoggingConfigHelper._is_native_windows():
+                # ATTENTION:
+                # On the Windows Native Platform, "rotating_file_concurrency"
+                # is currently not supported because pywin32 is required to use
+                # concurrent_log_handler. (which is not installed in the conda env).
+                pass
+            else:
+                if ("rotating_file" in logging_handlers) and (
+                    "rotating_file_concurrency" in logging_handlers
+                ):
+                    logging_config["handlers"]["rotating_file"] = logging_config[
+                        "handlers"
+                    ]["rotating_file_concurrency"]
 
-        # Delete unnecessary items
+        # Delete unnecessary items (always cleanup, regardless of apply_concurrent)
         if "rotating_file_concurrency" in logging_handlers:
             del logging_config["handlers"]["rotating_file_concurrency"]
 
