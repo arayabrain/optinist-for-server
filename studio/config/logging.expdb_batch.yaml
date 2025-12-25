@@ -23,8 +23,9 @@ handlers:
     filename: logs/expdb/batch.log
     encoding: utf-8
     maxBytes: 5242880
+    # when: midnight # It seems that concurrent-log-handler=0.9.25 does not work. Verification is required.
     # backupCount ... Number of backups on the same date
-    backupCount: 100
+    backupCount: 1000
 loggers:
   sqlalchemy.engine:
     level: WARNING
