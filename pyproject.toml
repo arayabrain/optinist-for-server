@@ -88,7 +88,7 @@ xmltodict = "*"
 matplotlib = "3.7.*"
 scikit-image = "0.21"
 scikit-learn = "*"
-concurrent-log-handler = "^0.9.25"
+concurrent-log-handler = "^0.9.28"
 numpydoc = "*"
 yapf = "*"
 
