@@ -175,12 +175,19 @@ class ExpDbBatch:
             db.rollback()  # 明示的にrollback
             raise
 
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_output_data(self):
         # Clean up raw path
         create_directory(self.raw_path.output_dir, delete_dir=True)
 
         # Clean up public path if different
         if self.raw_path.output_dir != self.pub_path.output_dir:
             create_directory(self.pub_path.output_dir, delete_dir=True)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_preprocess_data(self):
+        # Clean up preprocess path
+        create_directory(self.raw_path.preprocess_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
     def load_raw_cellmask_data(self, sparse: bool = False) -> int:
@@ -278,7 +285,9 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
         self.logger_.info("process 'preprocess' start.")
-        create_directory(self.raw_path.preprocess_dir)
+
+        # Clean up preprocess data
+        self.cleanup_exp_preprocess_data()
 
         preprocess_results = preprocessing(
             microscope=MicroscopeExpdbData(self.raw_path.microscope_file),
