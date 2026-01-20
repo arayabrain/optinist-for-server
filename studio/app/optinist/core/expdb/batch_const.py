@@ -13,6 +13,7 @@ class ProcessCommand(Enum):
 
 
 class SupportedRoiMethod(Enum):
+    UNSUPPORTED = "unsupported"
     CAIMAN = "caiman"
     SUITE2P = "suite2p"
 

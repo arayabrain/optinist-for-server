@@ -424,6 +424,8 @@ class ExpDbBatch:
         elif self.roi_method == SupportedRoiMethod.CAIMAN:
             self.logger_.info("Using CaImAn CNMF for cell detection")
             return self.cell_detection_cnmf(stack)
+        elif self.roi_method == SupportedRoiMethod.UNSUPPORTED:
+            assert False, "Unsupported roi method"
         else:  # Default to caiman
             self.logger_.info(
                 f"Unknown roi_method '{self.roi_method.value}', "
