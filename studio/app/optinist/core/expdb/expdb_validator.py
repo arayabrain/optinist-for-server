@@ -6,6 +6,27 @@ from studio.app.common.schemas.workflow import WorkflowConfig
 from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 
 
+class ExpDbValidatorConfig:
+    # If flag USE_STRICT_VALIDATION is true,
+    #   validation of ExpDbBatch processing will be strict.
+    #
+    # - Validation of analysis batch workflow configuration
+    #   - True case:
+    #       - If a strict workflow is not configured in the Workflow screen,
+    #         a validation error will occur.
+    #   - False case:
+    #       - Validation of workflow configuration is omitted in the Workflow screen.
+    #       - However, if the minimum required node (roi node) is missing,an error
+    #          will be detected in the subsequent analysis batch processing phase.
+    #
+    # - Display control of algorithm nodes selectable in the Workflow screen
+    #   - True case:
+    #       - Only nodes related to the analysis batch can be selected.
+    #   - False case:
+    #       - All nodes, not just analysis batches, can be selected.
+    USE_STRICT_VALIDATION = False  # default is False
+
+
 class ExpDbValidator:
     _BATCH_INPUT_NODE_NAME = "expdb_batch_microscope_expdb"
 
@@ -34,7 +55,7 @@ class ExpDbValidator:
 
         # Note: Only one of the optional nodes is accepted.
         is_optional_node_exists = False
-        for accept_optional_node in cls._BATCH_ACCEPTABLE_OPTIONAL_NODES:
+        for accept_optional_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_NODES):
             if accept_optional_node in check_nodes:
                 is_optional_node_exists = True
                 acceptable_nodes.add(accept_optional_node)
@@ -55,7 +76,7 @@ class ExpDbValidator:
 
         # Note: Only one of the optional nodes is accepted.
         roi_node_name = None
-        for accept_optional_node in cls._BATCH_ACCEPTABLE_OPTIONAL_NODES:
+        for accept_optional_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_NODES):
             if accept_optional_node in check_nodes:
                 roi_node_name = accept_optional_node
                 break  # Break when one item is added.

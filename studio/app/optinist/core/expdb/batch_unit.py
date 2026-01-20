@@ -43,6 +43,7 @@ from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidatorConfig
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -735,7 +736,8 @@ class ExpDbWorkflowConfigReader:
                 actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
                     config
                 )
-                self.logger_.error(
+
+                err_message = (
                     f"Workflow config contains invalid nodes for batch processing."
                     f"Found nodes: {sorted(actual_nodes)}. "
                     f"Required nodes: "
@@ -744,7 +746,15 @@ class ExpDbWorkflowConfigReader:
                     f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
                     f"Falling back to default parameters."
                 )
-                return None
+
+                # Switch validation processing by validation strict mode
+                if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+                    self.logger_.error(err_message)
+                    return None
+                else:
+                    # If not in strict mode, processing continues.
+                    self.logger_.warning(err_message)
+                    pass
 
             # Extract and validate ROI method from workflow
             workflow_roi_method = ExpDbValidator.validate_batch_roi_method(config)
