@@ -35,37 +35,63 @@ class ExpDbValidator:
         {
             _BATCH_INPUT_NODE_NAME,
             "preprocessing",
-            "analyze_stats",
         }
     )
-    _BATCH_ACCEPTABLE_OPTIONAL_NODES = frozenset(
+    _BATCH_ACCEPTABLE_OPTIONAL_ROI_NODES = frozenset(
         {
             "caiman_cnmf_preprocessing",
             "suite2p_preprocessing",
         }
     )
-    BATCH_ACCEPTABLE_NODES = list(
-        _BATCH_ACCEPTABLE_REQUIRED_NODES | _BATCH_ACCEPTABLE_OPTIONAL_NODES
+    _BATCH_ACCEPTABLE_OPTIONAL_ANALYZE_NODES = frozenset(
+        {
+            frozenset({"analyze_stats"}),
+            frozenset(
+                {
+                    "stat_file_convert",
+                    "anova1_mult",
+                    "vector_average",
+                    "curvefit_tuning",
+                }
+            ),
+        }
+    )
+    BATCH_ACCEPTABLE_NODES = (
+        list(_BATCH_ACCEPTABLE_REQUIRED_NODES),
+        list(_BATCH_ACCEPTABLE_OPTIONAL_ROI_NODES),
+        list(_BATCH_ACCEPTABLE_OPTIONAL_ANALYZE_NODES),
     )
 
     @classmethod
     def validate_batch_nodes_in_workflow(cls, config: WorkflowConfig) -> bool:
-        acceptable_nodes = set(cls._BATCH_ACCEPTABLE_REQUIRED_NODES)
         check_nodes = WorkflowConfigReader.extract_node_names_in_workflow(config)
 
-        # Note: Only one of the optional nodes is accepted.
-        is_optional_node_exists = False
-        for accept_optional_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_NODES):
-            if accept_optional_node in check_nodes:
-                is_optional_node_exists = True
-                acceptable_nodes.add(accept_optional_node)
+        # 1) Add required nodes to the acceptable list
+        acceptable_nodes = set(cls._BATCH_ACCEPTABLE_REQUIRED_NODES)
+
+        # 2) Only one of the optional roi nodes is accepted.
+        is_roi_node_exists = False
+        for accept_roi_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_ROI_NODES):
+            if accept_roi_node in check_nodes:
+                is_roi_node_exists = True
+                acceptable_nodes.add(accept_roi_node)
                 break  # Break when one item is added.
 
-        # Set default optional node
-        if not is_optional_node_exists:
+        if not is_roi_node_exists:
             return False
 
-        # Exact match check for node list
+        # 3) Only one of the optional analyze nodes is accepted.
+        is_analyze_node_exists = False
+        for accept_analyze_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_ANALYZE_NODES):
+            if set(accept_analyze_node).issubset(check_nodes):
+                is_analyze_node_exists = True
+                acceptable_nodes |= accept_analyze_node
+                break  # Break when one item is added.
+
+        if not is_analyze_node_exists:
+            return False
+
+        # 4) Exact match check for node list
         acceptable_nodes_matched = sorted(check_nodes) == sorted(list(acceptable_nodes))
 
         return acceptable_nodes_matched
@@ -76,7 +102,7 @@ class ExpDbValidator:
 
         # Note: Only one of the optional nodes is accepted.
         roi_node_name = None
-        for accept_optional_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_NODES):
+        for accept_optional_node in sorted(cls._BATCH_ACCEPTABLE_OPTIONAL_ROI_NODES):
             if accept_optional_node in check_nodes:
                 roi_node_name = accept_optional_node
                 break  # Break when one item is added.

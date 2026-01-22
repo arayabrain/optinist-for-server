@@ -740,10 +740,8 @@ class ExpDbWorkflowConfigReader:
                 err_message = (
                     f"Workflow config contains invalid nodes for batch processing."
                     f"Found nodes: {sorted(actual_nodes)}. "
-                    f"Required nodes: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_REQUIRED_NODES)}. "
-                    f"Plus exactly ONE of: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
+                    f"Acceptable nodes: "
+                    f"{ExpDbValidator.BATCH_ACCEPTABLE_NODES}. "
                     f"Falling back to default parameters."
                 )
 
