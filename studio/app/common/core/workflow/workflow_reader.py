@@ -121,6 +121,11 @@ class WorkflowConfigReader:
 
         return matched_node
 
+    @classmethod
+    def exists_node_in_workflow(cls, config: WorkflowConfig, node_name: str) -> bool:
+        node = cls.find_node_in_workflow(config, node_name)
+        return node is not None
+
     @staticmethod
     def extract_node_names_in_workflow(config: WorkflowConfig) -> List[str]:
         """

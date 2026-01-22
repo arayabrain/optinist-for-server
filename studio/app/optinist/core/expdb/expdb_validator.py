@@ -43,17 +43,18 @@ class ExpDbValidator:
             "suite2p_preprocessing",
         }
     )
+    _BATCH_ANALYZE_STAT_SUB_NODES = frozenset(
+        {
+            "stat_file_convert",
+            "anova1_mult",
+            "vector_average",
+            "curvefit_tuning",
+        }
+    )
     _BATCH_ACCEPTABLE_OPTIONAL_ANALYZE_NODES = frozenset(
         {
             frozenset({"analyze_stats"}),
-            frozenset(
-                {
-                    "stat_file_convert",
-                    "anova1_mult",
-                    "vector_average",
-                    "curvefit_tuning",
-                }
-            ),
+            _BATCH_ANALYZE_STAT_SUB_NODES,
         }
     )
     BATCH_ACCEPTABLE_NODES = (

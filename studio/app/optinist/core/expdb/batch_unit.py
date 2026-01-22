@@ -5,7 +5,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from glob import glob
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import scipy
@@ -43,7 +43,10 @@ from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
-from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidatorConfig
+from studio.app.optinist.core.expdb.expdb_validator import (
+    ExpDbValidator,
+    ExpDbValidatorConfig,
+)
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -439,10 +442,17 @@ class ExpDbBatch:
         self.logger_.info("process 'generate_statdata' start.")
 
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
+
+        # Get analyze_stat param (AssertionError if not configured)
+        analyze_stats_params = (
+            self.workflow_config_reader.get_analyze_stat_node_params()
+        )
+        assert analyze_stats_params, "No analyze_stat node configured."
+
         result = analyze_stats(
             expdb,
             self.raw_path.output_dir,
-            self.workflow_config_reader.get_node_params_or_default("analyze_stats"),
+            analyze_stats_params,
         )
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
@@ -728,9 +738,6 @@ class ExpDbWorkflowConfigReader:
             )
             config = WorkflowConfigReader._read_from_any_path(workflow_yaml_path)
 
-            # Validate nodes are acceptable for batch processing
-            from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
-
             if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
                 # Extract actual nodes for error message
                 actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
@@ -789,6 +796,26 @@ class ExpDbWorkflowConfigReader:
             )
             return None
 
+    def exists_node(self, node_name: Union[str, List]) -> bool:
+        result = True
+
+        if type(node_name) is str:
+            result = WorkflowConfigReader.exists_node_in_workflow(
+                self.workflow_config, node_name
+            )
+        elif type(node_name) is list:
+            for node_name_ in node_name:
+                result = WorkflowConfigReader.exists_node_in_workflow(
+                    self.workflow_config, node_name_
+                )
+                # If no node is found, the check ends.
+                if not result:
+                    break
+        else:
+            result = False
+
+        return result
+
     def get_node_params_or_default(self, node_name: str) -> dict:
         """
         Get parameters for a node, preferring workflow.yaml over defaults.
@@ -835,3 +862,37 @@ class ExpDbWorkflowConfigReader:
             extracted_params = read_default_params(node_name)
 
         return extracted_params
+
+    def get_analyze_stat_node_params(self) -> dict:
+        """
+        Get the params of the analyze_stats-related node.
+        1. If the analyze_stats node exists, get its params.
+        2. If the analyze_stats node does not exist, get the params of
+        the analyze_stats node's subnode (which consists of multiple nodes).
+        3. If none of the above nodes exist, return None.
+        """
+
+        analyze_node_params = None
+
+        analyze_stats_node_name = "analyze_stats"
+        analyze_stats_sub_node_names = list(
+            ExpDbValidator._BATCH_ANALYZE_STAT_SUB_NODES
+        )
+
+        # Search for the analyze_stats node
+        if self.exists_node(analyze_stats_node_name):
+            analyze_node_params = self.get_node_params_or_default(
+                analyze_stats_node_name
+            )
+
+        # Search for sub nodes of analyze_stats
+        elif self.exists_node(analyze_stats_sub_node_names):
+            analyze_node_params = {}
+            for sub_node_name in analyze_stats_sub_node_names:
+                analyze_node_params |= self.get_node_params_or_default(sub_node_name)
+
+        # Nodes not found
+        else:
+            analyze_node_params = None
+
+        return analyze_node_params
