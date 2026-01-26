@@ -539,9 +539,10 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
-        # CleanUp database records
+        # CleanUp database records & output data
         with concurrent_db_session_scope() as db:
-            expdb_batch.cleanup_exp_record(db)
+            expdb_batch.cleanup_exp_record(db)  # cleanup db record
+            expdb_batch.cleanup_exp_output_data()  # cleanup output data
 
         # Analysis process
         with stopwatchcm(dataset_process_stopwatch_callback):
@@ -650,8 +651,10 @@ class ExpDbBatchConcurrentProcess:
 
         expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
+        # CleanUp database records & output data
         with concurrent_db_session_scope() as db:
-            expdb_batch.cleanup_exp_record(db)
+            expdb_batch.cleanup_exp_record(db)  # cleanup db record
+            expdb_batch.cleanup_exp_output_data()  # cleanup output data
 
         return True
 

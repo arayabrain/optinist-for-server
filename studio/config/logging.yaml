@@ -27,10 +27,9 @@ handlers:
     formatter: default
     filename: logs/studio.log
     encoding: utf-8
-    maxBytes: 5242880
-    # when: midnight # It seems that concurrent-log-handler=0.9.25 does not work. Verification is required.
-    # backupCount ... Number of backups on the same date
-    backupCount: 1000
+    when: midnight
+    interval: 1
+    backupCount: 365
 loggers:
   optinist:
     level: DEBUG
