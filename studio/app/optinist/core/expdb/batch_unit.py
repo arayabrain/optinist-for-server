@@ -5,7 +5,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from glob import glob
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import scipy
@@ -43,6 +43,10 @@ from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
 from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.expdb_validator import (
+    ExpDbValidator,
+    ExpDbValidatorConfig,
+)
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
@@ -175,12 +179,19 @@ class ExpDbBatch:
             db.rollback()  # 明示的にrollback
             raise
 
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_output_data(self):
         # Clean up raw path
         create_directory(self.raw_path.output_dir, delete_dir=True)
 
         # Clean up public path if different
         if self.raw_path.output_dir != self.pub_path.output_dir:
             create_directory(self.pub_path.output_dir, delete_dir=True)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_preprocess_data(self):
+        # Clean up preprocess path
+        create_directory(self.raw_path.preprocess_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
     def load_raw_cellmask_data(self, sparse: bool = False) -> int:
@@ -278,7 +289,9 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
         self.logger_.info("process 'preprocess' start.")
-        create_directory(self.raw_path.preprocess_dir)
+
+        # Clean up preprocess data
+        self.cleanup_exp_preprocess_data()
 
         preprocess_results = preprocessing(
             microscope=MicroscopeExpdbData(self.raw_path.microscope_file),
@@ -415,6 +428,8 @@ class ExpDbBatch:
         elif self.roi_method == SupportedRoiMethod.CAIMAN:
             self.logger_.info("Using CaImAn CNMF for cell detection")
             return self.cell_detection_cnmf(stack)
+        elif self.roi_method == SupportedRoiMethod.UNSUPPORTED:
+            assert False, "Unsupported roi method"
         else:  # Default to caiman
             self.logger_.info(
                 f"Unknown roi_method '{self.roi_method.value}', "
@@ -427,10 +442,17 @@ class ExpDbBatch:
         self.logger_.info("process 'generate_statdata' start.")
 
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
+
+        # Get analyze_stat param (AssertionError if not configured)
+        analyze_stats_params = (
+            self.workflow_config_reader.get_analyze_stat_node_params()
+        )
+        assert analyze_stats_params, "No analyze_stat node configured."
+
         result = analyze_stats(
             expdb,
             self.raw_path.output_dir,
-            self.workflow_config_reader.get_node_params_or_default("analyze_stats"),
+            analyze_stats_params,
         )
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
@@ -716,24 +738,28 @@ class ExpDbWorkflowConfigReader:
             )
             config = WorkflowConfigReader._read_from_any_path(workflow_yaml_path)
 
-            # Validate nodes are acceptable for batch processing
-            from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
-
             if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
                 # Extract actual nodes for error message
                 actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
                     config
                 )
-                self.logger_.error(
+
+                err_message = (
                     f"Workflow config contains invalid nodes for batch processing."
                     f"Found nodes: {sorted(actual_nodes)}. "
-                    f"Required nodes: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_REQUIRED_NODES)}. "
-                    f"Plus exactly ONE of: "
-                    f"{sorted(ExpDbValidator._BATCH_ACCEPTABLE_OPTIONAL_NODES)}. "
+                    f"Acceptable nodes: "
+                    f"{ExpDbValidator.BATCH_ACCEPTABLE_NODES}. "
                     f"Falling back to default parameters."
                 )
-                return None
+
+                # Switch validation processing by validation strict mode
+                if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+                    self.logger_.error(err_message)
+                    return None
+                else:
+                    # If not in strict mode, processing continues.
+                    self.logger_.warning(err_message)
+                    pass
 
             # Extract and validate ROI method from workflow
             workflow_roi_method = ExpDbValidator.validate_batch_roi_method(config)
@@ -769,6 +795,26 @@ class ExpDbWorkflowConfigReader:
                 f"will use default parameters"
             )
             return None
+
+    def exists_node(self, node_name: Union[str, List]) -> bool:
+        result = True
+
+        if type(node_name) is str:
+            result = WorkflowConfigReader.exists_node_in_workflow(
+                self.workflow_config, node_name
+            )
+        elif type(node_name) is list:
+            for node_name_ in node_name:
+                result = WorkflowConfigReader.exists_node_in_workflow(
+                    self.workflow_config, node_name_
+                )
+                # If no node is found, the check ends.
+                if not result:
+                    break
+        else:
+            result = False
+
+        return result
 
     def get_node_params_or_default(self, node_name: str) -> dict:
         """
@@ -816,3 +862,37 @@ class ExpDbWorkflowConfigReader:
             extracted_params = read_default_params(node_name)
 
         return extracted_params
+
+    def get_analyze_stat_node_params(self) -> dict:
+        """
+        Get the params of the analyze_stats-related node.
+        1. If the analyze_stats node exists, get its params.
+        2. If the analyze_stats node does not exist, get the params of
+        the analyze_stats node's subnode (which consists of multiple nodes).
+        3. If none of the above nodes exist, return None.
+        """
+
+        analyze_node_params = None
+
+        analyze_stats_node_name = "analyze_stats"
+        analyze_stats_sub_node_names = list(
+            ExpDbValidator._BATCH_ANALYZE_STAT_SUB_NODES
+        )
+
+        # Search for the analyze_stats node
+        if self.exists_node(analyze_stats_node_name):
+            analyze_node_params = self.get_node_params_or_default(
+                analyze_stats_node_name
+            )
+
+        # Search for sub nodes of analyze_stats
+        elif self.exists_node(analyze_stats_sub_node_names):
+            analyze_node_params = {}
+            for sub_node_name in analyze_stats_sub_node_names:
+                analyze_node_params |= self.get_node_params_or_default(sub_node_name)
+
+        # Nodes not found
+        else:
+            analyze_node_params = None
+
+        return analyze_node_params

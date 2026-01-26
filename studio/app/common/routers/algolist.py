@@ -107,4 +107,9 @@ async def get_expdb_algolist() -> Dict[str, Algo]:
     """
     Similar to `/algolist`, but returns only expdb related algolists
     """
-    return NestDictGetter.get_nest_dict(wrapper_expdb_dict, "")
+    from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidatorConfig
+
+    if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+        return NestDictGetter.get_nest_dict(wrapper_expdb_dict, "")
+    else:
+        return await get_algolist()

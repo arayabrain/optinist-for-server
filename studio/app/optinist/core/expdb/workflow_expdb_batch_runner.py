@@ -15,7 +15,10 @@ from studio.app.optinist.core.expdb.batch_const import (
     SupportedRoiMethod,
 )
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil, ProcessResult
-from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidator
+from studio.app.optinist.core.expdb.expdb_validator import (
+    ExpDbValidator,
+    ExpDbValidatorConfig,
+)
 from studio.app.optinist.core.expdb.proc_file_data import ProcFile
 from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 
@@ -52,11 +55,18 @@ class WorkflowExpdbBatchRunner:
                 f" [uid: {self.workspace_id}/{self.unique_id}]"
                 f" acceptable nodes={ExpDbValidator.BATCH_ACCEPTABLE_NODES}"
             )
-            logger.error(err_message)
 
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=err_message
-            )
+            # Switch validation processing by validation strict mode
+            if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+                # If in strict mode, an exception is thrown.
+                logger.error(err_message)
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=err_message
+                )
+            else:
+                # If not in strict mode, processing continues.
+                logger.warning(err_message)
+                pass
 
         # ------------------------------------------------------------
         # Save Batch Run Template Workflow
