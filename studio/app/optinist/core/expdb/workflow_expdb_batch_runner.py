@@ -10,8 +10,6 @@ from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.core.workflow.workflow_runner import WorkflowRunner
 from studio.app.common.core.workflow.workflow_writer import WorkflowConfigWriter
 from studio.app.optinist.core.expdb.batch_const import (
-    HEARTBEAT_FILE,
-    HEARTBEAT_STALE_TIMEOUT,
     LOCKFILE_NAME,
     ProcessCommand,
     SupportedRoiMethod,
@@ -200,7 +198,7 @@ class WorkflowExpdbBatchRunner:
             # Even if lockfile acquisition succeeds, check heartbeat to detect
             # if another container is actually running the batch process.
             # ------------------------------------------------------------
-            if BatchHeartbeatManager.is_active(HEARTBEAT_FILE, HEARTBEAT_STALE_TIMEOUT):
+            if BatchHeartbeatManager.is_active():
                 # Heartbeat is active: another container is running batch process
                 proc_lock_file.close()
                 proc_lock_file = None

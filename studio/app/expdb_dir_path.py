@@ -8,6 +8,8 @@ from studio.app.dir_path import DIRPATH
 class EXPDB_DIRPATH:
     load_dotenv(f"{DIRPATH.CONFIG_DIR}/.env")
 
+    EXPDB_LOG_DIR = f"{DIRPATH.DATA_DIR}/logs/expdb"
+
     EXPDB_DIR = os.environ.get("EXPDB_DIR")
     assert EXPDB_DIR is not None, "EXPDB_DIR must be set"
     assert os.path.exists(EXPDB_DIR), f"{EXPDB_DIR} does not exist"
