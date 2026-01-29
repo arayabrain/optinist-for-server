@@ -14,6 +14,7 @@ from studio.app.optinist.core.expdb.batch_const import (
     ProcessCommand,
     SupportedRoiMethod,
 )
+from studio.app.optinist.core.expdb.batch_runner import BatchHeartbeatManager
 from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil, ProcessResult
 from studio.app.optinist.core.expdb.expdb_validator import (
     ExpDbValidator,
@@ -186,7 +187,27 @@ class WorkflowExpdbBatchRunner:
         # @see studio.app.optinist.core.expdb.batch_runner.__process_preprocess
         proc_lock_file = None
         try:
+            # Check the lock file
             proc_lock_file = lockfile.LockFile(LOCKFILE_NAME)
+
+            # ------------------------------------------------------------
+            # Cross-container lock detection using heartbeat
+            #
+            # zc.lockfile uses PID-based lock detection, which doesn't work
+            # across different Docker containers (different PID namespaces).
+            # Even if lockfile acquisition succeeds, check heartbeat to detect
+            # if another container is actually running the batch process.
+            # ------------------------------------------------------------
+            if BatchHeartbeatManager.is_active():
+                # Heartbeat is active: another container is running batch process
+                proc_lock_file.close()
+                proc_lock_file = None
+                err_message = (
+                    f"Batch process is running in another container "
+                    f"(heartbeat active). [exp_id: {exp_id}]"
+                )
+                logger.error(err_message)
+                raise lockfile.LockError(err_message)
 
             # Write proc file
             ProcFileWriter.write(exp_id, proc_file)

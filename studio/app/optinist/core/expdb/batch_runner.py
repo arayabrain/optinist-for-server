@@ -4,8 +4,10 @@ import logging
 import logging.config
 import os
 import threading
+import time
 import traceback
 from contextlib import contextmanager
+from pathlib import Path
 
 import psutil
 from lauda import stopwatch, stopwatchcm
@@ -42,6 +44,101 @@ from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
 )
+
+
+class BatchHeartbeatManager:
+    """
+    Manages heartbeat file for cross-container lock detection.
+
+    This class creates and periodically updates a heartbeat file to indicate
+    that a batch process is actively running. Other containers can check this
+    file to determine if a lock is stale (process crashed) or active.
+    """
+
+    # Heartbeat file path
+    FILE_PATH = f"{EXPDB_DIRPATH.EXPDB_LOG_DIR}/process.heartbeat"
+
+    # Heartbeat update interval in seconds
+    INTERVAL = 30
+
+    # Time in seconds after which a heartbeat is considered stale
+    STALE_TIMEOUT = 600
+
+    def __init__(self):
+        self.heartbeat_file = Path(self.FILE_PATH)
+        self._timer = None
+        self._running = False
+
+    def start(self):
+        """Start heartbeat updates"""
+        self._running = True
+        self._update_heartbeat()
+        self._schedule_next_update()
+
+    def stop(self):
+        """Stop heartbeat updates and cleanup heartbeat file"""
+        self._running = False
+        if self._timer:
+            self._timer.cancel()
+            self._timer = None
+        self._cleanup_heartbeat()
+
+    def _schedule_next_update(self):
+        """Schedule next heartbeat update"""
+        if self._running:
+            self._timer = threading.Timer(self.INTERVAL, self._heartbeat_loop)
+            self._timer.daemon = True
+            self._timer.start()
+
+    def _heartbeat_loop(self):
+        """Heartbeat loop: update and reschedule"""
+        if self._running:
+            self._update_heartbeat()
+            self._schedule_next_update()
+
+    def _update_heartbeat(self):
+        """Update heartbeat file with current timestamp"""
+        try:
+            self.heartbeat_file.write_text(f"{time.time()}\n")
+        except Exception:
+            pass
+
+    def _cleanup_heartbeat(self):
+        """Remove heartbeat file"""
+        try:
+            self.heartbeat_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    @classmethod
+    def is_active(cls) -> bool:
+        """
+        Check if a batch process is actively running by examining the heartbeat file.
+
+        Returns:
+            True if heartbeat is active (file exists and was updated recently),
+            False otherwise (file doesn't exist or is stale)
+        """
+        path = Path(cls.FILE_PATH)
+        if not path.exists():
+            return False
+
+        try:
+            # Check both mtime and file content for robustness
+            mtime = path.stat().st_mtime
+            content_time = mtime
+            try:
+                content = path.read_text().strip()
+                if content:
+                    content_time = float(content)
+            except (ValueError, IOError):
+                pass
+
+            latest_time = max(mtime, content_time)
+            elapsed = time.time() - latest_time
+            return elapsed < cls.STALE_TIMEOUT
+        except Exception:
+            return False
 
 
 class BatchProgressMonitor:
@@ -243,6 +340,11 @@ class ExpDbBatchRunner:
             self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
             error = e
 
+            # Heartbeat 停止（例外発生時）
+            if hasattr(self, "heartbeat") and self.heartbeat:
+                self.heartbeat.stop()
+                self.logger_.info("Heartbeat stopped (due to exception).")
+
         finally:
             # 処理終了ログ出力
             if error is None:
@@ -290,10 +392,30 @@ class ExpDbBatchRunner:
             self.logger_.error("already running. - %s", e)
             raise e
 
+        # ----------------------------------------
+        # Heartbeat 開始
+        #
+        # - 異なるDockerコンテナ間でのロック検出のため、
+        #   定期的にheartbeatファイルを更新する
+        # ----------------------------------------
+        self.heartbeat = BatchHeartbeatManager()
+        self.heartbeat.start()
+        self.logger_.info(
+            "Heartbeat started. [file: %s][interval: %ds][stale_timeout: %ds]",
+            BatchHeartbeatManager.FILE_PATH,
+            BatchHeartbeatManager.INTERVAL,
+            BatchHeartbeatManager.STALE_TIMEOUT,
+        )
+
     def __process_postprocess(self):
         """
         後処理
         """
+
+        # Heartbeat 停止
+        if hasattr(self, "heartbeat") and self.heartbeat:
+            self.heartbeat.stop()
+            self.logger_.info("Heartbeat stopped.")
 
         # Note: ロックファイル解除は、ライブラリ(zc.lockfile)により自動処理される
         self.lock.close()
