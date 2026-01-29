@@ -5,11 +5,6 @@ PROC_FILE_EXT = ".proc"
 PROC_FILE_DONE_EXT = ".proc.done"
 PROC_FILE_ERROR_EXT = ".proc.error"
 
-# Batch heatbeat related
-HEARTBEAT_FILE = "process.heartbeat"
-HEARTBEAT_INTERVAL = 30  # seconds
-HEARTBEAT_STALE_TIMEOUT = 600  # seconds
-
 
 class ProcessCommand(Enum):
     REGIST = "regist"

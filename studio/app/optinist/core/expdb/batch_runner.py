@@ -19,9 +19,6 @@ from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
 from studio.app.optinist.core.expdb.batch_const import (
-    HEARTBEAT_FILE,
-    HEARTBEAT_INTERVAL,
-    HEARTBEAT_STALE_TIMEOUT,
     LOCKFILE_NAME,
     ProcessCommand,
     SupportedRoiMethod,
@@ -58,21 +55,17 @@ class BatchHeartbeatManager:
     file to determine if a lock is stale (process crashed) or active.
     """
 
-    def __init__(
-        self,
-        heartbeat_file: str = HEARTBEAT_FILE,
-        interval: int = HEARTBEAT_INTERVAL,
-        stale_timeout: int = HEARTBEAT_STALE_TIMEOUT,
-    ):
-        """
-        Args:
-            heartbeat_file: Path to the heartbeat file
-            interval: Interval in seconds between heartbeat updates
-            stale_timeout: Time in seconds after which a heartbeat is considered stale
-        """
-        self.heartbeat_file = Path(heartbeat_file)
-        self.interval = interval
-        self.stale_timeout = stale_timeout
+    # Heartbeat file path
+    FILE_PATH = f"{EXPDB_DIRPATH.EXPDB_LOG_DIR}/process.heartbeat"
+
+    # Heartbeat update interval in seconds
+    INTERVAL = 30
+
+    # Time in seconds after which a heartbeat is considered stale
+    STALE_TIMEOUT = 600
+
+    def __init__(self):
+        self.heartbeat_file = Path(self.FILE_PATH)
         self._timer = None
         self._running = False
 
@@ -93,7 +86,7 @@ class BatchHeartbeatManager:
     def _schedule_next_update(self):
         """Schedule next heartbeat update"""
         if self._running:
-            self._timer = threading.Timer(self.interval, self._heartbeat_loop)
+            self._timer = threading.Timer(self.INTERVAL, self._heartbeat_loop)
             self._timer.daemon = True
             self._timer.start()
 
@@ -118,23 +111,15 @@ class BatchHeartbeatManager:
             pass
 
     @classmethod
-    def is_active(
-        cls,
-        heartbeat_file: str = HEARTBEAT_FILE,
-        stale_timeout: int = HEARTBEAT_STALE_TIMEOUT,
-    ) -> bool:
+    def is_active(cls) -> bool:
         """
         Check if a batch process is actively running by examining the heartbeat file.
-
-        Args:
-            heartbeat_file: Path to the heartbeat file
-            stale_timeout: Time in seconds after which a heartbeat is considered stale
 
         Returns:
             True if heartbeat is active (file exists and was updated recently),
             False otherwise (file doesn't exist or is stale)
         """
-        path = Path(heartbeat_file)
+        path = Path(cls.FILE_PATH)
         if not path.exists():
             return False
 
@@ -151,7 +136,7 @@ class BatchHeartbeatManager:
 
             latest_time = max(mtime, content_time)
             elapsed = time.time() - latest_time
-            return elapsed < stale_timeout
+            return elapsed < cls.STALE_TIMEOUT
         except Exception:
             return False
 
@@ -417,9 +402,9 @@ class ExpDbBatchRunner:
         self.heartbeat.start()
         self.logger_.info(
             "Heartbeat started. [file: %s][interval: %ds][stale_timeout: %ds]",
-            HEARTBEAT_FILE,
-            HEARTBEAT_INTERVAL,
-            HEARTBEAT_STALE_TIMEOUT,
+            BatchHeartbeatManager.FILE_PATH,
+            BatchHeartbeatManager.INTERVAL,
+            BatchHeartbeatManager.STALE_TIMEOUT,
         )
 
     def __process_postprocess(self):
