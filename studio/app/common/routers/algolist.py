@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from studio.app.common.core.snakemake.smk_utils import SmkInternalUtils
 from studio.app.common.schemas.algolist import Algo, AlgoList, Arg, Return
 from studio.app.const import NOT_DISPLAY_ARGS_LIST
-from studio.app.wrappers import wrapper_dict
+from studio.app.wrappers import wrapper_dict, wrapper_expdb_dict
 
 router = APIRouter()
 
@@ -100,3 +100,16 @@ async def get_algolist() -> Dict[str, Algo]:
     """
 
     return NestDictGetter.get_nest_dict(wrapper_dict, "")
+
+
+@router.get("/algolist/expdb", response_model=AlgoList, tags=["others"])
+async def get_expdb_algolist() -> Dict[str, Algo]:
+    """
+    Similar to `/algolist`, but returns only expdb related algolists
+    """
+    from studio.app.optinist.core.expdb.expdb_validator import ExpDbValidatorConfig
+
+    if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+        return NestDictGetter.get_nest_dict(wrapper_expdb_dict, "")
+    else:
+        return await get_algolist()

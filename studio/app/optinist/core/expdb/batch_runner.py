@@ -1,22 +1,28 @@
 import concurrent.futures
 import datetime
-import glob
 import logging
 import logging.config
 import os
-import pathlib
+import threading
+import time
 import traceback
 from contextlib import contextmanager
-from enum import Enum
+from pathlib import Path
 
-import yaml
+import psutil
 from lauda import stopwatch, stopwatchcm
 from zc import lockfile
 
+from studio.app.common.core.logger import LoggingConfigHelper
 from studio.app.common.core.users.crud_organizations import get_organization
 from studio.app.common.db.database import session_scope
 from studio.app.dir_path import DIRPATH
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import (
+    LOCKFILE_NAME,
+    ProcessCommand,
+    SupportedRoiMethod,
+)
 from studio.app.optinist.core.expdb.batch_unit import ExpDbBatch
 from studio.app.optinist.core.expdb.crud_cells import bulk_insert_cells
 from studio.app.optinist.core.expdb.crud_configs import summarize_experiment_metadata
@@ -25,70 +31,279 @@ from studio.app.optinist.core.expdb.crud_expdb import (
     get_experiment,
     update_experiment,
 )
+from studio.app.optinist.core.expdb.expdb_data import ProcessResult
+from studio.app.optinist.core.expdb.expdb_validator import ExpDbEnviromentValidator
+from studio.app.optinist.core.expdb.proc_file_data import (
+    ProcFile,
+    ProcFilePath,
+    ProcFileUtils,
+)
+from studio.app.optinist.core.expdb.proc_file_reader import ProcFileReader
+from studio.app.optinist.core.expdb.proc_file_writer import ProcFileWriter
 from studio.app.optinist.schemas.expdb.experiment import (
     ExpDbExperimentCreate,
     ExpDbExperimentUpdate,
 )
 
-LOCKFILE_NAME = "process.lock"
-FLAG_FILE_EXT = ".proc"
 
+class BatchHeartbeatManager:
+    """
+    Manages heartbeat file for cross-container lock detection.
 
-class ProcessCommand(Enum):
-    REGIST = "regist"
-    REGIST_METADATA = "regist_metadata"
-    DELETE = "delete"
+    This class creates and periodically updates a heartbeat file to indicate
+    that a batch process is actively running. Other containers can check this
+    file to determine if a lock is stale (process crashed) or active.
+    """
 
+    # Heartbeat file path
+    FILE_PATH = f"{EXPDB_DIRPATH.EXPDB_LOG_DIR}/process.heartbeat"
 
-class ProcessResult:
+    # Heartbeat update interval in seconds
+    INTERVAL = 30
+
+    # Time in seconds after which a heartbeat is considered stale
+    STALE_TIMEOUT = 600
+
     def __init__(self):
-        self.success_ids_ = []
-        self.failure_ids_ = []
+        self.heartbeat_file = Path(self.FILE_PATH)
+        self._timer = None
+        self._running = False
 
-    @property
-    def success_ids(self):
-        return self.success_ids_
+    def start(self):
+        """Start heartbeat updates"""
+        self._running = True
+        self._update_heartbeat()
+        self._schedule_next_update()
 
-    @property
-    def failure_ids(self):
-        return self.failure_ids_
+    def stop(self):
+        """Stop heartbeat updates and cleanup heartbeat file"""
+        self._running = False
+        if self._timer:
+            self._timer.cancel()
+            self._timer = None
+        self._cleanup_heartbeat()
 
-    @property
-    def total_ids(self):
-        return self.success_ids_ + self.failure_ids_
+    def _schedule_next_update(self):
+        """Schedule next heartbeat update"""
+        if self._running:
+            self._timer = threading.Timer(self.INTERVAL, self._heartbeat_loop)
+            self._timer.daemon = True
+            self._timer.start()
 
-    def has_error(self) -> bool:
-        return len(self.failure_ids_) > 0
+    def _heartbeat_loop(self):
+        """Heartbeat loop: update and reschedule"""
+        if self._running:
+            self._update_heartbeat()
+            self._schedule_next_update()
+
+    def _update_heartbeat(self):
+        """Update heartbeat file with current timestamp"""
+        try:
+            self.heartbeat_file.write_text(f"{time.time()}\n")
+        except Exception:
+            pass
+
+    def _cleanup_heartbeat(self):
+        """Remove heartbeat file"""
+        try:
+            self.heartbeat_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    @classmethod
+    def is_active(cls) -> bool:
+        """
+        Check if a batch process is actively running by examining the heartbeat file.
+
+        Returns:
+            True if heartbeat is active (file exists and was updated recently),
+            False otherwise (file doesn't exist or is stale)
+        """
+        path = Path(cls.FILE_PATH)
+        if not path.exists():
+            return False
+
+        try:
+            # Check both mtime and file content for robustness
+            mtime = path.stat().st_mtime
+            content_time = mtime
+            try:
+                content = path.read_text().strip()
+                if content:
+                    content_time = float(content)
+            except (ValueError, IOError):
+                pass
+
+            latest_time = max(mtime, content_time)
+            elapsed = time.time() - latest_time
+            return elapsed < cls.STALE_TIMEOUT
+        except Exception:
+            return False
+
+
+class BatchProgressMonitor:
+    """
+    Monitor the progress of parallel processing and periodically log the status
+    """
+
+    # Maximum number of remaining data to display in logs
+    MAX_DISPLAY_REMAINING_COUNT = 10
+
+    def __init__(
+        self,
+        logger_: logging.Logger,
+        futures: list,
+        target_proc_files: list[ProcFilePath],
+        completed_futures: set,
+        interval: int = 60,
+    ):
+        """
+        Args:
+            logger: Logger for output
+            futures: List of all futures
+            target_proc_files: List of target proc files (in same order as futures)
+            completed_futures: Set of completed futures (held as reference)
+            interval: Log output interval (seconds)
+        """
+        self.logger = logger_
+        self.futures = futures
+        self.target_proc_files = target_proc_files
+        self.completed_futures = completed_futures
+        self.total_count = len(target_proc_files)
+        self.interval = interval
+        self._timer = None
+
+        # Create internal mapping
+        self._future_to_proc_file = {
+            future: proc_file for future, proc_file in zip(futures, target_proc_files)
+        }
+
+    def start(self):
+        """Start progress monitoring"""
+        self._schedule_next_log()
+
+    def stop(self):
+        """Stop progress monitoring"""
+        if self._timer:
+            self._timer.cancel()
+            self._timer = None
+
+    def _schedule_next_log(self):
+        """Schedule next log output"""
+
+        def log_and_reschedule():
+            # Log only if not all completed
+            if len(self.completed_futures) < self.total_count:
+                self._log_progress()
+
+                # Schedule next timer
+                self._schedule_next_log()
+
+        self._timer = threading.Timer(self.interval, log_and_reschedule)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def _log_progress(self):
+        """Log progress status"""
+        # Get remaining proc files
+        remaining_proc_files = [
+            self._future_to_proc_file[f]
+            for f in self.futures
+            if f not in self.completed_futures
+        ]
+
+        completed_count = len(self.completed_futures)
+        remaining_count = len(remaining_proc_files)
+
+        # Output progress log (remaining data IDs list)
+        if remaining_count > 0:
+            display_exp_ids = [
+                pf.exp_id
+                for pf in remaining_proc_files[: self.MAX_DISPLAY_REMAINING_COUNT]
+            ]
+            suffix = (
+                f" (showing {self.MAX_DISPLAY_REMAINING_COUNT} of {remaining_count})"
+                if remaining_count > self.MAX_DISPLAY_REMAINING_COUNT
+                else ""
+            )
+            self.logger.info(
+                (
+                    "Processing progress: [completed: %d/%d] - "
+                    "Remaining data%s: [count: %d]%s"
+                ),
+                completed_count,
+                self.total_count,
+                suffix,
+                remaining_count,
+                display_exp_ids,
+            )
+
+        # Get system load info
+        system_load = self._get_system_load_info()
+
+        # Output system load log
+        self.logger.info(
+            "System load: %s",
+            system_load,
+        )
+
+    @staticmethod
+    def _get_system_load_info() -> str:
+        """
+        Get server load status
+
+        Returns:
+            System load information string
+        """
+        try:
+            # CPU usage (average of all cores)
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+
+            # Memory usage
+            memory = psutil.virtual_memory()
+            memory_used_gb = memory.used / (1024**3)
+            memory_total_gb = memory.total / (1024**3)
+            memory_percent = memory.percent
+
+            # Load average (1min, 5min, 15min)
+            load_avg = psutil.getloadavg()
+
+            return (
+                f"CPU: {cpu_percent:.1f}%, "
+                f"Memory: {memory_used_gb:.1f}/{memory_total_gb:.1f}GB "
+                f"({memory_percent:.1f}%), "
+                f"LoadAvg: {load_avg[0]:.2f}/{load_avg[1]:.2f}/{load_avg[2]:.2f}"
+            )
+        except Exception as e:
+            return f"Failed to get system load info: {e}"
 
 
 class ExpDbBatchRunner:
     LOGGER_NAME = "batch_runner_logger"
     LOGGING_CONFIG_FILE = f"{DIRPATH.CONFIG_DIR}/logging.expdb_batch.yaml"
 
-    def __init__(self, organization_id: int, parallel_workers: int = 1):
+    PROGRESS_MONITORING_INTERVAL = 60  # sec
+
+    def __init__(
+        self,
+        organization_id: int,
+        parallel_workers: int = 1,
+    ):
         self.start_time = datetime.datetime.now()
         self.__init_logger()
         self.org_id = organization_id
         self.parallel_workers = parallel_workers
+        self.available_roi_methods = (
+            ExpDbEnviromentValidator.check_available_roi_methods()
+        )
 
     def __init_logger(self):
-        logging_config = yaml.safe_load(
-            open(__class__.LOGGING_CONFIG_FILE, encoding="utf-8").read()
+        # Load and configure logging config (using unified utility method)
+        logging_config = LoggingConfigHelper.load_and_configure_logging_config(
+            config_file=__class__.LOGGING_CONFIG_FILE,
+            base_dir=DIRPATH.DATA_DIR,
+            apply_concurrent=True,
         )
-
-        # Adjust log file path
-        log_file = (
-            logging_config.get("handlers", {}).get("rotating_file", {}).get("filename")
-        )
-        if log_file:
-            log_file = f"{DIRPATH.DATA_DIR}/{log_file}"
-            logging_config["handlers"]["rotating_file"]["filename"] = log_file
-
-        # Create log output directory (if none exists)
-        # ※ logging.config.dictConfig() の前に実施必要
-        log_dir = os.path.dirname(log_file) if log_file else None
-        if log_dir and (not os.path.isdir(log_dir)):
-            os.mkdir(log_dir)
 
         logging.config.dictConfig(logging_config)
 
@@ -96,14 +311,14 @@ class ExpDbBatchRunner:
 
     def __stopwatch_callback(watch, function=None):
         logging.getLogger(__class__.LOGGER_NAME).info(
-            "processing done. [%s()][elapsed_time: %.6f sec]",
+            "Processing done. [%s()][elapsed_time: %.6f sec]",
             (function.__name__ if function is not None else "(N/A)"),
             watch.elapsed_time,
         )
 
     @stopwatch(callback=__stopwatch_callback)
     def process(self):
-        self.logger_.info("process start.")
+        self.logger_.info("Processing start.")
 
         processResult = ProcessResult()
         error: Exception = None
@@ -125,13 +340,18 @@ class ExpDbBatchRunner:
             self.logger_.error("%s: %s\n%s", type(e), e, traceback.format_exc())
             error = e
 
+            # Heartbeat 停止（例外発生時）
+            if hasattr(self, "heartbeat") and self.heartbeat:
+                self.heartbeat.stop()
+                self.logger_.info("Heartbeat stopped (due to exception).")
+
         finally:
             # 処理終了ログ出力
             if error is None:
                 if processResult.has_error():
                     self.logger_.warning(
                         (
-                            "process finish. [status: warning]"
+                            "Processing finish. [status: warning]"
                             "[success: %d][failure: %d][failure_ids: %s]"
                         ),
                         len(processResult.success_ids),
@@ -140,11 +360,11 @@ class ExpDbBatchRunner:
                     )
                 else:
                     self.logger_.info(
-                        "process finish. [status: success][total: %d]",
+                        "Processing finish. [status: success][total: %d]",
                         len(processResult.total_ids),
                     )
             else:
-                self.logger_.info("process finish. [status: error (suspended)]")
+                self.logger_.info("Processing finish. [status: error (suspended)]")
 
     def __process_preprocess(self):
         """
@@ -172,10 +392,30 @@ class ExpDbBatchRunner:
             self.logger_.error("already running. - %s", e)
             raise e
 
+        # ----------------------------------------
+        # Heartbeat 開始
+        #
+        # - 異なるDockerコンテナ間でのロック検出のため、
+        #   定期的にheartbeatファイルを更新する
+        # ----------------------------------------
+        self.heartbeat = BatchHeartbeatManager()
+        self.heartbeat.start()
+        self.logger_.info(
+            "Heartbeat started. [file: %s][interval: %ds][stale_timeout: %ds]",
+            BatchHeartbeatManager.FILE_PATH,
+            BatchHeartbeatManager.INTERVAL,
+            BatchHeartbeatManager.STALE_TIMEOUT,
+        )
+
     def __process_postprocess(self):
         """
         後処理
         """
+
+        # Heartbeat 停止
+        if hasattr(self, "heartbeat") and self.heartbeat:
+            self.heartbeat.stop()
+            self.logger_.info("Heartbeat stopped.")
 
         # Note: ロックファイル解除は、ライブラリ(zc.lockfile)により自動処理される
         self.lock.close()
@@ -188,19 +428,31 @@ class ExpDbBatchRunner:
 
         processResult = ProcessResult()
 
-        target_flag_files = self.__search_target_datasets()
+        # 処理対象datasets検索
+        self.logger_.info(
+            "Search proc files [path: %s][roi_methods:%s]",
+            EXPDB_DIRPATH.EXPDB_DIR,
+            self.available_roi_methods,
+        )
+        target_proc_files = ProcFileReader.find_proc_files(
+            filter_roi_methods=self.available_roi_methods
+        )
+        target_exp_ids = [proc.exp_id for proc in target_proc_files]
 
         # 処理対象datasetsが存在しない場合は、ここで処理終了（return）
-        if len(target_flag_files) == 0:
+        if len(target_proc_files) == 0:
             self.logger_.info("No datasets found.")
             return processResult
 
         # 最大並列処理Process数を規定
-        max_workers = min(len(target_flag_files), self.parallel_workers)
+        max_workers = min(len(target_proc_files), self.parallel_workers)
         self.logger_.info(
-            "Start processing datasets. [total: %d][max_workers: %d]",
-            len(target_flag_files),
+            "Start processing datasets. [total: %d][max_workers: %d][roi_methods:%s]"
+            "[IDs: %s]",
+            len(target_proc_files),
             max_workers,
+            self.available_roi_methods,
+            target_exp_ids,
         )
 
         # datasets処理開始（並列処理）
@@ -211,18 +463,39 @@ class ExpDbBatchRunner:
             futures = [
                 executor.submit(
                     ExpDbBatchConcurrentProcess.process_single_dataset_entrypoint,
-                    flag_file=flag_file,
+                    proc_file_path=proc_file_path,
                     org_id=self.org_id,
                     start_time=self.start_time,
                     logger_name=__class__.LOGGER_NAME,
                 )
-                # 処理対象datasets検索：フラグファイル走査
-                for flag_file in target_flag_files
+                for proc_file_path in target_proc_files
             ]
 
-            process_results = []
-            for future in concurrent.futures.as_completed(futures):
-                process_results.append(future.result())
+            # Track completion and start monitoring
+            completed_futures = set()
+            progress_monitor = BatchProgressMonitor(
+                logger_=self.logger_,
+                futures=futures,
+                target_proc_files=target_proc_files,
+                completed_futures=completed_futures,
+                interval=__class__.PROGRESS_MONITORING_INTERVAL,
+            )
+            progress_monitor.start()
+
+            try:
+                # Wait for each task to complete
+                process_results = []
+                for future in concurrent.futures.as_completed(futures):
+                    completed_futures.add(future)
+                    process_results.append(future.result())
+            finally:
+                progress_monitor.stop()
+
+            self.logger_.info(
+                "All processing completed. [total: %d][IDs: %s]",
+                len(target_proc_files),
+                target_exp_ids,
+            )
 
         # datasets処理結果の集計
         for result in process_results:
@@ -238,24 +511,10 @@ class ExpDbBatchRunner:
 
         return processResult
 
-    @stopwatch(callback=__stopwatch_callback)
-    def __search_target_datasets(self) -> list:
-        """
-        処理対象datasets検索
-        """
-        self.logger_.info("path: %s", EXPDB_DIRPATH.EXPDB_DIR)
-
-        # フラグファイル検索
-        target_flag_files = sorted(
-            glob.glob(EXPDB_DIRPATH.EXPDB_DIR + "/*/*" + FLAG_FILE_EXT)
-        )
-
-        return target_flag_files
-
 
 def dataset_process_stopwatch_callback(watch, function=None):
     logging.getLogger(ExpDbBatchConcurrentProcess.LOGGER_NAME).info(
-        "processing done. [%s()][elapsed_time: %.6f sec]",
+        "Processing done. [%s()][elapsed_time: %.6f sec]",
         (function.__name__ if function is not None else "(N/A)"),
         watch.elapsed_time,
     )
@@ -286,30 +545,19 @@ class ExpDbBatchConcurrentProcess:
             初期化されたロガーインスタンス
         """
 
-        logging_config = yaml.safe_load(
-            open(cls.LOGGING_CONFIG_FILE, encoding="utf-8").read()
+        # Define filename modifier to add exp_id to log filename
+        def add_exp_id_to_filename(filename: str) -> str:
+            basepath, ext = os.path.splitext(filename)
+            return f"{basepath}.{exp_id}{ext}"
+
+        # Load and configure logging config (using unified utility method)
+        # Note: apply_concurrent=False because each process has unique log file
+        logging_config = LoggingConfigHelper.load_and_configure_logging_config(
+            config_file=cls.LOGGING_CONFIG_FILE,
+            base_dir=DIRPATH.DATA_DIR,
+            apply_concurrent=False,
+            filename_modifier=add_exp_id_to_filename,
         )
-
-        # プロセス固有のログファイル名に変更（競合を避けるため）
-        if (
-            "handlers" in logging_config
-            and "rotating_file" in logging_config["handlers"]
-        ):
-            # Adjust log file path
-            log_file = (
-                logging_config.get("handlers", {})
-                .get("rotating_file", {})
-                .get("filename")
-            )
-            if log_file:
-                # Add process ID to file name
-                basepath, ext = os.path.splitext(log_file)
-                new_log_file = f"{basepath}.{exp_id}{ext}"
-
-                # Convert to absolute path
-                new_log_file = f"{DIRPATH.DATA_DIR}/{new_log_file}"
-
-                logging_config["handlers"]["rotating_file"]["filename"] = new_log_file
 
         # ロギング設定の適用
         # *Copy the changes to avoid affecting other processes
@@ -317,14 +565,10 @@ class ExpDbBatchConcurrentProcess:
 
         return logging.getLogger(cls.LOGGER_NAME)
 
-    @staticmethod
-    def __get_exp_id_from_flag_file(flag_file: str) -> str:
-        return os.path.basename(flag_file).split(".", 1)[0]
-
     @classmethod
     def process_single_dataset_entrypoint(
         cls,
-        flag_file: str,
+        proc_file_path: ProcFilePath,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
@@ -333,22 +577,24 @@ class ExpDbBatchConcurrentProcess:
         ATTENTION: This method does not use decorator (stopwatch)
             because it is an entrypoint of ProcessPoolExecutor.
         """
-        return cls.process_single_dataset(flag_file, org_id, start_time, logger_name)
+        return cls.process_single_dataset(
+            proc_file_path, org_id, start_time, logger_name
+        )
 
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_single_dataset(
         cls,
-        flag_file: str,
+        proc_file_path: ProcFilePath,
         org_id: int,
         start_time: datetime.datetime,
         logger_name: str,
     ) -> dict:
-        exp_id = cls.__get_exp_id_from_flag_file(flag_file)
+        exp_id = ProcFileUtils.parse_exp_id_from_path(proc_file_path.path)
         logger = cls.__init_process_logger(exp_id)
         logger.info(
-            f"Process {os.getpid()} starting to \
-                process exp_id: {exp_id}, flag_file: {flag_file}"
+            f"Process {os.getpid()} starting to "
+            f"process exp_id: {exp_id}, proc_file_path: {proc_file_path.path}"
         )
 
         error = None
@@ -356,24 +602,29 @@ class ExpDbBatchConcurrentProcess:
         result = {"success": False, "exp_id": exp_id}
 
         try:
-            # フラグファイル read
-            with open(flag_file) as cfile:
-                config = yaml.safe_load(cfile)
-
             # コマンド判定
-            command = config.get("command") if config is not None else None
+            command = proc_file_path.proc_data.command
 
             if command == ProcessCommand.REGIST.value:
                 cls.process_dataset_registration(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             elif command == ProcessCommand.REGIST_METADATA.value:
                 cls.process_dataset_metadata_registration(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             elif command == ProcessCommand.DELETE.value:
                 cls.process_dataset_deletion(
-                    exp_id=exp_id, org_id=org_id, logger=logger
+                    exp_id=exp_id,
+                    org_id=org_id,
+                    roi_method=SupportedRoiMethod(proc_file_path.proc_data.roi_method),
+                    logger=logger,
                 )
             else:
                 raise ValueError(
@@ -388,7 +639,7 @@ class ExpDbBatchConcurrentProcess:
             result["error"] = e
 
         finally:
-            cls.process_dataset_postprocess(flag_file, command, start_time, error)
+            cls.process_dataset_postprocess(proc_file_path, command, start_time, error)
 
             if error:
                 logger.error("finish process dataset: [exp_id: %s]", exp_id)
@@ -400,7 +651,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_registration(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Dataset登録処理
@@ -408,25 +659,26 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
-        # CleanUp database records
+        # CleanUp database records & output data
         with concurrent_db_session_scope() as db:
-            expdb_batch.cleanup_exp_record(db)
+            expdb_batch.cleanup_exp_record(db)  # cleanup db record
+            expdb_batch.cleanup_exp_output_data()  # cleanup output data
 
         # Analysis process
         with stopwatchcm(dataset_process_stopwatch_callback):
             logger.info("Run Analysis process")
 
             if expdb_batch.raw_path.microscope_file is None:
-                # If no microscope data, create cnmf_info from existing mat files
+                # If no microscope data, use existing processed mat files
                 logger.warning(
                     "No microscope data found. Will use existing processed data."
                 )
             else:
                 stack = expdb_batch.preprocess()
                 expdb_batch.generate_orimaps(stack)
-                expdb_batch.cell_detection_cnmf(stack)
+                expdb_batch.cell_detection(stack)
                 del stack
 
             stat_data = expdb_batch.generate_statdata()
@@ -473,7 +725,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_metadata_registration(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Metadata 登録処理
@@ -481,7 +733,7 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset metadata registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
         with concurrent_db_session_scope() as db:
             try:
@@ -511,7 +763,7 @@ class ExpDbBatchConcurrentProcess:
     @classmethod
     @stopwatch(callback=dataset_process_stopwatch_callback)
     def process_dataset_deletion(
-        cls, exp_id: str, org_id: int, logger: logging
+        cls, exp_id: str, org_id: int, roi_method: SupportedRoiMethod, logger: logging
     ) -> bool:
         """
         Dataset削除処理
@@ -519,17 +771,19 @@ class ExpDbBatchConcurrentProcess:
 
         logger.info("process dataset registration: %s", exp_id)
 
-        expdb_batch = ExpDbBatch(exp_id, org_id)
+        expdb_batch = ExpDbBatch(exp_id, org_id, roi_method)
 
+        # CleanUp database records & output data
         with concurrent_db_session_scope() as db:
-            expdb_batch.cleanup_exp_record(db)
+            expdb_batch.cleanup_exp_record(db)  # cleanup db record
+            expdb_batch.cleanup_exp_output_data()  # cleanup output data
 
         return True
 
     @classmethod
     def process_dataset_postprocess(
         cls,
-        flag_file: str,
+        proc_file_path: ProcFilePath,
         command: str,
         start_time: datetime.datetime,
         error: Exception = None,
@@ -540,44 +794,41 @@ class ExpDbBatchConcurrentProcess:
 
         # ----------------------------------------
         # 後処理
-        # - フラグファイル処理（ログ出力、リネーム）
+        # - proc file 処理（ログ出力、リネーム）
         # ----------------------------------------
 
-        # フラグファイル書き込みデータ作成
-        if not error:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "success",
-                "log": "completed successfully.",
-            }
-        else:
-            result_log = {
-                "command": command,
-                "start_time": start_time,
-                "complete_time": datetime.datetime.now(),
-                "result": "error",
-                "log": "{}: {}".format(type(error), str(error)),
-            }
+        # Read existing proc file to preserve roi_method
+        existing_roi_method = None
+        try:
+            existing_roi_method = proc_file_path.proc_data.roi_method
+        except Exception:
+            # If we can't read the file, roi_method will be None
+            pass
 
-        # フラグファイル内容アップデート
-        with open(flag_file, "w") as yf:
-            yaml.dump(result_log, yf)
+        # Determine success status
+        is_success = not error
 
-        # フラグファイル名作成
-        if not error:
-            renamed_flag_file = flag_file + ".done"
-        else:
-            renamed_flag_file = flag_file + ".error"
-
-        # 過去のフラグファイルが存在する場合はリネーム
-        if os.path.isfile(renamed_flag_file):
-            ps = pathlib.Path(renamed_flag_file).stat()
-            st_mtime = datetime.datetime.fromtimestamp(ps.st_mtime).strftime(
-                "%Y%m%d%H%M%S"
+        # Create ProcFile with result
+        if is_success:
+            result_proc = ProcFile(
+                command=command,
+                roi_method=existing_roi_method,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="success",
+                log="completed successfully.",
             )
-            os.rename(renamed_flag_file, renamed_flag_file + "." + st_mtime)
+        else:
+            result_proc = ProcFile(
+                command=command,
+                roi_method=existing_roi_method,
+                start_time=start_time,
+                complete_time=datetime.datetime.now(),
+                result="error",
+                log="{}: {}".format(type(error), str(error)),
+            )
 
-        # フラグファイルリネーム
-        os.rename(flag_file, renamed_flag_file)
+        # Write and rename/backup proc file
+        ProcFileWriter.write_and_backup_proc_file(
+            proc_file_path.path, result_proc, is_success
+        )

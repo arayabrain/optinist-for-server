@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Type, Union
 
 from fastapi import Query
 from pydantic import dataclasses
@@ -20,7 +20,7 @@ class SortOptions:
 
     def get_sa_sort_list(
         self,
-        sa_table,
+        sa_table: Type,
         mapping: Dict[str, Union[str, SQLModelMetaclass]] = None,
         default=["id", SortDirection.asc],
     ) -> List:

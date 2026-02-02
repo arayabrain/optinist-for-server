@@ -1,6 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useSearchParams } from "react-router-dom"
 
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { Box, Input, styled, Tooltip } from "@mui/material"
@@ -34,6 +33,7 @@ import {
   ImageUrls,
 } from "store/slice/Database/DatabaseType"
 import { AppDispatch, RootState } from "store/store"
+import { useUrlParamsSync } from "utils/useUrlParamsSync"
 
 type CellProps = {
   user?: unknown
@@ -472,9 +472,9 @@ const DatabaseCells = ({ user }: CellProps) => {
     filterParams: state[DATABASE_SLICE_NAME].filterParams,
   }))
 
-  const [newParams, setNewParams] = useState(
-    window.location.search.replace("?", ""),
-  )
+  const { searchParams, setNewParams } = useUrlParamsSync()
+  const dispatch = useDispatch<AppDispatch>()
+
   const [dataDialog, setDataDialog] = useState<{
     type: string
     data?: string | string[]
@@ -487,9 +487,6 @@ const DatabaseCells = ({ user }: CellProps) => {
   })
   const [fieldFilter, setFieldFilter] = useState("")
   const [valueFilter, setValueFilter] = useState<string | string[]>("")
-
-  const [searchParams, setParams] = useSearchParams()
-  const dispatch = useDispatch<AppDispatch>()
 
   const id = searchParams.get("id")
   const offset = searchParams.get("offset")
@@ -622,21 +619,6 @@ const DatabaseCells = ({ user }: CellProps) => {
     })
     //eslint-disable-next-line
   }, [dataParams, dataParamsFilter, fieldFilter, valueFilter])
-
-  useEffect(() => {
-    let param = newParams
-    if (newParams[0] === "&") param = newParams.slice(1, param.length)
-    if (param === window.location.search.replace("?", "")) return
-    setParams(param.replaceAll("+", "%2B"))
-    //eslint-disable-next-line
-  }, [newParams])
-
-  useEffect(() => {
-    if (newParams && newParams !== window.location.search.replace("?", "")) {
-      setNewParams(window.location.search.replace("?", ""))
-    }
-    //eslint-disable-next-line
-  }, [searchParams])
 
   useEffect(() => {
     dispatch(getOptionsFilter())

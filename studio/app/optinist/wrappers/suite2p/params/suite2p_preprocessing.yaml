@@ -1,0 +1,83 @@
+# Suite2p Preprocessing for ExpDB Workflow
+#
+# Performs Suite2p ROI detection and generates ExpDB-compatible output files.
+# Combines suite2p_file_convert + suite2p_roi functionality with ExpDB integration.
+#
+# Reference: https://suite2p.readthedocs.io/en/latest/settings.html
+
+# ----------------------------------------
+# File Conversion Settings
+# ----------------------------------------
+
+# Force use of scikit-image TIFF reader (from suite2p_file_convert)
+# Note: suite2p_preprocessing writes its own temp TIFF, so this has limited effect
+force_sktiff: False
+
+# Batch size for TIFF reading (from suite2p_file_convert)
+# Used to determine which TIFF reader to use
+batch_size: 500
+
+# ----------------------------------------
+# Main Settings
+# ----------------------------------------
+
+# Calcium indicator timescale (seconds) - this is the main parameter for deconvolution
+tau: 1.25
+
+classification:
+  soma_crop: True        # crop dendrites for cell classification stats like compactness
+
+# ----------------------------------------
+# Cell Detection Parameters
+# ----------------------------------------
+
+cell_detection:
+  high_pass: 100         # running mean subtraction with window of size 'high_pass(use low values for 1P)
+  sparse_mode: True      # whether or not to run sparse_mode
+  max_overlap: 0.75      # cells with more overlap than this get removed during triage before refinement
+  nbinned: 5000          # max number of binned frames for cell detection
+  spatial_scale: 0       # 0: multi-scale; 1: 6 pixels 2: 12 pixels 3: 24 pixels 4: 48 pixels
+  threshold_scaling: 6.0 # adjust the automatically determined threshold by this scalar multiplier
+  max_iterations: 20     # maximum number of iterations to do cell detection
+
+# ----------------------------------------
+# 1P-Specific Parameters
+# ----------------------------------------
+
+1P:
+  # Window for spatial high-pass filtering for neuropil subtraction before detection
+  spatial_hp_detect: 25
+
+# ----------------------------------------
+# Output Settings
+# ----------------------------------------
+
+Output:
+  preclassify: 0.       # apply classifier before signal extraction with probability 0.3
+
+# ----------------------------------------
+# ROI Extraction Parameters
+# ----------------------------------------
+
+ROI_extraction:
+  allow_overlap: False      # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
+  inner_neuropil_radius: 2  # number of pixels to keep between ROI and neuropil donut
+  min_neuropil_pixels: 350  # minimum number of pixels in the neuropil
+
+
+# ----------------------------------------
+# ExpDB-Specific Parameters
+# ----------------------------------------
+
+ExpDB:
+  fs: 2.0           # Frame rate (Hz) - will be overridden by NWB metadata if available
+  neucoeff: 0.7    # Neuropil correction coefficient. Formula: F_corrected = (F - neucoeff * Fneu) + mean(Fneu)
+  normalize_by_energy: False   # Apply AY-style energy normalization (recommended for ExpDB compatibility)
+  create_Yr: False # Create Yr.mat (reshaped image data) - WARNING: Very large file (~2.5GB)
+  # Matches CaImAn behavior; archival only, not used by analyze_stats
+  create_C_or: False  # Create C_or.mat (original temporal components)
+  validate_outputs: True # Validate .mat files after creation (round-trip test)
+  roi_thr_bool: False  # Apply energy thresholding to ROI pixels for visualization (similar to CaImAn's get_roi)
+  # Set to False to match suite2p_roi behavior (use all pixels)
+  roi_thr: 0.9  # ROI threshold for visualization when roi_thr_bool=True (0-1)
+  # Only used if roi_thr_bool is enabled

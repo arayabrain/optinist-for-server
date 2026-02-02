@@ -5,9 +5,9 @@ import os
 import platform
 import subprocess
 from glob import glob
-from pathlib import Path
 from typing import Dict
 
+from studio.app.common.core.experiment.experiment import ExptOutputPathIds
 from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.snakemake.smk import Rule
 from studio.app.common.core.snakemake.snakemake_reader import SmkConfigReader
@@ -16,7 +16,7 @@ from studio.app.common.core.utils.filepath_finder import find_condaenv_filepath
 from studio.app.common.core.workflow.workflow import NodeType, NodeTypeUtil
 from studio.app.const import ACCEPT_FILE_EXT, FILETYPE, TC_SUFFIX, TS_SUFFIX
 from studio.app.dir_path import DIRPATH
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.wrappers import wrapper_dict
 
 logger = AppLogger.get_logger()
@@ -30,9 +30,7 @@ class SmkUtils:
                 return [join_filepath([DIRPATH.INPUT_DIR, x]) for x in details["input"]]
             elif details["type"] == FILETYPE.MICROSCOPE_EXPDB:
                 exp_id = details["input"]
-                subject_id = exp_id.split("_")[0]
-                exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
-
+                exp_dir = ExpDbPathIdsUtil.create_expdb_file_path(exp_id, "")
                 microscope_files = []
                 for ext in ACCEPT_FILE_EXT.MICROSCOPE_EXPDB_EXT.value:
                     microscope_files.extend(glob(join_filepath([exp_dir, f"*{ext}"])))
@@ -46,24 +44,12 @@ class SmkUtils:
                 return microscope_files
             elif details["type"] == FILETYPE.EXPDB:
                 exp_id = details["input"]
-                subject_id = exp_id.split("_")[0]
                 return [
-                    join_filepath(
-                        [
-                            EXPDB_DIRPATH.EXPDB_DIR,
-                            subject_id,
-                            exp_id,
-                            f"{exp_id}_{TS_SUFFIX}.mat",
-                        ]
+                    ExpDbPathIdsUtil.create_expdb_file_path(
+                        exp_id, f"{exp_id}_{TS_SUFFIX}.mat"
                     ),
-                    join_filepath(
-                        [
-                            EXPDB_DIRPATH.EXPDB_DIR,
-                            subject_id,
-                            exp_id,
-                            "preprocess",
-                            f"{exp_id}_{TC_SUFFIX}.mat",
-                        ]
+                    ExpDbPathIdsUtil.create_expdb_file_path(
+                        exp_id, f"{exp_id}_{TC_SUFFIX}.mat", ["preprocess"]
                     ),
                 ]
             else:
@@ -96,6 +82,10 @@ class SmkUtils:
     def conda(cls, details):
         """Gets conda env path and handles special case of CaImAn on Apple Silicon"""
         if NodeTypeUtil.check_nodetype_from_filetype(details["type"]) == NodeType.DATA:
+            return None
+
+        path = details.get("path")
+        if not path:
             return None
 
         wrapper = cls.dict2leaf(wrapper_dict, details["path"].split("/"))
@@ -168,24 +158,44 @@ class SmkUtils:
         return modified_params
 
     @staticmethod
-    def resolve_nwbfile_reference(rule_config: Rule):
+    def resolve_nwbfile_reference(rule_config: Rule, config: dict = None):
         """Resolve NWB template reference if necessary"""
         if hasattr(rule_config, "nwbfile"):
             if isinstance(rule_config.nwbfile, str) and rule_config.nwbfile.startswith(
                 "ref:"
             ):
-                workflow_dirpath = str(Path(rule_config.output).parent.parent)
-
-                config_path = join_filepath(
-                    [DIRPATH.OUTPUT_DIR, workflow_dirpath, DIRPATH.SNAKEMAKE_CONFIG_YML]
-                )
-                config = SmkConfigReader.read_from_path(config_path)
-
-                if "nwb_template" in config:
-                    template = config["nwb_template"]
-                    rule_config.nwbfile = template
+                # If config is provided (from snakemake context), use it directly
+                if config is not None:
+                    if "nwb_template" in config:
+                        template = config["nwb_template"]
+                        rule_config.nwbfile = template
+                    else:
+                        logger.error("NWB template not found in provided config")
+                        logger.error(f"Config keys available: {list(config.keys())}")
                 else:
-                    logger.error(f"NWB template not found in config: {config_path}")
+                    # Fallback to file reading for backwards compatibility
+                    output_path = join_filepath(
+                        [
+                            DIRPATH.OUTPUT_DIR,
+                            rule_config.output,
+                        ]
+                    )
+                    path_ids = ExptOutputPathIds(os.path.dirname(output_path))
+                    config = SmkConfigReader.read(
+                        path_ids.workspace_id,
+                        path_ids.unique_id,
+                    )
+
+                    if config and "nwb_template" in config:
+                        template = config["nwb_template"]
+                        rule_config.nwbfile = template
+                    else:
+                        logger.error(
+                            "NWB template not found in config:"
+                            f" {path_ids.workspace_id}/{path_ids.unique_id}"
+                        )
+                        config_keys = list(config.keys()) if config else "None"
+                        logger.error(f"Config keys available: {config_keys}")
 
         return rule_config
 

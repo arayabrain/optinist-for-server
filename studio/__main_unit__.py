@@ -14,6 +14,7 @@ from studio.app.common.core.auth.auth_dependencies import (
     get_current_user,
 )
 from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.middleware import ClientIdLoggingMiddleware
 from studio.app.common.core.mode import MODE
 from studio.app.common.core.workspace.workspace_dependencies import (
     is_workspace_available,
@@ -115,6 +116,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add LoggingMiddleware to capture client_id for logging
+app.add_middleware(ClientIdLoggingMiddleware)
+
 
 @app.get("/is_standalone", response_model=bool, tags=["others"])
 async def is_standalone():
@@ -170,6 +174,7 @@ def main(develop_mode: bool = False):
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--reload", action="store_true")
+    timeout_keep_alive = 60
     args = parser.parse_args()
 
     logging_config = AppLogger.get_logging_config()
@@ -188,6 +193,7 @@ def main(develop_mode: bool = False):
             port=args.port,
             log_config=logging_config,
             workers=args.workers,
+            timeout_keep_alive=timeout_keep_alive,
             reload=reload,
             **reload_options,
         )
@@ -198,5 +204,6 @@ def main(develop_mode: bool = False):
             port=args.port,
             log_config=logging_config,
             workers=args.workers,
+            timeout_keep_alive=timeout_keep_alive,
             reload=False,
         )

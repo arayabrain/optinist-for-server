@@ -17,60 +17,8 @@ from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 logger = AppLogger.get_logger()
 
-
-def get_roi(A, roi_thr, thr_method, swap_dim, dims):
-    from scipy.ndimage import binary_fill_holes
-    from skimage.measure import find_contours
-
-    d, nr = np.shape(A)
-
-    # for each patches
-    ims = []
-    coordinates = []
-    for i in range(nr):
-        pars = dict()
-        # we compute the cumulative sum of the energy of the Ath component
-        # that has been ordered from least to highest
-        patch_data = A.data[A.indptr[i] : A.indptr[i + 1]]
-        idx = np.argsort(patch_data)[::-1]
-
-        if thr_method == "nrg":
-            cumEn = np.cumsum(patch_data[idx] ** 2)
-            if len(cumEn) == 0:
-                pars = dict(
-                    coordinates=np.array([]),
-                    CoM=np.array([np.NaN, np.NaN]),
-                    neuron_id=i + 1,
-                )
-                coordinates.append(pars)
-                continue
-            else:
-                # we work with normalized values
-                cumEn /= cumEn[-1]
-                Bvec = np.ones(d)
-                # we put it in a similar matrix
-                Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]][idx]] = cumEn
-        else:
-            Bvec = np.zeros(d)
-            Bvec[A.indices[A.indptr[i] : A.indptr[i + 1]]] = (
-                patch_data / patch_data.max()
-            )
-
-        if swap_dim:
-            Bmat = np.reshape(Bvec, dims, order="C")
-        else:
-            Bmat = np.reshape(Bvec, dims, order="F")
-
-        r_mask = np.zeros_like(Bmat, dtype="bool")
-        contour = find_contours(Bmat, roi_thr)
-        for c in contour:
-            r_mask[np.round(c[:, 0]).astype("int"), np.round(c[:, 1]).astype("int")] = 1
-
-        # Fill in the hole created by the contour boundary
-        r_mask = binary_fill_holes(r_mask)
-        ims.append(r_mask + (i * r_mask))
-
-    return ims
+# Note: get_roi has been moved to studio.app.optinist.wrappers.expdb.roi_utils
+# It's imported lazily within functions to avoid circular dependencies
 
 
 def util_get_image_memmap(function_id: str, images: np.ndarray, file_path: str):
@@ -151,6 +99,8 @@ def caiman_cnmf(
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
+
+    from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
 
     function_id = ExptOutputPathIds(output_dir).function_id
     logger.info(f"start caiman_cnmf: {function_id}")
@@ -345,6 +295,7 @@ def caiman_cnmf(
                 "name": "Fluorescence",
                 "data": fluorescence.T,
                 "unit": "lumens",
+                "rate": fr,
             }
         }
     }

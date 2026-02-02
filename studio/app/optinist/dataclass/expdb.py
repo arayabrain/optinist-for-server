@@ -17,6 +17,84 @@ class TcData(MatlabData):
 
 
 class TsData(MatlabData):
+    """
+    Trial Structure (TS) data class containing trial structure  parameters.
+
+    This class stores timing information used for calculating response statistics
+    and orientation maps. The parameters define how timecourse and image data are
+    segmented and analyzed:
+
+    Data Size Calculations:
+        - Minimum Required Fields:
+            - Nframes_base (nframes_base)
+            - Nframes_stim (nframes_stim)
+            - Nstim_per_trial (nstim_per_trial)
+            - Ntrials (ntrials)
+            - stim_log (stim_log)
+            - frameRate (framerate)
+            - Conditionally required:
+                - if Nframes_base is absent, then also require
+                    - pre_stim (pre_stim)
+                    - post_stim (post_stim)
+                    - Nstim_per_trial_radial (nstim_per_trial_radial)
+                    - Nstim_per_trial_circular (nstim_per_trial_circular)
+
+        - Frame Count: The total number of frames in the imaging data,
+          read as seq_count from the microscope file. This should match
+          the total calculated frames from the trial structure:
+          nframes_per_trial * ntrials.
+
+        - nframes_epoch: Total frames per stimulus epoch
+            (nframes_base + nframes_stim + nframes_post (0 or post_stim))
+          Used to reshape timecourse data into trials and stimuli.
+
+        - nstim_per_trial (Nstim_per_trial): The number of stimuli per trial.
+          Used in stat_file_convert.py to sort and reshape timecourse data.
+
+        - nstim_per_run: If has nframes_base in input, it equals nstim_per_trial;
+          otherwise it is nstim_per_trial_planar.
+
+        - nstim_per_trial_planar: The number of stimuli per trial in planar format.
+          Calculated from nstim_per_trial_radial and nstim_per_trial_circular.
+
+        - nframes_per_trial: Total frames in one trial (nframes_epoch * nstim_per_run)
+          Used to segment timecourse data by trial in sort_tc() and stack_average().
+
+        - base_index: Frame indices for baseline calculation
+            (4 frames from nframes_base-3 to nframes_base, inclusive)
+          Used in get_orimap() to calculate baseline fluorescence (F0) via calc_F().
+
+        - stim_index: Frame indices during stimulus presentation
+            (nframes_stim frames starting at nframes_base+1)
+          Used in get_orimap() to calculate stimulus-evoked response (F) via calc_F().
+
+        - data_table:
+          - shape: (ncells, ntrials, nstimplus)
+          - Created in get_data_tables() where
+            nstimplus = nstim_per_run + 1 (stimuli + baseline)
+          - Each cell has averaged responses during base_index and stim_index periods.
+          - Inputs to get_data_tables():
+            - tc_data: (tc_len, ncells)
+            - direction_of_motion: int
+            - trials: int
+            - base_period: np.ndarray
+            - stim_period: np.ndarray
+          - Output of get_data_tables():
+            - data_tables: (ncells, ntrials, nstimplus)
+
+    Calculation Flow:
+        1. Timecourse data (tc_length × n_cells) is reshaped using
+            nframes_epoch (nframes_base + nframes_stim + nframes_post)
+        2. Baseline calculated from frames in base_index range
+        3. Stimulus response calculated from frames in stim_index range
+        4. dF/F ratio calculated: (F_stim - F_base) / F_base
+            where F_stim = mean fluorescence during stim_index frames
+            and F_base = mean fluorescence during base_index frames
+        5. Statistics computed in StatData using dir_ratio_change, ori_ratio_change
+            dir_ratio_change = (stim_response / baseline) - 1 for each direction
+            ori_ratio_change = averaging opposite directions from dir_ratio_change
+    """
+
     def __init__(self, data, params={}, file_name="ts"):
         params = {"fieldName": TS_FIELDNAME, **params}
 
@@ -79,3 +157,6 @@ class ExpDbData(BaseData):
                 self.tc = TcData(path)
             elif path.endswith(f"{TS_SUFFIX}.mat"):
                 self.ts = TsData(path)
+
+    def save_json(self, json_dir):
+        pass

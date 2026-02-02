@@ -1,3 +1,24 @@
+"""
+Shared utility functions for Optinist wrappers.
+"""
+
+# Import mat_file_io functions for shared access
+from studio.app.optinist.wrappers.optinist.utils.mat_file_io import (
+    save_auxiliary_mats,
+    save_cellmask_mat,
+    save_timecourse_mat,
+)
+
+__all__ = [
+    "standard_norm",
+    "recursive_flatten_params",
+    "param_check",
+    "save_timecourse_mat",
+    "save_cellmask_mat",
+    "save_auxiliary_mats",
+]
+
+
 def standard_norm(X, mean, std):
     from sklearn.preprocessing import StandardScaler
 
@@ -7,8 +28,7 @@ def standard_norm(X, mean, std):
 
 
 def recursive_flatten_params(params, result_params: dict, nest_counter=0):
-    # avoid infinite loops
-    assert nest_counter <= 2, f"Nest depth overflow. [{nest_counter}]"
+    assert nest_counter <= 10, f"Nest depth overflow. [{nest_counter}]"
     nest_counter += 1
 
     for key, nested_param in params.items():

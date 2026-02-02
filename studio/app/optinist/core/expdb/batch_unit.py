@@ -5,7 +5,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from glob import glob
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import scipy
@@ -16,12 +16,15 @@ from PIL import Image
 from scipy.io import loadmat, savemat
 from sqlmodel import Session
 
-from studio.app.common.core.utils.config_handler import ConfigReader
 from studio.app.common.core.utils.filepath_creater import (
     create_directory,
     join_filepath,
 )
-from studio.app.common.core.utils.filepath_finder import find_param_filepath
+from studio.app.common.core.workflow.workflow_params import (
+    get_typecheck_params,
+    read_default_params,
+)
+from studio.app.common.core.workflow.workflow_reader import WorkflowConfigReader
 from studio.app.common.dataclass.image import ImageData
 from studio.app.const import (
     ACCEPT_FILE_EXT,
@@ -35,21 +38,19 @@ from studio.app.const import (
     THUMBNAIL_HEIGHT,
     TS_SUFFIX,
 )
-from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import SupportedRoiMethod
 from studio.app.optinist.core.expdb.crud_cells import bulk_delete_cells
-from studio.app.optinist.core.expdb.crud_expdb import (
-    delete_experiment,
-    extract_experiment_view_attributes,
-    get_experiment,
+from studio.app.optinist.core.expdb.crud_expdb import delete_experiment, get_experiment
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
+from studio.app.optinist.core.expdb.expdb_metadata_reader import ExppDbMetadataReader
+from studio.app.optinist.core.expdb.expdb_validator import (
+    ExpDbValidator,
+    ExpDbValidatorConfig,
 )
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.core.nwb.nwb_creater import merge_nwbfile, save_nwb
 from studio.app.optinist.dataclass import ExpDbData, StatData
 from studio.app.optinist.dataclass.microscope_expdb import MicroscopeExpdbData
-from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
-    caiman_cnmf_preprocessing,
-    get_roi,
-)
 from studio.app.optinist.wrappers.expdb import analyze_stats
 from studio.app.optinist.wrappers.expdb.get_orimap import get_orimap
 from studio.app.optinist.wrappers.expdb.kmeans_analysis import (
@@ -61,18 +62,12 @@ from studio.app.optinist.wrappers.expdb.pca_analysis import (
     pca_analysis,
 )
 from studio.app.optinist.wrappers.expdb.preprocessing import preprocessing
-from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
 
 
 @dataclass
 class Result:
     success: bool
     message: Optional[str] = None
-
-
-def get_default_params(name: str):
-    filepath = find_param_filepath(name)
-    return ConfigReader.read(filepath)
 
 
 def save_image_with_thumb(img_path: str, img):
@@ -87,12 +82,10 @@ def save_image_with_thumb(img_path: str, img):
     thumb_img.save(img_path.replace(".png", ".thumb.png"))
 
 
-class ExpDbPath:
+class ExpDbBatchPath:
     def __init__(self, exp_id: str, is_raw=False):
-        subject_id = exp_id.split("_")[0]
-
         if is_raw:
-            self.exp_dir = join_filepath([EXPDB_DIRPATH.EXPDB_DIR, subject_id, exp_id])
+            self.exp_dir = ExpDbPathIdsUtil.create_expdb_file_path(exp_id, "")
             assert os.path.exists(self.exp_dir), f"exp_dir not found: {self.exp_dir}"
             self.output_dir = join_filepath([self.exp_dir, "outputs"])
 
@@ -126,9 +119,7 @@ class ExpDbPath:
                 [self.preprocess_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]
             )
         else:
-            self.exp_dir = join_filepath(
-                [EXPDB_DIRPATH.PUBLIC_EXPDB_DIR, subject_id, exp_id]
-            )
+            self.exp_dir = ExpDbPathIdsUtil.create_public_expdb_file_path(exp_id, "")
             self.output_dir = self.exp_dir
 
         # outputs
@@ -143,15 +134,23 @@ class ExpDbBatch:
     #   ExpDbBatchConcurrentProcess.LOGGER_NAME.
     LOGGER_NAME = "batch_process_logger"
 
-    def __init__(self, exp_id: str, org_id: int) -> None:
+    def __init__(
+        self, exp_id: str, org_id: int, roi_method: SupportedRoiMethod
+    ) -> None:
         self.logger_ = logging.getLogger(__class__.LOGGER_NAME)
         self.exp_id = exp_id
         self.org_id = org_id
+        self.roi_method = roi_method
 
-        self.raw_path = ExpDbPath(self.exp_id, is_raw=True)
-        self.pub_path = ExpDbPath(self.exp_id)
-        self.nwb_input_config = ConfigReader.read(find_param_filepath("nwb"))
+        self.raw_path = ExpDbBatchPath(self.exp_id, is_raw=True)
+        self.pub_path = ExpDbBatchPath(self.exp_id)
+        self.nwb_input_config = read_default_params("nwb")
         self.nwbfile = {}
+
+        self.workflow_config_reader = ExpDbWorkflowConfigReader(
+            self.logger_, self.exp_id, self.roi_method
+        )
+
         self._configure_matplotlib()
 
     def __stopwatch_callback(watch, function=None):
@@ -180,12 +179,19 @@ class ExpDbBatch:
             db.rollback()  # 明示的にrollback
             raise
 
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_output_data(self):
         # Clean up raw path
         create_directory(self.raw_path.output_dir, delete_dir=True)
 
         # Clean up public path if different
         if self.raw_path.output_dir != self.pub_path.output_dir:
             create_directory(self.pub_path.output_dir, delete_dir=True)
+
+    @stopwatch(callback=__stopwatch_callback)
+    def cleanup_exp_preprocess_data(self):
+        # Clean up preprocess path
+        create_directory(self.raw_path.preprocess_dir, delete_dir=True)
 
     @stopwatch(callback=__stopwatch_callback)
     def load_raw_cellmask_data(self, sparse: bool = False) -> int:
@@ -213,10 +219,12 @@ class ExpDbBatch:
     def process_roi_masks(self):
         """
         Process cellmask data  from .mat file to create ROI image.
-        Uses cnmf.get_roi function that is used in creating cnmf_info.
+        Uses get_roi function that works with both CaImAn and Suite2p.
         Returns roi_image : ndarray
             2D composite ROI mask
         """
+        # Import from common module - works with both CaImAn and Suite2p
+        from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
 
         cellmask_data = self.load_raw_cellmask_data(sparse=True)[0]
 
@@ -238,11 +246,11 @@ class ExpDbBatch:
             f"Matrix has {cellmask_data.nnz} non-zero elements out of {d*nr} total"
         )
 
-        # Get parameters for ROI processing
-        params = get_default_params("caiman_cnmf_preprocessing")
-        flat_params = {}
-        recursive_flatten_params(params, flat_params)
-        roi_thr = flat_params.get("roi_thr", 0.9)
+        # Get parameters for ROI processing based on detected ROI method
+        node_name = SupportedRoiMethod.get_node_name_from_roi_method(self.roi_method)
+        self.logger_.info(f"Using ROI parameters from node: {node_name}")
+        params = self.workflow_config_reader.get_node_params_or_default(node_name)
+        roi_thr = params.get("roi_thr", 0.9)
         thr_method = "nrg"
         swap_dim = False  # Use F-order reshaping
 
@@ -281,12 +289,16 @@ class ExpDbBatch:
     @stopwatch(callback=__stopwatch_callback)
     def preprocess(self) -> ImageData:
         self.logger_.info("process 'preprocess' start.")
-        create_directory(self.raw_path.preprocess_dir)
+
+        # Clean up preprocess data
+        self.cleanup_exp_preprocess_data()
 
         preprocess_results = preprocessing(
             microscope=MicroscopeExpdbData(self.raw_path.microscope_file),
             output_dir=self.raw_path.preprocess_dir,
-            params=get_default_params("preprocessing"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "preprocessing"
+            ),
             nwbfile=self.nwb_input_config,
         )
 
@@ -312,14 +324,24 @@ class ExpDbBatch:
             stack=stack,
             expdb=expdb,
             output_dir=self.raw_path.orimaps_dir,
-            params={**get_default_params("get_orimap"), "exp_id": self.exp_id},
+            params={
+                **self.workflow_config_reader.get_node_params_or_default("get_orimap"),
+                "exp_id": self.exp_id,
+            },
         )
 
     @stopwatch(callback=__stopwatch_callback)
     def cell_detection_cnmf(self, stack: ImageData):
+        # Lazy import - only needed for CaImAn processing
+        from studio.app.optinist.wrappers.caiman.cnmf_preprocessing import (
+            caiman_cnmf_preprocessing,
+        )
+
         # NOTE: frame rateなどの情報を引き渡すためにnwb_input_configを引数に与える
         self.logger_.info("process 'cell_detection_cnmf' start.")
-        cnmf_params = get_default_params("caiman_cnmf_preprocessing")
+        cnmf_params = self.workflow_config_reader.get_node_params_or_default(
+            "caiman_cnmf_preprocessing"
+        )
         function_id = "caiman_cnmf"
         result = caiman_cnmf_preprocessing(
             images=stack,
@@ -340,12 +362,97 @@ class ExpDbBatch:
         return result
 
     @stopwatch(callback=__stopwatch_callback)
+    def cell_detection_suite2p(self, stack: ImageData):
+        """
+        Run Suite2p cell detection pipeline.
+
+        Alternative to cell_detection_cnmf() using Suite2p algorithm.
+        Produces identical output format (ExpDbData) for analyze_stats.
+
+        Args:
+            stack: ImageData from preprocessing node
+
+        Returns:
+            Dictionary with processed_data (ExpDbData) and other outputs
+
+        Notes:
+            - Uses same output directory as CaImAn (preprocess/)
+            - Creates same file names (timecourse.mat, cellmask.mat)
+            - User must choose Suite2p OR CaImAn, not both
+        """
+        from studio.app.optinist.wrappers.suite2p.suite2p_preprocessing import (
+            suite2p_preprocessing,
+        )
+
+        self.logger_.info("process 'cell_detection_suite2p' start.")
+        suite2p_params = self.workflow_config_reader.get_node_params_or_default(
+            "suite2p_preprocessing"
+        )
+        function_id = "suite2p_preprocessing"
+        result = suite2p_preprocessing(
+            images=stack,
+            output_dir=self.raw_path.preprocess_dir,
+            params=suite2p_params,
+            nwbfile=self.nwb_input_config,
+        )
+        if NWBDATASET.CONFIG not in self.nwbfile:
+            self.nwbfile[NWBDATASET.CONFIG] = {}
+        if function_id not in self.nwbfile[NWBDATASET.CONFIG]:
+            self.nwbfile[NWBDATASET.CONFIG][function_id] = {}
+        params_str = json.dumps(suite2p_params, separators=(",", ":"))
+        self.nwbfile[NWBDATASET.CONFIG][function_id]["node_params"] = params_str
+
+        if "nwbfile" in result:
+            self.nwbfile = merge_nwbfile(self.nwbfile, result["nwbfile"])
+
+        return result
+
+    @stopwatch(callback=__stopwatch_callback)
+    def cell_detection(self, stack: ImageData):
+        """
+        Run cell detection using the specified ROI method.
+
+        Automatically selects between CaImAn CNMF or Suite2p based on
+        the roi_method parameter passed to the ExpDbBatch constructor.
+
+        Args:
+            stack: ImageData from preprocessing node (motion-corrected)
+
+        Returns:
+            Dictionary with processed_data (ExpDbData) and other outputs
+            from the selected cell detection method
+        """
+        if self.roi_method == SupportedRoiMethod.SUITE2P:
+            self.logger_.info("Using Suite2p for cell detection")
+            return self.cell_detection_suite2p(stack)
+        elif self.roi_method == SupportedRoiMethod.CAIMAN:
+            self.logger_.info("Using CaImAn CNMF for cell detection")
+            return self.cell_detection_cnmf(stack)
+        elif self.roi_method == SupportedRoiMethod.UNSUPPORTED:
+            assert False, "Unsupported roi method"
+        else:  # Default to caiman
+            self.logger_.info(
+                f"Unknown roi_method '{self.roi_method.value}', "
+                f"defaulting to CaImAn CNMF"
+            )
+            return self.cell_detection_cnmf(stack)
+
+    @stopwatch(callback=__stopwatch_callback)
     def generate_statdata(self) -> StatData:
         self.logger_.info("process 'generate_statdata' start.")
 
         expdb = ExpDbData(paths=[self.raw_path.tc_file, self.raw_path.ts_file])
+
+        # Get analyze_stat param (AssertionError if not configured)
+        analyze_stats_params = (
+            self.workflow_config_reader.get_analyze_stat_node_params()
+        )
+        assert analyze_stats_params, "No analyze_stat node configured."
+
         result = analyze_stats(
-            expdb, self.raw_path.output_dir, get_default_params("analyze_stats")
+            expdb,
+            self.raw_path.output_dir,
+            analyze_stats_params,
         )
         stat = result.get("stat")
         assert isinstance(stat, StatData), "generate statdata failed"
@@ -491,7 +598,9 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=get_default_params("pca_analysis"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "pca_analysis"
+            ),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
@@ -522,7 +631,9 @@ class ExpDbBatch:
             roi_masks=roi_masks,
             fluorescence=timecourses,
             output_dir=self.raw_path.output_dir,
-            params=get_default_params("kmeans_analysis"),
+            params=self.workflow_config_reader.get_node_params_or_default(
+                "kmeans_analysis"
+            ),
             ts_file=self.raw_path.ts_file,
             nwbfile=self.nwbfile,
         )
@@ -551,17 +662,7 @@ class ExpDbBatch:
 
     @stopwatch(callback=__stopwatch_callback)
     def load_exp_metadata(self) -> Tuple[dict, dict]:
-        if not os.path.exists(self.raw_path.exp_metadata_file):
-            return (None, None)
-        else:
-            with open(self.raw_path.exp_metadata_file) as f:
-                attributes = json.load(f)
-                view_attributes = extract_experiment_view_attributes(attributes)
-
-                if not view_attributes:
-                    raise KeyError("Invalid metadata format")
-
-        return (attributes, view_attributes)
+        return ExppDbMetadataReader.load_exp_metadata(self.raw_path.exp_metadata_file)
 
     @stopwatch(callback=__stopwatch_callback)
     def save_nwb(self, metadata: dict):
@@ -605,3 +706,193 @@ class ExpDbBatch:
         # Disable interactive mode
         plt.ioff()
         plt.style.use("fast")
+
+
+class ExpDbWorkflowConfigReader:
+    """
+    This is a reader class for the workflow.yaml created for each Dataset.
+      (workflow.yaml contains parameters for the node that executes the batch, etc.)
+    """
+
+    def __init__(
+        self, logger: logging.Logger, exp_id: str, roi_method: SupportedRoiMethod
+    ) -> None:
+        self.logger_ = logger
+        self.exp_id = exp_id
+        self.roi_method = roi_method
+
+        # Load workflow config if it exists (for GUI-configured parameters)
+        self.workflow_config = self._load_workflow_config()
+
+    def _load_workflow_config(self):
+        """
+        Load and validate workflow.yaml if it exists for this experiment.
+
+        Returns:
+            WorkflowConfig object if workflow.yaml exists and is valid, None otherwise
+        """
+        try:
+            # Read workflow.yaml corresponding to data (exp_id)
+            workflow_yaml_path = ExpDbPathIdsUtil.create_expdb_file_path(
+                self.exp_id, f"{self.exp_id}_workflow.yaml"
+            )
+            config = WorkflowConfigReader._read_from_any_path(workflow_yaml_path)
+
+            if not ExpDbValidator.validate_batch_nodes_in_workflow(config):
+                # Extract actual nodes for error message
+                actual_nodes = WorkflowConfigReader.extract_node_names_in_workflow(
+                    config
+                )
+
+                err_message = (
+                    f"Workflow config contains invalid nodes for batch processing."
+                    f"Found nodes: {sorted(actual_nodes)}. "
+                    f"Acceptable nodes: "
+                    f"{ExpDbValidator.BATCH_ACCEPTABLE_NODES}. "
+                    f"Falling back to default parameters."
+                )
+
+                # Switch validation processing by validation strict mode
+                if ExpDbValidatorConfig.USE_STRICT_VALIDATION:
+                    self.logger_.error(err_message)
+                    return None
+                else:
+                    # If not in strict mode, processing continues.
+                    self.logger_.warning(err_message)
+                    pass
+
+            # Extract and validate ROI method from workflow
+            workflow_roi_method = ExpDbValidator.validate_batch_roi_method(config)
+            if workflow_roi_method:
+                if workflow_roi_method == self.roi_method:
+                    self.logger_.info(
+                        f"Workflow specifies ROI method: {workflow_roi_method.value}"
+                    )
+                else:
+                    self.logger_.warning(
+                        "ROI method in the workflow and proc file does not match.: "
+                        f"[workflow roi_method: {workflow_roi_method.value}] "
+                        f"[proc file roi_method: {self.roi_method.value}]"
+                    )
+            else:
+                self.logger_.warning(
+                    "Could not determine ROI method from workflow, "
+                    "will use roi_method from .proc file"
+                )
+
+            # Log available nodes for debugging
+            node_count = len(config.nodeDict) if config.nodeDict else 0
+            self.logger_.info(
+                f"Workflow config loaded successfully with {node_count} nodes"
+            )
+
+            return config
+
+        except Exception as e:
+            self.logger_.warning(
+                f"Unexpected error loading workflow config from "
+                f"{workflow_yaml_path}: {e}, "
+                f"will use default parameters"
+            )
+            return None
+
+    def exists_node(self, node_name: Union[str, List]) -> bool:
+        result = True
+
+        if type(node_name) is str:
+            result = WorkflowConfigReader.exists_node_in_workflow(
+                self.workflow_config, node_name
+            )
+        elif type(node_name) is list:
+            for node_name_ in node_name:
+                result = WorkflowConfigReader.exists_node_in_workflow(
+                    self.workflow_config, node_name_
+                )
+                # If no node is found, the check ends.
+                if not result:
+                    break
+        else:
+            result = False
+
+        return result
+
+    def get_node_params_or_default(self, node_name: str) -> dict:
+        """
+        Get parameters for a node, preferring workflow.yaml over defaults.
+
+        This method first attempts to retrieve parameters from the workflow.yaml
+        file (if it exists and contains the specified node). If workflow params
+        are not available, it falls back to the default parameter files.
+
+        Args:
+            node_name: Name of the algorithm node
+                      (e.g., "suite2p_preprocessing", "caiman_cnmf_preprocessing")
+
+        Returns:
+            Dictionary of parameters for the node. Never returns None.
+
+        Raises:
+            ValueError: If neither workflow nor default params can be loaded
+        """
+        extracted_params = None
+
+        # Try to get from workflow first
+        if self.workflow_config:
+            node = WorkflowConfigReader.find_node_in_workflow(
+                self.workflow_config, node_name
+            )
+
+            # Check for non-empty params (empty dict {} should fall back to defaults)
+            if node and node.data.param and len(node.data.param) > 0:
+                # Extract actual values from nested workflow structure
+                extracted_params = get_typecheck_params(node.data.param, node_name)
+                self.logger_.info(
+                    f"Using parameters from workflow.yaml for {node_name}: "
+                    f"loaded {len(extracted_params)} parameters"
+                )
+            else:
+                self.logger_.info(
+                    f"Node {node_name} not found in workflow or has no/empty params, "
+                    f"using default parameters"
+                )
+
+        # Fallback to default params
+        if extracted_params is None:
+            self.logger_.info(f"Using default parameters for {node_name}")
+            extracted_params = read_default_params(node_name)
+
+        return extracted_params
+
+    def get_analyze_stat_node_params(self) -> dict:
+        """
+        Get the params of the analyze_stats-related node.
+        1. If the analyze_stats node exists, get its params.
+        2. If the analyze_stats node does not exist, get the params of
+        the analyze_stats node's subnode (which consists of multiple nodes).
+        3. If none of the above nodes exist, return None.
+        """
+
+        analyze_node_params = None
+
+        analyze_stats_node_name = "analyze_stats"
+        analyze_stats_sub_node_names = list(
+            ExpDbValidator._BATCH_ANALYZE_STAT_SUB_NODES
+        )
+
+        # Search for the analyze_stats node
+        if self.exists_node(analyze_stats_node_name):
+            analyze_node_params = self.get_node_params_or_default(
+                analyze_stats_node_name
+            )
+
+        # Search for sub nodes of analyze_stats
+        elif self.exists_node(analyze_stats_sub_node_names):
+            analyze_node_params = {}
+            for sub_node_name in analyze_stats_sub_node_names:
+                analyze_node_params |= self.get_node_params_or_default(sub_node_name)
+
+        # Nodes not found
+        else:
+            analyze_node_params = None
+
+        return analyze_node_params

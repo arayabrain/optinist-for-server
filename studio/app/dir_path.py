@@ -5,12 +5,8 @@ from types import SimpleNamespace
 
 from dotenv import load_dotenv
 
-_TMP_DIR = (
-    os.environ.get("TEMP", os.environ.get("TMP", "C:\\temp"))
-    if platform.system() == "Windows"
-    else "/tmp"
-)
-_DEFAULT_DIR = f"{_TMP_DIR}/studio"
+_TMP_DIR = "C:\\temp" if platform.system() == "Windows" else "/tmp"
+_DEFAULT_DIR = os.path.join(_TMP_DIR, "studio")
 _ENV_DIR = os.environ.get("OPTINIST_DIR")
 
 
@@ -49,6 +45,7 @@ class DIRPATH:
     SNAKEMAKE_CONDA_ENV_DIR = f"{ROOT_DIR}/.snakemake/conda"
 
     SNAKEMAKE_FILEPATH = f"{APP_DIR}/Snakefile"
+    SNAKEMAKE_EDIT_ROI_FILEPATH = f"{APP_DIR}/Snakefile_edit_ROI"
     EXPERIMENT_YML = "experiment.yaml"
     SNAKEMAKE_CONFIG_YML = "snakemake.yaml"
     WORKFLOW_YML = "workflow.yaml"

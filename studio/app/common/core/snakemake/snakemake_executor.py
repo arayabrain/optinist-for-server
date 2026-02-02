@@ -5,7 +5,14 @@ from typing import Dict
 
 from snakemake import snakemake
 
+from studio.app.common.core.experiment.experiment_record_services import (
+    ExperimentRecordService,
+)
 from studio.app.common.core.logger import AppLogger
+from studio.app.common.core.logger_context_helpers import (
+    get_client_id_for_subprocess,
+    with_client_id_context,
+)
 from studio.app.common.core.snakemake.smk import SmkParam
 from studio.app.common.core.snakemake.smk_status_logger import SmkStatusLogger
 from studio.app.common.core.snakemake.snakemake_reader import SmkConfigReader
@@ -21,11 +28,17 @@ logger = AppLogger.get_logger()
 
 
 def snakemake_execute(workspace_id: str, unique_id: str, params: SmkParam):
+    client_id = get_client_id_for_subprocess()
+
     with ProcessPoolExecutor(max_workers=1) as executor:
         logger.info("start snakemake running process.")
 
         future = executor.submit(
-            _snakemake_execute_process, workspace_id, unique_id, params
+            _snakemake_execute_process,
+            workspace_id,
+            unique_id,
+            params,
+            client_id=client_id,
         )
         future_result = future.result()
 
@@ -34,8 +47,12 @@ def snakemake_execute(workspace_id: str, unique_id: str, params: SmkParam):
         return future_result
 
 
+@with_client_id_context  # Automatically set client_id for logging
 def _snakemake_execute_process(
-    workspace_id: str, unique_id: str, params: SmkParam
+    workspace_id: str,
+    unique_id: str,
+    params: SmkParam,
+    client_id: str = None,
 ) -> bool:
     # ------------------------------------------------------------
     # Snakemake execution process
@@ -74,6 +91,12 @@ def _snakemake_execute_process(
 
     # Update workflow processing results
     WorkflowResult(workspace_id, unique_id).observe_overall()
+
+    # Update experiment database record
+    if ExperimentRecordService.is_available():
+        ExperimentRecordService.regist_record_on_workflow_completed(
+            workspace_id, unique_id
+        )
 
     # Data usage calculation
     WorkspaceDataCapacityService.update_experiment_data_usage(workspace_id, unique_id)

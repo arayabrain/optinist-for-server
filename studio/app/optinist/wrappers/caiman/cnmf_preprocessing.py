@@ -1,23 +1,27 @@
 import gc
-import os
 
 import numpy as np
 import scipy
 
 from studio.app.common.core.logger import AppLogger
-from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.dataclass import ImageData
-from studio.app.const import CELLMASK_SUFFIX, TC_SUFFIX, TS_SUFFIX
+from studio.app.const import TS_SUFFIX
+from studio.app.optinist.core.expdb.expdb_data import ExpDbPathIdsUtil
 from studio.app.optinist.core.nwb.nwb import NWBDATASET
 from studio.app.optinist.dataclass import EditRoiData, FluoData, IscellData, RoiData
 from studio.app.optinist.dataclass.expdb import ExpDbData
 from studio.app.optinist.wrappers.caiman.cnmf import (
-    get_roi,
     util_cleanup_image_memmap,
     util_download_model_files,
     util_get_image_memmap,
 )
-from studio.app.optinist.wrappers.optinist.utils import recursive_flatten_params
+from studio.app.optinist.wrappers.expdb.roi_utils import get_roi
+from studio.app.optinist.wrappers.optinist.utils import (
+    recursive_flatten_params,
+    save_auxiliary_mats,
+    save_cellmask_mat,
+    save_timecourse_mat,
+)
 
 logger = AppLogger.get_logger()
 
@@ -76,13 +80,10 @@ def calculate_AY(
 def caiman_cnmf_preprocessing(
     images: ImageData, output_dir: str, params: dict = None, **kwargs
 ) -> dict(fluorescence=FluoData, iscell=IscellData, processed_data=ExpDbData):
-    import scipy
     from caiman import local_correlations, stop_server
     from caiman.cluster import setup_cluster
     from caiman.source_extraction.cnmf import cnmf, online_cnmf
     from caiman.source_extraction.cnmf.params import CNMFParams
-
-    from studio.app.expdb_dir_path import EXPDB_DIRPATH
 
     function_id = "caiman_cnmf"
     logger.info(f"start {function_id}")
@@ -104,7 +105,8 @@ def caiman_cnmf_preprocessing(
     if isinstance(file_path, list):
         file_path = file_path[0]
 
-    exp_id = "_".join(os.path.basename(file_path).split("_")[:2])
+    exp_ids = ExpDbPathIdsUtil.parse_ids_from_workflow_output_path(file_path)
+    exp_id = exp_ids.exp_id
 
     images = images.data
     mmap_paths = []
@@ -170,33 +172,44 @@ def caiman_cnmf_preprocessing(
     stop_server(dview=dview)
 
     Yr = mmap_images.reshape(T, dims[0] * dims[1], order="F").T
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_Yr.mat"]),
-        {"Yr": Yr},
-    )
 
     AY = calculate_AY(cnm.estimates.A, cnm.estimates.C, Yr, dims)
-    timecourse_path = join_filepath([output_dir, f"{exp_id}_{TC_SUFFIX}.mat"])
-    trialstructure_path = join_filepath(
-        [
-            EXPDB_DIRPATH.EXPDB_DIR,
-            exp_id.split("_")[0],
-            exp_id,
-            f"{exp_id}_{TS_SUFFIX}.mat",
-        ]
-    )
-    scipy.io.savemat(timecourse_path, {"timecourse": AY})
-
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_{CELLMASK_SUFFIX}.mat"]),
-        {"cellmask": cnm.estimates.A},
-    )
-    scipy.io.savemat(
-        join_filepath([output_dir, f"{exp_id}_C_or.mat"]),
-        {"C_or": cnm.estimates.C},
+    trialstructure_path = ExpDbPathIdsUtil.create_expdb_file_path(
+        exp_id,
+        f"{exp_id}_{TS_SUFFIX}.mat",
     )
 
-    # contours plot
+    # Save timecourse.mat with validation
+    timecourse_path = save_timecourse_mat(
+        timecourse_data=AY,
+        output_dir=output_dir,
+        exp_id=exp_id,
+        field_name="timecourse",
+        validate=True,
+    )
+
+    # Save cellmask.mat with validation
+    save_cellmask_mat(
+        cellmask_data=cnm.estimates.A,
+        output_dir=output_dir,
+        exp_id=exp_id,
+        field_name="cellmask",
+        validate=True,
+    )
+
+    # Save auxiliary .mat files (Yr.mat and C_or.mat) with validation
+    save_auxiliary_mats(
+        output_dir=output_dir,
+        exp_id=exp_id,
+        Yr=Yr,
+        C_or=cnm.estimates.C,
+        validate=True,
+    )
+
+    # Compute summary images
+    mean_img = np.mean(mmap_images, axis=0)
+
+    # Compute local correlations for visualization
     Cn = local_correlations(mmap_images.transpose(1, 2, 0))
     Cn[np.isnan(Cn)] = 0
 
@@ -258,7 +271,11 @@ def caiman_cnmf_preprocessing(
         roi_list.append(kargs)
 
     nwbfile[NWBDATASET.ROI] = {function_id: {"roi_list": roi_list}}
-    nwbfile[NWBDATASET.POSTPROCESS] = {function_id: {"all_roi_img": im}}
+    nwbfile[NWBDATASET.POSTPROCESS] = {
+        function_id: {
+            "all_roi_img": im,
+        }
+    }
 
     # Add iscell to NWB
     nwbfile[NWBDATASET.COLUMN] = {
@@ -284,25 +301,35 @@ def caiman_cnmf_preprocessing(
         }
     }
 
+    empty_roi = np.full(dims, np.nan)
     info = {
         "processed_data": ExpDbData([timecourse_path, trialstructure_path]),
-        "images": ImageData(
+        "mean_image": ImageData(
+            np.array(mean_img, dtype=np.uint16),
+            output_dir=output_dir,
+            file_name="mean_image",
+        ),
+        "local_correlations": ImageData(
             np.array(Cn * 255, dtype=np.uint8),
             output_dir=output_dir,
-            file_name="images",
+            file_name="local_correlations",
         ),
         "fluorescence": FluoData(fluorescence, file_name="fluorescence"),
         "iscell": IscellData(iscell, file_name="iscell"),
         "all_roi": RoiData(
-            np.nanmax(im, axis=0), output_dir=output_dir, file_name="all_roi"
+            np.nanmax(im, axis=0) if len(im) > 0 else empty_roi.copy(),
+            output_dir=output_dir,
+            file_name="all_roi",
         ),
         "cell_roi": RoiData(
-            np.nanmax(im[iscell != 0], axis=0),
+            np.nanmax(im[iscell != 0], axis=0) if len(im) > 0 else empty_roi.copy(),
             output_dir=output_dir,
             file_name="cell_roi",
         ),
         "non_cell_roi": RoiData(
-            non_cell_roi, output_dir=output_dir, file_name="non_cell_roi"
+            non_cell_roi if len(im) > 0 else empty_roi.copy(),
+            output_dir=output_dir,
+            file_name="non_cell_roi",
         ),
         "edit_roi_data": EditRoiData(mmap_images, im),
         "nwbfile": nwbfile,
@@ -314,5 +341,8 @@ def caiman_cnmf_preprocessing(
     except Exception as e:
         logger.error("Failed to cleanup memmap files.")
         logger.error(e)
+
+    logger.info("Caiman cnmf preprocessing completed successfully")
+    logger.info(f"Detected {n_rois} cells, {n_noncell_rois} non-cells")
 
     return info
