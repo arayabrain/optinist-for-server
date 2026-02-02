@@ -86,6 +86,31 @@ class ExpDbExperimentUpdate(BaseModel):
     updated_at: Optional[datetime]
 
 
+class ExpDbExperimentCatalog(BaseModel):
+    id: int
+    experiment_id: str
+    fields: ExpDbExperimentFields = None
+    attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
+    processing_log: Optional[dict] = {}
+    publish_status: Optional[int] = Field(
+        default=None, description="0: private, 1: public (from experiments table)"
+    )
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
+
+class ExpDbExperimentCatalogCreate(BaseModel):
+    experiment_id: str
+    organization_id: int
+    attributes: Optional[dict] = {}
+    view_attributes: Optional[dict] = {}
+    processing_log: Optional[dict] = {}
+
+
 class ExpDbExperimentsSearchOptions(BaseModel):
     experiment_id: Optional[str] = Field(
         Query(default="", description="partial match (experiments.experiment_id)")

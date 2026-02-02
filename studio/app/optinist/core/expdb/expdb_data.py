@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.expdb_dir_path import EXPDB_DIRPATH
+from studio.app.optinist.core.expdb.batch_const import PROC_FILE_EXT
 
 
 @dataclass
@@ -89,6 +90,15 @@ class ExpDbPathIdsUtil:
         )
 
     @staticmethod
+    def parse_ids_from_proc_file_path(proc_file_path: str) -> ExpDbPathIds:
+        if proc_file_path.endswith(PROC_FILE_EXT):
+            basename = os.path.basename(proc_file_path)
+            name, ext = os.path.splitext(basename)
+            return ExpDbPathIds(exp_id=name)
+        else:
+            return None
+
+    @staticmethod
     def parse_ids_from_workflow_output_path(output_path: str) -> ExpDbPathIds:
         """
         A utility to extract exp_ids from the output of a workflow
@@ -102,3 +112,24 @@ class ExpDbPathIdsUtil:
             os.path.basename(output_path).split(ExpDbPathIds.ID_DELIMITER)[:2]
         )
         return ExpDbPathIds(exp_id=exp_id)
+
+
+class ProcessResult:
+    def __init__(self):
+        self.success_ids_ = []
+        self.failure_ids_ = []
+
+    @property
+    def success_ids(self):
+        return self.success_ids_
+
+    @property
+    def failure_ids(self):
+        return self.failure_ids_
+
+    @property
+    def total_ids(self):
+        return self.success_ids_ + self.failure_ids_
+
+    def has_error(self) -> bool:
+        return len(self.failure_ids_) > 0

@@ -33,6 +33,14 @@ export const getExperimentsApi = async (
   return response.data
 }
 
+export const getExperimentsCatalogsApi = async (
+  params: DatabaseParams,
+): Promise<DatabaseDTO> => {
+  const paramsNew = stringify(params, { indices: false })
+  const response = await axios.get(`/expdb/experiments_catalogs?${paramsNew}`)
+  return response.data
+}
+
 export const getCellsApi = async (
   params: DatabaseParams,
 ): Promise<DatabaseDTO> => {
@@ -94,5 +102,10 @@ export const putAttributesApi = async (
 
 export const getOptionsFilterApi = async (): Promise<FilterParams> => {
   const response = await axios.get("public/config/filter_params")
+  return response.data
+}
+
+export const postRefreshExperimentsCatalogsApi = async (): Promise<boolean> => {
+  const response = await axios.post("/expdb/experiments_catalogs/refresh")
   return response.data
 }

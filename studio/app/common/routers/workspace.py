@@ -13,6 +13,7 @@ from studio.app.common.core.logger import AppLogger
 from studio.app.common.core.utils.filepath_creater import join_filepath
 from studio.app.common.core.workflow.workflow import WorkflowRunStatus
 from studio.app.common.core.workspace.workspace_dependencies import (
+    check_expdb_batch_type_workspace_permission,
     is_workspace_available,
     is_workspace_owner,
 )
@@ -197,6 +198,11 @@ def create_workspace(
     workspace = common_model.Workspace(
         **workspace.dict(), user_id=current_user.id, deleted=0
     )
+
+    # Check EXPDB_BATCH type workspace's permission
+    if not check_expdb_batch_type_workspace_permission(current_user, workspace):
+        raise HTTPException(status_code=403, detail="Workspace is not available")
+
     db.add(workspace)
     db.commit()
     db.refresh(workspace)

@@ -27,6 +27,7 @@ import {
   isCsvInputNode,
   isHDF5InputNode,
   isMatlabInputNode,
+  normalizeFileType,
 } from "store/slice/InputNode/InputNodeUtils"
 import {
   reproduceWorkflow,
@@ -38,8 +39,10 @@ import { getWorkspace } from "store/slice/Workspace/WorkspaceActions"
 /**
  * Get the appropriate file type for the initial node
  */
-const getInitialNodeFileType = (_workspaceType?: number) => {
-  return FILE_TYPE_SET.EXPDB
+const getInitialNodeFileType = (workspaceType?: number) => {
+  return workspaceType === WORKSPACE_TYPE.EXPDB_BATCH
+    ? FILE_TYPE_SET.EXPDB_BATCH_MICROSCOPE_EXPDB
+    : FILE_TYPE_SET.EXPDB
 }
 
 /**
@@ -127,9 +130,9 @@ export const inputNodeSlice = createSlice({
   },
   extraReducers: (builder) =>
     builder
-      .addCase(getWorkspace.fulfilled, (state) => {
+      .addCase(getWorkspace.fulfilled, (state, action) => {
         // Save workspace type for later use
-        const workspaceType = WORKSPACE_TYPE.DEFAULT // Currently a fixed value
+        const workspaceType = action.payload.type
         state[WORKSPACE_TYPE_KEY] = workspaceType
 
         // Update the initial node based on workspace type
@@ -206,12 +209,13 @@ export const inputNodeSlice = createSlice({
           .forEach((node) => {
             if (node.data?.fileType != null) {
               try {
-                const baseNode = FileNodeFactory.createInputNode(
-                  node.data.fileType,
-                )
+                // Backward compatibility: normalize deprecated file types
+                const fileType = normalizeFileType(node.data.fileType)
+
+                const baseNode = FileNodeFactory.createInputNode(fileType)
                 // Use specific param for CSV nodes
                 const param =
-                  node.data.fileType === FILE_TYPE_SET.CSV
+                  fileType === FILE_TYPE_SET.CSV
                     ? (node.data.param as CsvInputParamType)
                     : baseNode.param
                 newState[node.id] = {
@@ -239,19 +243,17 @@ export const inputNodeSlice = createSlice({
             .forEach((node) => {
               if (node.data?.fileType != null) {
                 try {
-                  const baseNode = FileNodeFactory.createInputNode(
-                    node.data.fileType,
-                  )
-                  const filePathType = FileNodeFactory.getFilePathType(
-                    node.data.fileType,
-                  )
-                  const specialPath = FileNodeFactory.getSpecialPathConfig(
-                    node.data.fileType,
-                  )
+                  // Backward compatibility: normalize deprecated file types
+                  const fileType = normalizeFileType(node.data.fileType)
+
+                  const baseNode = FileNodeFactory.createInputNode(fileType)
+                  const filePathType = FileNodeFactory.getFilePathType(fileType)
+                  const specialPath =
+                    FileNodeFactory.getSpecialPathConfig(fileType)
 
                   // Use specific param for CSV nodes
                   const param =
-                    node.data.fileType === FILE_TYPE_SET.CSV
+                    fileType === FILE_TYPE_SET.CSV
                       ? (node.data.param as CsvInputParamType)
                       : baseNode.param
 

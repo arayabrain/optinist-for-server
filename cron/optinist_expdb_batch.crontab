@@ -1,1 +1,5 @@
+# run expdb_batch
 */5 * * * * optinist sh /app/cron/run_expdb_batch_script.sh > /dev/null 2>&1
+
+# run refresh_experiment_catalogs
+5 0 * * * optinist sh /app/cron/run_refresh_experiment_catalogs.sh > /dev/null 2>&1

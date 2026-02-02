@@ -19,6 +19,23 @@ else
   echo "Proc files found. [$proc_files]"
 fi
 
-# Run expdb_batch
-conda activate expdb_batch && \
+# ------------------------------------------------------------
+# Start batch process
+#
+# NOTE:
+# - If .proc files exist, launch batch runs for all roi methods (caiman, suite2p, ...).
+# - The batch run module automatically determines
+#   which roi method each proc file corresponds to based on the conda environment.
+# ------------------------------------------------------------
+
+# Process CaImAn datasets
+echo "Processing CaImAn datasets"
+conda activate expdb_batch_caiman && \
   python run_expdb_batch.py -o 1 -p 5
+conda deactivate
+
+# Process Suite2p datasets
+echo "Processing Suite2p datasets"
+conda activate expdb_batch_suite2p && \
+  python run_expdb_batch.py -o 1 -p 5
+conda deactivate

@@ -48,6 +48,10 @@ class User(BaseModel):
     def is_admin_data(self) -> bool:
         return self.is_admin or self.role_id == UserRole.data_manager
 
+    @property
+    def is_expdb_batch_runnable_admin(self) -> bool:
+        return self.is_admin or self.role_id == UserRole.data_manager
+
     class Config:
         orm_mode = True
 

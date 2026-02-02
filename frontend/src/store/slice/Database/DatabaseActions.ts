@@ -4,6 +4,7 @@ import {
   getCellsApi,
   getCellsPublicApi,
   getExperimentsApi,
+  getExperimentsCatalogsApi,
   getExperimentsPublicApi,
   getListShareApi,
   getOptionsFilterApi,
@@ -34,6 +35,22 @@ export const getExperimentsDatabase = createAsyncThunk<
     return rejectWithValue(e)
   }
 })
+
+export const getExperimentsCatalogsDatabase = createAsyncThunk<
+  DatabaseDTO,
+  DatabaseParams
+>(
+  `${DATABASE_SLICE_NAME}/getExperimentsCatalogsDatabase`,
+  async (params, thunkAPI) => {
+    const { rejectWithValue } = thunkAPI
+    try {
+      const response = await getExperimentsCatalogsApi(params)
+      return response
+    } catch (e) {
+      return rejectWithValue(e)
+    }
+  },
+)
 
 export const getCellsDatabase = createAsyncThunk<DatabaseDTO, DatabaseParams>(
   `${DATABASE_SLICE_NAME}/getCellsList`,

@@ -1,9 +1,18 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import { shallowEqual, useDispatch, useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
 
+import moment from "moment"
 import { enqueueSnackbar, VariantType } from "notistack"
 
+import { Article } from "@mui/icons-material"
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch"
@@ -15,6 +24,7 @@ import PublicOffIcon from "@mui/icons-material/PublicOff"
 import {
   Box,
   Checkbox,
+  Chip,
   IconButton,
   Input,
   styled,
@@ -35,6 +45,7 @@ import {
   GridSortDirection,
   GridSortItem,
   GridSortModel,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid"
 
 import { SHARE, WAITING_TIME } from "@types"
@@ -48,6 +59,7 @@ import SwitchCustom from "components/common/SwitchCustom"
 import PopupShareGroup from "components/Database/PopupShareGroup"
 import {
   getExperimentsDatabase,
+  getExperimentsCatalogsDatabase,
   getExperimentsPublicDatabase,
   getListShare,
   getOptionsFilter,
@@ -64,6 +76,7 @@ import {
 } from "store/slice/Database/DatabaseType"
 import { isAdminOrManager } from "store/slice/User/UserSelector"
 import { AppDispatch, RootState } from "store/store"
+import { useUrlParamsSync } from "utils/useUrlParamsSync"
 
 export type Data = {
   id: number
@@ -83,23 +96,49 @@ export type Data = {
   updated_time: string
 }
 
+type PopupBaseProps = {
+  data?: string | string[]
+  open: boolean
+  handleClose: () => void
+  title: string
+  expId?: string
+  readOnly?: boolean
+  onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void
+  onSubmit?: () => void
+  showSaveButton?: boolean
+}
+
 type PopupAttributesProps = {
   data?: string | string[]
   open: boolean
   handleClose: () => void
   role?: boolean
   handleChangeAttributes: (e: ChangeEvent<HTMLTextAreaElement>) => void
-  exp_id?: string
+  expId?: string
   onSubmit: () => void
   readonly?: boolean
+}
+
+type PopupLogsProps = {
+  data?: string | string[]
+  open: boolean
+  handleClose: () => void
+  expId?: string
 }
 
 type DatabaseProps = {
   user?: UserDTO
   cellPath: string
   handleRowClick?: GridEventListener<"rowClick">
+  handleRowSelectionModelChange?: (
+    selectionModel: GridRowSelectionModel,
+  ) => void
   readonly?: boolean
   metadataEditable?: boolean
+  multiSelect?: boolean
+  hideImageColumns?: boolean
+  initialRowSelection?: GridRowSelectionModel
+  useExperimentsCatalogsApi?: boolean
 }
 
 let timeout: NodeJS.Timeout | undefined = undefined
@@ -113,65 +152,17 @@ const LIST_FILTER_IS = [
 ]
 
 const columns = (
-  listIdData: number[],
-  setListCheck: (value: number[]) => void,
-  listCheck: number[],
-  dataExperiments: DatabaseType[],
-  checkBoxAll: boolean,
-  setCheckBoxAll: (value: boolean) => void,
-  handleOpenAttributes: (value: string, id: number) => void,
+  handleOpenAttributes: (value: string, id: number, expId?: string) => void,
+  handleOpenLogs: (value: string, expId?: string) => void,
   handleOpenDialog: (value: ImageUrls[], exp_id?: string) => void,
   cellPath: string,
   navigate: (path: string) => void,
   user: boolean,
-  adminOrManager: boolean,
   readonly?: boolean,
   loading: boolean = false,
   options?: FilterParams,
+  useExperimentsCatalogsApi: boolean = false,
 ) => [
-  adminOrManager &&
-    user &&
-    !readonly && {
-      field: "checkbox",
-      renderHeader: () => (
-        <Checkbox
-          checked={checkBoxAll}
-          onChange={(e: ChangeEvent) => {
-            const target = e.target as HTMLInputElement
-            setCheckBoxAll(target.checked)
-            if (!target.checked) {
-              const newListId: number[] = listCheck.filter(
-                (item) => !listIdData.includes(item),
-              )
-              setListCheck([...newListId])
-            } else {
-              const newList = dataExperiments.map((item) => item.id)
-              setListCheck([
-                ...listCheck,
-                ...newList.filter((item) => !listCheck.includes(item)),
-              ])
-            }
-          }}
-        />
-      ),
-      sortable: false,
-      filterable: false,
-      width: 70,
-      type: "string",
-      renderCell: (params: { row: DatabaseType }) => (
-        <Checkbox
-          checked={listCheck.includes(params.row.id)}
-          onChange={(e: ChangeEvent) => {
-            const newData = listCheck.filter((id) => id !== params.row.id)
-            const target = e.target as HTMLInputElement
-            if (!target.checked) {
-              setCheckBoxAll(false)
-              setListCheck(newData)
-            } else setListCheck([...listCheck, params.row.id])
-          }}
-        />
-      ),
-    },
   {
     field: "experiment_id",
     headerName: "Experiment ID",
@@ -340,16 +331,49 @@ const columns = (
     filterable: false,
     sortable: false,
     renderCell: (params: { row: DatabaseType }) => {
-      const inputValue = JSON.stringify(params?.row?.attributes).trim()
+      const inputValue = JSON.stringify(params?.row?.attributes ?? {}).trim()
       const parsedJSON = JSON.parse(inputValue)
       const formattedJSON = JSON.stringify(parsedJSON, null, 2)
       const value = formattedJSON
       return (
         <Box
           sx={{ cursor: "pointer" }}
-          onClick={() => handleOpenAttributes(value, params?.row?.id)}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenAttributes(
+              value,
+              params?.row?.id,
+              params?.row?.experiment_id,
+            )
+          }}
         >
           <AssignmentOutlinedIcon color={"primary"} />
+        </Box>
+      )
+    },
+  },
+  useExperimentsCatalogsApi && {
+    field: "processing_log",
+    headerName: "Processing Log",
+    width: 140,
+    filterable: false,
+    sortable: false,
+    renderCell: (params: { row: DatabaseType }) => {
+      const inputValue = JSON.stringify(
+        params?.row?.processing_log || {},
+      ).trim()
+      const parsedJSON = JSON.parse(inputValue)
+      const formattedJSON = JSON.stringify(parsedJSON, null, 2)
+      const value = formattedJSON
+      return (
+        <Box
+          sx={{ cursor: "pointer" }}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenLogs(value, params?.row?.experiment_id)
+          }}
+        >
+          <Article color={"primary"} />
         </Box>
       )
     },
@@ -400,15 +424,17 @@ const columns = (
   },
 ]
 
-const PopupAttributes = ({
+const PopupBase = ({
   data,
   open,
   handleClose,
-  role = false,
-  handleChangeAttributes,
+  title,
+  expId,
+  readOnly = true,
+  onChange,
   onSubmit,
-  readonly,
-}: PopupAttributesProps) => {
+  showSaveButton = false,
+}: PopupBaseProps) => {
   const [error, setError] = useState("")
   const isValidJSON = (str: string) => {
     try {
@@ -421,7 +447,7 @@ const PopupAttributes = ({
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     isValidJSON(e.target.value)
-    handleChangeAttributes(e)
+    onChange?.(e)
   }
 
   useEffect(() => {
@@ -446,13 +472,28 @@ const PopupAttributes = ({
         onClose={handleClose}
         aria-labelledby="draggable-dialog-title"
       >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            padding: "16px 24px 0",
+          }}
+        >
+          <Box sx={{ fontWeight: 600, fontSize: "1.1rem" }}>{title}</Box>
+          {expId && (
+            <Chip
+              label={expId}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{ fontSize: "0.8rem" }}
+            />
+          )}
+        </Box>
         <DialogContent sx={{ minWidth: 400 }}>
           <DialogContentText>
-            <Content
-              readOnly={!role || readonly}
-              value={data}
-              onChange={handleChange}
-            />
+            <Content readOnly={readOnly} value={data} onChange={handleChange} />
             <span style={{ color: "red", display: "block" }}>{error}</span>
           </DialogContentText>
         </DialogContent>
@@ -467,7 +508,7 @@ const PopupAttributes = ({
           >
             Close
           </Button>
-          {role && !readonly && (
+          {showSaveButton && (
             <Button variant={"contained"} disabled={!!error} onClick={onSubmit}>
               Save
             </Button>
@@ -477,12 +518,55 @@ const PopupAttributes = ({
     </Box>
   )
 }
+
+const PopupAttributes = ({
+  data,
+  open,
+  handleClose,
+  role = false,
+  handleChangeAttributes,
+  onSubmit,
+  readonly,
+  expId,
+}: PopupAttributesProps) => {
+  return (
+    <PopupBase
+      data={data}
+      open={open}
+      handleClose={handleClose}
+      title="Attributes"
+      expId={expId}
+      readOnly={!role || readonly}
+      onChange={handleChangeAttributes}
+      onSubmit={onSubmit}
+      showSaveButton={role && !readonly}
+    />
+  )
+}
+
+const PopupLogs = ({ data, open, handleClose, expId }: PopupLogsProps) => {
+  return (
+    <PopupBase
+      data={data}
+      open={open}
+      handleClose={handleClose}
+      title="Logs"
+      expId={expId}
+      readOnly={true}
+    />
+  )
+}
 const DatabaseExperiments = ({
   user,
   cellPath,
   handleRowClick,
+  handleRowSelectionModelChange,
   readonly,
   metadataEditable,
+  multiSelect = false,
+  hideImageColumns = false,
+  initialRowSelection = [],
+  useExperimentsCatalogsApi = false,
 }: DatabaseProps) => {
   const type: keyof TypeData = user ? "private" : "public"
   const adminOrManager = useSelector(isAdminOrManager)
@@ -490,11 +574,14 @@ const DatabaseExperiments = ({
     data: dataExperiments,
     loading,
     filterParams,
-  } = useSelector((state: RootState) => ({
-    data: state[DATABASE_SLICE_NAME].data[type],
-    loading: state[DATABASE_SLICE_NAME].loading,
-    filterParams: state[DATABASE_SLICE_NAME].filterParams,
-  }))
+  } = useSelector(
+    (state: RootState) => ({
+      data: state[DATABASE_SLICE_NAME].data[type],
+      loading: state[DATABASE_SLICE_NAME].loading,
+      filterParams: state[DATABASE_SLICE_NAME].filterParams,
+    }),
+    shallowEqual,
+  )
 
   const [openPublishAll, setOpenPublishAll] = useState<{
     title: string
@@ -507,9 +594,10 @@ const DatabaseExperiments = ({
     open: false,
     type: "on",
   })
-  const [newParams, setNewParams] = useState(
-    window.location.search.replace("?", ""),
-  )
+  const { searchParams, setNewParams } = useUrlParamsSync()
+  const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
+
   const [openShare, setOpenShare] = useState<{ open: boolean; id?: number }>({
     open: false,
   })
@@ -530,17 +618,16 @@ const DatabaseExperiments = ({
   const [fieldFilter, setFieldFilter] = useState("")
   const [valueFilter, setValueFilter] = useState<string | string[]>("")
 
-  const [searchParams, setParams] = useSearchParams()
-  const dispatch = useDispatch<AppDispatch>()
-  const navigate = useNavigate()
-
   const offset = searchParams.get("offset") || 0
   const limit = searchParams.get("limit") || 50
   const sort = searchParams.getAll("sort")
 
-  const { dataShare } = useSelector((state: RootState) => ({
-    dataShare: state[DATABASE_SLICE_NAME].listShare,
-  }))
+  const { dataShare } = useSelector(
+    (state: RootState) => ({
+      dataShare: state[DATABASE_SLICE_NAME].listShare,
+    }),
+    shallowEqual,
+  )
 
   const handleClickVariant = (variant: VariantType, mess: string) => {
     enqueueSnackbar(mess, { variant })
@@ -613,7 +700,11 @@ const DatabaseExperiments = ({
   })
 
   const fetchApi = () => {
-    const api = !user ? getExperimentsPublicDatabase : getExperimentsDatabase
+    const api = !user
+      ? getExperimentsPublicDatabase
+      : useExperimentsCatalogsApi
+        ? getExperimentsCatalogsDatabase
+        : getExperimentsDatabase
     let newPublish: number | undefined
     if (!dataParamsFilter.publish_status) newPublish = undefined
     else {
@@ -688,21 +779,6 @@ const DatabaseExperiments = ({
   }, [dataExperiments, listCheck])
 
   useEffect(() => {
-    if (newParams && newParams !== window.location.search.replace("?", "")) {
-      setNewParams(window.location.search.replace("?", ""))
-    }
-    //eslint-disable-next-line
-  }, [searchParams])
-
-  useEffect(() => {
-    let param = newParams
-    if (newParams[0] === "&") param = newParams.slice(1, param.length)
-    if (param === window.location.search.replace("?", "")) return
-    setParams(param.replaceAll("+", "%2B"))
-    //eslint-disable-next-line
-  }, [newParams])
-
-  useEffect(() => {
     fetchApi()
     //eslint-disable-next-line
   }, [JSON.stringify(dataParams), user, JSON.stringify(dataParamsFilter)])
@@ -741,8 +817,12 @@ const DatabaseExperiments = ({
     setDataDialog({ type: "", data: undefined })
   }
 
-  const handleOpenAttributes = (data: string, id: number) => {
-    setDataDialog({ id: id, type: "attribute", data })
+  const handleOpenAttributes = (data: string, id: number, expId?: string) => {
+    setDataDialog({ id: id, type: "attribute", data, expId })
+  }
+
+  const handleOpenLogs = (data: string, expId?: string) => {
+    setDataDialog({ type: "logs", data, expId })
   }
 
   const handleChangeAttributes = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -1026,6 +1106,74 @@ const DatabaseExperiments = ({
   const ColumnPrivate = () => {
     return [
       {
+        field: "updated_time",
+        headerName: "Timestamp",
+        width: 160,
+        filterable: false,
+        sortable: false,
+        renderCell: (params: { row: DatabaseType }) => {
+          return (
+            <Tooltip title={params.row?.updated_at}>
+              <SpanCustom>
+                {moment(params.row?.updated_at).format("YYYY/MM/DD HH:mm")}
+              </SpanCustom>
+            </Tooltip>
+          )
+        },
+      },
+    ]
+  }
+
+  const ColumnCheckbox = () => {
+    return [
+      {
+        field: "checkbox",
+        renderHeader: () => (
+          <Checkbox
+            checked={checkBoxAll}
+            onChange={(e: ChangeEvent) => {
+              const target = e.target as HTMLInputElement
+              setCheckBoxAll(target.checked)
+              if (!target.checked) {
+                const listIdData = dataExperiments.items.map((item) => item.id)
+                const newListId: number[] = listCheck.filter(
+                  (item) => !listIdData.includes(item),
+                )
+                setListCheck([...newListId])
+              } else {
+                const newList = dataExperiments.items.map((item) => item.id)
+                setListCheck([
+                  ...listCheck,
+                  ...newList.filter((item) => !listCheck.includes(item)),
+                ])
+              }
+            }}
+          />
+        ),
+        sortable: false,
+        filterable: false,
+        width: 70,
+        type: "string",
+        renderCell: (params: { row: DatabaseType }) => (
+          <Checkbox
+            checked={listCheck.includes(params.row.id)}
+            onChange={(e: ChangeEvent) => {
+              const newData = listCheck.filter((id) => id !== params.row.id)
+              const target = e.target as HTMLInputElement
+              if (!target.checked) {
+                setCheckBoxAll(false)
+                setListCheck(newData)
+              } else setListCheck([...listCheck, params.row.id])
+            }}
+          />
+        ),
+      },
+    ]
+  }
+
+  const ColumnManage = () => {
+    return [
+      {
         field: "share_type",
         headerName: "Share",
         width: 120,
@@ -1072,26 +1220,86 @@ const DatabaseExperiments = ({
     ]
   }
 
-  const columnsTable = [
+  let columnsTable = [
     ...columns(
-      dataExperiments.items.map((item) => item.id),
-      setListCheck,
-      listCheck,
-      dataExperiments?.items,
-      checkBoxAll,
-      setCheckBoxAll,
       handleOpenAttributes,
+      handleOpenLogs,
       handleOpenDialog,
       cellPath,
       navigate,
       !!user,
-      !!adminOrManager,
       readonly,
       loading,
       filterParams,
+      useExperimentsCatalogsApi,
     ),
     ...getColumns,
   ].filter(Boolean) as GridColDef[]
+
+  // Filter columns if hidePixcelColumns is true
+  if (hideImageColumns) {
+    const firstImageColumnIndex = columnsTable.findIndex(
+      (col) => col.field === "cell_image_urls",
+    )
+    if (firstImageColumnIndex !== -1) {
+      columnsTable = columnsTable.slice(0, firstImageColumnIndex)
+    }
+  }
+
+  /**
+   * Preserve scroll position when row selection changes in multi-select mode
+   * DataGrid automatically scrolls to selected rows, which causes unwanted flickering
+   * This logic captures the scroll position before selection and restores it after rendering
+   */
+  const dataGridContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollPositionRef = useRef({ top: 0, left: 0 })
+
+  const getVirtualScroller = useCallback(() => {
+    return dataGridContainerRef.current?.querySelector(
+      ".MuiDataGrid-virtualScroller",
+    ) as HTMLElement | null
+  }, [])
+
+  const saveScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scrollPositionRef.current = {
+        top: scroller.scrollTop,
+        left: scroller.scrollLeft,
+      }
+    }
+  }, [getVirtualScroller])
+
+  const restoreScrollPosition = useCallback(() => {
+    const scroller = getVirtualScroller()
+    if (scroller) {
+      scroller.scrollTop = scrollPositionRef.current.top
+      scroller.scrollLeft = scrollPositionRef.current.left
+    }
+  }, [getVirtualScroller])
+
+  const handleRowSelectionChange = useCallback(
+    (newSelection: GridRowSelectionModel) => {
+      if (!multiSelect) {
+        handleRowSelectionModelChange?.(newSelection)
+        return
+      }
+
+      saveScrollPosition()
+      handleRowSelectionModelChange?.(newSelection)
+
+      // Restore after React renders the updated selection state
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 0)
+    },
+    [
+      multiSelect,
+      handleRowSelectionModelChange,
+      saveScrollPosition,
+      restoreScrollPosition,
+    ],
+  )
 
   return (
     <DatabaseExperimentsWrapper>
@@ -1173,24 +1381,35 @@ const DatabaseExperiments = ({
           ) : null}
         </Box>
       ) : null}
-      <DataGrid
-        columns={
-          adminOrManager && user && !readonly
-            ? ([...columnsTable, ...ColumnPrivate()] as GridColDef[])
-            : (columnsTable as GridColDef[])
-        }
-        sortModel={model.sort as GridSortItem[]}
-        rows={dataExperiments?.items || []}
-        rowHeight={128}
-        hideFooter={true}
-        filterMode={"server"}
-        sortingMode={"server"}
-        onSortModelChange={handleSort}
-        filterModel={model.filter}
-        onFilterModelChange={handleFilter}
-        onRowClick={handleRowClick}
-        sx={{ flex: 1, minHeight: 0 }}
-      />
+      <Box
+        ref={dataGridContainerRef}
+        sx={{ flex: 1, minHeight: 0, display: "flex" }}
+      >
+        <DataGrid
+          columns={
+            [
+              ...(user && adminOrManager && !readonly ? ColumnCheckbox() : []),
+              ...columnsTable,
+              ...(user ? ColumnPrivate() : []),
+              ...(user && adminOrManager && !readonly ? ColumnManage() : []),
+            ] as GridColDef[]
+          }
+          sortModel={model.sort as GridSortItem[]}
+          rows={dataExperiments?.items || []}
+          rowHeight={128}
+          hideFooter={true}
+          filterMode={"server"}
+          sortingMode={"server"}
+          onSortModelChange={handleSort}
+          filterModel={model.filter}
+          onFilterModelChange={handleFilter}
+          onRowClick={handleRowClick}
+          checkboxSelection={multiSelect}
+          rowSelectionModel={initialRowSelection}
+          onRowSelectionModelChange={handleRowSelectionChange}
+          sx={{ flex: 1 }}
+        />
+      </Box>
       {dataExperiments?.items.length > 0 ? (
         <Box sx={{ mt: 2 }}>
           <PaginationCustom
@@ -1216,6 +1435,13 @@ const DatabaseExperiments = ({
         onSubmit={onSubmitAttributes}
         role={!!adminOrManager && !!user}
         readonly={!metadataEditable}
+        expId={dataDialog.expId}
+      />
+      <PopupLogs
+        data={dataDialog.data}
+        open={dataDialog.type === "logs"}
+        handleClose={handleCloseDialog}
+        expId={dataDialog.expId}
       />
       <Loading loading={loading} />
       {openShare.open && openShare.id ? (

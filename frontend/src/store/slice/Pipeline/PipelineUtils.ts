@@ -143,3 +143,21 @@ export function handleWorkflowYamlError(
     enqueueSnackbar("Failed to Run workflow", { variant: "error" })
   }
 }
+
+export function handleExpDbBatchWorkflowError(
+  error: ApiError,
+  enqueueSnackbar: (message: string, options?: OptionsObject) => SnackbarKey,
+): void {
+  // Catch workflow yaml parameter errors
+  if (error?.response?.status === 422) {
+    const snackbarOptions: OptionsObject = {
+      variant: "warning",
+    }
+    enqueueSnackbar(
+      "An error occurred while run Analys Batch. Please check the log for details.",
+      snackbarOptions,
+    )
+  } else {
+    enqueueSnackbar("Failed to Run workflow", { variant: "error" })
+  }
+}

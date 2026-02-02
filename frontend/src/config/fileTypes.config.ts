@@ -1,10 +1,25 @@
+import { WORKSPACE_TYPE } from "const/Workspace"
+
 // Define tree hierarchy constants for better maintainability
 export const TREE_HIERARCHY = {
   DATA: "Data",
+  BATCH_DATA: "Batch Data",
+  EXPDB_BATCH_DATA: "Analysis Batch Data",
 } as const
 
 export type TreeHierarchyType =
   (typeof TREE_HIERARCHY)[keyof typeof TREE_HIERARCHY]
+
+// Define mapping between workspace types and allowed tree hierarchies
+export const WORKSPACE_TYPE_HIERARCHY_MAPPING: Record<
+  WORKSPACE_TYPE,
+  TreeHierarchyType[]
+> = {
+  [WORKSPACE_TYPE.DEFAULT]: [TREE_HIERARCHY.DATA],
+  [WORKSPACE_TYPE.NORMAL]: [TREE_HIERARCHY.DATA],
+  [WORKSPACE_TYPE.BATCH]: [TREE_HIERARCHY.DATA, TREE_HIERARCHY.BATCH_DATA],
+  [WORKSPACE_TYPE.EXPDB_BATCH]: [TREE_HIERARCHY.EXPDB_BATCH_DATA],
+}
 
 export interface FileTypeConfig {
   key: string
@@ -69,6 +84,7 @@ export const REACT_FLOW_NODE_TYPE_KEY = {
   MicroscopeFileNode: "MicroscopeFileNode",
   MicroscopeExpdbFileNode: "MicroscopeExpdbFileNode",
   ExpDbNode: "ExpDbNode",
+  ExpdbBatchMicroscopeExpdbFileNode: "ExpdbBatchMicroscopeExpdbFileNode",
 } as const
 
 // Streamlined config - nodeType references REACT_FLOW_NODE_TYPE_KEY
@@ -153,20 +169,22 @@ export const FILE_TYPE_CONFIGS: Record<string, FileTypeConfig> = {
     nodeType: REACT_FLOW_NODE_TYPE_KEY.MicroscopeExpdbFileNode,
   },
   EXPDB: {
-    key: "expdb",
+    key: "standard_expdb",
     displayName: "preprocessed_data",
     hasFilePath: true,
     filePathType: "single",
     defaultParam: {},
     nodeType: REACT_FLOW_NODE_TYPE_KEY.ExpDbNode,
   },
-} as const
-
-// TODO: It is recommended to delete this alias and prepare
-//   an interface that references FILE_TYPE_CONFIGS.*.displayName.
-export const FILE_TYPE_NODE_NAME_ALIAS = {
-  MICROSCOPE_EXPDB: FILE_TYPE_CONFIGS.MICROSCOPE_EXPDB.displayName,
-  EXPDB: FILE_TYPE_CONFIGS.EXPDB.displayName,
+  EXPDB_BATCH_MICROSCOPE_EXPDB: {
+    key: "expdb_batch_microscope_expdb",
+    displayName: "batch_database",
+    hasFilePath: true,
+    filePathType: "array",
+    defaultParam: {},
+    nodeType: REACT_FLOW_NODE_TYPE_KEY.ExpdbBatchMicroscopeExpdbFileNode,
+    treeHierarchy: TREE_HIERARCHY.EXPDB_BATCH_DATA,
+  },
 } as const
 
 // Enhanced configs with computed properties

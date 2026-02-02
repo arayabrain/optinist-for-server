@@ -5,6 +5,7 @@ import { NodeProps } from "reactflow"
 import { AlgorithmNode } from "components/Workspace/FlowChart/FlowChartNode/AlgorithmNode"
 import { BehaviorFileNode } from "components/Workspace/FlowChart/FlowChartNode/BehaviorFileNode"
 import { CsvFileNode } from "components/Workspace/FlowChart/FlowChartNode/CsvFileNode"
+import { ExpdbBatchMicroscopeExpdbFileNode } from "components/Workspace/FlowChart/FlowChartNode/ExpdbBatchInputNode/ExpdbBatchMicroscopeExpdbFileNode"
 import { ExpDbNode } from "components/Workspace/FlowChart/FlowChartNode/ExpDbNode"
 import { FluoFileNode } from "components/Workspace/FlowChart/FlowChartNode/FluoFileNode"
 import { HDF5FileNode } from "components/Workspace/FlowChart/FlowChartNode/HDF5FileNode"
@@ -28,6 +29,7 @@ export const nodeComponentRegistry: Record<string, NodeComponentType> = {
   MicroscopeFileNode,
   ExpDbNode,
   MicroscopeExpdbFileNode,
+  ExpdbBatchMicroscopeExpdbFileNode,
 }
 
 // Get component by node type name
